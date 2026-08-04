@@ -30,3 +30,11 @@ To keep our repository clean and avoid merge conflicts, please follow these guid
 1. **Review Before Building:** Always check the `docs/` folder for the latest quest structures and campus map updates before starting a new feature.
 2. **Use the Drafts:** Keep messy experiments, test code, and WIP sprites inside the respective `drafts/` folders in `src/` and `assets/`.
 3. **Communicate:** Ping the group chat before pushing major changes to the `main` branch or if you are restructuring any core files.
+
+## Git & .gitignore Rules
+To prevent our repository from becoming bloated and to avoid breaking each other's local setups, we rely on a strict `.gitignore` policy. 
+* **No personal IDE settings:** Keep personal workspace configurations (like `.vscode/` settings) on your own machine.
+* **No engine caches or logs:** Temporary engine files, crash logs, and user-specific preference files must not be committed.
+* **No compiled builds:** Exported executables and playable versions inside the `builds/` folder are ignored to save repository space.
+* **Large Files:** Standard GitHub blocks files over 100MB. If you are adding massive audio tracks or uncompressed sprite sheets, let the team know so we can configure Git LFS (Large File Storage).
+* *Note: If you install a new tool or plugin that generates temporary junk files, please update the `.gitignore` file immediately before committing.*
