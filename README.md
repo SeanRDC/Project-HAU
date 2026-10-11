@@ -3,7 +3,7 @@
 > **The Elevator Pitch:** A 2D pixel art adventure that lets players explore the Holy Angel University campus, complete student-life quests, and uncover university secrets.
 
 ## Project Status: First Playable Area
-The first area is playable: the **Don Juan D. Nepomuceno Building**. You can walk the driveway out front, go into the lobby, and hang out in the courtyard. It is a prototype running on our own small engine in the browser. The plan is to port it to Godot 4 once the look and feel are settled.
+The first two areas are playable: the **Don Juan D. Nepomuceno Building** and the **Epiphany of Angels** park. You can walk the driveway out front, go into the lobby, hang out in the courtyard, then leave by the gate and loop back through the park. Progress saves on its own. It is a prototype running on our own small engine in the browser. The plan is to port it to Godot 4 once the look and feel are settled.
 
 ## Play It
 You need [Node.js](https://nodejs.org) 20 or newer.
@@ -24,6 +24,7 @@ Then open http://localhost:5173 in your browser.
 | `Q` | Phone (first-day checklist) |
 | `T` | Skip ahead 1.5 hours |
 | `M` | Mute |
+| `N` | New game (on the title screen) |
 
 ## The Core Vision
 * **Genre:** 2D Side-View Narrative Adventure (free roam)

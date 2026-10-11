@@ -21,7 +21,7 @@ Once a system (like the player controller or dialogue manager) is tested and app
 ## Layout
 * `engine/` - reusable parts that know nothing about HAU: display buffer, game loop, input, camera, lighting, particles, time of day, audio, pixel drawing helpers.
 * `game/art/` - everything you see is drawn by code here (building, props, characters, sky). There are no image files yet.
-* `game/scenes/` - one file per location: `plaza`, `lobby`, `courtyard`.
+* `game/scenes/` - one file per location: `plaza`, `lobby`, `courtyard`, `park`.
 * `game/story/` - NPCs, dialogue and the checklist. **Writers: this is the folder to edit.**
 * `game/ui/` - speech bubbles, phone, title screen.
 
@@ -30,13 +30,15 @@ Add these to the URL to jump straight somewhere while testing:
 
 `http://localhost:5173/?area=courtyard&x=500&hour=19&talk=bea`
 
-* `area` - `plaza`, `lobby` or `courtyard`
+* `area` - `plaza`, `lobby`, `courtyard` or `park`
 * `x` - where to stand
 * `hour` - time of day, 0 to 24
 * `talk` - start talking to an NPC by id
 * `flags` - comma-separated story flags to set
 * `phone` - open the phone
 * `warm` - simulate this many seconds before the first frame
+
+Any of these also turns the save game off for that run, so testing never touches your real progress.
 
 ## Future Coding Standards
 * Keep scripts modular (e.g., the quest tracker should be completely separate from the player movement script).
