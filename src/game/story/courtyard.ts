@@ -156,13 +156,9 @@ export function courtyardHotspots(x: { door: number; arch: number; chair: number
       id: 'gate',
       x: x.gate - 22,
       range: 20,
-      label: 'Silipin ang gate',
+      label: 'Lumabas sa gate',
       height: 60,
-      use: (g) =>
-        g.say([
-          { who: '', text: 'Naka-kandado. Sa kabila, tanaw ang daan papunta sa iba pang building.' },
-          { who: '', text: 'Sa susunod na lang.' },
-        ]),
+      use: (g) => g.travel('park', 'gate'),
     },
   ];
 }

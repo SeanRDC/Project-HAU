@@ -154,18 +154,6 @@ function ground(c: Ctx): void {
   rect(c, 0, GROUND + 44, WIDTH, 1, P.roadDark);
 }
 
-/** The university seal set into the pavement, seen at a low angle. */
-function pavementSeal(c: Ctx, x: number, y: number): void {
-  ellipse(c, x, y, 44, 7, P.maroon);
-  ellipse(c, x, y, 41, 6, P.trim);
-  ellipse(c, x, y, 39, 5.5, P.gold);
-  ellipse(c, x, y, 25, 3.5, P.maroon);
-  ellipse(c, x, y, 23, 3, P.goldHi);
-  rect(c, x - 8, y - 2, 17, 4, P.trim);
-  rect(c, x - 3, y - 1, 7, 2, P.maroon);
-  for (let i = -30; i <= 30; i += 5) px(c, x + i, y + (Math.abs(i) > 18 ? 0 : i % 2 ? 4 : -4), P.maroon);
-}
-
 function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement } {
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
   const [glow, g] = makeCanvas(WIDTH, VIEW_H);
@@ -203,13 +191,11 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   // light spilling out of the open door and across the steps
   lights.push({ x: PLAZA_DOOR_X, y: GROUND - 30, r: 110, color: [255, 208, 140], strength: 0.9 });
 
-  pavementSeal(c, PLAZA_DOOR_X, GROUND + 30);
-
   // fountain rotonda
   fountainBasin(c, FOUNTAIN_X, FOUNTAIN_Y);
   stoneBench(c, 40, GROUND + 13);
   hedge(c, 0, GROUND + 4, 104, 10, 9);
-  signBoard(c, 70, GROUND + 3, ['SCHOOL OF', 'COMPUTING'], P.maroon, P.goldHi);
+  signBoard(c, 70, GROUND + 3, ['EPIPHANY', 'OF ANGELS'], P.maroon, P.goldHi);
   bush(c, 320, GROUND + 4, 30, 18, 61);
 
   // guardian angel on its little lawn
@@ -288,6 +274,7 @@ export function buildPlaza(): AreaDef {
     spawns: {
       start: { x: 1130, facing: -1 },
       door: { x: PLAZA_DOOR_X, facing: -1 },
+      park: { x: 44, facing: 1 },
     },
 
     update(dt, area, view) {

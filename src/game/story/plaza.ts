@@ -128,19 +128,6 @@ export function plazaHotspots(doorX: number, fountainX: number, statueX: number)
       use: (g) => g.travel('lobby', 'front'),
     },
     {
-      id: 'seal',
-      x: doorX - 62,
-      range: 16,
-      label: 'Tingnan ang seal',
-      height: 20,
-      use: (g) =>
-        g.say([
-          { who: '', text: 'Ang seal ng Holy Angel University. "Laus Deo Semper": Praise God always.' },
-          { who: '', text: 'Sabi ng mga senior, malas daw tapakan \'to bago ka grumaduate.' },
-          { who: 'you', text: '...Naapakan ko na yata kanina.' },
-        ]),
-    },
-    {
       id: 'fountain',
       x: fountainX,
       range: 40,
@@ -165,16 +152,12 @@ export function plazaHotspots(doorX: number, fountainX: number, statueX: number)
         ]),
     },
     {
-      id: 'soc',
-      x: 60,
-      range: 30,
-      label: 'Basahin ang karatula',
-      height: 44,
-      use: (g) =>
-        g.say([
-          { who: '', text: '"SCHOOL OF COMPUTING". Dito ang daan.' },
-          { who: '', text: 'May nakasabit na papel sa ilalim: "Ginagawa pa ang bahaging ito. Balik ka sa susunod."' },
-        ]),
+      id: 'park',
+      x: 50,
+      range: 28,
+      label: 'Pumunta sa Epiphany of Angels',
+      height: 66,
+      use: (g) => g.travel('park', 'drive'),
     },
     {
       id: 'gate',

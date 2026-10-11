@@ -267,7 +267,10 @@ export function buildCourtyard(): AreaDef {
     lights,
     hotspots: courtyardHotspots({ door: DOOR_X, arch: ARCH_X, chair: CHAIR_X, gate: GATE_X }),
     npcs: courtyardNpcs(),
-    spawns: { lobby: { x: DOOR_X + 6, facing: 1 } },
+    spawns: {
+      lobby: { x: DOOR_X + 6, facing: 1 },
+      gate: { x: GATE_X - 24, facing: -1 },
+    },
 
     update(dt, area, view) {
       leaf -= dt;
