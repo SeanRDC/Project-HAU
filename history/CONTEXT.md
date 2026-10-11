@@ -1,4 +1,4 @@
-# Project Context
+﻿# Project Context
 
 Last updated: 2026-10-12 (Minimap and map teleport)
 
@@ -82,6 +82,13 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * **Archangel names** are not in the game; the plaques were unreadable in the photos.
 * **Audio** has never been listened to critically. It may need rebalancing.
 * **University permission** for using the HAU name and likeness has not been asked for yet.
+
+## Planned Next
+See `sessions/2026-10-12-minimap-teleport-and-plans.md` for the details.
+* **Photo trip, Tuesday 2026-10-13.** The shot list is in that session file. Fix the maps from the photos afterwards, Main Gate first.
+* **Characters easier to tell apart.** One signature feature each (hair, glasses, build, accessories), then talking and idle animations. Trisha, Bea, Kath and Ella currently look almost the same.
+* **Close-up cutscenes** with portraits drawn by code from each `Look`, replaced later by hand-drawn art.
+* **Quest "Ang Ikaapat na Piso"** (Jopet), drafted in `docs/drafts/` on branch `quest-ikaapat-na-piso`. It needs a day system, close-ups, the library and the SOC org room.
 
 ## Not Done Yet
 * **Interiors of every building except the DJN.** Waiting on reference photos of each one. Do not guess at them.
