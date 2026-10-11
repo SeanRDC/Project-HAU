@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173 in your browser.
+Then open http://localhost:5173 in your browser. Or run `npm run play` instead of `npm run dev` and the game opens in your browser on its own.
 
 | Key | Action |
 | --- | --- |
