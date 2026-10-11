@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-11 (Campus layout)
+Last updated: 2026-10-12 (Minimap and map teleport)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -20,6 +20,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Art | Drawn by code, no image files yet | Lets the time-of-day lighting recolour everything; replace with real sprites later |
 | Opening | New games start outside the Main Gate with a cutscene | Bag check and ID tap are the first thing every HAU student does each day |
 | Cutscenes | A list of steps in the story files, played by `src/game/cutscene.ts` | Writers can script scenes without touching the engine; no timeline editor to build |
+| Map teleport | Pick any place on the C map and jump there | Stand-in while the campus is only partly walkable. Switch off with `TELEPORT` in `src/game/ui/map.ts` once it is all joined up on foot |
 
 ## What Exists
 Twelve connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
@@ -44,7 +45,7 @@ The seven campus streets, outsides only, no people yet:
 
 Every building's door names it, gives its number on the 2022 campus map and the offices inside, and says it is not open yet.
 
-Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key, title screen, synthesised audio, autosave.
+Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key (pixel art, painted from the plan, with teleport) and a minimap in the top right, title screen, synthesised audio, autosave.
 
 ## Where Things Live
 * `src/engine/` - generic engine parts. Knows nothing about HAU.

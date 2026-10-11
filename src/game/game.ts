@@ -24,7 +24,7 @@ import { buildWalkway } from './scenes/walkway';
 import { TASKS } from './story/tasks';
 import { AreaDef, GameApi, Line, Sound, Step } from './types';
 import { drawAreaTitle, drawClock, drawControlsHint, drawLetterbox, drawPrompt, drawToast } from './ui/hud';
-import { CampusMap } from './ui/map';
+import { CampusMap, STOPS } from './ui/map';
 import { Phone } from './ui/phone';
 import { drawSelect } from './ui/select';
 import { drawTitle } from './ui/title';
@@ -98,6 +98,11 @@ export class Game implements GameApi {
       area.onStep = () => this.audio.footstep(!d.outdoor);
       this.areas.set(d.id, area);
     }
+    // the places the campus map can send you
+    this.map.stops = STOPS.map(([id, spawn]) => {
+      const def = this.areas.get(id)!.def;
+      return { area: id, spawn, name: def.title, at: whereAmI(id, def.spawns[spawn].x)! };
+    });
     this.area = this.areas.get('plaza')!;
     this.area.enter('start');
 
@@ -299,8 +304,14 @@ export class Game implements GameApi {
         this.audio.select();
       }
       if (!this.phone.open && (input.pressed('map') || (this.map.open && input.pressed('back')))) {
-        this.map.toggle();
+        this.map.toggle(this.area.def.id);
         this.audio.select();
+      }
+      const stop = this.map.choose(input, () => this.audio.select());
+      if (stop) {
+        this.map.open = false;
+        this.audio.chime();
+        this.travel(stop.area, stop.spawn);
       }
       if (input.pressed('time') && !this.phone.open && !this.map.open) this.clock = (this.clock + 1.5) % 24;
     }
@@ -420,17 +431,21 @@ export class Game implements GameApi {
 
     const ui = this.display.ui();
     if (this.mode === 'play') {
+      // where you are on the campus plan, and a step ahead of you for the map arrow
+      const here = whereAmI(area.def.id, area.player.x);
+      const ahead = whereAmI(area.def.id, area.player.x + area.player.facing * 30);
       drawLetterbox(ui, this.bars);
       if (this.target) drawPrompt(ui, this.target, area.camera.x, this.time);
       this.dialogue.render(ui, area);
       if (!this.dialogue.active) {
         if (!this.cutscene) drawClock(ui, this.clock);
+        if (!this.cutscene && !this.phone.open) this.map.renderMini(ui, here, ahead, this.time, moodAt(this.clock).night);
         drawAreaTitle(ui, area.def.title, area.def.subtitle, this.areaAge);
         if (!this.cutscene) drawControlsHint(ui, clamp(14 - this.playAge, 0, 1));
       }
       if (this.toast) drawToast(ui, this.toast.text, this.toast.age);
       this.phone.render(ui, this.clock, (f) => this.has(f));
-      this.map.render(ui, whereAmI(area.def.id, area.player.x), this.time);
+      this.map.render(ui, here, ahead, this.time);
     }
     drawTitle(ui, this.time, Math.max(this.titleOut, this.selectFade), this.hasSave);
     drawSelect(ui, this.time, this.selectFade * (1 - this.titleOut), this.choiceAnim);
