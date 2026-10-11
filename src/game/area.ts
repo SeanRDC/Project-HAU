@@ -117,9 +117,20 @@ export class Area implements AreaRuntime {
     if (facing) n.facing = facing;
   }
 
-  /** True while anyone sent by send() is still on the way. */
-  walking(): boolean {
-    return this.walkTo !== null || this.npcs.some((n) => n.goal !== null);
+  /** True while someone sent by send() is still on the way. */
+  walking(who: string): boolean {
+    if (who === 'you') return this.walkTo !== null;
+    return this.npcs.some((n) => n.def.id === who && n.goal !== null);
+  }
+
+  /** Cutscene helper: turn someone without moving them. */
+  turn(who: string, dir: 1 | -1): void {
+    if (who === 'you') {
+      this.player.facing = dir;
+      return;
+    }
+    const n = this.npcs.find((n) => n.def.id === who);
+    if (n) n.facing = dir;
   }
 
   spawnParticle(p: Partial<Particle>): void {

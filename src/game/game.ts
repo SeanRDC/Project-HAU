@@ -1,18 +1,19 @@
 import { Audio } from '../engine/audio';
 import { Display, VIEW_H, VIEW_W } from '../engine/display';
 import { Input } from '../engine/input';
-import { clamp } from '../engine/math';
+import { clamp, damp } from '../engine/math';
 import { moodAt } from '../engine/tod';
 import { Area, Target } from './area';
 import { Sky } from './art/sky';
+import { Cutscene, CutsceneHost } from './cutscene';
 import { Dialogue } from './dialogue';
 import { buildCourtyard } from './scenes/courtyard';
 import { buildLobby } from './scenes/lobby';
 import { buildPark } from './scenes/park';
 import { buildPlaza } from './scenes/plaza';
 import { TASKS } from './story/tasks';
-import { AreaDef, GameApi, Line } from './types';
-import { drawAreaTitle, drawClock, drawControlsHint, drawPrompt, drawToast } from './ui/hud';
+import { AreaDef, GameApi, Line, Sound, Step } from './types';
+import { drawAreaTitle, drawClock, drawControlsHint, drawLetterbox, drawPrompt, drawToast } from './ui/hud';
 import { Phone } from './ui/phone';
 import { drawTitle } from './ui/title';
 
@@ -53,6 +54,15 @@ export class Game implements GameApi {
   private hasSave = false;
   private persist = true;
   private sinceSave = 0;
+  private cutscene: Cutscene | null = null;
+  /** 0..1, the black bars that slide in during a cutscene */
+  private bars = 0;
+  private host: CutsceneHost = {
+    area: () => this.area,
+    talking: () => this.dialogue.active,
+    game: this,
+    sound: (s) => this.sound(s),
+  };
 
   constructor(private display: Display, private input: Input) {
     const defs: AreaDef[] = [buildPlaza(), buildLobby(), buildCourtyard(), buildPark()];
@@ -103,6 +113,7 @@ export class Game implements GameApi {
       this.area.camera.snap(this.area.player.x);
     }
     for (const f of (q.get('flags') ?? '').split(',')) if (f) this.flags.add(f);
+    if (this.mode === 'play') this.startIntro();
     if (q.has('phone')) this.phone.open = true;
     const npc = this.area.npcs.find((n) => n.def.id === q.get('talk'));
     if (npc) {
@@ -129,7 +140,8 @@ export class Game implements GameApi {
   }
 
   private save(): void {
-    if (!this.persist || this.mode !== 'play') return;
+    // mid-cutscene positions make bad save points; the next save catches up
+    if (!this.persist || this.mode !== 'play' || this.cutscene) return;
     this.sinceSave = 0;
     try {
       const data = { flags: [...this.flags], clock: this.clock, area: this.area.def.id, x: Math.round(this.area.player.x) };
@@ -166,6 +178,25 @@ export class Game implements GameApi {
     return this.clock;
   }
 
+  play(steps: Step[]): void {
+    this.cutscene = new Cutscene(steps);
+    this.target = null;
+    this.phone.open = false;
+  }
+
+  private sound(s: Sound): void {
+    if (s === 'beep') this.audio.beep();
+    else if (s === 'buzz') this.audio.buzz();
+    else if (s === 'turnstile') this.audio.clack();
+    else if (s === 'zip') this.audio.zip();
+  }
+
+  /** Plays the area's walk-in cutscene, if it has one for right now. */
+  private startIntro(): void {
+    const steps = this.area.def.intro?.(this, this.area.player.x);
+    if (steps) this.play(steps);
+  }
+
   update(dt: number): void {
     const input = this.input;
     this.time += dt;
@@ -196,6 +227,7 @@ export class Game implements GameApi {
         this.areaAge = 0;
         if (this.area.def.visitFlag) this.set(this.area.def.visitFlag);
         this.save();
+        this.startIntro();
       }
     } else {
       this.fade = Math.max(0, this.fade - dt / FADE_TIME);
@@ -204,7 +236,17 @@ export class Game implements GameApi {
     const wasTalking = this.dialogue.active;
     if (wasTalking) this.dialogue.update(dt, input);
 
-    if (!wasTalking && !this.pending) {
+    const scripted = this.cutscene !== null;
+    if (this.cutscene && !this.pending) {
+      this.cutscene.update(dt, this.host);
+      if (this.cutscene.done) {
+        this.cutscene = null;
+        this.save();
+      }
+    }
+    this.bars = damp(this.bars, this.cutscene ? 1 : 0, 6, dt);
+
+    if (!wasTalking && !this.pending && !scripted) {
       if (input.pressed('phone') || (this.phone.open && input.pressed('back'))) {
         this.phone.toggle();
         this.audio.select();
@@ -213,8 +255,14 @@ export class Game implements GameApi {
     }
     this.phone.update(dt);
 
-    const locked = this.dialogue.active || wasTalking || this.phone.open || this.pending !== null;
+    const locked = this.dialogue.active || wasTalking || this.phone.open || this.pending !== null || scripted;
+    const before = this.area.player.x;
     this.area.update(dt, input, mood, locked);
+    const bar = this.area.def.barrier;
+    if (bar && !this.has(bar.until) && before >= bar.x && this.area.player.x < bar.x) {
+      this.area.player.x = bar.x;
+      this.area.player.vx = 0;
+    }
     this.target = locked ? null : this.area.target();
     if (this.target && input.pressed('interact')) {
       this.audio.select();
@@ -245,6 +293,7 @@ export class Game implements GameApi {
           this.area.enter('start');
         }
         this.areaAge = 0;
+        this.startIntro();
       }
     } else if (this.time > 0.6 && this.input.pressed('interact')) {
       this.pending = { area: 'plaza', spawn: 'start' };
@@ -280,12 +329,13 @@ export class Game implements GameApi {
 
     const ui = this.display.ui();
     if (this.mode === 'play') {
+      drawLetterbox(ui, this.bars);
       if (this.target) drawPrompt(ui, this.target, area.camera.x, this.time);
       this.dialogue.render(ui, area);
       if (!this.dialogue.active) {
-        drawClock(ui, this.clock);
+        if (!this.cutscene) drawClock(ui, this.clock);
         drawAreaTitle(ui, area.def.title, area.def.subtitle, this.areaAge);
-        drawControlsHint(ui, clamp(14 - this.playAge, 0, 1));
+        if (!this.cutscene) drawControlsHint(ui, clamp(14 - this.playAge, 0, 1));
       }
       if (this.toast) drawToast(ui, this.toast.text, this.toast.age);
       this.phone.render(ui, this.clock, (f) => this.has(f));
