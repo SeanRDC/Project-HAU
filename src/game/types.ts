@@ -18,6 +18,29 @@ export interface Line {
   set?: string;
 }
 
+/** Short synthesised sound effects a cutscene can ask for. */
+export type Sound = 'beep' | 'buzz' | 'turnstile' | 'zip';
+
+/**
+ * One beat of a cutscene. Steps run in order and each one waits for the last:
+ * a walk until they arrive, a say until the lines are read, a pause for its
+ * seconds. The rest happen instantly.
+ */
+export type Step =
+  /** walk 'you' (default) or an NPC to x; `together` starts the next step right away */
+  | { walk: number; who?: string; together?: boolean }
+  /** put an NPC somewhere instantly */
+  | { place: string; x: number; facing?: 1 | -1 }
+  /** turn 'you' or an NPC to face left (-1) or right (1) */
+  | { face: string; dir: 1 | -1 }
+  | { say: Line[] }
+  | { pause: number }
+  | { sound: Sound }
+  /** change what the player is wearing, e.g. { bag: undefined } to hand the bag over; null puts it all back */
+  | { look: Partial<Look> | null }
+  /** anything else: set a flag, poke the scene's props */
+  | { run: (game: GameApi) => void };
+
 /** What scenes are allowed to ask the game to do. */
 export interface GameApi {
   has(flag: string): boolean;
@@ -25,6 +48,8 @@ export interface GameApi {
   say(lines: Line[]): void;
   travel(area: string, spawn: string): void;
   hour(): number;
+  /** start a cutscene; the player has no control until it ends */
+  play(steps: Step[]): void;
 }
 
 export interface Layer {
@@ -97,12 +122,18 @@ export interface AreaDef {
   spawns: Record<string, { x: number; facing: 1 | -1 }>;
   /** story flag set the first time the player walks in */
   visitFlag?: string;
+  /** a cutscene to play on walking in (or continuing a save here), or null for none */
+  intro?(game: GameApi, playerX: number): Step[] | null;
+  /** the player can't cross x from right to left until the flag is set (a turnstile, a locked door) */
+  barrier?: { x: number; until: string };
   /** where the fountain is, if there is one, so its sound gets louder nearby */
   fountainX?: number;
   /** per-frame logic, mostly particle emitters */
   update?(dt: number, area: AreaRuntime, view: AreaView): void;
   /** animated things drawn behind the characters */
   drawBack?(ctx: Ctx, view: AreaView): void;
+  /** animated things drawn in front of the characters, still lit like the world */
+  drawFront?(ctx: Ctx, view: AreaView): void;
   /** drawn after lighting: sunbeams and anything else that should glow */
   drawOver?(ctx: Ctx, view: AreaView): void;
 }

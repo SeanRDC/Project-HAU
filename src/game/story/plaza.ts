@@ -163,9 +163,9 @@ export function plazaHotspots(doorX: number, fountainX: number, statueX: number)
       id: 'gate',
       x: 1262,
       range: 22,
-      label: 'Lumabas ng gate',
+      label: 'Lumabas sa main gate',
       height: 50,
-      use: (g) => g.say([{ who: 'you', text: 'Uuwi na agad? Kararating ko lang. Mamaya na.' }]),
+      use: (g) => g.travel('gate', 'plaza'),
     },
   ];
 }

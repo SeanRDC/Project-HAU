@@ -29,6 +29,8 @@ interface Npc extends Walker {
   def: NpcDef;
   wait: number;
   target: number | null;
+  /** set by a cutscene: walk here no matter what, then stand */
+  goal: number | null;
 }
 
 /** Something the player can press E on right now. */
@@ -54,6 +56,10 @@ export class Area implements AreaRuntime {
   readonly camera: Camera;
   readonly player: Walker;
   readonly npcs: Npc[];
+  /** what the player is wearing right now; cutscenes can swap it (bag off, etc) */
+  playerLook: Look = PLAYER_LOOK;
+  /** set by a cutscene: the player walks here on their own, then stops */
+  walkTo: number | null = null;
   private particles = new Particles();
   private light = new LightMap();
   private time = 0;
@@ -75,6 +81,7 @@ export class Area implements AreaRuntime {
       stride: 0,
       wait: 1 + Math.random() * 4,
       target: null,
+      goal: null,
     }));
     [this.hazeBuf, this.hazeCtx] = makeCanvas(VIEW_W, VIEW_H);
   }
@@ -85,7 +92,45 @@ export class Area implements AreaRuntime {
     this.player.facing = s.facing;
     this.player.vx = 0;
     this.player.stride = 0;
+    this.walkTo = null;
+    this.playerLook = PLAYER_LOOK;
     this.camera.snap(s.x);
+  }
+
+  /** Cutscene helper: send someone ('you' or an NPC id) walking to x. */
+  send(who: string, x: number): void {
+    if (who === 'you') {
+      this.walkTo = x;
+      return;
+    }
+    const n = this.npcs.find((n) => n.def.id === who);
+    if (n) n.goal = x;
+  }
+
+  /** Cutscene helper: put an NPC somewhere instantly. */
+  place(who: string, x: number, facing?: 1 | -1): void {
+    const n = this.npcs.find((n) => n.def.id === who);
+    if (!n) return;
+    n.x = x;
+    n.goal = null;
+    n.target = null;
+    if (facing) n.facing = facing;
+  }
+
+  /** True while someone sent by send() is still on the way. */
+  walking(who: string): boolean {
+    if (who === 'you') return this.walkTo !== null;
+    return this.npcs.some((n) => n.def.id === who && n.goal !== null);
+  }
+
+  /** Cutscene helper: turn someone without moving them. */
+  turn(who: string, dir: 1 | -1): void {
+    if (who === 'you') {
+      this.player.facing = dir;
+      return;
+    }
+    const n = this.npcs.find((n) => n.def.id === who);
+    if (n) n.facing = dir;
   }
 
   spawnParticle(p: Partial<Particle>): void {
@@ -159,8 +204,18 @@ export class Area implements AreaRuntime {
   update(dt: number, input: Input, mood: Mood, locked: boolean): void {
     this.time += dt;
     const p = this.player;
-    const axis = locked ? 0 : input.axis();
-    const speed = input.down('run') ? RUN_SPEED : WALK_SPEED;
+    let axis = locked ? 0 : input.axis();
+    let speed = input.down('run') ? RUN_SPEED : WALK_SPEED;
+    if (this.walkTo !== null) {
+      const d = this.walkTo - p.x;
+      if (Math.abs(d) < 1.5) {
+        this.walkTo = null;
+        axis = 0;
+      } else {
+        axis = Math.sign(d);
+        speed = WALK_SPEED * clamp(Math.abs(d) / 6, 0.4, 1);
+      }
+    }
     p.vx = damp(p.vx, axis * speed, 14, dt);
     if (axis !== 0) p.facing = axis > 0 ? 1 : -1;
     this.advance(p, dt);
@@ -172,7 +227,16 @@ export class Area implements AreaRuntime {
 
     for (const n of this.npcs) {
       n.vx = 0;
-      if (n.def.wander && !locked) {
+      if (n.goal !== null) {
+        const d = n.goal - n.x;
+        if (Math.abs(d) < 1.5) {
+          n.goal = null;
+          n.wait = 3 + Math.random() * 4;
+        } else {
+          n.facing = d > 0 ? 1 : -1;
+          n.vx = n.facing * 26;
+        }
+      } else if (n.def.wander && !locked) {
         if (n.target === null) {
           n.wait -= dt;
           if (n.wait <= 0) n.target = n.def.wander[0] + Math.random() * (n.def.wander[1] - n.def.wander[0]);
@@ -239,7 +303,7 @@ export class Area implements AreaRuntime {
         continue;
       }
       drawShadow(ctx, sx, w.y);
-      drawCharacter(ctx, sx, w.y, npc ? npc.look : PLAYER_LOOK, {
+      drawCharacter(ctx, sx, w.y, npc ? npc.look : this.playerLook, {
         facing: w.facing,
         phase: w.phase,
         stride: w.stride,
@@ -247,6 +311,7 @@ export class Area implements AreaRuntime {
       });
     }
 
+    def.drawFront?.(ctx, view);
     for (const l of def.layers) if (l.front) this.drawLayer(ctx, l, mood);
 
     // indoors the sun matters less, the walls keep things warm and even

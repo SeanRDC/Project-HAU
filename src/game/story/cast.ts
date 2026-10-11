@@ -48,6 +48,25 @@ export const ENZO: Look = {
   lace: '#e3b33b', height: 1,
 };
 
+// main gate: two guards on bag check, a student ahead of you in line, the taho vendor outside
+
+export const NONOY: Look = {
+  skin: '#a87650', hair: '#1e2a48', hairStyle: 'cap', top: '#dfe6f2', bottom: '#1e2a48', shoes: '#15141a', height: 2,
+};
+
+export const JOY: Look = {
+  skin: '#cf9a70', hair: '#231a1c', hairStyle: 'bun', top: '#dfe6f2', bottom: '#1e2a48', shoes: '#15141a',
+};
+
+export const ELLA: Look = {
+  skin: '#d9a87e', hair: '#3a2622', hairStyle: 'long', top: '#f3f0e8', bottom: '#7c1f2c', shoes: '#22202a', skirt: true,
+  lace: '#7c1f2c', bag: '#4a6a8a', height: -1,
+};
+
+export const TAHO: Look = {
+  skin: '#9c6a46', hair: '#e8e2d2', hairStyle: 'cap', top: '#d9c79a', bottom: '#4a4438', shoes: '#2a2420', bag: '#b9bcc4',
+};
+
 export const CAT: Look = {
   skin: '#d98b3a', hair: '#d98b3a', hairStyle: 'bald', top: '#d98b3a', bottom: '#d98b3a', shoes: '#d98b3a',
 };

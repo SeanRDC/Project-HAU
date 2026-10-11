@@ -141,4 +141,54 @@ export class Audio {
     const now = this.ac.currentTime;
     [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => this.tone(f, now + i * 0.09, 0.5, 0.07, 'triangle', this.music));
   }
+
+  /** Filtered noise burst; `sweep` slides the filter for zips and swishes. */
+  private burst(at: number, length: number, freq: number, gain: number, sweep = freq): void {
+    const ac = this.ac!;
+    const src = ac.createBufferSource();
+    src.buffer = this.noise;
+    const filter = ac.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 2;
+    filter.frequency.setValueAtTime(freq, at);
+    filter.frequency.linearRampToValueAtTime(sweep, at + length);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(gain, at);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + length);
+    src.connect(filter).connect(g).connect(this.master);
+    src.start(at, Math.random() * 0.5, length + 0.05);
+  }
+
+  /** Card reader accepted: two quick high beeps. */
+  beep(): void {
+    if (!this.ac) return;
+    const now = this.ac.currentTime;
+    this.tone(1760, now, 0.09, 0.05, 'square', this.master);
+    this.tone(2349, now + 0.11, 0.14, 0.05, 'square', this.master);
+  }
+
+  /** Card reader refused: one low flat buzz. */
+  buzz(): void {
+    if (!this.ac) return;
+    const now = this.ac.currentTime;
+    this.tone(196, now, 0.35, 0.06, 'sawtooth', this.master);
+    this.tone(207, now, 0.35, 0.04, 'square', this.master);
+  }
+
+  /** Turnstile arm unlocking and swinging round. */
+  clack(): void {
+    if (!this.ac) return;
+    const now = this.ac.currentTime;
+    this.burst(now, 0.05, 2200, 0.14);
+    this.tone(110, now, 0.08, 0.08, 'triangle', this.master);
+    this.burst(now + 0.32, 0.07, 1400, 0.1);
+  }
+
+  /** A zipper going one way and back. */
+  zip(): void {
+    if (!this.ac) return;
+    const now = this.ac.currentTime;
+    this.burst(now, 0.35, 1800, 0.06, 4200);
+    this.burst(now + 0.45, 0.3, 4000, 0.05, 1700);
+  }
 }

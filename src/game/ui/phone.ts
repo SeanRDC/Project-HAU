@@ -5,7 +5,7 @@ import { TASKS } from '../story/tasks';
 import { GOLD, INK, MAROON, PAPER, font, roundRect, wrap } from './draw';
 
 const W = 112;
-const H = 238;
+const H = 250;
 
 /** The player's phone: slides in from the right with the day's to-do list. */
 export class Phone {

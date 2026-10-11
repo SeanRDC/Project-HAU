@@ -90,3 +90,12 @@ export function drawControlsHint(ui: Ctx, alpha: number): void {
   }
   ui.globalAlpha = 1;
 }
+
+/** Black bars top and bottom while a cutscene plays. `t` 0..1 slides them in. */
+export function drawLetterbox(ui: Ctx, t: number): void {
+  if (t < 0.01) return;
+  const h = 16 * t;
+  ui.fillStyle = '#0d0b10';
+  ui.fillRect(0, 0, VIEW_W, h);
+  ui.fillRect(0, VIEW_H - h, VIEW_W, h);
+}

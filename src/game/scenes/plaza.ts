@@ -275,6 +275,7 @@ export function buildPlaza(): AreaDef {
       start: { x: 1130, facing: -1 },
       door: { x: PLAZA_DOOR_X, facing: -1 },
       park: { x: 44, facing: 1 },
+      gate: { x: 1236, facing: -1 },
     },
 
     update(dt, area, view) {
