@@ -4,6 +4,7 @@ import { Input } from '../engine/input';
 import { clamp, damp } from '../engine/math';
 import { moodAt } from '../engine/tod';
 import { Area, Target } from './area';
+import { Character, baseLook, character, isCharacter, setCharacter } from './art/player';
 import { Sky } from './art/sky';
 import { Cutscene, CutsceneHost } from './cutscene';
 import { Dialogue } from './dialogue';
@@ -16,6 +17,7 @@ import { TASKS } from './story/tasks';
 import { AreaDef, GameApi, Line, Sound, Step } from './types';
 import { drawAreaTitle, drawClock, drawControlsHint, drawLetterbox, drawPrompt, drawToast } from './ui/hud';
 import { Phone } from './ui/phone';
+import { drawSelect } from './ui/select';
 import { drawTitle } from './ui/title';
 
 /** in-game hours per real second: a full day takes about 12 minutes */
@@ -46,6 +48,13 @@ export class Game implements GameApi {
 
   private mode: 'title' | 'play' = 'title';
   private titleOut = 0;
+  /** the character picker is showing over the title; `selectFade` and `choiceAnim` are 0..1 */
+  private selecting = false;
+  private selectFade = 0;
+  private choice: Character = 'boy';
+  private choiceAnim = 0;
+  /** the picker was opened with N, so confirming wipes the old save (Esc leaves it alone) */
+  private startFresh = false;
   /** 0 clear, 1 black */
   private fade = 0;
   private pending: { area: string; spawn: string } | null = null;
@@ -102,6 +111,8 @@ export class Game implements GameApi {
     this.clock = START_HOUR;
     this.resume = null;
     this.hasSave = false;
+    // ?char=girl plays as the girl
+    this.applyCharacter(q.get('char') === 'girl' ? 'girl' : 'boy');
     if (!q.has('title')) {
       this.mode = 'play';
       this.titleOut = 1;
@@ -128,16 +139,26 @@ export class Game implements GameApi {
     for (let i = 0; i < Number(q.get('warm') ?? 0) * 60; i++) this.update(1 / 60);
   }
 
+  /** Make `c` the player's base look everywhere. Only call between scenes, never mid-cutscene. */
+  private applyCharacter(c: Character): void {
+    this.choice = c;
+    this.choiceAnim = c === 'girl' ? 1 : 0;
+    setCharacter(c);
+    for (const a of this.areas.values()) a.playerLook = baseLook();
+  }
+
   private load(): void {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return;
-      const data = JSON.parse(raw) as { flags: string[]; clock: number; area: string; x: number };
+      const data = JSON.parse(raw) as { flags: string[]; clock: number; area: string; x: number; character?: unknown };
       if (!this.areas.has(data.area)) return;
       this.flags = new Set(data.flags);
       this.clock = data.clock;
       this.resume = { area: data.area, x: data.x };
       this.hasSave = true;
+      // saves from before character selection have no field: they were the boy
+      this.applyCharacter(isCharacter(data.character) ? data.character : 'boy');
     } catch {
       // a broken or blocked save just means starting over
     }
@@ -148,7 +169,13 @@ export class Game implements GameApi {
     if (!this.persist || this.mode !== 'play' || this.cutscene) return;
     this.sinceSave = 0;
     try {
-      const data = { flags: [...this.flags], clock: this.clock, area: this.area.def.id, x: Math.round(this.area.player.x) };
+      const data = {
+        flags: [...this.flags],
+        clock: this.clock,
+        area: this.area.def.id,
+        x: Math.round(this.area.player.x),
+        character: character(),
+      };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch {
       // private browsing can refuse storage; the game still plays
@@ -301,24 +328,60 @@ export class Game implements GameApi {
         this.areaAge = 0;
         this.startIntro();
       }
+    } else if (this.selecting) {
+      this.updateSelect();
     } else if (this.time > 0.6 && this.input.pressed('interact')) {
-      this.pending = { ...NEW_GAME };
-      this.audio.chime();
+      if (this.hasSave) {
+        // continue: the saved character is already applied
+        this.pending = { ...NEW_GAME };
+        this.audio.chime();
+      } else {
+        this.openSelect(false);
+      }
     } else if (this.time > 0.6 && this.hasSave && this.input.pressed('fresh')) {
-      // new game: forget the save and start the day again
+      this.openSelect(true);
+    }
+    this.selectFade = damp(this.selectFade, this.selecting ? 1 : 0, 12, dt);
+    this.choiceAnim = damp(this.choiceAnim, this.choice === 'girl' ? 1 : 0, 14, dt);
+    this.updateAudio(mood.night);
+  }
+
+  private openSelect(fresh: boolean): void {
+    this.selecting = true;
+    this.startFresh = fresh;
+    this.audio.select();
+  }
+
+  private updateSelect(): void {
+    const input = this.input;
+    if (input.pressed('left') && this.choice !== 'boy') {
+      this.choice = 'boy';
+      this.audio.select();
+    } else if (input.pressed('right') && this.choice !== 'girl') {
+      this.choice = 'girl';
+      this.audio.select();
+    } else if (input.pressed('back')) {
+      this.selecting = false;
+      this.startFresh = false;
+      this.audio.select();
+    } else if (input.pressed('interact')) {
+      // a new day: forget any old save, keep the chosen student
       this.flags.clear();
       this.clock = START_HOUR;
       this.resume = null;
-      this.hasSave = false;
-      try {
-        localStorage.removeItem(SAVE_KEY);
-      } catch {
-        // nothing to clear
+      if (this.startFresh && this.persist) {
+        try {
+          localStorage.removeItem(SAVE_KEY);
+        } catch {
+          // nothing to clear
+        }
       }
+      this.hasSave = false;
+      this.startFresh = false;
+      this.applyCharacter(this.choice);
       this.pending = { ...NEW_GAME };
       this.audio.chime();
     }
-    this.updateAudio(mood.night);
   }
 
   private updateAudio(night: number): void {
@@ -346,7 +409,8 @@ export class Game implements GameApi {
       if (this.toast) drawToast(ui, this.toast.text, this.toast.age);
       this.phone.render(ui, this.clock, (f) => this.has(f));
     }
-    drawTitle(ui, this.time, this.titleOut, this.hasSave);
+    drawTitle(ui, this.time, Math.max(this.titleOut, this.selectFade), this.hasSave);
+    drawSelect(ui, this.time, this.selectFade * (1 - this.titleOut), this.choiceAnim);
     if (this.fade > 0) {
       ui.fillStyle = `rgba(13,11,16,${this.fade})`;
       ui.fillRect(0, 0, VIEW_W, VIEW_H);

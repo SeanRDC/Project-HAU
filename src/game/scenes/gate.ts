@@ -5,12 +5,12 @@
 import { Ctx, VIEW_H, VIEW_W, makeCanvas } from '../../engine/display';
 import { css, damp, hex, rng } from '../../engine/math';
 import { disc, line, poly, px, rect } from '../../engine/pix';
-import { PLAYER_LOOK } from '../area';
 import {
   ARCH_WIDTH, ReaderState, bagOnTable, bagTable, canopy, gateArch, idCard, inspectionSign, noIdBoard, perimeterWall,
   railing, readerScreen, turnstile, turnstileArm,
 } from '../art/gate';
 import { P, shade } from '../art/palette';
+import { baseLook } from '../art/player';
 import { SILHOUETTE, boomBarrier, bush, foliage, hedge, lampPost, palm, pot, tree } from '../art/props';
 import { Checkpoint, gateArrival, gateHotspots, gateNpcs } from '../story/gate';
 import { AreaDef, AreaLight } from '../types';
@@ -292,7 +292,7 @@ export function buildGate(): AreaDef {
     drawBack(ctx, view) {
       const cam = Math.round(view.camX);
       const top = BACK - 15;
-      if (st.bag !== 'none') bagOnTable(ctx, TABLE_B + 6 - cam, top, PLAYER_LOOK.bag!, st.bag === 'open');
+      if (st.bag !== 'none') bagOnTable(ctx, TABLE_B + 6 - cam, top, baseLook().bag!, st.bag === 'open');
     },
 
     drawFront(ctx, view) {

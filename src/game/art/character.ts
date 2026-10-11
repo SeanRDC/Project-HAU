@@ -6,7 +6,7 @@ import { Ctx } from '../../engine/display';
 import { ellipse, line, rect } from '../../engine/pix';
 import { shade } from './palette';
 
-export type Hair = 'short' | 'long' | 'bun' | 'cap' | 'bald';
+export type Hair = 'short' | 'long' | 'shoulder' | 'bun' | 'cap' | 'bald';
 
 export interface Look {
   skin: string;
@@ -98,6 +98,9 @@ export function drawCharacter(ctx: Ctx, x: number, feetY: number, look: Look, po
   }
 
   if (look.hairStyle === 'long') rect(ctx, -5, sh - 6, 4, 11, shade(look.hair, -0.15));
+  // shoulder-length hair trails behind the shoulders and swings a pixel with the stride
+  const swing = Math.round(Math.sin(ph - 1) * m * 1.5);
+  if (look.hairStyle === 'shoulder') rect(ctx, -6 + swing, sh - 5, 3, 7, shade(look.hair, -0.15));
 
   leg(ph, legColor, look.shoes);
 
@@ -141,6 +144,13 @@ export function drawCharacter(ctx: Ctx, x: number, feetY: number, look: Look, po
       rect(ctx, -4, hy - 1, 8, 3, look.hair);
       rect(ctx, -5, hy, 4, 9, look.hair);
       rect(ctx, -5, hy + 4, 1, 5, hairDark);
+      rect(ctx, 3, hy + 1, 1, 3, look.hair);
+      break;
+    case 'shoulder':
+      rect(ctx, -4, hy - 1, 8, 3, look.hair);
+      rect(ctx, -5, hy, 4, 8, look.hair);
+      rect(ctx, -5 + swing, hy + 8, 4, 2, look.hair);
+      rect(ctx, -5 + swing, hy + 5, 1, 5, hairDark);
       rect(ctx, 3, hy + 1, 1, 3, look.hair);
       break;
     case 'bun':

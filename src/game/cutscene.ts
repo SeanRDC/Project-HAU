@@ -2,7 +2,8 @@
 // player's hands off the controls while one is running; the E key still
 // moves the dialogue along.
 
-import { Area, PLAYER_LOOK } from './area';
+import { Area } from './area';
+import { baseLook } from './art/player';
 import { GameApi, Sound, Step } from './types';
 
 /** What a running cutscene needs from the game. */
@@ -59,7 +60,7 @@ export class Cutscene {
     if ('place' in s) area.place(s.place, s.x, s.facing);
     else if ('face' in s) area.turn(s.face, s.dir);
     else if ('sound' in s) host.sound(s.sound);
-    else if ('look' in s) area.playerLook = s.look ? { ...PLAYER_LOOK, ...s.look } : PLAYER_LOOK;
+    else if ('look' in s) area.playerLook = s.look ? { ...baseLook(), ...s.look } : baseLook();
     else if ('run' in s) s.run(host.game);
     return false;
   }
