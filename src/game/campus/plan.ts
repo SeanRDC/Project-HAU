@@ -262,7 +262,7 @@ export const BUILDINGS = {
     short: 'Gym Annex',
     blocks: [block([1088, 372], 82, 24)],
     inside: [],
-    sure: false,
+    sure: true,
   },
 } satisfies Record<string, Building>;
 
