@@ -20,7 +20,7 @@ You need [Node.js](https://nodejs.org) 20 or newer. Nothing else has to be insta
 1. `npm run check` (type check) and `npm run build` must both pass.
 2. Play through the part you changed.
 3. Add a session file (see below) and update `CONTEXT.md` if you changed a decision, the folder layout, or the list of unfinished things.
-4. Work on a branch and open a pull request. `main` is protected: only the repo owner can push to it directly.
+4. Work on a branch and open a pull request. `main` is protected: only the repo owner can push to it directly, and a pull request cannot be merged until the owner (@SeanRDC) has approved it. Pushing new commits after an approval asks for a fresh one.
 
 ## Writing a Session File
 Name it `sessions/YYYY-MM-DD-short-title.md`. Keep it short:
