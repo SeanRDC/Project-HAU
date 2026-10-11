@@ -119,22 +119,22 @@ export function plazaNpcs(): NpcDef[] {
 }
 
 export function plazaHotspots(x: {
-  lane: number; walkway: number; statue: number; epiphany: number; door: number; gate: number;
+  lane: number; walkway: number; fountain: number; epiphany: number; door: number; statue: number; gate: number;
 }): Hotspot[] {
   return [
     wayTo('lane', x.lane, 'Pumunta sa parking lane', 'lane', 'plaza', 66),
     wayTo('walkway', x.walkway, 'Pumunta sa chapel walkway', 'walkway', 'rotunda', 66),
     {
-      id: 'angel',
-      x: x.statue,
+      id: 'fountain',
+      x: x.fountain,
       range: 40,
-      label: 'Tingnan ang rebulto',
+      label: 'Tingnan ang fountain',
       height: 96,
       use: (g) =>
         g.say([
           { who: '', text: 'Ang Holy Guardian Angel sa gitna ng rotunda, nakatayo sa likod ng dalawang batang nagbabasa ng iisang libro.' },
           { who: '', text: 'May kasamang ambon ang hangin galing sa fountain sa paanan nila.' },
-          { who: '', text: 'Nakapatong ang mga kamay ng anghel sa balikat ng mga bata. Parang sinasabing: sige, magbasa lang kayo, nandito ako.', set: 'saw_angel' },
+          { who: '', text: 'Nakapatong ang mga kamay ng anghel sa balikat ng mga bata. Parang sinasabing: sige, magbasa lang kayo, nandito ako.' },
           { who: 'you', text: 'Ang sarap tumambay dito.' },
         ]),
     },
@@ -146,6 +146,18 @@ export function plazaHotspots(x: {
       label: 'Pumasok sa DJN Building',
       height: 64,
       use: (g) => g.travel('lobby', 'front'),
+    },
+    {
+      id: 'angel',
+      x: x.statue,
+      range: 30,
+      label: 'Tingnan ang rebulto',
+      height: 96,
+      use: (g) =>
+        g.say([
+          { who: '', text: 'Ang Holy Guardian Angel, may kasamang bata. Nakaturo sa langit ang isang kamay.' },
+          { who: '', text: 'Parang sinasabing: doon ang tingin, hindi sa cellphone.', set: 'saw_angel' },
+        ]),
     },
     deadEnd(
       'gate',

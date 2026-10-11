@@ -20,7 +20,7 @@ Then, after confirming which building is which and measuring 140.36 m from the r
 * **9 game pixels per metre.** Picked because the DJN Building (620 px for about 68 m) and the angel pedestals already fit it.
 * **One scene per street, and each street shows one side.** A side view cannot show both sides of a road, so each street looks at the side with more on it. All 21 numbered buildings end up visible somewhere. A building behind the camera gets a kerb sign and a "look back" hotspot.
 * **The Epiphany of Angels is a road, not a park, and the main gate opens onto it.** The photos and the gate diagram show the Sto. Rosario Gate at its street end, four angels down each side, and the fountain plaza at the campus end. So the opening now goes gate, Epiphany, Main Building, instead of gate straight to the driveway.
-* **The statue is in the rotunda fountain.** The first version had a fountain on one side of the drive and a separate bronze angel on the other. The photo shows one thing: the angel and two children standing in the fountain.
+* **Two statues at the front of the Main Building.** The rotunda fountain now has the Holy Guardian Angel and two children standing in it, as in the photo. The bronze guardian angel beside the building was taken out at first, on the reading that the two were the same statue. Sean asked for it back, so it is restored where it was, with its original lines and the `saw_angel` task.
 * **No interiors.** Every door says the building's name, its number on the campus map, the offices inside, and that it is not open yet.
 * **No people on the new streets yet.** They come with the interiors.
 * **The plaza and gate scenes were not rescaled.** Their cutscenes and dialogue depend on their spacing. They are tied to the plan by their two ends, which is enough for the map.
@@ -33,12 +33,12 @@ Then, after confirming which building is which and measuring 140.36 m from the r
 * `src/game/scenes/kit.ts` (new): backdrop layers, road, lamps and falling leaves shared by the street scenes.
 * Seven new scenes: `walkway`, `lane`, `halls`, `aps`, `lawn`, `sjh`, `gym`. Hotspots in `src/game/story/streets.ts`, shared door and signpost helpers in `story/campus.ts`.
 * `scenes/park.ts` rebuilt to the plan (70 m instead of about 195). `story/park.ts`: NPC positions now come from the scene; the courtyard door and School of Computing sign are gone from here.
-* `scenes/plaza.ts`: statue in the fountain, three signposted ways out of the rotunda, the right-hand gate is now St. Barachiel Gate and no longer lets you out.
+* `scenes/plaza.ts`: statue group in the rotunda fountain, the bronze angel still beside the building, three signposted ways out of the rotunda, the right-hand gate is now St. Barachiel Gate and no longer lets you out.
 * Links: main gate to Epiphany, Epiphany to plaza, courtyard gate to the walkway.
 * `src/game/ui/map.ts` (new): campus map on the **C** key with a "you are here" dot, drawn from the plan.
 * `tools/check-links.mjs` (new) and `npm run check:links`: presses E on every hotspot in a headless Chrome and checks every way out. `src/main.ts` exposes the game as `window.hau` in the dev server for it.
 * `docs/campus-layout.md` (new): the full write-up, with the table of buildings and what is still a guess.
-* Checklist text: "Tingnan ang rebulto sa driveway" is now "sa rotunda". No flags renamed, so old saves still load. A save made inside the old park puts you at the far end of the new one.
+* No flags renamed and no checklist text changed, so old saves still load. A save made inside the old park puts you at the far end of the new one.
 
 ## Tested
 * `npm run check` and `npm run build` pass.

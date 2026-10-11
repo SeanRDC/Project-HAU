@@ -1,7 +1,8 @@
 // The road in front of the Don Juan D. Nepomuceno Building, looking
 // north-east. The rotunda with the Holy Guardian Angel statue fountain is on
 // the left, where the chapel walkway and the parking lane meet; the building
-// is in the middle; St. Barachiel Gate, the vehicle entrance on Holy Angel
+// is in the middle; the bronze guardian angel stands on its lawn beside the
+// building, and St. Barachiel Gate, the vehicle entrance on Holy Angel
 // Avenue, is on the right. The Epiphany of Angels is behind the camera.
 // Holy Rosary Parish peeks over the rooftops.
 //
@@ -14,7 +15,7 @@ import { disc, ellipse, line, poly, px, rect, sign } from '../../engine/pix';
 import { DJN_DOOR_X, DJN_WIDTH, drawDJN } from '../art/djn';
 import { P, shade } from '../art/palette';
 import {
-  SILHOUETTE, boomBarrier, bush, foliage, fountainBasin, guardHouse, hedge, lampPost, palm, pot,
+  SILHOUETTE, angelStatue, boomBarrier, bush, foliage, fountainBasin, guardHouse, hedge, lampPost, palm, pot,
   signBoard, stoneBench, tree, tricycle,
 } from '../art/props';
 import { guardianGroup } from '../art/street';
@@ -27,8 +28,8 @@ const WALK = 240;
 const DJN_X = 410;
 const FOUNTAIN_X = 190;
 const FOUNTAIN_Y = 222;
-/** a small lawn island on the drive, where the first version of this scene had the statue */
-const ISLAND_X = 1100;
+/** the bronze guardian angel on its lawn, beside the building */
+const STATUE_X = 1100;
 const GATE_X = 1250;
 /** the parking lane carries on off the left edge */
 const LANE_X = 44;
@@ -215,12 +216,13 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   stoneBench(c, EPIPHANY_X - 64, GROUND + 13);
   signBoard(c, EPIPHANY_X, GROUND + 3, ['EPIPHANY', 'OF ANGELS'], P.maroon, P.goldHi);
 
-  // a lawn island on the drive
-  ellipse(c, ISLAND_X, GROUND + 22, 58, 7, P.pave);
-  ellipse(c, ISLAND_X, GROUND + 21, 54, 6, P.grass);
-  ellipse(c, ISLAND_X - 6, GROUND + 19, 40, 3, P.grassHi);
-  bush(c, ISLAND_X - 8, GROUND + 22, 34, 18, 316);
-  palm(c, ISLAND_X + 42, GROUND + 20, 54, 315);
+  // guardian angel on its little lawn
+  ellipse(c, STATUE_X, GROUND + 22, 58, 7, P.pave);
+  ellipse(c, STATUE_X, GROUND + 21, 54, 6, P.grass);
+  ellipse(c, STATUE_X - 6, GROUND + 19, 40, 3, P.grassHi);
+  angelStatue(c, STATUE_X, GROUND + 22);
+  palm(c, STATUE_X + 42, GROUND + 20, 54, 315);
+  lights.push({ x: STATUE_X, y: GROUND - 40, r: 70, color: [255, 214, 150], strength: 0.75 });
 
   tricycle(c, 1168, GROUND + 28);
   guardHouse(c, GATE_X, GROUND + 14);
@@ -285,7 +287,7 @@ export function buildPlaza(): AreaDef {
     glow: main.glow,
     lights,
     hotspots: plazaHotspots({
-      lane: LANE_X, walkway: WALKWAY_X, statue: FOUNTAIN_X, epiphany: EPIPHANY_X, door: PLAZA_DOOR_X, gate: 1262,
+      lane: LANE_X, walkway: WALKWAY_X, fountain: FOUNTAIN_X, epiphany: EPIPHANY_X, door: PLAZA_DOOR_X, statue: STATUE_X, gate: 1262,
     }),
     npcs: plazaNpcs(),
     fountainX: FOUNTAIN_X,
