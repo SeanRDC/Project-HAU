@@ -1,4 +1,4 @@
-export type Action = 'left' | 'right' | 'up' | 'down' | 'run' | 'interact' | 'back' | 'phone' | 'time' | 'mute';
+export type Action = 'left' | 'right' | 'up' | 'down' | 'run' | 'interact' | 'back' | 'phone' | 'time' | 'mute' | 'fresh';
 
 const BINDINGS: Record<string, Action> = {
   ArrowLeft: 'left',
@@ -19,6 +19,7 @@ const BINDINGS: Record<string, Action> = {
   KeyQ: 'phone',
   KeyT: 'time',
   KeyM: 'mute',
+  KeyN: 'fresh',
 };
 
 export class Input {

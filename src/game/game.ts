@@ -8,6 +8,7 @@ import { Sky } from './art/sky';
 import { Dialogue } from './dialogue';
 import { buildCourtyard } from './scenes/courtyard';
 import { buildLobby } from './scenes/lobby';
+import { buildPark } from './scenes/park';
 import { buildPlaza } from './scenes/plaza';
 import { TASKS } from './story/tasks';
 import { AreaDef, GameApi, Line } from './types';
@@ -18,10 +19,13 @@ import { drawTitle } from './ui/title';
 /** in-game hours per real second: a full day takes about 12 minutes */
 const TIME_RATE = 24 / (12 * 60);
 const FADE_TIME = 0.35;
+const START_HOUR = 16.4;
+const SAVE_KEY = 'project-hau-save-v1';
+const SAVE_EVERY = 10;
 
 /** blip pitch per speaker so voices are told apart by ear */
 const VOICES: Record<string, number> = {
-  you: 440, guard: 220, driver: 196, trisha: 587, jopet: 330, liza: 494, bea: 659, migs: 370, cat: 990,
+  you: 440, guard: 220, driver: 196, trisha: 587, jopet: 330, liza: 494, bea: 659, migs: 370, cat: 990, kath: 622, bong: 185, enzo: 392,
 };
 
 export class Game implements GameApi {
@@ -31,7 +35,7 @@ export class Game implements GameApi {
   private phone = new Phone();
   private areas = new Map<string, Area>();
   private area: Area;
-  private clock = 16.4;
+  private clock = START_HOUR;
   private flags = new Set<string>();
   private time = 0;
 
@@ -44,9 +48,14 @@ export class Game implements GameApi {
   private playAge = 0;
   private toast: { text: string; age: number } | null = null;
   private target: Target | null = null;
+  /** where to put the player when continuing a saved game */
+  private resume: { area: string; x: number } | null = null;
+  private hasSave = false;
+  private persist = true;
+  private sinceSave = 0;
 
   constructor(private display: Display, private input: Input) {
-    const defs: AreaDef[] = [buildPlaza(), buildLobby(), buildCourtyard()];
+    const defs: AreaDef[] = [buildPlaza(), buildLobby(), buildCourtyard(), buildPark()];
     for (const d of defs) {
       const area = new Area(d, this.sky);
       area.onStep = () => this.audio.footstep(!d.outdoor);
@@ -62,6 +71,7 @@ export class Game implements GameApi {
       if (who && who !== 'you') this.area.face(who);
     };
 
+    this.load();
     this.applyDebugParams();
   }
 
@@ -72,6 +82,12 @@ export class Game implements GameApi {
   private applyDebugParams(): void {
     const q = new URLSearchParams(location.search);
     if (location.search.length < 2) return;
+    // dev runs start clean and never touch the real save
+    this.persist = false;
+    this.flags.clear();
+    this.clock = START_HOUR;
+    this.resume = null;
+    this.hasSave = false;
     if (!q.has('title')) {
       this.mode = 'play';
       this.titleOut = 1;
@@ -97,6 +113,32 @@ export class Game implements GameApi {
     for (let i = 0; i < Number(q.get('warm') ?? 0) * 60; i++) this.update(1 / 60);
   }
 
+  private load(): void {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw) as { flags: string[]; clock: number; area: string; x: number };
+      if (!this.areas.has(data.area)) return;
+      this.flags = new Set(data.flags);
+      this.clock = data.clock;
+      this.resume = { area: data.area, x: data.x };
+      this.hasSave = true;
+    } catch {
+      // a broken or blocked save just means starting over
+    }
+  }
+
+  private save(): void {
+    if (!this.persist || this.mode !== 'play') return;
+    this.sinceSave = 0;
+    try {
+      const data = { flags: [...this.flags], clock: this.clock, area: this.area.def.id, x: Math.round(this.area.player.x) };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    } catch {
+      // private browsing can refuse storage; the game still plays
+    }
+  }
+
   has(flag: string): boolean {
     return this.flags.has(flag);
   }
@@ -109,6 +151,7 @@ export class Game implements GameApi {
       this.toast = { text: task.text, age: 0 };
       this.audio.chime();
     }
+    this.save();
   }
 
   say(lines: Line[]): void {
@@ -138,6 +181,7 @@ export class Game implements GameApi {
     }
 
     this.playAge += dt;
+    if ((this.sinceSave += dt) > SAVE_EVERY && !this.dialogue.active) this.save();
     this.areaAge += dt;
     if (this.toast && (this.toast.age += dt) > 3.4) this.toast = null;
     this.titleOut = Math.min(1, this.titleOut + dt * 2);
@@ -150,7 +194,8 @@ export class Game implements GameApi {
         this.area.enter(this.pending.spawn);
         this.pending = null;
         this.areaAge = 0;
-        if (this.area.def.id === 'lobby') this.set('entered_djn');
+        if (this.area.def.visitFlag) this.set(this.area.def.visitFlag);
+        this.save();
       }
     } else {
       this.fade = Math.max(0, this.fade - dt / FADE_TIME);
@@ -191,10 +236,30 @@ export class Game implements GameApi {
       if (this.fade >= 1) {
         this.mode = 'play';
         this.pending = null;
-        this.area.enter('start');
+        if (this.resume) {
+          this.area = this.areas.get(this.resume.area)!;
+          this.area.enter('');
+          this.area.player.x = this.resume.x;
+          this.area.camera.snap(this.resume.x);
+        } else {
+          this.area.enter('start');
+        }
         this.areaAge = 0;
       }
     } else if (this.time > 0.6 && this.input.pressed('interact')) {
+      this.pending = { area: 'plaza', spawn: 'start' };
+      this.audio.chime();
+    } else if (this.time > 0.6 && this.hasSave && this.input.pressed('fresh')) {
+      // new game: forget the save and start the day again
+      this.flags.clear();
+      this.clock = START_HOUR;
+      this.resume = null;
+      this.hasSave = false;
+      try {
+        localStorage.removeItem(SAVE_KEY);
+      } catch {
+        // nothing to clear
+      }
       this.pending = { area: 'plaza', spawn: 'start' };
       this.audio.chime();
     }
@@ -225,7 +290,7 @@ export class Game implements GameApi {
       if (this.toast) drawToast(ui, this.toast.text, this.toast.age);
       this.phone.render(ui, this.clock, (f) => this.has(f));
     }
-    drawTitle(ui, this.time, this.titleOut);
+    drawTitle(ui, this.time, this.titleOut, this.hasSave);
     if (this.fade > 0) {
       ui.fillStyle = `rgba(13,11,16,${this.fade})`;
       ui.fillRect(0, 0, VIEW_W, VIEW_H);
