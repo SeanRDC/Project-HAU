@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# build output (playable builds are not committed, see README)
+dist/
+builds/*
+!builds/README.md
+
+# personal editor / tool settings
+.vscode/
+.idea/
+.claude/
+*.code-workspace
+
+# logs and OS junk
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# local env
+.env
+.env.local
+
+# godot (for when we port)
+.godot/
+*.import
+export_presets.cfg
