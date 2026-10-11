@@ -15,19 +15,28 @@ const OPTIONS: { id: Character; label: string }[] = [
 ];
 
 /**
- * Character picker drawn over the title scene. `a` is its overall opacity and
- * `girl` slides the highlight from the boy (0) to the girl (1).
+ * The dark wash behind the character picker and the name box. It is drawn
+ * once for both, so it holds steady while one screen hands over to the other.
  */
-export function drawSelect(ui: Ctx, t: number, a: number, girl: number): void {
+export function drawMenuBackdrop(ui: Ctx, a: number): void {
   if (a <= 0.01) return;
   ui.globalAlpha = a;
-
   const g = ui.createLinearGradient(0, 0, 0, VIEW_H);
   g.addColorStop(0, 'rgba(20,10,35,0.7)');
   g.addColorStop(0.5, 'rgba(20,10,35,0.45)');
   g.addColorStop(1, 'rgba(20,10,35,0.75)');
   ui.fillStyle = g;
   ui.fillRect(0, 0, VIEW_W, VIEW_H);
+  ui.globalAlpha = 1;
+}
+
+/**
+ * Character picker drawn over the title scene. `a` is its overall opacity and
+ * `girl` slides the highlight from the boy (0) to the girl (1).
+ */
+export function drawSelect(ui: Ctx, t: number, a: number, girl: number): void {
+  if (a <= 0.01) return;
+  ui.globalAlpha = a;
 
   ui.textAlign = 'center';
   font(ui, 7, 600);
@@ -106,13 +115,6 @@ export function drawSelect(ui: Ctx, t: number, a: number, girl: number): void {
 export function drawName(ui: Ctx, t: number, a: number, who: Character, name: string, max: number): void {
   if (a <= 0.01) return;
   ui.globalAlpha = a;
-
-  const g = ui.createLinearGradient(0, 0, 0, VIEW_H);
-  g.addColorStop(0, 'rgba(20,10,35,0.7)');
-  g.addColorStop(0.5, 'rgba(20,10,35,0.45)');
-  g.addColorStop(1, 'rgba(20,10,35,0.75)');
-  ui.fillStyle = g;
-  ui.fillRect(0, 0, VIEW_W, VIEW_H);
 
   ui.textAlign = 'center';
   font(ui, 7, 600);

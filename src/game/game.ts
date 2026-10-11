@@ -27,12 +27,14 @@ import { drawAreaTitle, drawClock, drawControlsHint, drawLetterbox, drawPrompt, 
 import { RAINING, Weather, WeatherSave } from './weather';
 import { CampusMap, STOPS } from './ui/map';
 import { Phone } from './ui/phone';
-import { drawName, drawSelect } from './ui/select';
+import { drawMenuBackdrop, drawName, drawSelect } from './ui/select';
 import { drawTitle } from './ui/title';
 
 /** in-game hours per real second: a full day takes about 12 minutes */
 const TIME_RATE = 24 / (12 * 60);
 const FADE_TIME = 0.35;
+/** how fast an opening screen fades out or in, per second: about a sixth of a second each way */
+const SCREEN_FADE = 6;
 const START_HOUR = 16.4;
 /** a day's allowance, in pesos. Refilled each morning once the game has more than one day. */
 const BAON = 150;
@@ -44,7 +46,7 @@ const NEW_GAME = { area: 'gate', spawn: 'street' };
 /** blip pitch per speaker so voices are told apart by ear */
 const VOICES: Record<string, number> = {
   you: 440, guard: 220, driver: 196, trisha: 587, jopet: 330, liza: 494, bea: 659, migs: 370, cat: 990, kath: 622, bong: 185, enzo: 392,
-  nonoy: 233, joy: 523, ella: 698, taho: 165,
+  nonoy: 233, joy: 523, ella: 698, taho: 165, actdo: 208,
 };
 
 export class Game implements GameApi {
@@ -68,16 +70,22 @@ export class Game implements GameApi {
 
   private mode: 'title' | 'play' = 'title';
   private titleOut = 0;
-  /** the character picker is showing over the title; `selectFade` and `choiceAnim` are 0..1 */
+  /** the character picker is showing over the title; `selectFade` (the dark wash behind it) and `choiceAnim` are 0..1 */
   private selecting = false;
   private selectFade = 0;
+  /**
+   * Which of the three opening screens is on show, and how far it has faded
+   * in. Only one is ever drawn: the old one fades right out before the next
+   * fades in, so their lettering never sits on top of each other.
+   */
+  private screen: 'title' | 'select' | 'name' = 'title';
+  private screenFade = 1;
   private choice: Character = 'boy';
   private choiceAnim = 0;
   /** the picker was opened with N, so confirming wipes the old save (Esc leaves it alone) */
   private startFresh = false;
-  /** the name box is showing on top of the picker */
+  /** the name box has taken over from the picker */
   private naming = false;
-  private nameFade = 0;
   private nameDraft = '';
   /** 0 clear, 1 black */
   private fade = 0;
@@ -411,6 +419,8 @@ export class Game implements GameApi {
       this.fade = Math.min(1, this.fade + dt / 0.6);
       if (this.fade >= 1) {
         this.mode = 'play';
+        // a new game leaves from the name box under a black screen: nothing of the menus should fade back over the game
+        if (this.screen !== 'title') this.titleOut = 1;
         const start = this.pending;
         this.pending = null;
         if (this.resume) {
@@ -440,7 +450,19 @@ export class Game implements GameApi {
     }
     this.selectFade = damp(this.selectFade, this.selecting ? 1 : 0, 12, dt);
     this.choiceAnim = damp(this.choiceAnim, this.choice === 'girl' ? 1 : 0, 14, dt);
-    this.nameFade = damp(this.nameFade, this.naming ? 1 : 0, 12, dt);
+    // hand over between screens, unless the game is already starting: then whatever is showing stays put under the fade
+    if (!this.pending) {
+      const want = this.naming ? 'name' : this.selecting ? 'select' : 'title';
+      if (this.screen !== want) {
+        this.screenFade -= dt * SCREEN_FADE;
+        if (this.screenFade <= 0) {
+          this.screenFade = 0;
+          this.screen = want;
+        }
+      } else {
+        this.screenFade = Math.min(1, this.screenFade + dt * SCREEN_FADE);
+      }
+    }
     this.updateAudio(mood.night);
   }
 
@@ -544,9 +566,11 @@ export class Game implements GameApi {
       this.phone.render(ui, this.clock, (f) => this.has(f), { pesos: this.wallet, last: this.lastBuy });
       this.map.render(ui, here, ahead, this.time);
     }
-    drawTitle(ui, this.time, Math.max(this.titleOut, this.selectFade), this.hasSave);
-    drawSelect(ui, this.time, this.selectFade * (1 - this.titleOut) * (1 - this.nameFade), this.choiceAnim);
-    drawName(ui, this.time, this.selectFade * (1 - this.titleOut) * this.nameFade, this.choice, this.nameDraft, NAME_MAX);
+    const showing = (s: Game['screen']) => (this.screen === s ? this.screenFade * (1 - this.titleOut) : 0);
+    drawTitle(ui, this.time, 1 - showing('title'), this.hasSave);
+    drawMenuBackdrop(ui, this.selectFade * (1 - this.titleOut));
+    drawSelect(ui, this.time, showing('select'), this.choiceAnim);
+    drawName(ui, this.time, showing('name'), this.choice, this.nameDraft, NAME_MAX);
     if (this.fade > 0) {
       ui.fillStyle = `rgba(13,11,16,${this.fade})`;
       ui.fillRect(0, 0, VIEW_W, VIEW_H);
