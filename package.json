@@ -2,6 +2,7 @@
   "name": "project-hau",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "A side-view pixel art walk around the Holy Angel University campus.",
   "type": "module",
   "scripts": {

@@ -43,6 +43,9 @@ Then open http://localhost:5173 in your browser.
 * `builds/` - Playable campus prototypes and milestone releases.
 * `history/` - Session logs and handoff notes. **Read `history/README.md` every time you pull.**
 
+## License
+This is private work. Only the team and collaborators added by the repository owner may use, copy or contribute to it. See [`LICENSE`](LICENSE).
+
 ## The Team
 This is a closed 4-person project developed within the School of Computing.
 * **[Sean Rhani Dela Cruz]** - [Role, e.g., Lead Developer / Engine Architect]
