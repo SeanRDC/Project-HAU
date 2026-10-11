@@ -1,14 +1,15 @@
 // The gate on Sto. Rosario St. You start out on the street on the right, with
-// the traffic going by between you and the camera, pass the gatehouse, get
-// your bag checked under the tent, tap your ID at the turnstile, and walk on
-// left to the drive in front of the Main Building.
+// the traffic going by between you and the camera, pass a pickup parked where
+// it shouldn't be and the enforcer ticketing it, and walk in under the
+// gatehouse: the bag tables and the ID turnstile stand under its roof. Past
+// the turnstile you come out on the drive in front of the Main Building.
 
 import { Ctx, VIEW_H, VIEW_W, makeCanvas } from '../../engine/display';
 import { css, damp, hex, rng } from '../../engine/math';
-import { disc, line, poly, px, rect } from '../../engine/pix';
+import { disc, ellipse, line, poly, px, rect } from '../../engine/pix';
 import {
-  ARCH_WIDTH, BARRICADE_W, ReaderState, bagOnTable, bagTable, barricade, canopy, gateArch, idCard, inspectionSign,
-  noIdBoard, perimeterWall, railing, readerScreen, turnstile, turnstileArm,
+  ARCH_WIDTH, BARRICADE_W, PIER_W, ReaderState, bagOnTable, bagTable, barricade, gateHouse, gatePiers, idCard,
+  inspectionSign, noIdBoard, noParkingSign, perimeterWall, railing, readerScreen, turnstile, turnstileArm,
 } from '../art/gate';
 import { P, shade } from '../art/palette';
 import { baseLook } from '../art/player';
@@ -17,7 +18,7 @@ import { Sprite, VehicleKind, drawVehicle, lampAt, vehicleSprite } from '../art/
 import { Checkpoint, gateArrival, gateHotspots, gateNpcs } from '../story/gate';
 import { AreaDef, AreaLight, Layer } from '../types';
 
-const WIDTH = 1180;
+const WIDTH = 1200;
 const GROUND = 206;
 const WALK = 242;
 /** the line the gate furniture stands on, just behind where people walk */
@@ -28,15 +29,23 @@ const PLAZA_X = 34;
 const PARK_X = 104;
 const BOOM_X = 56;
 const BOARD_X = 372;
-const TURNSTILE_X = 440;
-const TABLE_A = 556;
-const TABLE_B = 646;
-const CANOPY: [number, number] = [508, 700];
-const SIGN_X = 710;
-const ARCH_X = 834;
-const STREET_X = 1160;
+/** the gatehouse: its front piers stand at the kerb, just nearer the camera than the line people walk on */
+const ARCH_X = 600;
+const GATE_BASE = WALK + 2;
+/** the whole checkpoint is under its roof: the turnstile by the inner pier, then the two bag tables */
+const TURNSTILE_X = ARCH_X - ARCH_WIDTH / 2 + PIER_W + 20;
+const TABLE_A = ARCH_X - 10;
+const TABLE_B = ARCH_X + 60;
+const SIGN_X = ARCH_X + ARCH_WIDTH / 2 + 22;
+/** the pickup parked up on the sidewalk, the sign it is parked beside, and where the enforcer stands writing it up */
+const TRUCK_X = 912;
+const TRUCK_BASE = GROUND + 27;
+const TRUCK_SCALE = 1.5;
+const NO_PARKING_X = 846;
+const ENFORCER_X = 830;
+const STREET_X = 1180;
 /** where the campus drive ends and the public sidewalk and street begin; a big tree stands in front of the join */
-const KERB_X = 740;
+const KERB_X = 450;
 /** the two lanes of the street: where the wheels run, how big the vehicles are drawn, which way they go */
 const LANES = [
   { base: VIEW_H - 4, scale: 1, dir: -1 as const, speed: 76, every: 3.2 },
@@ -127,9 +136,6 @@ function ground(c: Ctx): void {
     px(c, rand() * inside, GROUND + 18 + rand() * (VIEW_H - GROUND - 18), rand() > 0.5 ? P.roadLine : P.roadDark);
   }
   for (let x = 40; x < inside; x += 120) line(c, x, GROUND + 18, x - 26, VIEW_H, P.roadDark, 1);
-  // painted lane through the checkpoint
-  for (let x = TURNSTILE_X + 14; x < CANOPY[1]; x += 10) rect(c, x, WALK + 4, 6, 1, '#d8c23a');
-
   // outside: the public sidewalk, the kerb, then the concrete of Sto. Rosario St.
   const w = WIDTH - inside;
   rect(c, inside, GROUND, w, 40, '#b3ab9c');
@@ -154,14 +160,14 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   const lampColor = hex(P.lamp);
 
   tree(c, 120, GROUND + 2, 110, 40, 401);
-  tree(c, 610, GROUND - 40, 96, 34, 402);
+  tree(c, 860, GROUND + 2, 96, 34, 402);
   palm(c, 250, GROUND + 2, 80, 410);
   // the palms and trees that stand inside the fence, behind the gatehouse
-  palm(c, ARCH_X - 96, GROUND + 2, 118, 411);
-  palm(c, ARCH_X + 92, GROUND + 2, 130, 412);
-  palm(c, ARCH_X + 118, GROUND + 2, 104, 413);
-  tree(c, ARCH_X + 190, GROUND + 2, 92, 38, 403);
-  tree(c, ARCH_X + 300, GROUND + 2, 104, 40, 404);
+  palm(c, ARCH_X - 152, GROUND + 2, 118, 411);
+  palm(c, ARCH_X + 150, GROUND + 2, 130, 412);
+  palm(c, ARCH_X + 176, GROUND + 2, 104, 413);
+  tree(c, ARCH_X + 400, GROUND + 2, 92, 38, 403);
+  tree(c, ARCH_X + 520, GROUND + 2, 104, 40, 404);
 
   // the wall runs the whole way, broken by the gate
   perimeterWall(c, 0, ARCH_X - ARCH_WIDTH / 2, GROUND);
@@ -169,14 +175,16 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   // a clipped hedge behind the railings on the street side
   hedge(c, ARCH_X + ARCH_WIDTH / 2 + 16, GROUND - 9, 150, 12, 31);
   ground(c);
-  gateArch(c, ARCH_X, GROUND);
-  // the spotlights on the beam, and the lit way through underneath it
+  gateHouse(c, ARCH_X, GATE_BASE, GROUND);
+  // the spotlights on the beam, and the strip lights under the roof that light the checkpoint
   for (const dx of [-ARCH_WIDTH / 2 + 7, ARCH_WIDTH / 2 - 6]) {
-    disc(g, ARCH_X + dx, GROUND - 110, 3, P.lamp);
-    lights.push({ x: ARCH_X + dx, y: GROUND - 96, r: 76, color: lampColor, strength: 0.85 });
+    disc(g, ARCH_X + dx, GATE_BASE - 112, 3, P.lamp);
+    lights.push({ x: ARCH_X + dx, y: GATE_BASE - 98, r: 76, color: lampColor, strength: 0.85 });
   }
-  rect(g, ARCH_X - ARCH_WIDTH / 2 + 24, GROUND - 72, ARCH_WIDTH - 48, 12, '#8a744a');
-  lights.push({ x: ARCH_X, y: GROUND - 20, r: 90, color: [255, 232, 190], strength: 0.8 });
+  for (const dx of [-44, 44]) {
+    rect(g, ARCH_X + dx - 6, GATE_BASE - 70, 12, 2, '#fff1c8');
+    lights.push({ x: ARCH_X + dx, y: BACK - 40, r: 86, color: [255, 236, 190], strength: 0.85 });
+  }
 
   // inside: planting along the wall, the barrier by Gate 1, the warning board
   hedge(c, 80, GROUND + 3, 200, 11, 21);
@@ -186,18 +194,21 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   boomBarrier(c, BOOM_X, GROUND + 22, 84, 2.05);
   noIdBoard(c, BOARD_X - 23, GROUND - 34);
 
-  // checkpoint
-  railing(c, TURNSTILE_X + 20, CANOPY[0] + 12, BACK);
+  // the checkpoint, under the gatehouse roof
+  railing(c, TURNSTILE_X + 18, TURNSTILE_X + 42, BACK);
   turnstile(c, TURNSTILE_X, BACK);
-  canopy(c, CANOPY[0], CANOPY[1], BACK);
-  const mid = Math.round((CANOPY[0] + CANOPY[1]) / 2);
-  disc(g, mid, BACK - 64, 3, '#fff1c8');
-  lights.push({ x: mid, y: BACK - 62, r: 80, color: [255, 236, 190], strength: 0.85 });
   bagTable(c, TABLE_A, BACK);
   bagTable(c, TABLE_B, BACK);
   inspectionSign(c, SIGN_X, BACK);
+  // out on the street: the pickup up on the sidewalk, nose to the NO PARKING sign, a ticket under its wiper
+  noParkingSign(c, NO_PARKING_X, GROUND + 8);
+  const pickup = vehicleSprite('pickup', '#d8281f');
+  ellipse(c, TRUCK_X, TRUCK_BASE, 54, 3, 'rgba(20,14,34,0.3)');
+  drawVehicle(c, pickup, TRUCK_X, TRUCK_BASE, TRUCK_SCALE, -1);
+  rect(c, TRUCK_X - 16, TRUCK_BASE - 34, 5, 3, '#f4f1ea');
+  rect(c, TRUCK_X - 16, TRUCK_BASE - 34, 5, 1, '#c9c4b8');
 
-  for (const x of [170, 330, 960, 1120]) {
+  for (const x of [170, 330, 790, 1020, 1160]) {
     const l = lampPost(c, x, GROUND + 15);
     lights.push({ x: l.x, y: l.y, r: 92, color: lampColor, strength: 0.95 });
     disc(g, l.x, l.y, 4, P.lamp);
@@ -225,13 +236,14 @@ function frontLayer(): HTMLCanvasElement {
   return canvas;
 }
 
-/** The row of barricades along the kerb, a gap left in front of the gatehouse to walk in by. */
-function barricadeRow(): HTMLCanvasElement {
+/**
+ * What stands at the kerb, between the people and the traffic: the two front
+ * piers of the gatehouse, and the row of barricades along the street beyond it.
+ */
+function kerbRow(): HTMLCanvasElement {
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
-  for (let x = KERB_X + 34; x < WIDTH - 20; x += BARRICADE_W + 3) {
-    if (Math.abs(x + BARRICADE_W / 2 - ARCH_X) < 44) continue;
-    barricade(c, x, GROUND + 46);
-  }
+  gatePiers(c, ARCH_X, GATE_BASE);
+  for (let x = ARCH_X + ARCH_WIDTH / 2 + 10; x < WIDTH - 20; x += BARRICADE_W + 3) barricade(c, x, GROUND + 46);
   return canvas;
 }
 
@@ -299,6 +311,7 @@ export function buildGate(): AreaDef {
     scanner: TURNSTILE_X + 16,
     tableA: TABLE_A,
     tableB: TABLE_B,
+    pickup: ENFORCER_X + 46,
     bag: (s) => (st.bag = s),
     reader: (s) => {
       st.reader = s;
@@ -313,7 +326,7 @@ export function buildGate(): AreaDef {
   let playerX = 0;
 
   // the traffic on the street: a few vehicles already on the road, then one along every few seconds in each lane
-  const barricades = barricadeRow();
+  const kerb = kerbRow();
   const sprites = FLEET.map(([kind, body]) => vehicleSprite(kind, body));
   const traffic: Vehicle[] = [];
   const due = LANES.map((_, i) => 0.6 + i * 1.7);
@@ -324,8 +337,8 @@ export function buildGate(): AreaDef {
     const off = (sprite.canvas.width * l.scale) / 2 + 6;
     traffic.push({ sprite, lane, x: x ?? (l.dir > 0 ? KERB_X - off : WIDTH + off), speed: l.speed * (0.85 + rand() * 0.3) });
   };
-  send(0, KERB_X + 170);
-  send(0, KERB_X + 380);
+  send(0, KERB_X + 240);
+  send(0, KERB_X + 560);
   /** vehicles are only seen on the street: they pass behind the big tree and are gone */
   const onStreet = (ctx: Ctx, cam: number, draw: () => void) => {
     ctx.save();
@@ -353,10 +366,10 @@ export function buildGate(): AreaDef {
     ],
     glow: main.glow,
     lights,
-    hotspots: gateHotspots({ street: STREET_X, arch: ARCH_X, board: BOARD_X, plaza: PLAZA_X, park: PARK_X }, cp),
-    npcs: gateNpcs(),
+    hotspots: gateHotspots({ street: STREET_X, arch: SIGN_X - 8, board: BOARD_X, plaza: PLAZA_X, park: PARK_X, pickup: TRUCK_X }, cp),
+    npcs: gateNpcs({ joy: TABLE_A - 26, nonoy: TABLE_B - 26, enforcer: ENFORCER_X, taho: [1080, 1160] }),
     spawns: {
-      street: { x: ARCH_X + 190, facing: -1 },
+      street: { x: TRUCK_X + 150, facing: -1 },
       plaza: { x: PLAZA_X + 24, facing: 1 },
       park: { x: PARK_X + 14, facing: 1 },
     },
@@ -393,7 +406,7 @@ export function buildGate(): AreaDef {
       leafTimer -= dt;
       if (leafTimer <= 0) {
         leafTimer = 0.8 + rand() * 1.4;
-        const from = [120, 610][Math.floor(rand() * 2)];
+        const from = [120, 860][Math.floor(rand() * 2)];
         area.spawnParticle({
           x: from + (rand() - 0.5) * 60,
           y: GROUND - 80 + rand() * 30,
@@ -417,8 +430,9 @@ export function buildGate(): AreaDef {
       const cam = Math.round(view.camX);
       turnstileArm(ctx, TURNSTILE_X - cam, BACK, st.arm);
       if (st.card) idCard(ctx, TURNSTILE_X + 10 - cam, BACK - 27);
-      // from the fence towards the camera: the barricades at the kerb, the far lane, the near lane
-      ctx.drawImage(barricades, -cam, 0);
+      // from the fence towards the camera: the gatehouse piers and the barricades at the kerb,
+      // then the far lane and the near lane
+      ctx.drawImage(kerb, -cam, 0);
       onStreet(ctx, cam, () => {
         for (const lane of LANES.keys()) {
           const l = LANES[lane];

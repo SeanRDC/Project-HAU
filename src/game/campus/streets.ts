@@ -135,7 +135,7 @@ export function setback(street: Street, b: Block): number {
 // the other end.
 const FIXED: Record<string, { x0: number; a: Spot; x1: number; b: Spot }> = {
   // the street side of the main gate: it all happens at the gate
-  gate: { x0: 0, a: PLACES.mainGate, x1: 1180, b: PLACES.mainGate },
+  gate: { x0: 0, a: PLACES.mainGate, x1: 1200, b: PLACES.mainGate },
   // the front of the Main Building: rotunda on the left, St. Barachiel Gate on the right
   plaza: { x0: 190, a: PLACES.rotunda, x1: 1250, b: PLACES.barachielGate },
   lobby: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },

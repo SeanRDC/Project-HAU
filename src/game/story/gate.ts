@@ -3,7 +3,7 @@
 // in front of the Main Building. Edit freely.
 
 import { Hotspot, NpcDef, Step } from '../types';
-import { ELLA, JOY, NONOY, TAHO } from './cast';
+import { ACTDO, ELLA, JOY, NONOY, TAHO } from './cast';
 
 /** Where things stand in the scene, handed over by scenes/gate.ts. */
 export interface GateSpots {
@@ -14,6 +14,17 @@ export interface GateSpots {
   plaza: number;
   /** the path off to the Epiphany of Angels */
   park: number;
+  /** the pickup parked at the kerb */
+  pickup: number;
+}
+
+/** Where the people at the gate stand, handed over by scenes/gate.ts. */
+export interface GatePeople {
+  joy: number;
+  nonoy: number;
+  enforcer: number;
+  /** the stretch of sidewalk the taho vendor works */
+  taho: [number, number];
 }
 
 /** The checkpoint props the cutscenes can work, handed over by scenes/gate.ts. */
@@ -24,6 +35,8 @@ export interface Checkpoint {
   tableA: number;
   /** where you get your own bag checked */
   tableB: number;
+  /** where you stop on the sidewalk when you come up to the parked pickup */
+  pickup: number;
   /** your bag on Kuya Nonoy's table */
   bag(state: 'none' | 'closed' | 'open'): void;
   reader(state: 'ok' | 'deny'): void;
@@ -95,12 +108,60 @@ function bagCheck(cp: Checkpoint, hour: number): Step[] {
 }
 
 /**
- * Walking in from the street for the first time: Ella is just finishing at
- * the next table, beeps through the turnstile, then it's your turn.
+ * The first thing you meet on the way to the gate: a pickup parked under the
+ * NO PARKING sign, half across the way in, and the city traffic enforcer
+ * writing it a ticket.
+ */
+function parkedPickup(cp: Checkpoint): Step[] {
+  return [
+    { face: 'actdo', dir: 1 },
+    { walk: cp.pickup },
+    { face: 'you', dir: -1 },
+    { pause: 0.5 },
+    {
+      say: [
+        { who: '', text: 'Isang pulang Chevrolet pickup, nakasampa sa sidewalk, katabi mismo ng karatulang "NO PARKING". Halos harang na sa daanan papasok ng gate.' },
+        { who: 'you', text: 'Seryoso? Dito pa talaga, sa tapat mismo ng gate? Saan dadaan ang mga tao?' },
+        { who: 'actdo', text: 'Sa gilid ka muna dumaan. Tinitiketan ko na \'to.' },
+        { who: 'you', text: 'Ang laki-laki ng sasakyan, tapos sa bawal pa pumarada. May parking naman sa loob!' },
+        { who: 'actdo', text: 'Araw-araw \'yan. "Sandali lang po, may ihahatid lang." Isang oras na \'yang sandali niya.' },
+        {
+          who: 'you',
+          text: '...',
+          choices: [
+            {
+              text: 'Kami ngang naglalakad, pumipila.',
+              then: [
+                { who: 'you', text: 'Kami ngang naglalakad, pumipila at nagpapa-bag check. Sila, apat na ang gulong, ayaw pang sumunod.' },
+                { who: 'actdo', text: 'Kaya nga may tiket. Illegal parking, obstruction. May babayaran siya pagbalik.' },
+              ],
+            },
+            {
+              text: 'Sana ma-tow na lang.',
+              then: [
+                { who: 'you', text: 'Sana i-tow n\'yo na lang po. Para matuto.' },
+                { who: 'actdo', text: 'Parating na ang tow truck. Tiket muna, tapos hila. May proseso tayo.' },
+              ],
+            },
+          ],
+        },
+        { who: 'actdo', text: 'Sige na, pumasok ka na. Baka ma-late ka pa dahil sa kanya.' },
+        { who: 'you', text: 'Unang araw pa lang, may reklamo na agad ako. Welcome to college.', set: 'saw_ticket' },
+      ],
+    },
+    { face: 'actdo', dir: 1 },
+  ];
+}
+
+/**
+ * Walking in from the street for the first time: past the parked pickup,
+ * then in under the gatehouse, where Ella is just finishing at the next
+ * table. She beeps through the turnstile, then it's your turn.
  */
 export function gateArrival(cp: Checkpoint, hour: number): Step[] {
   return [
     { place: 'ella', x: cp.tableA + 26, facing: -1 },
+    ...parkedPickup(cp),
     { walk: cp.tableB + 28 },
     {
       say: [
@@ -118,7 +179,7 @@ export function gateArrival(cp: Checkpoint, hour: number): Step[] {
     { run: () => cp.card(false) },
     { sound: 'turnstile' },
     { run: () => cp.hold(true) },
-    { walk: 300, who: 'ella', together: true },
+    { walk: 330, who: 'ella', together: true },
     { pause: 1.4 },
     { run: () => cp.hold(false) },
     ...bagCheck(cp, hour),
@@ -161,18 +222,34 @@ function tapId(cp: Checkpoint, g: { has(flag: string): boolean; hour(): number }
     { run: () => cp.card(false) },
     { sound: 'turnstile' },
     { run: (game) => game.set('scanned_id') },
-    { walk: cp.scanner - 56 },
+    // out from under the gatehouse and past the big tree, on to the campus drive
+    { walk: cp.scanner - 150 },
     { say: [{ who: 'you', text: 'Okay. Unang araw. Kaya ko \'to.' }] },
   ];
 }
 
-export function gateNpcs(): NpcDef[] {
+export function gateNpcs(at: GatePeople): NpcDef[] {
   return [
+    {
+      id: 'actdo',
+      name: 'Enforcer Dante',
+      look: ACTDO,
+      x: at.enforcer,
+      depth: -3,
+      facing: 1,
+      talk: (g) =>
+        g.raining()
+          ? [{ who: 'actdo', text: 'Umuulan na, hindi pa rin bumabalik ang may-ari. Basa na ang tiket niya, pero valid pa rin \'yan.' }]
+          : [
+              { who: 'actdo', text: 'ACTDO. Angeles City Traffic Development Office. Kami ang naniniket sa mga ganyan.' },
+              { who: 'actdo', text: 'Sabihan mo mga kaklase mo: bawal pumarada sa tapat ng gate. Kahit sandali lang.' },
+            ],
+    },
     {
       id: 'nonoy',
       name: 'Kuya Nonoy',
       look: NONOY,
-      x: 620,
+      x: at.nonoy,
       depth: -6,
       facing: 1,
       talk: (g) =>
@@ -188,7 +265,7 @@ export function gateNpcs(): NpcDef[] {
       id: 'joy',
       name: 'Ate Joy',
       look: JOY,
-      x: 530,
+      x: at.joy,
       depth: -6,
       facing: 1,
       talk: (g) =>
@@ -230,10 +307,10 @@ export function gateNpcs(): NpcDef[] {
       id: 'taho',
       name: 'Manong Taho',
       look: TAHO,
-      x: 936,
+      x: (at.taho[0] + at.taho[1]) / 2,
       depth: -4,
       facing: -1,
-      wander: [900, 970],
+      wander: at.taho,
       talk: (g) => [
         {
           who: 'taho',
@@ -292,6 +369,18 @@ export function gateHotspots(x: GateSpots, cp: Checkpoint): Hotspot[] {
       use: (g) => g.travel('park', 'gate'),
     },
     {
+      id: 'pickup',
+      x: x.pickup,
+      range: 24,
+      label: 'Tingnan ang pickup',
+      height: 44,
+      use: (g) =>
+        g.say([
+          { who: '', text: 'Pulang Chevrolet, itim ang mags, may sticker pa ng putik sa pinto. Makintab, bagong hugas. May puting papel na nakaipit sa wiper.' },
+          { who: 'you', text: g.has('scanned_id') ? 'Nandito pa rin. Ang tapang.' : 'Ang ganda ng sasakyan. Ang pangit ng parada.' },
+        ]),
+    },
+    {
       id: 'board',
       x: x.board,
       range: 20,
@@ -311,7 +400,7 @@ export function gateHotspots(x: GateSpots, cp: Checkpoint): Hotspot[] {
       height: 124,
       use: (g) =>
         g.say([
-          { who: '', text: 'HOLY ANGEL UNIVERSITY, sa itim na letra sa puting gate. Sa itaas nito, ang selyo ng unibersidad at ang bubong na salamin.' },
+          { who: '', text: 'HOLY ANGEL UNIVERSITY, sa itim na letra sa puting gate. Sa itaas nito, ang selyo ng unibersidad at ang bubong na salamin. Sa ilalim ng bubong, ang bag check at ang scanner ng ID.' },
           { who: '', text: 'Bukas na ang mga bakal na pinto. Sunod-sunod ang pasok ng mga naka-puti at maroon, habang dumadaan ang mga jeep at trike sa likod mo.' },
         ]),
     },

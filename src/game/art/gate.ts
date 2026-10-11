@@ -1,6 +1,6 @@
 // The gate students come in by: the gatehouse itself, the fence either side
-// of it, the barricades at the kerb, the bag inspection tent and the ID
-// turnstile. The gatehouse, fence and barricades are drawn from
+// of it, the barricades at the kerb, and the bag tables and ID turnstile that
+// stand under its roof. The gatehouse, fence and barricades are drawn from
 // `HAU SIDE GATE DESIGN.jpg` in `assets/`; the checkpoint furniture is still
 // from memory of how campus gates here usually look.
 
@@ -21,7 +21,11 @@ const PILLAR = '#e6dfc6';
 const PILLAR_HI = '#f4efdc';
 const PILLAR_LO = '#bdb596';
 
-export const ARCH_WIDTH = 152;
+/** the gatehouse reaches from the fence out to the kerb: wide enough to hold the whole checkpoint */
+export const ARCH_WIDTH = 250;
+export const PIER_W = 26;
+const BEAM_TOP = 112;
+const BEAM_H = 38;
 
 /**
  * The fence along the street: a low cream kerb wall, black iron railings with
@@ -59,41 +63,47 @@ export function perimeterWall(c: Ctx, x0: number, x1: number, ground: number): v
 }
 
 /**
- * The gatehouse, seen from the street: two thick white piers, a white beam
- * across them with the university seal and HOLY ANGEL UNIVERSITY in black
- * letters, and a low pyramid of glass for a roof. The way through is left
- * open so the layers behind show through; the iron leaves are folded back.
+ * The gatehouse, seen from the street: a white beam across the top with the
+ * university seal and HOLY ANGEL UNIVERSITY in black letters, and a low
+ * pyramid of glass for a roof. This is everything but the two front piers
+ * (see `gatePiers`), so that people can be drawn walking in under it.
+ * `base` is where the front piers stand, at the kerb; `ground` is the fence
+ * line at the back. The way through is left open so the campus shows beyond.
  */
-export function gateArch(c: Ctx, cx: number, ground: number): void {
+export function gateHouse(c: Ctx, cx: number, base: number, ground: number): void {
   const half = ARCH_WIDTH / 2;
-  const pierW = 24;
-  const beamTop = ground - 110;
-  const beamH = 38;
-  const pier = (x: number) => {
-    rect(c, x, beamTop + beamH, pierW, ground - beamTop - beamH, WHITE);
-    rect(c, x, beamTop + beamH, 4, ground - beamTop - beamH, WHITE_HI);
-    rect(c, x + pierW - 6, beamTop + beamH, 6, ground - beamTop - beamH, WHITE_LO);
-    rect(c, x - 1, ground - 6, pierW + 2, 6, WHITE_LO);
-    // the glass notice case on the face of the pier
-    rect(c, x + 8, ground - 44, 8, 22, '#3a3d44');
-    rect(c, x + 9, ground - 43, 6, 20, '#7d8a98');
-    rect(c, x + 9, ground - 43, 2, 20, '#a9b6c2');
-  };
-  // what you see through the gateway: the far piers of the covered way and its ceiling
-  rect(c, cx - half + pierW, beamTop + beamH, ARCH_WIDTH - pierW * 2, 12, WHITE_DEEP);
-  rect(c, cx - half + pierW, beamTop + beamH + 12, ARCH_WIDTH - pierW * 2, 2, '#8f9096');
-  for (const dx of [-30, 24]) {
-    rect(c, cx + dx, beamTop + beamH + 14, 7, ground - beamTop - beamH - 14, WHITE_LO);
-    rect(c, cx + dx, beamTop + beamH + 14, 2, ground - beamTop - beamH - 14, WHITE);
+  const beamTop = base - BEAM_TOP;
+  const beamBottom = beamTop + BEAM_H;
+  const inner = cx - half + PIER_W;
+  const innerW = ARCH_WIDTH - PIER_W * 2;
+
+  // the paved floor of the covered way, from the fence line out to the kerb
+  rect(c, cx - half, ground, ARCH_WIDTH, base - ground + 2, '#d6d2c6');
+  for (let x = cx - half; x < cx + half; x += 16) rect(c, x, ground, 1, base - ground + 2, '#b9b5a8');
+  for (let y = ground + 9; y < base; y += 10) rect(c, cx - half, y, ARCH_WIDTH, 1, '#b9b5a8');
+  rect(c, cx - half, ground, ARCH_WIDTH, 1, '#ecead9');
+
+  // the ceiling, darker towards the back, and the two piers at the far end of the covered way
+  poly(c, [[inner, beamBottom], [inner + innerW, beamBottom], [inner + innerW - 16, beamBottom + 14], [inner + 16, beamBottom + 14]], WHITE_DEEP);
+  rect(c, inner + 16, beamBottom + 14, innerW - 32, 2, '#8f9096');
+  for (const x of [inner + 16, inner + innerW - 16 - 9]) {
+    rect(c, x, beamBottom + 16, 9, ground - beamBottom - 16, WHITE_LO);
+    rect(c, x, beamBottom + 16, 2, ground - beamBottom - 16, WHITE);
+    rect(c, x + 7, beamBottom + 16, 2, ground - beamBottom - 16, WHITE_DEEP);
   }
-  pier(cx - half);
-  pier(cx + half - pierW);
+  // the gate leaves folded back against them
+  for (const x0 of [inner + 27, inner + innerW - 27 - 14]) {
+    for (const y of [ground - 60, ground - 32, ground - 3]) rect(c, x0, y, 14, 1, P.iron);
+    for (let i = 0; i < 14; i += 3) rect(c, x0 + i, ground - 60, 1, 60, i % 6 ? P.iron : P.ironHi);
+  }
+  // strip lights under the roof
+  for (const x of [cx - 50, cx + 38]) rect(c, x, beamBottom + 4, 12, 2, '#fff6d8');
 
   // the beam
-  rect(c, cx - half - 3, beamTop, ARCH_WIDTH + 6, beamH, WHITE);
+  rect(c, cx - half - 3, beamTop, ARCH_WIDTH + 6, BEAM_H, WHITE);
   rect(c, cx - half - 3, beamTop, ARCH_WIDTH + 6, 2, WHITE_HI);
-  rect(c, cx - half - 3, beamTop + beamH - 2, ARCH_WIDTH + 6, 2, WHITE_LO);
-  rect(c, cx + half - 4, beamTop, 7, beamH, WHITE_LO);
+  rect(c, cx - half - 3, beamBottom - 2, ARCH_WIDTH + 6, 2, WHITE_LO);
+  rect(c, cx + half - 6, beamTop, 9, BEAM_H, WHITE_LO);
   // the seal: a white ring, the shield in maroon and gold inside it
   disc(c, cx, beamTop + 12, 9, '#9a9ca2');
   disc(c, cx, beamTop + 12, 8, WHITE_HI);
@@ -102,37 +112,62 @@ export function gateArch(c: Ctx, cx: number, ground: number): void {
   poly(c, [[cx - 3, beamTop + 14], [cx + 4, beamTop + 14], [cx + 0.5, beamTop + 18]], P.maroon);
   rect(c, cx - 3, beamTop + 10, 7, 1, P.gold);
   rect(c, cx, beamTop + 8, 1, 8, P.gold);
-  signCentered(c, 'HOLY ANGEL UNIVERSITY', cx, beamTop + 26, '#1c1c22');
-  // spotlights on the corners of the beam
-  for (const dx of [-half + 4, half - 9]) {
-    rect(c, cx + dx, beamTop - 1, 6, 3, '#55585f');
-  }
+  signCentered(c, 'HOLY ANGEL UNIVERSITY', cx, beamTop + 25, '#1c1c22');
+  for (const dx of [-half + 4, half - 9]) rect(c, cx + dx, beamTop - 1, 6, 3, '#55585f');
 
   // cornice and the glass roof
   rect(c, cx - half - 8, beamTop - 5, ARCH_WIDTH + 16, 5, WHITE);
   rect(c, cx - half - 8, beamTop - 5, ARCH_WIDTH + 16, 1, WHITE_HI);
   rect(c, cx - half - 8, beamTop - 1, ARCH_WIDTH + 16, 1, '#b9a878');
-  const roofTop = beamTop - 34;
-  const glass = '#cfe3ea';
-  poly(c, [[cx - half - 4, beamTop - 5], [cx + half + 4, beamTop - 5], [cx + 26, roofTop], [cx - 26, roofTop]], glass);
-  poly(c, [[cx - half - 4, beamTop - 5], [cx - 20, beamTop - 5], [cx - 8, roofTop], [cx - 26, roofTop]], '#e6f2f5');
-  poly(c, [[cx + 30, beamTop - 5], [cx + half + 4, beamTop - 5], [cx + 26, roofTop], [cx + 12, roofTop]], '#a9c6d0');
-  // glazing bars: the hips, then the rafters fanning down from the ridge
-  for (let k = -4; k <= 4; k++) line(c, cx + k * 6.5, roofTop, cx + k * (half + 4) / 4, beamTop - 6, '#8fa9b3', 1);
+  const roofTop = beamTop - 40;
+  const ridge = 44;
+  const eave = half + 4;
+  poly(c, [[cx - eave, beamTop - 5], [cx + eave, beamTop - 5], [cx + ridge, roofTop], [cx - ridge, roofTop]], '#cfe3ea');
+  poly(c, [[cx - eave, beamTop - 5], [cx - 30, beamTop - 5], [cx - 12, roofTop], [cx - ridge, roofTop]], '#e6f2f5');
+  poly(c, [[cx + 50, beamTop - 5], [cx + eave, beamTop - 5], [cx + ridge, roofTop], [cx + 20, roofTop]], '#a9c6d0');
+  // glazing bars: the rafters fanning down from the ridge, then the purlins across them
+  for (let k = -5; k <= 5; k++) line(c, cx + (k * ridge) / 5, roofTop, cx + (k * eave) / 5, beamTop - 6, '#8fa9b3', 1);
   for (let y = roofTop + 8; y < beamTop - 6; y += 8) {
     const t = (y - roofTop) / (beamTop - 5 - roofTop);
-    const hw = 26 + (half + 4 - 26) * t;
+    const hw = ridge + (eave - ridge) * t;
     rect(c, cx - hw, y, hw * 2, 1, '#8fa9b3');
   }
-  rect(c, cx - 26, roofTop - 1, 53, 2, '#f4f8f9');
+  rect(c, cx - ridge, roofTop - 1, ridge * 2 + 1, 2, '#f4f8f9');
+}
 
-  // gate leaves swung open against the piers
-  for (const side of [-1, 1]) {
-    const x0 = side < 0 ? cx - half + pierW : cx + half - pierW - 14;
-    for (const y of [ground - 66, ground - 36, ground - 4]) rect(c, x0, y, 14, 1, P.iron);
-    for (let i = 0; i < 14; i += 3) rect(c, x0 + i, ground - 66, 1, 66, i % 6 ? P.iron : P.ironHi);
-    for (let i = 0; i < 14; i += 3) px(c, x0 + i, ground - 68, P.iron);
+/**
+ * The two front piers of the gatehouse, standing at the kerb. Drawn over the
+ * people, so that walking in passes behind one of them.
+ */
+export function gatePiers(c: Ctx, cx: number, base: number): void {
+  const half = ARCH_WIDTH / 2;
+  const top = base - BEAM_TOP + BEAM_H;
+  for (const x of [cx - half, cx + half - PIER_W]) {
+    rect(c, x, top, PIER_W, base - top, WHITE);
+    rect(c, x, top, 4, base - top, WHITE_HI);
+    rect(c, x + PIER_W - 7, top, 7, base - top, WHITE_LO);
+    rect(c, x - 1, base - 7, PIER_W + 2, 7, WHITE_LO);
+    rect(c, x - 1, base - 8, PIER_W + 2, 1, WHITE_HI);
+    rect(c, x - 1, base - 1, PIER_W + 2, 1, WHITE_DEEP);
+    // the glass notice case on the face of the pier
+    rect(c, x + 8, base - 50, 9, 24, '#3a3d44');
+    rect(c, x + 9, base - 49, 7, 22, '#7d8a98');
+    rect(c, x + 9, base - 49, 2, 22, '#a9b6c2');
   }
+}
+
+/** A NO PARKING sign on a post, the kind the city puts along the kerb. */
+export function noParkingSign(c: Ctx, x: number, base: number): void {
+  rect(c, x, base - 44, 1, 44, '#8a8d95');
+  rect(c, x - 7, base - 58, 15, 15, '#f4f1ea');
+  rect(c, x - 7, base - 58, 15, 1, '#2a2a32');
+  rect(c, x - 7, base - 44, 15, 1, '#2a2a32');
+  disc(c, x, base - 51, 5, '#c8342f');
+  disc(c, x, base - 51, 3.5, '#f4f1ea');
+  sign(c, 'P', x - 1, base - 53, '#2a2a32');
+  line(c, x - 3, base - 54, x + 3, base - 48, '#c8342f', 1);
+  rect(c, x - 9, base - 42, 19, 8, '#c8342f');
+  sign(c, 'TOW', x - 5, base - 40, '#f4f1ea');
 }
 
 /**
