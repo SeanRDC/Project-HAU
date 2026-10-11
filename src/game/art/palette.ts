@@ -1,0 +1,62 @@
+import { css, hex, mix } from '../../engine/math';
+
+/** Colours picked off reference photos of the campus, then pushed a little warmer. */
+export const P = {
+  wall: '#ecd693',
+  wallLit: '#f5e4ab',
+  wallShade: '#cdb471',
+  wallDeep: '#a58c58',
+  trim: '#f8f3e4',
+  trimShade: '#d8d0bc',
+  trimDeep: '#b1a890',
+  glass: '#313849',
+  glassHi: '#5f6f8c',
+  step: '#6d463d',
+  stepHi: '#8f5f52',
+  stepDark: '#4b2f2b',
+  door: '#2a2330',
+  maroon: '#7c1f2c',
+  maroonHi: '#a23a44',
+  gold: '#e3b33b',
+  goldHi: '#f6d674',
+  leafDeep: '#1f4a31',
+  leafDark: '#2f6b3b',
+  leaf: '#418c46',
+  leafLit: '#67ae50',
+  leafHi: '#a2d266',
+  trunk: '#5c4737',
+  trunkHi: '#7d6048',
+  trunkDark: '#3f3027',
+  pave: '#beb7a8',
+  paveLine: '#a59e91',
+  paveDark: '#8e887e',
+  road: '#77737a',
+  roadDark: '#625f68',
+  roadLine: '#8a868c',
+  grass: '#5f9c49',
+  grassHi: '#7fb858',
+  grassDark: '#477c3d',
+  stone: '#9a979c',
+  stoneHi: '#bab7ba',
+  stoneDark: '#6f6c74',
+  water: '#3f6588',
+  waterHi: '#7fb0d0',
+  bronze: '#6e4c33',
+  bronzeHi: '#a0744b',
+  bronzeDark: '#412c21',
+  iron: '#25232b',
+  ironHi: '#45424d',
+  terracotta: '#b9694a',
+  terracottaHi: '#cf8560',
+  terracottaDark: '#94503a',
+  marble: '#e6ddd0',
+  marbleHi: '#f4eee4',
+  marbleLine: '#cdc2b2',
+  lamp: '#ffe6a8',
+};
+
+/** f < 0 darkens towards a cool shadow colour, f > 0 lightens towards warm white. */
+export function shade(color: string, f: number): string {
+  const c = hex(color);
+  return f < 0 ? css(mix(c, [38, 26, 58], -f)) : css(mix(c, [255, 248, 228], f));
+}
