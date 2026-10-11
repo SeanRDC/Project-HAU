@@ -3,17 +3,18 @@
 // university seal set into the pavers. You are looking north-west: the main
 // gate is at the left end, the covered shed runs behind the far row of
 // angels with St. Martha Hall beyond it, and at the right end the road opens
-// into the fountain plaza in front of the San Francisco de Javier Building.
+// into the fountain plaza in front of the San Francisco de Javier Building
+// (art/sfj.ts, drawn from the photos of it).
 // The near row of angels stands between you and the camera.
 
 import { Ctx, VIEW_H, makeCanvas } from '../../engine/display';
 import { hex, rng } from '../../engine/math';
 import { disc, ellipse, poly, px, rect } from '../../engine/pix';
-import { facade } from '../art/buildings';
 import { P } from '../art/palette';
 import { RED_TIP, bamboo, crookLamp, memorare, pedestal, pergola, scrollBench, stoneAngel } from '../art/park';
 import { bush, hedge, palm, pot, signBoard, tree } from '../art/props';
-import { fountainPlaza, gatePillar } from '../art/street';
+import { POOL_JETS, drawSFJ, jetPool } from '../art/sfj';
+import { gatePillar } from '../art/street';
 import { BUILDINGS, PLACES } from '../campus/plan';
 import { STREETS, frontage, streetWidth, xOf } from '../campus/streets';
 import { parkHotspots, parkNpcs } from '../story/park';
@@ -27,7 +28,8 @@ const SEAL_X = xOf(S, PLACES.seal);
 /** where the angels stop and the road opens into the fountain plaza */
 const END_X = xOf(S, PLACES.epiphanyEnd);
 const FOUNTAIN_X = xOf(S, PLACES.fountainPlaza);
-const FOUNTAIN_Y = GROUND + 30;
+/** the pool sits between the building's steps and the road */
+const FOUNTAIN_Y = GROUND + 15;
 const [SFJ_L] = frontage(S, BUILDINGS.sfj.blocks[0]);
 const [MARTHA_L, MARTHA_R] = frontage(S, BUILDINGS.martha.blocks[0]);
 const [CORAZON_L, CORAZON_R] = frontage(S, BUILDINGS.corazon.blocks[0]);
@@ -41,7 +43,8 @@ const PERGOLA_BAYS = Math.floor((END_X - GATE_X - 50) / PERGOLA_BAY);
 const PERGOLA_X = GATE_X + 36;
 const MEMORARE_X = END_X + 30;
 const SFJ_X = SFJ_L + 8;
-const SFJ_DOOR = FOUNTAIN_X - 70;
+/** wide enough to put its doors straight behind the fountain, as they are */
+const SFJ_W = Math.round((FOUNTAIN_X - SFJ_X) / 0.46);
 
 function ground(c: Ctx): void {
   const rand = rng(57);
@@ -92,7 +95,7 @@ function roadSeal(c: Ctx, x: number, y: number): void {
   for (let i = -48; i <= 48; i += 6) px(c, x + i, y + Math.round((1 - (i * i) / 2500) * (i % 12 ? 6 : -6)), P.maroon);
 }
 
-function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement } {
+function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement; sfjDoor: number } {
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
   const [glow, g] = makeCanvas(WIDTH, VIEW_H);
   const lamp = hex(P.lamp);
@@ -103,11 +106,6 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
     tree(c, x, GROUND - 2, 100 + (i % 3) * 14, 34 + (i % 2) * 6, 1200 + i * 3);
   }
 
-  // San Francisco de Javier: glass between cream bands, facing the fountain plaza
-  facade(c, g, SFJ_X, WIDTH - SFJ_X + 12, GROUND - 4, {
-    floors: 6, style: 'curtain', wall: '#e2dccb', glass: '#3f8f86', accent: P.maroon, doors: [SFJ_DOOR - SFJ_X], name: 'SFJ', seed: 21,
-  });
-  doorLight(lights, SFJ_DOOR);
 
   // the covered shed, with its grey wall and bamboo, runs behind the angels
   rect(c, PERGOLA_X - 30, GROUND - 60, pergolaEnd - PERGOLA_X + 50, 60, '#7f8790');
@@ -123,6 +121,10 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   }
 
   ground(c);
+
+  // San Francisco de Javier, facing the fountain plaza
+  const sfjDoor = drawSFJ(c, g, SFJ_X, SFJ_W, GROUND + 2).door;
+  doorLight(lights, sfjDoor);
 
   // the Sto. Rosario Gate at the left end, seen from inside
   rect(c, 0, GROUND - 46, GATE_X - 20, 60, P.wall);
@@ -163,14 +165,13 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   lights.push({ x: MEMORARE_X, y: GROUND - 20, r: 60, color: [255, 226, 180], strength: 0.6 });
 
   // the fountain plaza
-  hedge(c, SFJ_X + 4, GROUND + 2, SFJ_DOOR - SFJ_X - 30, 9, 1700);
-  hedge(c, SFJ_DOOR + 26, GROUND + 2, WIDTH - SFJ_DOOR - 26, 9, 1701);
-  palm(c, SFJ_DOOR - 34, GROUND + 6, 64, 1710);
-  palm(c, FOUNTAIN_X + 62, GROUND + 6, 70, 1711);
-  fountainPlaza(c, FOUNTAIN_X, FOUNTAIN_Y);
-  lights.push({ x: FOUNTAIN_X, y: FOUNTAIN_Y - 10, r: 80, color: [200, 226, 255], strength: 0.55 });
+  hedge(c, SFJ_X + 2, GROUND + 5, 54, 8, 1700);
+  palm(c, SFJ_X + 26, GROUND + 8, 62, 1710);
+  palm(c, FOUNTAIN_X + 104, GROUND + 8, 70, 1711);
+  jetPool(c, FOUNTAIN_X, FOUNTAIN_Y);
+  lights.push({ x: FOUNTAIN_X, y: FOUNTAIN_Y - 10, r: 90, color: [200, 240, 236], strength: 0.6 });
   signBoard(c, WIDTH - 36, GROUND + 6, ['MAIN BLDG', 'ROTUNDA'], P.maroon, P.goldHi);
-  return { canvas, glow };
+  return { canvas, glow, sfjDoor };
 }
 
 /** The row of angels on the camera's side of the road: you see them from behind, dark against the scene. */
@@ -223,8 +224,8 @@ export function buildPark(): AreaDef {
       seal: SEAL_X,
       archangels: ANGELS_X + ANGEL_GAP * 2,
       memorare: MEMORARE_X,
-      sfj: SFJ_DOOR,
-      fountain: FOUNTAIN_X,
+      sfj: main.sfjDoor - 34,
+      fountain: FOUNTAIN_X + 30,
       exit: WIDTH - 36,
     }),
     npcs: parkNpcs({
@@ -240,19 +241,28 @@ export function buildPark(): AreaDef {
 
     update(dt, area, view) {
       drift(dt, area, view);
-      // the low jet in the middle of the plaza fountain
-      let n = 40 * dt;
-      while (n > rand()) {
-        n -= 1;
+      // the ring of foaming jets in the pool, and the trickle over the bowl in the middle
+      for (const [jx, jy] of POOL_JETS) {
+        let n = 26 * dt;
+        while (n > rand()) {
+          n -= 1;
+          area.spawnParticle({
+            x: FOUNTAIN_X + jx + (rand() - 0.5) * 3,
+            y: FOUNTAIN_Y + jy - 1,
+            vx: (rand() - 0.5) * 9,
+            vy: -44 * (0.75 + rand() * 0.3),
+            gravity: 150,
+            max: 1.2,
+            floor: FOUNTAIN_Y + jy - 1 + rand() * 2,
+            color: rand() > 0.3 ? '#f4fdff' : '#bfe6e2',
+            size: rand() > 0.7 ? 2 : 1,
+          });
+        }
+      }
+      if (rand() < 14 * dt) {
         area.spawnParticle({
-          x: FOUNTAIN_X + (rand() - 0.5) * 3,
-          y: FOUNTAIN_Y - 13,
-          vx: (rand() - 0.5) * 16,
-          vy: -34 * (0.8 + rand() * 0.3),
-          gravity: 150,
-          max: 1.4,
-          floor: FOUNTAIN_Y - 4 + rand() * 3,
-          color: rand() > 0.35 ? '#f2fbff' : '#b9dcf0',
+          x: FOUNTAIN_X + (rand() - 0.5) * 12, y: FOUNTAIN_Y - 6, vx: (rand() - 0.5) * 8, vy: -8, gravity: 90, max: 0.6,
+          floor: FOUNTAIN_Y - 1, color: '#d6f2ef',
         });
       }
     },

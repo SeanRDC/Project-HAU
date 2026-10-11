@@ -2,7 +2,7 @@
 // Dialogue is Taglish with a bit of Kapampangan. Edit freely.
 
 import { Hotspot, NpcDef } from '../types';
-import { deadEnd, wayTo } from './campus';
+import { wayTo } from './campus';
 import { DRIVER, GUARD, JOPET, TRISHA } from './cast';
 
 export function plazaNpcs(): NpcDef[] {
@@ -179,11 +179,7 @@ export function plazaHotspots(x: {
           { who: '', text: 'Parang sinasabing: doon ang tingin, hindi sa cellphone.', set: 'saw_angel' },
         ]),
     },
-    deadEnd(
-      'gate',
-      x.gate,
-      'Tingnan ang gate',
-      '"ST. BARACHIEL GATE." Sasakyan lang ang dumadaan dito, papuntang Holy Angel Avenue. Ang mga estudyante, sa main gate sa Sto. Rosario St. pumapasok at lumalabas, sa dulo ng Epiphany of Angels.',
-    ),
+    // the way students come in and go out: the gate scene sets you down here
+    wayTo('gate', x.gate, 'Lumabas sa gate', 'gate', 'plaza', 60),
   ];
 }
