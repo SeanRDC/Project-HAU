@@ -12,7 +12,7 @@ Lined up against OSM, the aerial-photo plan had the scale right (to 0.6%) and mo
 
 The aerial photo is still the source for the gates, the junctions, GGN (10) and the Formation Center (16). OSM still shows the old Sta. Clara buildings where GGN stands now; those are left out.
 
-The other sources, all in `assets/` (not committed, see "Reference images" below):
+The other sources, all in `assets/` (see "Reference images" below):
 
 | File | What it gave us |
 | --- | --- |
@@ -147,4 +147,4 @@ There are none beyond the DJN lobby and courtyard, on purpose. Each building's d
 
 ## Reference images
 
-The pictures in `assets/` came from Google Earth, a Google Maps photo sphere and the university's own campus map. They are not ours to republish and this repository is public, so they were left out of the commits. Share them with the team another way, and keep them in `assets/` under the same file names so the notes in `plan.ts` still point at the right picture.
+The pictures in `assets/` came from Google Earth, a Google Maps photo sphere, the university's own campus map and photos found online. They were kept out of the repository at first because they are other people's pictures and this repository is public. On 2026-10-12 Sean decided to commit them so the whole team has the same references. Keep them under the same file names so the notes in `plan.ts` and in the art files still point at the right picture. They are references only: nothing in the game loads them, and they should not go into a build. If anyone who owns one of them asks, take it out.

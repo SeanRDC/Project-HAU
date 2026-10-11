@@ -104,5 +104,5 @@ See `sessions/2026-10-12-minimap-teleport-and-plans.md` for the details.
 * No touch controls (it loads on a phone but you cannot move).
 * Real sprite art and recorded audio.
 * The Godot 4 port.
-* The reference images in `assets/` are not committed (they are Google Earth and university material). Share them with the team another way.
+* The reference images in `assets/` are committed as of 2026-10-12, at Sean's decision, so the team shares them. They are Google Earth, university and found-online material, references only: the game does not load them.
 * The older `docs/`, `assets/` and `tools/` READMEs still describe the original top-down plan in places.
