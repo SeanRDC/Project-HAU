@@ -172,9 +172,10 @@ export function guardianGroup(c: Ctx, x: number, base: number): void {
   const top = base - 39;
   // wings spread behind all three figures
   for (const side of [-1, 1]) {
-    poly(c, [[x + side * 3, top - 40], [x + side * 19, top - 52], [x + side * 23, top - 28], [x + side * 15, top - 10], [x + side * 5, top - 18]], lo);
-    for (let i = 0; i < 5; i++) line(c, x + side * (18 - i * 3), top - 46 + i * 2, x + side * (20 - i * 3), top - 18 + i, stone, 1);
-    line(c, x + side * 3, top - 40, x + side * 19, top - 52, hi, 1);
+    poly(c, [[x + side * 3, top - 40], [x + side * 14, top - 60], [x + side * 21, top - 54], [x + side * 24, top - 28], [x + side * 15, top - 8], [x + side * 5, top - 18]], lo);
+    for (let i = 0; i < 5; i++) line(c, x + side * (19 - i * 3), top - 52 + i * 2, x + side * (21 - i * 3), top - 18 + i, stone, 1);
+    line(c, x + side * 3, top - 40, x + side * 14, top - 60, hi, 1);
+    line(c, x + side * 14, top - 60, x + side * 21, top - 54, hi, 1);
   }
   // the angel
   poly(c, [[x - 6, top - 38], [x + 6, top - 38], [x + 9, top], [x - 9, top]], stone);
@@ -240,21 +241,62 @@ export function ironGate(c: Ctx, x0: number, x1: number, base: number): void {
   rect(c, mid, base - 56, 1, 56, P.ironHi);
 }
 
-/** A round patterned plaza with a low fountain in the middle, flattened by the low camera. */
-export function fountainPlaza(c: Ctx, x: number, cy: number): void {
-  ellipse(c, x, cy, 78, 12, '#8d8a92');
-  ellipse(c, x, cy, 74, 11, '#b9b4a6');
-  ellipse(c, x, cy, 60, 9, '#8d8a92');
-  ellipse(c, x, cy, 56, 8, '#c9c4b6');
-  for (let a = 0; a < 12; a++) {
-    const t = (a / 12) * Math.PI * 2;
-    line(c, x + Math.cos(t) * 30, cy + Math.sin(t) * 4, x + Math.cos(t) * 72, cy + Math.sin(t) * 10.5, '#8d8a92', 1);
+export const BASIN_WALL = 10;
+export const BASIN_RX = 64;
+
+/**
+ * The basin of the rotunda fountain, from `SFJ AND FOUNTAIN SIDE VIEW.jpg`:
+ * a low round wall of red brick standing straight on the road, with a pale
+ * cap, a metal plate on the front, and a mound of rough rock in the water
+ * for the statue to stand on. `cy` is the water line; the wall comes
+ * `BASIN_WALL` below it at the front.
+ */
+export function brickBasin(c: Ctx, x: number, cy: number): void {
+  const brick = '#a8553f';
+  const rx = BASIN_RX;
+  const ry = 9;
+  // the wet ring the spray leaves on the road
+  ellipse(c, x, cy + BASIN_WALL + 2, rx + 14, ry + 4, 'rgba(40,36,48,0.22)');
+  // the wall: the front of a short drum
+  ellipse(c, x, cy + BASIN_WALL, rx, ry, shade(brick, -0.35));
+  for (let dy = 0; dy < BASIN_WALL; dy++) ellipse(c, x, cy + dy, rx, ry, dy % 3 === 2 ? shade(brick, -0.28) : brick);
+  for (let row = 0; row < 3; row++) {
+    for (let a = row % 2 ? 0.06 : 0; a < Math.PI; a += 0.12) {
+      rect(c, x + Math.cos(a) * rx, cy + Math.sin(a) * ry + row * 3 + 1, 1, 2, shade(brick, -0.3));
+    }
   }
-  ellipse(c, x, cy - 1, 30, 5, P.stoneDark);
-  ellipse(c, x, cy - 2, 30, 5, P.stoneHi);
-  ellipse(c, x, cy - 2, 26, 4, '#2c4863');
-  ellipse(c, x, cy - 3, 26, 3.5, P.water);
-  ellipse(c, x - 4, cy - 4, 12, 1.5, '#517b9e');
-  rect(c, x - 2, cy - 12, 5, 9, P.stone);
-  ellipse(c, x, cy - 12, 6, 1.5, P.stoneHi);
+  // lit on the left, in shade on the right
+  for (let a = Math.PI * 0.62; a < Math.PI; a += 0.02) rect(c, x + Math.cos(a) * rx, cy + Math.sin(a) * ry, 1, BASIN_WALL, shade(brick, 0.14));
+  for (let a = 0; a < Math.PI * 0.22; a += 0.02) rect(c, x + Math.cos(a) * rx - 1, cy + Math.sin(a) * ry, 1, BASIN_WALL, shade(brick, -0.25));
+  // the cap and the water inside it
+  ellipse(c, x, cy, rx + 1, ry + 0.5, '#d9a084');
+  ellipse(c, x, cy - 1, rx + 1, ry + 0.5, '#e8b89c');
+  ellipse(c, x, cy - 1, rx - 4, ry - 2, shade(brick, -0.4));
+  ellipse(c, x, cy, rx - 5, ry - 3, '#2c4f5a');
+  ellipse(c, x, cy - 1, rx - 5, ry - 3.5, '#3f7480');
+  ellipse(c, x - 12, cy - 2, 30, 2, '#5b95a0');
+  // the plate
+  rect(c, x - 11, cy + BASIN_WALL - 2, 22, 6, '#8a8f96');
+  rect(c, x - 10, cy + BASIN_WALL - 1, 20, 4, '#c9cdd2');
+  rect(c, x - 8, cy + BASIN_WALL, 16, 1, '#6a6f76');
+  rect(c, x - 6, cy + BASIN_WALL + 2, 12, 1, '#8a8f96');
+  // the rock the statue stands on
+  const rand = rng(418);
+  const rock = '#7a5a44';
+  ellipse(c, x, cy - 2, 31, 5, shade(rock, -0.3));
+  for (let i = 0; i < 16; i++) {
+    const bx = x - 28 + i * 3.7 + rand() * 2;
+    const h = 5 + rand() * 9 * (1 - Math.abs(i - 7.5) / 12);
+    rect(c, bx, cy - 2 - h, 5, h + 1, rand() > 0.5 ? rock : shade(rock, -0.18));
+    rect(c, bx, cy - 2 - h, 2, 2, shade(rock, 0.25));
+  }
+}
+
+/** The yellow folding sign the guards stand by the fountain when the road is wet. */
+export function wetSign(c: Ctx, x: number, base: number): void {
+  ellipse(c, x, base, 8, 1.5, 'rgba(20,14,34,0.28)');
+  poly(c, [[x - 6, base], [x + 6, base], [x + 3, base - 14], [x - 3, base - 14]], '#e6c33a');
+  poly(c, [[x - 6, base], [x - 3, base], [x - 2, base - 14], [x - 3, base - 14]], '#f3da6a');
+  rect(c, x - 2, base - 10, 5, 4, '#2a2a32');
+  rect(c, x - 3, base - 15, 6, 1, '#2a2a32');
 }

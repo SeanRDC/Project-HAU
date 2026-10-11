@@ -3,7 +3,7 @@
 
 import { Ctx } from '../../engine/display';
 import { rng } from '../../engine/math';
-import { disc, ellipse, line, poly, px, rect, sign } from '../../engine/pix';
+import { disc, line, poly, px, rect, sign } from '../../engine/pix';
 import { P, shade } from './palette';
 
 export interface Tones {
@@ -274,26 +274,6 @@ export function boomBarrier(c: Ctx, x: number, base: number, length: number, ang
       i % 2 ? P.iron : '#f0cf3a', 3,
     );
   }
-}
-
-/** Fountain basin on its round grass island. The water jets are animated separately. */
-export function fountainBasin(c: Ctx, x: number, cy: number): void {
-  ellipse(c, x, cy + 3, 92, 13, P.paveDark);
-  ellipse(c, x, cy + 1, 92, 13, P.pave);
-  ellipse(c, x, cy, 86, 11, P.grassDark);
-  ellipse(c, x, cy - 1, 86, 11, P.grass);
-  ellipse(c, x - 6, cy - 3, 70, 7, P.grassHi);
-  ellipse(c, x, cy + 1, 68, 9, P.stoneDark);
-  ellipse(c, x, cy - 1, 68, 9, P.stone);
-  ellipse(c, x, cy - 2, 66, 8, P.stoneHi);
-  ellipse(c, x, cy - 1, 62, 7, '#2c4863');
-  ellipse(c, x, cy - 2, 62, 6.5, P.water);
-  ellipse(c, x - 10, cy - 3, 34, 3, '#517b9e');
-  // centre piece
-  ellipse(c, x, cy - 3, 11, 3, P.iron);
-  rect(c, x - 10, cy - 8, 21, 5, P.iron);
-  ellipse(c, x, cy - 8, 10, 2.5, P.ironHi);
-  ellipse(c, x, cy - 8, 7, 1.5, '#2c4863');
 }
 
 /** Small standing sign: a board on two legs. */

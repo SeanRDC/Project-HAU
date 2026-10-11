@@ -15,10 +15,10 @@ import { disc, ellipse, line, poly, px, rect, sign } from '../../engine/pix';
 import { DJN_DOOR_X, DJN_WIDTH, drawDJN } from '../art/djn';
 import { P, shade } from '../art/palette';
 import {
-  SILHOUETTE, angelStatue, boomBarrier, bush, foliage, fountainBasin, guardHouse, hedge, lampPost, palm, pot,
+  SILHOUETTE, angelStatue, boomBarrier, bush, foliage, guardHouse, hedge, lampPost, palm, pot,
   signBoard, stoneBench, tree, tricycle,
 } from '../art/props';
-import { guardianGroup } from '../art/street';
+import { BASIN_RX, brickBasin, guardianGroup, wetSign } from '../art/street';
 import { plazaHotspots, plazaNpcs } from '../story/plaza';
 import { AreaDef, AreaLight } from '../types';
 
@@ -27,7 +27,8 @@ const GROUND = 204;
 const WALK = 240;
 const DJN_X = 410;
 const FOUNTAIN_X = 190;
-const FOUNTAIN_Y = 222;
+/** the water line of the brick basin */
+const FOUNTAIN_Y = 220;
 /** the bronze guardian angel on its lawn, beside the building */
 const STATUE_X = 1100;
 const GATE_X = 1250;
@@ -207,8 +208,14 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   lights.push({ x: PLAZA_DOOR_X, y: GROUND - 30, r: 110, color: [255, 208, 140], strength: 0.9 });
 
   // the rotunda: the Holy Guardian Angel and two children stand in the fountain
-  fountainBasin(c, FOUNTAIN_X, FOUNTAIN_Y);
-  guardianGroup(c, FOUNTAIN_X, FOUNTAIN_Y - 4);
+  // a yellow arrow painted on the road sends cars round it
+  poly(c, [
+    [FOUNTAIN_X + 96, GROUND + 50], [FOUNTAIN_X + 132, GROUND + 47], [FOUNTAIN_X + 131, GROUND + 44], [FOUNTAIN_X + 150, GROUND + 51],
+    [FOUNTAIN_X + 132, GROUND + 57], [FOUNTAIN_X + 132, GROUND + 54], [FOUNTAIN_X + 98, GROUND + 55],
+  ], P.gold);
+  brickBasin(c, FOUNTAIN_X, FOUNTAIN_Y);
+  guardianGroup(c, FOUNTAIN_X, FOUNTAIN_Y - 9);
+  wetSign(c, FOUNTAIN_X - BASIN_RX - 16, GROUND + 34);
   lights.push({ x: FOUNTAIN_X, y: FOUNTAIN_Y - 60, r: 84, color: [255, 214, 150], strength: 0.8 });
   hedge(c, 0, GROUND + 4, 26, 10, 9);
   signBoard(c, LANE_X, GROUND + 3, ['PARKING', 'SFJ STL']);
@@ -262,10 +269,13 @@ export function buildPlaza(): AreaDef {
   const main = mainLayer(lights);
   const rand = rng(1234);
 
-  // a ring of short jets around the statue, and the two spouts from the ram's heads on its pedestal
+  // thin jets set round the rim that arc in over the water towards the statue,
+  // and the two spouts from the ram's heads on its pedestal
   const jets = [
-    ...[-50, -36, 36, 50].map((dx) => ({ x: dx, y: -1 + (Math.abs(dx) === 36 ? 2 : 0), power: 66, rate: 30, push: 0 })),
-    ...[-1, 1].map((side) => ({ x: side * 27, y: -17, power: 16, rate: 46, push: side * 16 })),
+    ...[-56, -44, -30, 30, 44, 56].map((dx) => ({
+      x: dx, y: Math.abs(dx) === 44 ? 3 : Math.abs(dx) === 30 ? 5 : 0, power: 58, rate: 22, push: -Math.sign(dx) * (12 + Math.abs(dx) * 0.22),
+    })),
+    ...[-1, 1].map((side) => ({ x: side * 27, y: -24, power: 16, rate: 40, push: side * 14 })),
   ];
   let leafTimer = 0;
   let fireflyTimer = 0;
@@ -311,7 +321,7 @@ export function buildPlaza(): AreaDef {
             vy: -j.power * (0.8 + rand() * 0.3),
             gravity: 170,
             max: 2.2,
-            floor: FOUNTAIN_Y + j.y - 1 + rand() * 3,
+            floor: FOUNTAIN_Y - 2 + rand() * 4,
             color: rand() > 0.35 ? '#f2fbff' : '#b9dcf0',
             size: rand() > 0.8 ? 2 : 1,
           });
@@ -357,8 +367,8 @@ export function buildPlaza(): AreaDef {
       for (let i = 0; i < 5; i++) {
         const k = (view.time * 0.5 + i / 5) % 1;
         ctx.globalAlpha = (1 - k) * 0.5;
-        rect(ctx, x - 8 - k * 46, FOUNTAIN_Y - 2 + (i % 3), 6 + k * 8, 1, P.waterHi);
-        rect(ctx, x + 6 + k * 44, FOUNTAIN_Y - 3 + ((i + 1) % 3), 6 + k * 8, 1, P.waterHi);
+        rect(ctx, x - 30 - k * 20, FOUNTAIN_Y - 2 + (i % 3), 5 + k * 5, 1, P.waterHi);
+        rect(ctx, x + 28 + k * 18, FOUNTAIN_Y - 3 + ((i + 1) % 3), 5 + k * 5, 1, P.waterHi);
       }
       ctx.globalAlpha = 1;
     },
