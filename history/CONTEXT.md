@@ -1,4 +1,4 @@
-﻿# Project Context
+# Project Context
 
 Last updated: 2026-10-12 (Minimap and map teleport)
 
