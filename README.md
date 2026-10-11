@@ -40,6 +40,7 @@ Then open http://localhost:5173 in your browser.
 * `src/` - The codebase (includes a `drafts/` folder for prototype scripts).
 * `tools/` - Development utilities and software stack info.
 * `builds/` - Playable campus prototypes and milestone releases.
+* `history/` - Session logs and handoff notes. **Read `history/README.md` every time you pull.**
 
 ## The Team
 This is a closed 4-person project developed within the School of Computing.
