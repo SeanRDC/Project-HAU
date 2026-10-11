@@ -1,7 +1,9 @@
-// Epiphany of Angels park. The Memorare text is paraphrased from the marker
-// on campus; the quiz answers match the facts used in the lobby.
+// Epiphany of Angels. The Memorare text is paraphrased from the marker on
+// campus; the quiz answers match the facts used in the lobby.
 
+import { BUILDINGS } from '../campus/plan';
 import { Hotspot, Line, NpcDef } from '../types';
+import { closedDoor, wayTo } from './campus';
 import { BONG, ENZO, KATH } from './cast';
 
 function quiz(): Line[] {
@@ -38,13 +40,14 @@ function quiz(): Line[] {
   ];
 }
 
-export function parkNpcs(): NpcDef[] {
+/** Where each of them stands: Kath by a bench, the other two strolling between the two x's. */
+export function parkNpcs(x: { kath: number; bong: [number, number]; enzo: [number, number] }): NpcDef[] {
   return [
     {
       id: 'kath',
       name: 'Kath',
       look: KATH,
-      x: 318,
+      x: x.kath,
       depth: -8,
       facing: 1,
       talk: (g) =>
@@ -65,10 +68,10 @@ export function parkNpcs(): NpcDef[] {
       id: 'bong',
       name: 'Mang Bong',
       look: BONG,
-      x: 596,
+      x: (x.bong[0] + x.bong[1]) / 2,
       depth: -5,
       facing: 1,
-      wander: [560, 632],
+      wander: x.bong,
       talk: (g) =>
         g.has('met_bong')
           ? [
@@ -87,10 +90,10 @@ export function parkNpcs(): NpcDef[] {
       id: 'enzo',
       name: 'Enzo',
       look: ENZO,
-      x: 1030,
+      x: (x.enzo[0] + x.enzo[1]) / 2,
       depth: -4,
       facing: -1,
-      wander: [960, 1120],
+      wander: x.enzo,
       talk: (g) => {
         const h = g.hour();
         const light: Line =
@@ -114,17 +117,10 @@ export function parkNpcs(): NpcDef[] {
 }
 
 export function parkHotspots(x: {
-  gate: number; memorare: number; guardian: number; archangels: number; seal: number; soc: number; exit: number;
+  gate: number; memorare: number; guardian: number; archangels: number; seal: number; sfj: number; fountain: number; exit: number;
 }): Hotspot[] {
   return [
-    {
-      id: 'gate',
-      x: x.gate,
-      range: 22,
-      label: 'Pumasok sa courtyard',
-      height: 70,
-      use: (g) => g.travel('courtyard', 'gate'),
-    },
+    wayTo('gate', x.gate, 'Lumabas sa main gate', 'gate', 'plaza', 70),
     {
       id: 'memorare',
       x: x.memorare,
@@ -159,7 +155,7 @@ export function parkHotspots(x: {
       height: 100,
       use: (g) =>
         g.say([
-          { who: '', text: 'Pitong arkanghel na yari sa puting bato, nakahanay sa gilid ng daan, bawat isa may sariling plake.' },
+          { who: '', text: 'Pitong arkanghel na yari sa puting bato, nakahanay sa magkabilang gilid ng daan, bawat isa may sariling plake.' },
           { who: 'you', text: 'Michael, Gabriel, Raphael... at apat pang hindi ko kabisado. Sorry po.' },
         ]),
     },
@@ -176,25 +172,19 @@ export function parkHotspots(x: {
           { who: 'you', text: '...Nasa gitna mismo ng daan. Paano iiwasan \'yan?' },
         ]),
     },
+    closedDoor('sfj', x.sfj, BUILDINGS.sfj),
     {
-      id: 'soc',
-      x: x.soc,
+      id: 'fountain',
+      x: x.fountain,
       range: 26,
-      label: 'Basahin ang karatula',
-      height: 44,
+      label: 'Tingnan ang fountain',
+      height: 40,
       use: (g) =>
         g.say([
-          { who: '', text: '"SCHOOL OF COMPUTING". May harang na cone at dilaw na tali.' },
-          { who: '', text: 'May nakasabit na papel: "Ginagawa pa ang bahaging ito. Balik ka sa susunod."' },
+          { who: '', text: 'Bilog na plaza na may maliit na fountain sa gitna, sa dulo ng hanay ng mga anghel.' },
+          { who: '', text: 'Mula rito, kita na ang rotunda at ang harap ng Main Building.' },
         ]),
     },
-    {
-      id: 'exit',
-      x: x.exit,
-      range: 22,
-      label: 'Pumunta sa harap ng DJN',
-      height: 50,
-      use: (g) => g.travel('plaza', 'park'),
-    },
+    wayTo('exit', x.exit, 'Pumunta sa harap ng Main Bldg.', 'plaza', 'epiphany'),
   ];
 }
