@@ -10,7 +10,8 @@
     "dev:lan": "vite --host --port 5174",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "check:links": "node tools/check-links.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.0",
