@@ -28,20 +28,21 @@ function jeepney(c: Ctx, base: number, body: string): void {
   rect(c, 4, base - 17, 50, 12, body);
   rect(c, 4, base - 17, 50, 2, shade(body, 0.3));
   rect(c, 4, base - 6, 50, 1, lo);
-  rect(c, 6, base - 29, 46, 3, '#e9e6de');
-  rect(c, 6, base - 26, 46, 1, '#b9b6ae');
+  rect(c, 6, base - 29, 46, 3, shade(body, 0.3));
+  rect(c, 6, base - 29, 46, 1, shade(body, 0.55));
+  rect(c, 6, base - 26, 46, 1, lo);
   rect(c, 10, base - 32, 36, 1, '#8a8d95');
   for (let x = 10; x < 47; x += 6) rect(c, x, base - 32, 1, 3, '#8a8d95');
   // open side windows, passengers' heads in them
   rect(c, 8, base - 25, 42, 8, '#2a2c36');
-  for (let x = 8; x <= 50; x += 7) rect(c, x, base - 26, 1, 9, '#e9e6de');
+  for (let x = 8; x <= 50; x += 7) rect(c, x, base - 26, 1, 9, shade(body, 0.3));
   for (const [x, col] of [[12, '#c99468'], [19, '#b8825a'], [33, '#d9a878'], [40, '#c99468']] as const) {
     disc(c, x, base - 20, 2, col);
     rect(c, x - 2, base - 23, 5, 2, '#241a18');
   }
-  // the painted stripe and the route board
+  // the painted stripes and the route board
   rect(c, 4, base - 12, 50, 2, P.gold);
-  rect(c, 4, base - 10, 50, 1, '#c8342f');
+  rect(c, 4, base - 10, 50, 1, '#f4f1ea');
   rect(c, 22, base - 16, 18, 3, '#f4f1ea');
   // the nose: windscreen, long bonnet, chrome grille and the horse on top
   poly(c, [[50, base - 26], [56, base - 26], [60, base - 17], [50, base - 17]], '#55657c');

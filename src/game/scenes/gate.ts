@@ -20,8 +20,9 @@ import { Checkpoint, gateArrival, gateHotspots, gateNpcs, ownerWaiting } from '.
 import { AreaDef, AreaLight, Layer } from '../types';
 
 const WIDTH = 1200;
-const GROUND = 206;
-const WALK = 242;
+// this scene sits higher on the screen than the others: the street needs the room below the sidewalk
+const GROUND = 188;
+const WALK = 224;
 /** the line the gate furniture stands on, just behind where people walk */
 const BACK = WALK - 6;
 
@@ -47,9 +48,9 @@ const STREET_X = 1180;
 const KERB_X = 450;
 /** the two lanes of the street: where the wheels run, how big the vehicles are drawn, which way they go */
 const LANES = [
-  { base: VIEW_H - 4, scale: 1, dir: -1 as const, speed: 76, every: 3.2 },
-  // the near lane is right under the camera: twice the size, only the top half in frame
-  { base: VIEW_H + 30, scale: 2, dir: 1 as const, speed: 170, every: 7 },
+  { base: VIEW_H - 19, scale: 1.25, dir: -1 as const, speed: 84, every: 3.4 },
+  // the near lane is a little bigger and quicker, and still whole on the screen
+  { base: VIEW_H - 2, scale: 1.5, dir: 1 as const, speed: 122, every: 4.6 },
 ];
 
 function layerWidth(parallax: number): number {
@@ -285,9 +286,10 @@ interface Vehicle {
   speed: number;
 }
 
+/** the jeepneys on this route are purple or green */
 const FLEET: [VehicleKind, string][] = [
-  ['car', '#c9cdd3'], ['jeepney', '#c8342f'], ['car', '#3b4a66'], ['tricycle', '#2f5f9e'], ['suv', '#e2dccb'],
-  ['jeepney', '#2f7a5a'], ['car', '#8a2f34'], ['tricycle', '#c8342f'], ['suv', '#2a2c36'], ['jeepney', '#e3b33b'],
+  ['jeepney', '#6d3fa8'], ['car', '#c9cdd3'], ['jeepney', '#2f8f4e'], ['tricycle', '#2f5f9e'], ['suv', '#e2dccb'],
+  ['jeepney', '#8a55c8'], ['car', '#3b4a66'], ['jeepney', '#3aa35c'], ['tricycle', '#c8342f'], ['suv', '#2a2c36'],
 ];
 
 /** Live state of the checkpoint props, worked by the cutscenes in story/gate.ts. */
@@ -343,7 +345,7 @@ export function buildGate(): AreaDef {
     traffic.push({ sprite, lane, x: x ?? (l.dir > 0 ? KERB_X - off : WIDTH + off), speed: l.speed * (0.85 + rand() * 0.3) });
   };
   send(0, KERB_X + 240);
-  send(0, KERB_X + 560);
+  send(1, KERB_X + 520);
   /** vehicles are only seen on the street: they pass behind the big tree and are gone */
   const onStreet = (ctx: Ctx, cam: number, draw: () => void) => {
     ctx.save();
