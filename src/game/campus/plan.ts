@@ -8,6 +8,13 @@
 //
 // To fix a position: open the aerial photo, read the new pixel, change it
 // here. Every scene and the campus map follow.
+//
+// Since 2026-10-12 the buildings themselves come from OpenStreetMap instead:
+// their real outlines, surveyed, in `osm.ts`, made by `npm run import:osm`.
+// The aerial photo is still used for the gates, junctions and the two
+// buildings OSM does not have yet (GGN and the Formation Center).
+
+import { OUTLINES } from './osm';
 
 /** A pixel on the aerial photo, [x, y] from its top-left corner. */
 export type Px = [number, number];
@@ -43,17 +50,30 @@ const AXIS = len(ROTUNDA, WALKWAY_END);
 const UX = (WALKWAY_END[0] - ROTUNDA[0]) / AXIS;
 const UY = (WALKWAY_END[1] - ROTUNDA[1]) / AXIS;
 
+/**
+ * The walkway read off the photo by eye is a little off the true grid. In
+ * OSM the building edges sit 2.64 degrees from it, so the plan is turned by
+ * that much to square them up. tools/import-osm.mjs uses the same number.
+ */
+export const GRID_TURN = (2.64 * Math.PI) / 180;
+const TC = Math.cos(GRID_TURN);
+const TS = Math.sin(GRID_TURN);
+
 /** Aerial pixel to metres from the chapel. */
 export function spot(p: Px): Spot {
   const dx = (p[0] - CHAPEL[0]) * M_PER_PX;
   const dy = (p[1] - CHAPEL[1]) * M_PER_PX;
-  return { u: dx * UX + dy * UY, v: -dx * UY + dy * UX };
+  const u = dx * UX + dy * UY;
+  const v = -dx * UY + dy * UX;
+  return { u: TC * u - TS * v, v: TS * u + TC * v };
 }
 
 /** Metres from the chapel back to an aerial pixel, for checking against the photo. */
 export function toPx(s: Spot): Px {
-  const dx = s.u * UX - s.v * UY;
-  const dy = s.u * UY + s.v * UX;
+  const u = TC * s.u + TS * s.v;
+  const v = -TS * s.u + TC * s.v;
+  const dx = u * UX - v * UY;
+  const dy = u * UY + v * UX;
   return [CHAPEL[0] + dx / M_PER_PX, CHAPEL[1] + dy / M_PER_PX];
 }
 
@@ -70,14 +90,34 @@ function block(centre: Px, alongPx: number, acrossPx: number): Block {
   return { at: spot(centre), along: alongPx * M_PER_PX, across: acrossPx * M_PER_PX };
 }
 
+/** A block given in plan metres, read off a building's OSM outline: u from..to, v from..to. */
+function part(u0: number, u1: number, v0: number, v1: number): Block {
+  return { at: { u: (u0 + u1) / 2, v: (v0 + v1) / 2 }, along: u1 - u0, across: v1 - v0 };
+}
+
+/** The smallest block that holds a building's whole OSM outline. */
+function bounds(id: string): Block {
+  const pts = OUTLINES[id];
+  const us = pts.map((p) => p[0]);
+  const vs = pts.map((p) => p[1]);
+  return part(Math.min(...us), Math.max(...us), Math.min(...vs), Math.max(...vs));
+}
+
+/** A building's OSM outline as plan spots, if OSM has it. */
+function outline(id: string): Spot[] | undefined {
+  return OUTLINES[id]?.map(([u, v]) => ({ u, v }));
+}
+
 export interface Building {
   /** its number on the official 2022 campus map, if it has one */
   no?: number;
   name: string;
   /** what students call it, and what fits on a sign */
   short: string;
-  /** the first block is the main one */
+  /** the first block is the main one. The street scenes are laid out from these. */
   blocks: Block[];
+  /** the real footprint from OpenStreetMap, for the campus map. Missing if OSM does not have it. */
+  outline?: Spot[];
   /** what the campus map says is inside */
   inside: string[];
   /**
@@ -92,7 +132,8 @@ export const BUILDINGS = {
     no: 1,
     name: 'Plaza de Corazon Building',
     short: 'Red Bldg.',
-    blocks: [block([266, 522], 40, 52)],
+    blocks: [bounds('corazon')],
+    outline: outline('corazon'),
     inside: ['Human Resource Development Office', 'Dormitory'],
     sure: false,
   },
@@ -100,7 +141,8 @@ export const BUILDINGS = {
     no: 2,
     name: 'St. Martha Hall',
     short: 'St. Martha',
-    blocks: [block([336, 520], 44, 110)],
+    blocks: [bounds('martha')],
+    outline: outline('martha'),
     inside: ['Admissions Office & Testing Center', 'Dormitory'],
     sure: true,
   },
@@ -108,7 +150,8 @@ export const BUILDINGS = {
     no: 3,
     name: 'San Francisco de Javier Building',
     short: 'SFJ',
-    blocks: [block([403, 480], 72, 105)],
+    blocks: [bounds('sfj')],
+    outline: outline('sfj'),
     inside: ["President's Office", 'University Library', 'University Theater'],
     sure: true,
   },
@@ -116,7 +159,9 @@ export const BUILDINGS = {
     no: 4,
     name: 'St. Therese of Lisieux Building',
     short: 'STL',
-    blocks: [block([497, 405], 52, 72), block([532, 327], 128, 28), block([520, 426], 30, 30)],
+    // main block, the long wing along the back road, the pavilion by the parking lane
+    blocks: [part(-168, -148, -60, -35), part(-165, -92, -74, -57), part(-168, -150, -35, -22)],
+    outline: outline('stl'),
     inside: ["School of Hospitality and Tourism Management Dean's Office"],
     sure: true,
   },
@@ -124,23 +169,26 @@ export const BUILDINGS = {
     no: 5,
     name: 'Warehouse & Carpentry',
     short: 'Warehouse',
-    blocks: [block([350, 300], 24, 85)],
+    blocks: [bounds('warehouse')],
+    outline: outline('warehouse'),
     inside: [],
-    sure: false,
+    sure: true,
   },
   foodcourt: {
     no: 6,
     name: 'Yellow Food Court',
     short: 'Food Court',
-    blocks: [block([390, 272], 22, 120)],
+    blocks: [bounds('foodcourt')],
+    outline: outline('foodcourt'),
     inside: [],
-    sure: false,
+    sure: true,
   },
   sgh: {
     no: 7,
     name: 'St. Gabriel Hall',
     short: 'SGH',
-    blocks: [block([427, 262], 34, 160)],
+    blocks: [bounds('sgh')],
+    outline: outline('sgh'),
     inside: [],
     sure: true,
   },
@@ -148,7 +196,8 @@ export const BUILDINGS = {
     no: 8,
     name: 'St. Raphael Hall',
     short: 'SRH',
-    blocks: [block([463, 242], 34, 160)],
+    blocks: [bounds('srh')],
+    outline: outline('srh'),
     inside: [],
     sure: true,
   },
@@ -156,7 +205,8 @@ export const BUILDINGS = {
     no: 9,
     name: 'St. Michael Hall',
     short: 'SMH',
-    blocks: [block([506, 213], 28, 135)],
+    blocks: [bounds('smh')],
+    outline: outline('smh'),
     inside: [],
     sure: true,
   },
@@ -172,7 +222,9 @@ export const BUILDINGS = {
     no: 11,
     name: 'Peter G. Nepomuceno Building',
     short: 'PGN',
-    blocks: [block([640, 318], 72, 112), block([583, 398], 110, 72)],
+    // the tower, then the podium
+    blocks: [part(-92, -69, -76, -8), part(-135, -92, -37, -8)],
+    outline: outline('pgn'),
     inside: ['OSSA - Scholarship & Grants Office', "School of Business and Accountancy Dean's Office", 'PGN Auditorium'],
     sure: true,
   },
@@ -180,7 +232,8 @@ export const BUILDINGS = {
     no: 12,
     name: 'Don Juan D. Nepomuceno Building',
     short: 'Main Bldg.',
-    blocks: [block([662, 522], 150, 135)],
+    blocks: [bounds('djdn')],
+    outline: outline('djdn'),
     inside: ["Registrar's Office", 'Finance Office', 'CKS Office'],
     sure: true,
   },
@@ -188,7 +241,9 @@ export const BUILDINGS = {
     no: 13,
     name: 'Archbishop Pedro Santos Building',
     short: 'APS',
-    blocks: [block([738, 202], 222, 32)],
+    // the long block on the back road, then the end that turns towards the lawn
+    blocks: [part(-67, 42, -76, -59), part(24, 42, -59, -34)],
+    outline: outline('aps'),
     inside: [],
     sure: true,
   },
@@ -196,7 +251,9 @@ export const BUILDINGS = {
     no: 14,
     name: 'Mamerto G. Nepomuceno Building',
     short: 'MGN',
-    blocks: [block([752, 470], 30, 110), block([735, 420], 75, 30)],
+    // the long block beside the Main Building, then its south end
+    blocks: [part(-90, -72, 16, 72), part(-96, -67, 72, 85)],
+    outline: outline('mgn'),
     inside: [
       "School of Nursing & Applied Medical Sciences Dean's Office",
       "College of Criminal Justice Education & Forensics Dean's Office",
@@ -207,7 +264,8 @@ export const BUILDINGS = {
     no: 15,
     name: 'Chapel of the Holy Guardian Angel',
     short: 'Chapel',
-    blocks: [block([835, 300], 105, 95)],
+    blocks: [bounds('chapel')],
+    outline: outline('chapel'),
     inside: [],
     sure: true,
   },
@@ -217,13 +275,14 @@ export const BUILDINGS = {
     short: 'Formation Center',
     blocks: [block([873, 262], 50, 44)],
     inside: [],
-    sure: true,
+    sure: false,
   },
   sjh: {
     no: 17,
     name: 'St. Joseph Hall Building',
     short: 'SJH',
-    blocks: [block([895, 442], 222, 38)],
+    blocks: [bounds('sjh')],
+    outline: outline('sjh'),
     inside: [
       "School of Education Dean's Office",
       "School of Arts and Sciences Dean's Office",
@@ -236,7 +295,9 @@ export const BUILDINGS = {
     no: 18,
     name: 'Sacred Heart Building',
     short: 'SH',
-    blocks: [block([882, 108], 95, 70)],
+    // the main block, then the two wings that come forward
+    blocks: [part(50, 100, -83, -65), part(47, 68, -65, -42), part(89, 103, -67, -52)],
+    outline: outline('sh'),
     inside: ["School of Engineering & Architecture Dean's Office"],
     sure: true,
   },
@@ -244,7 +305,8 @@ export const BUILDINGS = {
     no: 19,
     name: 'Covered Court',
     short: 'Covered Court',
-    blocks: [block([943, 165], 105, 105)],
+    blocks: [bounds('court')],
+    outline: outline('court'),
     inside: [],
     sure: true,
   },
@@ -252,7 +314,8 @@ export const BUILDINGS = {
     no: 20,
     name: 'Immaculate Heart Gymnasium',
     short: 'Gym',
-    blocks: [block([1042, 292], 82, 172)],
+    blocks: [bounds('gym')],
+    outline: outline('gym'),
     inside: [],
     sure: true,
   },
@@ -260,7 +323,9 @@ export const BUILDINGS = {
     no: 21,
     name: 'Immaculate Heart Gymnasium Annex',
     short: 'Gym Annex',
-    blocks: [block([1088, 372], 82, 24)],
+    // the annex wraps the gym: along its south side, then down its east side
+    blocks: [part(40, 102, 76, 87), part(94, 104, 5, 76)],
+    outline: outline('annex'),
     inside: [],
     sure: true,
   },
@@ -275,8 +340,8 @@ export const PLACES = {
   chapelNose: spot(CHAPEL_NOSE),
   /** the Holy Guardian Angel statue fountain in the middle of the rotunda */
   rotunda: spot(ROTUNDA),
-  /** where the chapel walkway meets the road along the lawn */
-  walkwayEnd: spot(WALKWAY_END),
+  /** where the chapel walkway meets the road along the lawn. Nudged onto the OSM path, clear of PGN. */
+  walkwayEnd: { u: -67, v: -2 },
   /** Sto. Rosario Gate, the main gate, at the street end of the Epiphany of Angels */
   mainGate: spot([338, 643]),
   /** the university seal set into the pavers */
@@ -291,14 +356,19 @@ export const PLACES = {
   courtyardGate: spot([640, 445]),
   /** behind SFJ and STL, where the parking lane meets the back road */
   westJunction: spot([430, 345]),
-  /** between PGN, GGN and the end of APS */
-  northJunction: spot([640, 255]),
-  /** the far end of APS, below Sacred Heart */
-  northEastJunction: spot([868, 172]),
+  /** on the back road (the street outside the halls), at the corner of GGN */
+  hallsCorner: { u: -60, v: -88 },
+  // The three below were read off the aerial photo at first and landed
+  // inside APS, the covered court and the gym once the real outlines came in
+  // from OSM. They now sit on the OSM paths beside those buildings.
+  /** east of PGN, on the path along the lawn side of APS */
+  northJunction: { u: -62, v: -54 },
+  /** the far end of APS, between it and the covered court, below Sacred Heart */
+  northEastJunction: { u: 43, v: -28 },
   /** the corner of the lawn nearest St. Joseph Hall */
   southJunction: spot([770, 432]),
-  /** in front of the gym, at the far end of St. Joseph Hall */
-  gymCorner: spot([1000, 338]),
+  /** in front of the gym, on the path at the far end of St. Joseph Hall */
+  gymCorner: { u: 38, v: 52 },
 } satisfies Record<string, Spot>;
 
 export type PlaceId = keyof typeof PLACES;

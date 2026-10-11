@@ -27,7 +27,7 @@ export const STREETS = {
   /** the parking lane from the back road down to the rotunda, STL on the far side */
   lane: { id: 'lane', path: [PLACES.westJunction, PLACES.rotunda], looks: 'NE', lead: 60, tail: 70 },
   /** the back road past the food court and the three halls, up to the corner of GGN */
-  halls: { id: 'halls', path: [PLACES.westJunction, PLACES.northJunction], looks: 'NW', lead: 300, tail: 60 },
+  halls: { id: 'halls', path: [PLACES.westJunction, PLACES.hallsCorner], looks: 'NW', lead: 300, tail: 60 },
   /** the same road carrying on along APS to Sacred Heart */
   aps: { id: 'aps', path: [PLACES.northJunction, PLACES.northEastJunction], looks: 'NW', lead: 60, tail: 260 },
   /** the road along the chapel lawn, in front of PGN */

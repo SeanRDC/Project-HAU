@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-12 (Minimap and map teleport)
+Last updated: 2026-10-12 (Real building outlines from OpenStreetMap)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -13,7 +13,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Later | Port to Godot 4 | Decided up front; do it once the prototype's look and feel are settled |
 | Language | Taglish with a little Kapampangan | Sounds like actual students here |
 | Scope | The whole campus outdoors first, interiors after | Done: all 21 buildings from the outside, on ten connected outdoor scenes. Interiors (other than the DJN lobby and courtyard) wait for reference photos of each one |
-| Layout | One-to-one with the real campus, anchored on the chapel | Positions are read off an aerial photo into `src/game/campus/plan.ts` and the scenes are placed from it. Scale set by one Google Earth measurement (140.36 m, rotunda statue to the chapel) |
+| Layout | One-to-one with the real campus, anchored on the chapel | Buildings come from OpenStreetMap (`npm run import:osm` writes `src/game/campus/osm.ts`); gates, junctions, GGN and the Formation Center from an aerial photo. All of it goes into `src/game/campus/plan.ts` and the scenes are placed from it. Scale set by one Google Earth measurement (140.36 m, rotunda statue to the chapel), which OSM confirmed to 0.6% |
 | Scale | 9 game pixels per metre | The DJN Building and the angel pedestals were already drawn at about this |
 | Camera per street | Each street picks the side with the most to see | A side view only shows one side of a road. Buildings behind the camera get a sign and a "look back" hotspot |
 | Saving | Autosave to the browser | No menus to build; Enter continues, N starts over |
@@ -74,7 +74,7 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * **Dialogue:** written by a non-native speaker. Proofread all Taglish and especially the Kapampangan phrases ("Mayap a gatpanapun", "Dakal a salamat").
 * **History facts** in the lobby dialogue (built 1940, founded 1933 with 78 students, used as barracks in the war) came from Wikipedia, the HAU history page and the Angeles City tourism site. Verify before showing this officially.
 * **Interiors** are an interpretation from a few photos, not the real floor plan.
-* **The campus plan.** Positions were read off one aerial photo by eye and are good to about 5 m. Buildings 1, 5 and 6 are guesses. Check the map (C key) against the real campus; `docs/campus-layout.md` lists everything that is still a guess.
+* **The campus plan.** Buildings now come from OpenStreetMap and are good to a metre or two. Still guesses: GGN and the Formation Center (not in OSM; trace them there and re-run `npm run import:osm`), building 1 (unnamed in OSM), and which of halls 7 and 8 is St. Gabriel (OSM and the 2022 campus map disagree). `docs/campus-layout.md` lists the rest.
 * **What the buildings look like.** Only the DJN, the Epiphany, the rotunda statue and the walkway were drawn from photos. Every other building uses a generic facade with guessed colours and floor counts.
 * **Door text** on every building lists offices from the 2022 campus map. Offices move; check them.
 * **Main Gate** was drawn without reference photos, from how campus gates here usually look. The name board, tent, tables and turnstile layout are guesses. Compare with the real gate and fix the art in `src/game/art/gate.ts`. The main gate is the Sto. Rosario Gate; the "GATE 1" lettering on the guard house at St. Barachiel Gate is left over and should be renamed.

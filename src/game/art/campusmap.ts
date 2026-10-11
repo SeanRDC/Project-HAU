@@ -1,15 +1,19 @@
 // The campus from above, as pixel art, for the campus map and the minimap.
-// Painted once per zoom level from campus/plan.ts, so moving a building there
-// moves it here too. The walkway runs left to right, like on the C map.
+// Painted once per zoom level from campus/plan.ts and the OpenStreetMap data
+// in campus/osm.ts, so moving a building there moves it here too. The
+// walkway runs left to right, like on the C map.
 //
 // Looked at from slightly south (the +v side), so every building shows a roof
 // and a strip of front wall with windows, the way the official campus map
-// shows them.
+// shows them. Buildings are painted pixel by pixel from their real outlines.
+//
+// Map data (c) OpenStreetMap contributors, ODbL 1.0.
 
 import { Ctx, makeCanvas } from '../../engine/display';
 import { rng } from '../../engine/math';
 import { disc, ellipse, line, rect, sign, signWidth } from '../../engine/pix';
-import { BUILDINGS, Block, Building, BuildingId, PLACES, Spot } from '../campus/plan';
+import { CAMPUS, NEIGHBOURS, Pt, ROADS } from '../campus/osm';
+import { BUILDINGS, Building, BuildingId, PLACES, Spot } from '../campus/plan';
 import { STREETS } from '../campus/streets';
 import { P, shade } from './palette';
 
@@ -27,10 +31,16 @@ const ROOF: Partial<Record<BuildingId, string>> = {
   annex: '#5d6070',
   warehouse: '#a8a196',
   sh: '#dfe3e6',
+  chapel: P.marbleHi,
 };
 const WHITE_ROOF = '#e9e5dc';
 
-// how much of the campus the map covers, in metres, with a margin all round
+const CITY = '#a9a796';
+const CITY_ROOF = '#b9b5a6';
+const ASPHALT = '#77737a';
+const PAVING = '#efe7d2';
+
+// how much of the map to cover, in metres: the campus and the streets round it
 const us: number[] = [];
 const vs: number[] = [];
 for (const [, b] of ALL) {
@@ -43,7 +53,7 @@ for (const p of Object.values(PLACES)) {
   us.push(p.u);
   vs.push(p.v);
 }
-const MARGIN = 10;
+const MARGIN = 16;
 export const BOUNDS = {
   u0: Math.min(...us) - MARGIN,
   v0: Math.min(...vs) - MARGIN,
@@ -59,82 +69,164 @@ export interface CampusPicture {
   at(s: Spot): [number, number];
 }
 
+type At = CampusPicture['at'];
+
 /** Paint the whole campus at `scale` pixels per metre. */
 export function paintCampus(scale: number): CampusPicture {
   const w = Math.ceil((BOUNDS.u1 - BOUNDS.u0) * scale);
   const h = Math.ceil((BOUNDS.v1 - BOUNDS.v0) * scale);
   const [canvas, ctx] = makeCanvas(w, h);
   const at = (s: Spot): [number, number] => [(s.u - BOUNDS.u0) * scale, (s.v - BOUNDS.v0) * scale];
+  const pt = (p: Pt) => at({ u: p[0], v: p[1] });
   const m = (metres: number) => Math.max(1, Math.round(metres * scale));
   const rand = rng(1933);
 
-  ground(ctx, w, h, rand);
+  // the town round the campus, then the campus grounds on top
+  rect(ctx, 0, 0, w, h, CITY);
+  for (const r of NEIGHBOURS) solid(ctx, r.map(pt), CITY_ROOF, Math.min(2, m(3)), false, true);
+  for (const r of CAMPUS) ground(ctx, r.map(pt), rand);
   lawns(ctx, at, m);
-  roads(ctx, at, m);
+  roads(ctx, at, pt, m);
   water(ctx, at, m);
-  const solid = ALL.flatMap(([, b]) => b.blocks.map((k) => box(k, at)));
-  trees(ctx, at, m, rand, solid);
+
+  const shapes = ALL.flatMap(([id, b]) => shapesOf(b).map((s) => ({ id, b, pts: s.map((p) => at(p)) })));
+  trees(ctx, at, m, rand, shapes.map((s) => s.pts), CAMPUS.map((r) => r.map(pt)));
   // further back first, so nearer buildings overlap the ones behind them
-  const order = ALL.flatMap(([id, b]) => b.blocks.map((k) => ({ id, b, k }))).sort((a, b) => a.k.at.v - b.k.at.v);
-  for (const { id, b, k } of order) building(ctx, id, b, k, at, m);
+  shapes.sort((a, b) => Math.max(...a.pts.map((p) => p[1])) - Math.max(...b.pts.map((p) => p[1])));
+  for (const { id, b, pts } of shapes) {
+    const roof = ROOF[id] ?? WHITE_ROOF;
+    const wall = id === 'chapel' ? Math.max(1, m(2)) : Math.max(2, m(5));
+    solid(ctx, pts, roof, wall, !b.sure);
+    if (id === 'djdn') skylight(ctx, b, at);
+    if (id === 'chapel') cross(ctx, at(PLACES.chapel));
+  }
   for (const [id, b] of ALL) badge(ctx, b, id, at);
   return { canvas, scale, at };
 }
 
-/** A block's footprint on the canvas: [x, y, w, h], whole pixels. */
-function box(k: Block, at: CampusPicture['at']): [number, number, number, number] {
-  const [cx, cy] = at(k.at);
-  const s = at({ u: BOUNDS.u0 + 1, v: BOUNDS.v0 })[0]; // pixels per metre
-  const w = Math.max(3, Math.round(k.along * s));
-  const h = Math.max(3, Math.round(k.across * s));
-  return [Math.round(cx - w / 2), Math.round(cy - h / 2), w, h];
+/** A building's footprint: its OSM outline if it has one, otherwise each block as a rectangle. */
+function shapesOf(b: Building): Spot[][] {
+  if (b.outline) return [b.outline];
+  return b.blocks.map((k) => {
+    const [u0, u1, v0, v1] = [k.at.u - k.along / 2, k.at.u + k.along / 2, k.at.v - k.across / 2, k.at.v + k.across / 2];
+    return [{ u: u0, v: v0 }, { u: u1, v: v0 }, { u: u1, v: v1 }, { u: u0, v: v1 }];
+  });
 }
 
-/** Paving everywhere, with a little speckle so it does not read as flat colour. */
-function ground(ctx: Ctx, w: number, h: number, rand: () => number): void {
-  rect(ctx, 0, 0, w, h, '#cbc3ae');
-  for (let i = 0; i < (w * h) / 14; i++) {
-    const c = rand() < 0.5 ? '#c1b9a3' : '#d4ccb8';
-    rect(ctx, rand() * w, rand() * h, 1, 1, c);
+/** Even-odd point in polygon. */
+function inside(pts: [number, number][], x: number, y: number): boolean {
+  let c = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i];
+    const [xj, yj] = pts[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) c = !c;
   }
+  return c;
 }
 
-/** The chapel lawn, the strips along the Epiphany and the beds in front of the Main Building. */
-function lawns(ctx: Ctx, at: CampusPicture['at'], m: (x: number) => number): void {
-  const [cx, cy] = at(PLACES.chapel);
-  ellipse(ctx, cx, cy, m(78), m(62), P.grassDark);
-  ellipse(ctx, cx, cy, m(76), m(60), P.grass);
-  // the Epiphany of Angels: grass both sides of the paved road
-  const [gx, gy] = at(PLACES.mainGate);
-  const [ex, ey] = at(PLACES.epiphanyEnd);
-  line(ctx, gx, gy, ex, ey, P.grass, m(16));
-  // the beds along the front of the Main Building
-  const [rx, ry] = at(PLACES.rotunda);
-  const [bx, by] = at(PLACES.barachielGate);
-  line(ctx, rx, ry + m(10), bx, by - m(4), P.grass, m(8));
-  // dither the grass edge lighter so it catches the light like the scenes do
-  ctx.globalAlpha = 0.5;
-  ellipse(ctx, cx - m(8), cy - m(8), m(40), m(28), P.grassHi);
-  ctx.globalAlpha = 1;
-}
-
-/** Every walkable street, plus the bits of road the scenes walk past. */
-function roads(ctx: Ctx, at: CampusPicture['at'], m: (x: number) => number): void {
-  const paths: Spot[][] = [
-    ...Object.values(STREETS).map((s) => s.path),
-    [PLACES.rotunda, PLACES.barachielGate],
-    [PLACES.mainGate, PLACES.fountainPlaza, PLACES.rotunda],
-  ];
-  const wide = m(7);
-  for (const [colour, width] of [['#b3a98f', wide + 2], ['#efe7d2', wide]] as const) {
-    for (const path of paths) {
-      for (let i = 0; i + 1 < path.length; i++) {
-        const [x0, y0] = at(path[i]);
-        const [x1, y1] = at(path[i + 1]);
-        line(ctx, x0, y0, x1, y1, colour, width);
+/**
+ * One building, pixel by pixel: a soft shadow, the front wall dropped below
+ * the roof with rows of windows, then the roof with a lit top edge and a dark
+ * right edge. `guess` dots the outline in maroon. `plain` leaves the windows
+ * off, for the town round the campus.
+ */
+function solid(ctx: Ctx, pts: [number, number][], roof: string, wall: number, guess: boolean, plain = false): void {
+  const xs = pts.map((p) => p[0]);
+  const ys = pts.map((p) => p[1]);
+  const x0 = Math.floor(Math.min(...xs)) - 1;
+  const x1 = Math.ceil(Math.max(...xs)) + 2;
+  const y0 = Math.floor(Math.min(...ys)) - 1;
+  const y1 = Math.ceil(Math.max(...ys)) + wall + 3;
+  // the roof sits `wall` pixels up from the footprint, so the wall shows below it
+  const isRoof = (x: number, y: number) => inside(pts, x + 0.5, y + 0.5 + wall);
+  const isBase = (x: number, y: number) => inside(pts, x + 0.5, y + 0.5);
+  const front = shade(roof === WHITE_ROOF ? P.trim : roof, -0.28);
+  const hi = shade(roof, 0.35);
+  const left = shade(roof, 0.12);
+  const right = shade(roof, -0.2);
+  for (let y = y0 - wall; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
+      if (isRoof(x, y)) {
+        let c = roof;
+        if (!isRoof(x, y - 1)) c = hi;
+        else if (!isRoof(x + 1, y)) c = right;
+        else if (!isRoof(x - 1, y)) c = left;
+        if (guess && (x + y) % 2 === 0 && (!isRoof(x, y - 1) || !isRoof(x + 1, y) || !isRoof(x - 1, y) || !isRoof(x, y + 1))) c = P.maroon;
+        ctx.fillStyle = c;
+        ctx.fillRect(x, y, 1, 1);
+      } else if (isBase(x, y)) {
+        // the front wall: windows on every other pixel, a dark line at the foot
+        const foot = !isBase(x, y + 1);
+        let c = foot ? shade(front, -0.3) : front;
+        if (!plain && !foot && x % 2 === 1 && y % 2 === 0 && isBase(x - 1, y) && isBase(x + 1, y)) c = P.glass;
+        ctx.fillStyle = c;
+        ctx.fillRect(x, y, 1, 1);
+      } else if (isBase(x - 1, y - 2)) {
+        ctx.fillStyle = 'rgba(30,24,40,0.28)';
+        ctx.fillRect(x, y, 1, 1);
       }
     }
   }
+}
+
+/** Paving inside the campus boundary, with a little speckle so it does not read as flat colour. */
+function ground(ctx: Ctx, ring: [number, number][], rand: () => number): void {
+  const xs = ring.map((p) => p[0]);
+  const ys = ring.map((p) => p[1]);
+  for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++) {
+    for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+      if (!inside(ring, x + 0.5, y + 0.5)) continue;
+      const r = rand();
+      ctx.fillStyle = r < 0.06 ? '#c1b9a3' : r < 0.12 ? '#d4ccb8' : '#cbc3ae';
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  // a maroon fence line round the edge
+  for (let i = 0; i < ring.length; i++) {
+    const [ax, ay] = ring[i];
+    const [bx, by] = ring[(i + 1) % ring.length];
+    line(ctx, ax, ay, bx, by, shade(P.maroon, -0.1));
+  }
+}
+
+/** The chapel lawn inside its loop road, the strips along the Epiphany, the beds in front of the Main Building. */
+function lawns(ctx: Ctx, at: At, m: (x: number) => number): void {
+  const [cx, cy] = at({ u: -8, v: 2 });
+  ellipse(ctx, cx, cy, m(54), m(52), P.grassDark);
+  ellipse(ctx, cx, cy, m(52), m(50), P.grass);
+  ctx.globalAlpha = 0.5;
+  ellipse(ctx, cx - m(8), cy - m(8), m(30), m(24), P.grassHi);
+  ctx.globalAlpha = 1;
+  // the Epiphany of Angels: grass both sides of the paved road
+  const [gx, gy] = at(PLACES.mainGate);
+  const [ex, ey] = at(PLACES.epiphanyEnd);
+  line(ctx, gx, gy, ex, ey, P.grass, m(14));
+  // the beds along the front of the Main Building
+  const [rx, ry] = at(PLACES.rotunda);
+  const [bx, by] = at(PLACES.barachielGate);
+  line(ctx, rx, ry + m(10), bx, by - m(4), P.grass, m(6));
+}
+
+/** The streets round the campus, the paths through it, and every street you can walk in the game. */
+function roads(ctx: Ctx, at: At, pt: (p: Pt) => [number, number], m: (x: number) => number): void {
+  const draw = (pts: [number, number][], colour: string, width: number) => {
+    for (let i = 0; i + 1 < pts.length; i++) line(ctx, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], colour, width);
+  };
+  const streets = ROADS.filter((r) => r.kind === 'street').map((r) => r.pts.map(pt));
+  const paths = ROADS.filter((r) => r.kind === 'path').map((r) => r.pts.map(pt));
+  const game = [
+    ...Object.values(STREETS).map((s) => s.path),
+    [PLACES.rotunda, PLACES.barachielGate],
+    [PLACES.mainGate, PLACES.fountainPlaza, PLACES.rotunda],
+  ].map((path) => path.map(at));
+  // town streets: asphalt with a pale centre line
+  for (const s of streets) draw(s, shade(ASPHALT, -0.15), m(9) + 2);
+  for (const s of streets) draw(s, ASPHALT, m(9));
+  if (m(9) >= 5) for (const s of streets) draw(s, '#9a969c', 1);
+  // campus paths and the game's streets: light paving with a darker kerb
+  const pw = Math.max(2, m(5));
+  for (const s of [...paths, ...game]) draw(s, '#b3a98f', pw + 2);
+  for (const s of [...paths, ...game]) draw(s, PAVING, pw);
   // the gates: two maroon posts each
   for (const g of [PLACES.mainGate, PLACES.barachielGate]) {
     const [x, y] = at(g);
@@ -144,7 +236,7 @@ function roads(ctx: Ctx, at: CampusPicture['at'], m: (x: number) => number): voi
 }
 
 /** The two fountains and the seal in the pavers. */
-function water(ctx: Ctx, at: CampusPicture['at'], m: (x: number) => number): void {
+function water(ctx: Ctx, at: At, m: (x: number) => number): void {
   for (const p of [PLACES.fountainPlaza, PLACES.rotunda]) {
     const [x, y] = at(p);
     disc(ctx, x, y, m(6) + 1, P.stone);
@@ -157,17 +249,20 @@ function water(ctx: Ctx, at: CampusPicture['at'], m: (x: number) => number): voi
   rect(ctx, sx, sy, 1, 1, P.maroon);
 }
 
-/** Round treetops on the grass, never on a building or the road. */
+/** Round treetops on the campus grass, never on a building. */
 function trees(
   ctx: Ctx,
-  at: CampusPicture['at'],
+  at: At,
   m: (x: number) => number,
   rand: () => number,
-  solid: [number, number, number, number][],
+  buildings: [number, number][][],
+  campus: [number, number][][],
 ): void {
   const r = Math.max(1, m(3));
+  const pad = r + 2;
   const free = (x: number, y: number) =>
-    !solid.some(([bx, by, bw, bh]) => x > bx - r - 1 && x < bx + bw + r + 1 && y > by - r - 1 && y < by + bh + r + 2);
+    campus.some((c) => inside(c, x, y)) &&
+    !buildings.some((b) => [[0, 0], [pad, 0], [-pad, 0], [0, pad], [0, -pad - 4]].some(([dx, dy]) => inside(b, x + dx, y + dy)));
   const tree = (x: number, y: number) => {
     if (!free(x, y)) return;
     disc(ctx, x + 1, y + 1, r, 'rgba(26,40,30,0.35)');
@@ -175,11 +270,11 @@ function trees(
     if (r > 1) disc(ctx, x - 1, y - 1, r - 1, P.leaf);
     rect(ctx, x - 1, y - 1, 1, 1, P.leafHi);
   };
-  // a ring round the chapel lawn
-  const [cx, cy] = at(PLACES.chapel);
-  for (let i = 0; i < 26; i++) {
-    const a = (i / 26) * Math.PI * 2 + rand() * 0.1;
-    tree(Math.round(cx + Math.cos(a) * m(70)), Math.round(cy + Math.sin(a) * m(55)));
+  // a ring just inside the chapel loop road
+  const [cx, cy] = at({ u: -8, v: 2 });
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2 + rand() * 0.1;
+    tree(Math.round(cx + Math.cos(a) * m(46)), Math.round(cy + Math.sin(a) * m(44)));
   }
   // rows down both sides of the Epiphany
   const [gx, gy] = at(PLACES.mainGate);
@@ -189,92 +284,37 @@ function trees(
   const ny = (ex - gx) / len;
   for (let t = 0.08; t < 1; t += 0.16) {
     for (const side of [-1, 1]) {
-      tree(Math.round(gx + (ex - gx) * t + nx * m(7) * side), Math.round(gy + (ey - gy) * t + ny * m(7) * side));
+      tree(Math.round(gx + (ex - gx) * t + nx * m(6) * side), Math.round(gy + (ey - gy) * t + ny * m(6) * side));
     }
   }
   // a few scattered about the rest of the grounds
-  for (let i = 0; i < 40; i++) {
-    const x = Math.round(rand() * ctx.canvas.width);
-    const y = Math.round(rand() * ctx.canvas.height);
-    tree(x, y);
-  }
+  for (let i = 0; i < 60; i++) tree(Math.round(rand() * ctx.canvas.width), Math.round(rand() * ctx.canvas.height));
 }
 
-/** One block: shadow, roof, then the front wall with rows of windows. */
-function building(
-  ctx: Ctx,
-  id: BuildingId,
-  b: Building,
-  k: Block,
-  at: CampusPicture['at'],
-  m: (x: number) => number,
-): void {
-  const [x, y, w, h] = box(k, at);
+/** The Main Building's courtyard skylight, a glass roof on the campus map. */
+function skylight(ctx: Ctx, b: Building, at: At): void {
+  const k = b.blocks[0];
+  const [x0, y0] = at({ u: k.at.u - k.along * 0.2, v: k.at.v - k.across * 0.28 });
+  const [x1, y1] = at({ u: k.at.u + k.along * 0.2, v: k.at.v + k.across * 0.05 });
+  if (x1 - x0 < 3) return;
+  rect(ctx, x0, y0, x1 - x0, y1 - y0, '#8fb6cc');
+  rect(ctx, x0, y0, x1 - x0, 1, '#c3dde9');
+}
 
-  if (id === 'chapel') {
-    const [cx, cy] = at(k.at);
-    const r = Math.round(Math.min(w, h) / 2);
-    disc(ctx, cx + 1, cy + 2, r, 'rgba(30,24,40,0.3)');
-    disc(ctx, cx, cy, r, P.trimDeep);
-    disc(ctx, cx, cy - 1, r, P.marbleHi);
-    disc(ctx, cx, cy - 1, Math.max(1, Math.round(r * 0.55)), P.trimShade);
-    disc(ctx, cx, cy - 1, Math.max(1, Math.round(r * 0.45)), P.marble);
-    // the cross on top
-    rect(ctx, cx, cy - 3, 1, 4, P.gold);
-    rect(ctx, cx - 1, cy - 2, 3, 1, P.gold);
-    return;
-  }
-
-  const roof = ROOF[id] ?? WHITE_ROOF;
-  const wall = Math.min(Math.max(2, m(5)), Math.floor(h / 2));
-  // soft shadow down and to the right
-  ctx.globalAlpha = 0.28;
-  rect(ctx, x + 1, y + 2, w, h, '#1e1830');
-  ctx.globalAlpha = 1;
-  // roof with a lit top edge and a dark rim
-  rect(ctx, x, y, w, h - wall, roof);
-  rect(ctx, x, y, w, 1, shade(roof, 0.35));
-  rect(ctx, x, y, 1, h - wall, shade(roof, 0.15));
-  rect(ctx, x + w - 1, y, 1, h - wall, shade(roof, -0.2));
-  // the Main Building's courtyard skylight, a glass roof on the campus map
-  if (id === 'djdn' && w > 8 && h > 8) {
-    rect(ctx, x + Math.round(w * 0.3), y + Math.round(h * 0.2), Math.round(w * 0.4), Math.round(h * 0.35), '#8fb6cc');
-    rect(ctx, x + Math.round(w * 0.3), y + Math.round(h * 0.2), Math.round(w * 0.4), 1, '#c3dde9');
-  }
-  // the gym and annex have rooftop vents in rows
-  if ((id === 'gym' || id === 'court') && w > 6) {
-    for (let yy = y + 2; yy < y + h - wall - 1; yy += 3) rect(ctx, x + 2, yy, w - 4, 1, shade(roof, -0.12));
-  }
-  // front wall with windows
-  const front = shade(roof === WHITE_ROOF ? P.trim : roof, -0.28);
-  rect(ctx, x, y + h - wall, w, wall, front);
-  for (let wy = y + h - wall; wy < y + h - 1; wy += 2) {
-    for (let wx = x + 1; wx < x + w - 1; wx += 2) rect(ctx, wx, wy, 1, 1, P.glass);
-  }
-  rect(ctx, x, y + h - 1, w, 1, shade(front, -0.3));
-
-  // a position that is still a guess gets a dotted outline, like a pencil sketch
-  if (!b.sure) {
-    ctx.fillStyle = P.maroon;
-    for (let i = 0; i < w; i += 2) {
-      ctx.fillRect(x + i, y - 1, 1, 1);
-      ctx.fillRect(x + i, y + h, 1, 1);
-    }
-    for (let i = 0; i < h; i += 2) {
-      ctx.fillRect(x - 1, y + i, 1, 1);
-      ctx.fillRect(x + w, y + i, 1, 1);
-    }
-  }
+/** The gold cross on the chapel roof. */
+function cross(ctx: Ctx, [x, y]: [number, number]): void {
+  rect(ctx, x, y - 6, 1, 5, P.gold);
+  rect(ctx, x - 1, y - 5, 3, 1, P.gold);
 }
 
 /** The number each building has on the official campus map, in a maroon tag like the real one. */
-function badge(ctx: Ctx, b: Building, id: BuildingId, at: CampusPicture['at']): void {
+function badge(ctx: Ctx, b: Building, id: BuildingId, at: At): void {
   if (b.no === undefined) return;
   const [cx, cy] = at(b.blocks[0].at);
   const text = String(b.no);
   const w = signWidth(text) + 4;
   const x = Math.round(cx - w / 2);
-  const y = Math.round(cy - 4 - (id === 'chapel' ? 0 : 1));
+  const y = Math.round(cy - 6 - (id === 'chapel' ? -4 : 0));
   rect(ctx, x + 1, y + 1, w, 9, 'rgba(20,10,30,0.4)');
   rect(ctx, x, y, w, 9, '#f4e9c8');
   rect(ctx, x + 1, y + 1, w - 2, 7, P.maroon);

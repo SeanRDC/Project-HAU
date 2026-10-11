@@ -17,7 +17,7 @@ import { GROUND, WALK, ambience, doorLight, endWall, farCity, frontPlants, lamp,
 const S = STREETS.halls;
 const WIDTH = streetWidth(S);
 const LANE_X = xOf(S, PLACES.westJunction);
-const CORNER_X = xOf(S, PLACES.northJunction);
+const CORNER_X = xOf(S, PLACES.hallsCorner);
 const [SHED_L, SHED_R] = frontage(S, BUILDINGS.warehouse.blocks[0]);
 const [FOOD_L] = frontage(S, BUILDINGS.foodcourt.blocks[0]);
 const [SGH_L] = frontage(S, BUILDINGS.sgh.blocks[0]);

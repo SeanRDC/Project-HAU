@@ -11,7 +11,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit",
-    "check:links": "node tools/check-links.mjs"
+    "check:links": "node tools/check-links.mjs",
+    "import:osm": "node tools/import-osm.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.0",
