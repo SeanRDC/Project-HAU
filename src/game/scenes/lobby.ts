@@ -262,10 +262,9 @@ function build(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanv
 
 function frontLayer(): HTMLCanvasElement {
   const [canvas, c] = makeCanvas(WIDTH * 1.3, VIEW_H);
-  // big potted palms close to the camera, only their tops in frame
-  for (const [i, x] of [70, 470, 800].entries()) {
-    palm(c, x, VIEW_H + 58, 96, 660 + i, SILHOUETTE);
-    bush(c, x + 14, VIEW_H + 30, 70, 40, 670 + i, SILHOUETTE);
+  // leafy plants close to the camera, only their tops in frame
+  for (const [i, x] of [60, 450, 820].entries()) {
+    bush(c, x, VIEW_H + 34, 110, 50, 670 + i, SILHOUETTE);
   }
   return canvas;
 }
