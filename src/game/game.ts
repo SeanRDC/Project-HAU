@@ -24,6 +24,8 @@ const FADE_TIME = 0.35;
 const START_HOUR = 16.4;
 const SAVE_KEY = 'project-hau-save-v1';
 const SAVE_EVERY = 10;
+/** a new day starts out on the street, in front of the main gate */
+const NEW_GAME = { area: 'gate', spawn: 'street' };
 
 /** blip pitch per speaker so voices are told apart by ear */
 const VOICES: Record<string, number> = {
@@ -285,6 +287,7 @@ export class Game implements GameApi {
       this.fade = Math.min(1, this.fade + dt / 0.6);
       if (this.fade >= 1) {
         this.mode = 'play';
+        const start = this.pending;
         this.pending = null;
         if (this.resume) {
           this.area = this.areas.get(this.resume.area)!;
@@ -292,13 +295,14 @@ export class Game implements GameApi {
           this.area.player.x = this.resume.x;
           this.area.camera.snap(this.resume.x);
         } else {
-          this.area.enter('start');
+          this.area = this.areas.get(start.area)!;
+          this.area.enter(start.spawn);
         }
         this.areaAge = 0;
         this.startIntro();
       }
     } else if (this.time > 0.6 && this.input.pressed('interact')) {
-      this.pending = { area: 'plaza', spawn: 'start' };
+      this.pending = { ...NEW_GAME };
       this.audio.chime();
     } else if (this.time > 0.6 && this.hasSave && this.input.pressed('fresh')) {
       // new game: forget the save and start the day again
@@ -311,7 +315,7 @@ export class Game implements GameApi {
       } catch {
         // nothing to clear
       }
-      this.pending = { area: 'plaza', spawn: 'start' };
+      this.pending = { ...NEW_GAME };
       this.audio.chime();
     }
     this.updateAudio(mood.night);
