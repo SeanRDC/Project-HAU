@@ -13,6 +13,13 @@
 * **On the map** the gate scene sits at the gate beside the Main Building instead of the gate at the end of the Epiphany of Angels. The scene is titled Side Gate; the checklist says "I-tap ang ID sa side gate".
 * **The Epiphany's gate** is now a closed gate you can look at. The Epiphany is reached from the rotunda, as before.
 
+## Later the same session: the traffic
+Sean asked to fix the cars at the bottom that were cut off by the edge of the screen, to make the jeepneys purple and green, and to make the vehicles bigger so they look right next to the people.
+* The side gate scene now sits 18 px higher on the screen than the other scenes (`GROUND` 188, `WALK` 224 in `scenes/gate.ts`), which gives the street 38 px below the kerb instead of 20.
+* Both lanes are whole on the screen. The far lane is drawn at 1.25 times and the near lane at 1.5 times, where before the far lane was at 1 and the near lane at 2 with only its top half in frame.
+* Jeepneys are purple or green, roof and all, with a gold and white stripe.
+* A jeepney in the far lane hides people's legs for a moment as it goes by. That is what a jeepney does.
+
 ## How it works
 * `Area.walkIn(who)` and the cutscene step `{ walkIn: 'you' }` (or an NPC id): the walker moves up the screen, shrinks and fades over about a second. An NPC is gone from the scene afterwards. `{ walk, who, run: true }` makes an NPC run.
 * `goIn` in `story/gate.ts` is the shared bit: arm down, step through, walk in. `tapId` adds the travel to the plaza.
