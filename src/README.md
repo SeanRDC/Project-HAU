@@ -43,7 +43,7 @@ Add these to the URL to jump straight somewhere while testing:
 
 Any of these also turns the save game off for that run, so testing never touches your real progress.
 
-In the game, **C** opens the campus map.
+In the game, **C** opens the campus map. W/S picks a place and E jumps there (a stand-in until the whole campus is joined up on foot; switch it off with `TELEPORT` in `game/ui/map.ts`). The minimap in the top right is the same map, zoomed in.
 
 ## Checking the Scene Links
 With `npm run dev` running, `npm run check:links` opens a headless Chrome, presses E on every hotspot in every area and reports what each one does. It fails if a way out points at an area or spawn point that does not exist, if a hotspot cannot be reached, or if a street has no way back. Run it after adding or re-joining scenes. It needs Chrome installed; see the top of `tools/check-links.mjs`.
