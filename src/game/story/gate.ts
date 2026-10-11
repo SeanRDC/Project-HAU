@@ -267,9 +267,9 @@ export function gateHotspots(x: GateSpots, cp: Checkpoint): Hotspot[] {
       id: 'plaza',
       x: x.plaza,
       range: 24,
-      label: 'Pumunta sa DJN driveway',
+      label: 'Pumasok sa Epiphany of Angels',
       height: 56,
-      use: (g) => g.travel('plaza', 'gate'),
+      use: (g) => g.travel('park', 'gate'),
     },
     {
       id: 'board',
