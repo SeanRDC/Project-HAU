@@ -8,11 +8,18 @@ import { Character, baseLook, character, isCharacter, setCharacter } from './art
 import { Sky } from './art/sky';
 import { Cutscene, CutsceneHost } from './cutscene';
 import { Dialogue } from './dialogue';
+import { buildAps } from './scenes/aps';
 import { buildCourtyard } from './scenes/courtyard';
 import { buildGate } from './scenes/gate';
+import { buildGym } from './scenes/gym';
+import { buildHalls } from './scenes/halls';
+import { buildLane } from './scenes/lane';
+import { buildLawn } from './scenes/lawn';
 import { buildLobby } from './scenes/lobby';
 import { buildPark } from './scenes/park';
 import { buildPlaza } from './scenes/plaza';
+import { buildSjh } from './scenes/sjh';
+import { buildWalkway } from './scenes/walkway';
 import { TASKS } from './story/tasks';
 import { AreaDef, GameApi, Line, Sound, Step } from './types';
 import { drawAreaTitle, drawClock, drawControlsHint, drawLetterbox, drawPrompt, drawToast } from './ui/hud';
@@ -78,7 +85,11 @@ export class Game implements GameApi {
   };
 
   constructor(private display: Display, private input: Input) {
-    const defs: AreaDef[] = [buildGate(), buildPlaza(), buildLobby(), buildCourtyard(), buildPark()];
+    const defs: AreaDef[] = [
+      buildGate(), buildPark(), buildPlaza(), buildLobby(), buildCourtyard(),
+      // the rest of the campus, outsides only for now
+      buildWalkway(), buildLane(), buildHalls(), buildAps(), buildLawn(), buildSjh(), buildGym(),
+    ];
     for (const d of defs) {
       const area = new Area(d, this.sky);
       area.onStep = () => this.audio.footstep(!d.outdoor);
