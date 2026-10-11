@@ -20,6 +20,7 @@ export class Dialogue {
   private age = 0;
   onBlip: ((who: string) => void) | null = null;
   onFlag: ((flag: string) => void) | null = null;
+  onPesos: ((amount: number, item: string) => void) | null = null;
   onSpeaker: ((who: string) => void) | null = null;
 
   get active(): boolean {
@@ -34,6 +35,7 @@ export class Dialogue {
 
   private next(): void {
     if (this.line?.set) this.onFlag?.(this.line.set);
+    if (this.line?.pesos) this.onPesos?.(this.line.pesos, this.line.item ?? '');
     this.line = this.queue.shift() ?? null;
     this.shown = 0;
     this.choice = 0;

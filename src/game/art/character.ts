@@ -24,6 +24,8 @@ export interface Look {
   sleeves?: boolean;
   /** slightly taller or shorter than the default, in pixels */
   height?: number;
+  /** umbrella colour, when it rains */
+  umbrella?: string;
 }
 
 export interface Pose {
@@ -170,10 +172,32 @@ export function drawCharacter(ctx: Ctx, x: number, feetY: number, look: Look, po
       break;
   }
 
-  // front arm goes over the torso
-  arm(ph + Math.PI, look.top, look.skin);
+  if (look.umbrella) {
+    umbrella(ctx, sh, look.umbrella);
+    // the front arm bends up to hold the handle instead of swinging
+    line(ctx, 0, sh + 1, 3, sh + 6, look.top, 2);
+    line(ctx, 3, sh + 6, 2, sh + 3, look.sleeves ? look.top : look.skin, 2);
+  } else {
+    // front arm goes over the torso
+    arm(ph + Math.PI, look.top, look.skin);
+  }
 
   ctx.restore();
+}
+
+/** An open umbrella over the head, held at x = 2. `sh` is the shoulder line. */
+function umbrella(ctx: Ctx, sh: number, c: string): void {
+  const dark = shade(c, -0.3);
+  const pole = '#3a3440';
+  line(ctx, 2, sh + 5, 2, sh - 14, pole, 1);
+  rect(ctx, 2, sh - 20, 1, 1, pole);
+  rect(ctx, -2, sh - 19, 9, 1, c);
+  rect(ctx, -5, sh - 18, 15, 1, c);
+  rect(ctx, -7, sh - 17, 19, 2, c);
+  rect(ctx, -3, sh - 18, 4, 1, shade(c, 0.35));
+  rect(ctx, -8, sh - 15, 21, 1, dark);
+  // scalloped rim between the ribs
+  for (let x = -8; x <= 12; x += 5) rect(ctx, x, sh - 14, 2, 1, dark);
 }
 
 /** Campus cat. Sits and flicks its tail; small enough to hand-place. */

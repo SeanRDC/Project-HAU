@@ -5,7 +5,7 @@ import { TASKS } from '../story/tasks';
 import { GOLD, INK, MAROON, PAPER, font, roundRect, wrap } from './draw';
 
 const W = 112;
-const H = 250;
+const H = 260;
 
 /** The player's phone: slides in from the right with the day's to-do list. */
 export class Phone {
@@ -20,7 +20,8 @@ export class Phone {
     this.slide = damp(this.slide, this.open ? 1 : 0, 14, dt);
   }
 
-  render(ui: Ctx, hour: number, has: (flag: string) => boolean): void {
+  /** `baon` is the pesos left and the last thing bought, if anything. */
+  render(ui: Ctx, hour: number, has: (flag: string) => boolean, baon: { pesos: number; last: string | null }): void {
     if (this.slide < 0.01) return;
     const x = VIEW_W - (W + 22) * this.slide;
     const y = (VIEW_H - H) / 2 + (1 - this.slide) * 10;
@@ -62,18 +63,30 @@ export class Phone {
       : 'san ka na?? nasa courtyard ako ng DJN, pasok ka lang sa main door';
     wrap(ui, msg, W - 30).slice(0, 3).forEach((s, i) => ui.fillText(s, 13, 41 + i * 6.5 - (i ? 0 : 0)));
 
+    // baon: what is left, and what it last went on
+    font(ui, 6, 700);
+    ui.fillStyle = INK;
+    ui.fillText(`Baon: ₱${baon.pesos}`, 10, 64);
+    if (baon.last) {
+      font(ui, 5, 500);
+      ui.fillStyle = '#7a7080';
+      ui.textAlign = 'right';
+      ui.fillText(baon.last, W - 10, 65);
+      ui.textAlign = 'left';
+    }
+
     // checklist
     font(ui, 8, 700);
     ui.fillStyle = MAROON;
-    ui.fillText('Unang Araw', 10, 66);
+    ui.fillText('Unang Araw', 10, 77);
     font(ui, 5.5, 500);
     ui.fillStyle = '#7a7080';
     const count = TASKS.filter((t) => has(t.flag)).length;
-    ui.fillText(`${count} sa ${TASKS.length} tapos na`, 10, 77);
-    roundRect(ui, 10, 85, W - 20, 3, 1.5, '#e2d8c4');
-    if (count > 0) roundRect(ui, 10, 85, ((W - 20) * count) / TASKS.length, 3, 1.5, GOLD);
+    ui.fillText(`${count} sa ${TASKS.length} tapos na`, 10, 88);
+    roundRect(ui, 10, 96, W - 20, 3, 1.5, '#e2d8c4');
+    if (count > 0) roundRect(ui, 10, 96, ((W - 20) * count) / TASKS.length, 3, 1.5, GOLD);
 
-    let ty = 95;
+    let ty = 106;
     for (const t of TASKS) {
       const ok = has(t.flag);
       roundRect(ui, 10, ty, 8, 8, 2, ok ? MAROON : '#e2d8c4');

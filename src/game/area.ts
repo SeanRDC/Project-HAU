@@ -10,8 +10,13 @@ import { Particle, Particles } from '../engine/particles';
 import { Mood } from '../engine/tod';
 import { CHAR_HEIGHT, Look, drawCat, drawCharacter, drawShadow } from './art/character';
 import { baseLook } from './art/player';
+import { P } from './art/palette';
 import { Sky } from './art/sky';
 import { AreaDef, AreaRuntime, AreaView, GameApi, Layer, NpcDef } from './types';
+import { RAINING } from './weather';
+
+/** umbrella colours for students, picked by NPC */
+const UMBRELLAS = ['#2f5f8a', '#c8553d', '#3f7a52', '#6a4a8a', '#e3b33b', '#22202a'];
 
 const WALK_SPEED = 46;
 const RUN_SPEED = 84;
@@ -48,6 +53,8 @@ export class Area implements AreaRuntime {
   readonly npcs: Npc[];
   /** what the player is wearing right now; cutscenes can swap it (bag off, etc) */
   playerLook: Look = baseLook();
+  /** how hard it is raining, 0..1, set by the game every frame */
+  rain = 0;
   /** set by a cutscene: the player walks here on their own, then stops */
   walkTo: number | null = null;
   private particles = new Particles();
@@ -293,7 +300,12 @@ export class Area implements AreaRuntime {
         continue;
       }
       drawShadow(ctx, sx, w.y);
-      drawCharacter(ctx, sx, w.y, npc ? npc.look : this.playerLook, {
+      let look = npc ? npc.look : this.playerLook;
+      // out in the rain, you and the students put up umbrellas; guards and vendors have their tents
+      if (def.outdoor && this.rain > RAINING && (!npc || look.lace)) {
+        look = { ...look, umbrella: npc ? UMBRELLAS[npc.id.length % UMBRELLAS.length] : P.maroon };
+      }
+      drawCharacter(ctx, sx, w.y, look, {
         facing: w.facing,
         phase: w.phase,
         stride: w.stride,

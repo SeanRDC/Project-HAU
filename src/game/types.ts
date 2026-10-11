@@ -16,6 +16,10 @@ export interface Line {
   choices?: Choice[];
   /** flag to set once this line has been shown */
   set?: string;
+  /** pesos to take out of (negative) or put into the player's baon once this line has been shown */
+  pesos?: number;
+  /** what the money was for, shown on the phone, e.g. 'Taho' */
+  item?: string;
 }
 
 /** Short synthesised sound effects a cutscene can ask for. */
@@ -48,6 +52,10 @@ export interface GameApi {
   say(lines: Line[]): void;
   travel(area: string, spawn: string): void;
   hour(): number;
+  /** how much baon the player has left, in pesos */
+  pesos(): number;
+  /** true while it is raining hard enough to notice */
+  raining(): boolean;
   /** start a cutscene; the player has no control until it ends */
   play(steps: Step[]): void;
 }

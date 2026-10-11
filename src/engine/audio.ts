@@ -9,6 +9,8 @@ export class Audio {
   private music!: GainNode;
   private wind!: GainNode;
   private water!: GainNode;
+  private rain!: GainNode;
+  private rainFilter!: BiquadFilterNode;
   private noise!: AudioBuffer;
   private nextNote = 0;
   private nextChirp = 0;
@@ -29,8 +31,10 @@ export class Audio {
     const data = this.noise.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
 
-    this.wind = this.loopNoise('lowpass', 420, 0.05);
-    this.water = this.loopNoise('bandpass', 2600, 0);
+    this.wind = this.loopNoise('lowpass', 420, 0.05).gain;
+    this.water = this.loopNoise('bandpass', 2600, 0).gain;
+    // rain: broad hiss, pulled down to a dull roar on the roof when you are indoors
+    ({ gain: this.rain, filter: this.rainFilter } = this.loopNoise('lowpass', 5200, 0));
 
     // music goes through a feedback delay for a bit of space
     this.music = ac.createGain();
@@ -47,7 +51,7 @@ export class Audio {
     this.nextNote = ac.currentTime + 1;
   }
 
-  private loopNoise(type: BiquadFilterType, freq: number, gain: number): GainNode {
+  private loopNoise(type: BiquadFilterType, freq: number, gain: number): { gain: GainNode; filter: BiquadFilterNode } {
     const ac = this.ac!;
     const src = ac.createBufferSource();
     src.buffer = this.noise;
@@ -59,7 +63,7 @@ export class Audio {
     g.gain.value = gain;
     src.connect(filter).connect(g).connect(this.master);
     src.start();
-    return g;
+    return { gain: g, filter };
   }
 
   toggleMute(): void {
@@ -83,13 +87,15 @@ export class Audio {
 
   /**
    * Call every frame. `water` is 0..1 for how close the fountain is,
-   * `night` 0..1, `indoor` softens the wind.
+   * `night` 0..1, `indoor` softens the wind and muffles the rain, `rain` 0..1.
    */
-  update(water: number, night: number, indoor: boolean): void {
+  update(water: number, night: number, indoor: boolean, rain = 0): void {
     const ac = this.ac;
     if (!ac) return;
     const now = ac.currentTime;
     this.water.gain.setTargetAtTime(water * 0.07, now, 0.2);
+    this.rain.gain.setTargetAtTime(rain * (indoor ? 0.05 : 0.11), now, 0.6);
+    this.rainFilter.frequency.setTargetAtTime(indoor ? 700 : 5200, now, 0.3);
     this.wind.gain.setTargetAtTime(indoor ? 0.015 : 0.05, now, 0.5);
 
     if (now >= this.nextNote) {
@@ -182,6 +188,14 @@ export class Audio {
     this.burst(now, 0.05, 2200, 0.14);
     this.tone(110, now, 0.08, 0.08, 'triangle', this.master);
     this.burst(now + 0.32, 0.07, 1400, 0.1);
+  }
+
+  /** Coins changing hands: two bright clinks. */
+  coin(): void {
+    if (!this.ac) return;
+    const now = this.ac.currentTime;
+    this.tone(1975, now, 0.12, 0.04, 'triangle', this.master);
+    this.tone(2637, now + 0.07, 0.22, 0.04, 'triangle', this.master);
   }
 
   /** A zipper going one way and back. */
