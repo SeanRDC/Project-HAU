@@ -1,0 +1,108 @@
+import { Ctx } from '../engine/display';
+import { RGB } from '../engine/math';
+import { Particle } from '../engine/particles';
+import { Mood } from '../engine/tod';
+import { Look } from './art/character';
+
+export interface Choice {
+  text: string;
+  then: Line[];
+}
+
+export interface Line {
+  /** npc id, 'you' for the player, or '' for narration */
+  who: string;
+  text: string;
+  choices?: Choice[];
+  /** flag to set once this line has been shown */
+  set?: string;
+}
+
+/** What scenes are allowed to ask the game to do. */
+export interface GameApi {
+  has(flag: string): boolean;
+  set(flag: string): void;
+  say(lines: Line[]): void;
+  travel(area: string, spawn: string): void;
+  hour(): number;
+}
+
+export interface Layer {
+  canvas: HTMLCanvasElement;
+  /** 1 moves with the world, smaller is further away, larger is in front of the camera */
+  parallax: number;
+  /** 0..1, how much the layer fades into the sky colour */
+  haze?: number;
+  /** drawn over the characters */
+  front?: boolean;
+}
+
+export interface AreaLight {
+  x: number;
+  y: number;
+  r: number;
+  color: RGB;
+  strength: number;
+  /** on during the day too (indoor lights, sun through a door) */
+  always?: boolean;
+  /** only on during the day, fades out at night (sunlight) */
+  daylight?: boolean;
+}
+
+export interface Hotspot {
+  id: string;
+  x: number;
+  range: number;
+  label: string;
+  /** how far above the walk line the prompt floats */
+  height?: number;
+  use(game: GameApi): void;
+}
+
+export interface NpcDef {
+  id: string;
+  name: string;
+  look: Look;
+  x: number;
+  /** offset from the walk line, negative is further back */
+  depth?: number;
+  facing: 1 | -1;
+  /** min and max x to stroll between; stands still if missing */
+  wander?: [number, number];
+  cat?: boolean;
+  talk(game: GameApi): Line[];
+}
+
+export interface AreaView {
+  time: number;
+  camX: number;
+  mood: Mood;
+}
+
+export interface AreaDef {
+  id: string;
+  /** shown briefly when you walk in */
+  title: string;
+  subtitle: string;
+  width: number;
+  walkY: number;
+  bounds: [number, number];
+  outdoor: boolean;
+  layers: Layer[];
+  /** lit windows etc, added on top once it gets dark */
+  glow?: HTMLCanvasElement;
+  lights: AreaLight[];
+  hotspots: Hotspot[];
+  npcs: NpcDef[];
+  spawns: Record<string, { x: number; facing: 1 | -1 }>;
+  /** per-frame logic, mostly particle emitters */
+  update?(dt: number, area: AreaRuntime, view: AreaView): void;
+  /** animated things drawn behind the characters */
+  drawBack?(ctx: Ctx, view: AreaView): void;
+}
+
+/** The bits of the running area that scene callbacks need. */
+export interface AreaRuntime {
+  spawnParticle(p: Partial<Particle>): void;
+  playerX(): number;
+}
