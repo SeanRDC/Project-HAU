@@ -29,6 +29,10 @@ interface Walker {
   vx: number;
   phase: number;
   stride: number;
+  /** set while walking away from the camera through a doorway: 0 just starting, 1 gone inside */
+  away?: number | null;
+  /** how many seconds that walk takes */
+  awayTime?: number;
 }
 
 interface Npc extends Walker {
@@ -37,7 +41,15 @@ interface Npc extends Walker {
   target: number | null;
   /** set by a cutscene: walk here no matter what, then stand */
   goal: number | null;
+  /** run to the goal instead of walking */
+  hurry?: boolean;
+  /** has walked in through a doorway and left the scene */
+  gone?: boolean;
 }
+
+/** how far up the screen someone moves while walking in through a doorway, and how much smaller they get */
+const AWAY_RISE = 15;
+const AWAY_SHRINK = 0.26;
 
 /** Something the player can press E on right now. */
 export interface Target {
@@ -89,19 +101,43 @@ export class Area implements AreaRuntime {
     this.player.facing = s.facing;
     this.player.vx = 0;
     this.player.stride = 0;
+    this.player.away = null;
     this.walkTo = null;
     this.playerLook = baseLook();
     this.camera.snap(s.x);
   }
 
-  /** Cutscene helper: send someone ('you' or an NPC id) walking to x. */
-  send(who: string, x: number): void {
+  /** Cutscene helper: send someone ('you' or an NPC id) walking to x. An NPC told to `hurry` runs. */
+  send(who: string, x: number, hurry = false): void {
     if (who === 'you') {
       this.walkTo = x;
       return;
     }
     const n = this.npcs.find((n) => n.def.id === who);
-    if (n) n.goal = x;
+    if (n) {
+      n.goal = x;
+      n.hurry = hurry;
+    }
+  }
+
+  /**
+   * Cutscene helper: someone turns away from the camera and walks in through
+   * the doorway behind them, getting smaller and fading as they go. An NPC is
+   * gone from the scene afterwards; the player stays out of sight until the
+   * scene is entered again.
+   */
+  walkIn(who: string, time = 1.2): void {
+    const w = who === 'you' ? this.player : this.npcs.find((n) => n.def.id === who);
+    if (!w) return;
+    w.away = 0;
+    w.awayTime = time;
+    w.vx = 0;
+  }
+
+  /** True while someone sent in by walkIn() is still on the way. */
+  walkingIn(who: string): boolean {
+    const w = who === 'you' ? this.player : this.npcs.find((n) => n.def.id === who);
+    return !!w && w.away != null && w.away < 1;
   }
 
   /** Cutscene helper: put an NPC somewhere instantly. */
@@ -111,6 +147,8 @@ export class Area implements AreaRuntime {
     n.x = x;
     n.goal = null;
     n.target = null;
+    n.gone = false;
+    n.away = null;
     if (facing) n.facing = facing;
   }
 
@@ -142,7 +180,7 @@ export class Area implements AreaRuntime {
   anchor(who: string): { x: number; y: number } | null {
     if (who === 'you') return { x: this.player.x - this.camera.x, y: this.player.y - CHAR_HEIGHT - 4 };
     const n = this.npcs.find((n) => n.def.id === who);
-    if (!n) return null;
+    if (!n || n.gone) return null;
     return { x: n.x - this.camera.x, y: n.y - (n.def.cat ? 16 : CHAR_HEIGHT + 4 + (n.def.look.height ?? 0)) };
   }
 
@@ -165,7 +203,7 @@ export class Area implements AreaRuntime {
     let bestD = Infinity;
     for (const n of this.npcs) {
       const d = Math.abs(n.x - this.player.x);
-      if (d < 24 && d < bestD) {
+      if (!n.gone && d < 24 && d < bestD) {
         bestD = d;
         best = {
           label: n.def.cat ? `Lapitan si ${n.def.name}` : `Kausapin si ${n.def.name}`,
@@ -189,6 +227,16 @@ export class Area implements AreaRuntime {
   }
 
   private advance(w: Walker, dt: number): void {
+    if (w.away != null) {
+      // walking in: the legs keep going while they move away from the camera
+      if (w.away < 1) {
+        w.away = Math.min(1, w.away + dt / (w.awayTime ?? 1.2));
+        w.stride = 1;
+        w.phase += dt * 9;
+        if (w.away >= 1 && 'def' in w) (w as Npc).gone = true;
+      }
+      return;
+    }
     const before = Math.floor(w.phase / Math.PI);
     w.x += w.vx * dt;
     const moving = Math.abs(w.vx) > 3;
@@ -231,7 +279,7 @@ export class Area implements AreaRuntime {
           n.wait = 3 + Math.random() * 4;
         } else {
           n.facing = d > 0 ? 1 : -1;
-          n.vx = n.facing * 26;
+          n.vx = n.facing * (n.hurry ? RUN_SPEED : 26);
         }
       } else if (n.def.wander && !locked) {
         if (n.target === null) {
@@ -294,6 +342,7 @@ export class Area implements AreaRuntime {
       const npc = 'def' in w ? w.def : null;
       const sx = w.x - cam;
       if (sx < -30 || sx > VIEW_W + 30) continue;
+      if (('gone' in w && w.gone) || w.away === 1) continue;
       if (npc?.cat) {
         drawShadow(ctx, sx, w.y, 6);
         drawCat(ctx, sx, w.y, this.time);
@@ -305,12 +354,19 @@ export class Area implements AreaRuntime {
       if (def.outdoor && this.rain > RAINING && (!npc || look.lace)) {
         look = { ...look, umbrella: npc ? UMBRELLAS[npc.id.length % UMBRELLAS.length] : P.maroon };
       }
-      drawCharacter(ctx, sx, w.y, look, {
-        facing: w.facing,
-        phase: w.phase,
-        stride: w.stride,
-        time: this.time + w.x * 0.37,
-      });
+      const pose = { facing: w.facing, phase: w.phase, stride: w.stride, time: this.time + w.x * 0.37 };
+      if (w.away != null) {
+        // further from the camera with every step: higher up, smaller, and lost in the shade of the doorway
+        const k = smooth(w.away);
+        ctx.save();
+        ctx.globalAlpha = 1 - k * k;
+        ctx.translate(Math.round(sx), Math.round(w.y - AWAY_RISE * k));
+        ctx.scale(1 - AWAY_SHRINK * k, 1 - AWAY_SHRINK * k);
+        drawCharacter(ctx, 0, 0, look, pose);
+        ctx.restore();
+        continue;
+      }
+      drawCharacter(ctx, sx, w.y, look, pose);
     }
 
     def.drawFront?.(ctx, view);

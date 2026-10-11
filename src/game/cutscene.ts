@@ -38,6 +38,7 @@ export class Cutscene {
     if (!s) return false;
     if ('say' in s) return host.talking();
     if ('walk' in s) return !s.together && host.area().walking(s.who ?? 'you');
+    if ('walkIn' in s) return !s.together && host.area().walkingIn(s.walkIn);
     if ('pause' in s) return (this.timer -= dt) > 0;
     return false;
   }
@@ -46,7 +47,11 @@ export class Cutscene {
   private begin(s: Step, host: CutsceneHost): boolean {
     const area = host.area();
     if ('walk' in s) {
-      area.send(s.who ?? 'you', s.walk);
+      area.send(s.who ?? 'you', s.walk, s.run);
+      return !s.together;
+    }
+    if ('walkIn' in s) {
+      area.walkIn(s.walkIn, s.time);
       return !s.together;
     }
     if ('say' in s) {

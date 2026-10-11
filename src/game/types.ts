@@ -31,8 +31,10 @@ export type Sound = 'beep' | 'buzz' | 'turnstile' | 'zip';
  * seconds. The rest happen instantly.
  */
 export type Step =
-  /** walk 'you' (default) or an NPC to x; `together` starts the next step right away */
-  | { walk: number; who?: string; together?: boolean }
+  /** walk 'you' (default) or an NPC to x; `together` starts the next step right away; `run` makes an NPC run there */
+  | { walk: number; who?: string; together?: boolean; run?: boolean }
+  /** 'you' or an NPC turns and walks in through the doorway behind them, out of the scene, taking `time` seconds */
+  | { walkIn: string; time?: number; together?: boolean }
   /** put an NPC somewhere instantly */
   | { place: string; x: number; facing?: 1 | -1 }
   /** turn 'you' or an NPC to face left (-1) or right (1) */
