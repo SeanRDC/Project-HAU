@@ -70,7 +70,7 @@ export function lobbyHotspots(x: { entrance: number; bust: number; board: number
       height: 92,
       use: (g) =>
         g.say([
-          { who: '', text: '"Juan D. Nepomuceno, 1892-1973."' },
+          { who: '', text: 'Nakaukit sa pedestal: "Juan D. Nepomuceno, 1892-1973. Ad Majorem Dei Gloriam."' },
           { who: '', text: 'Siya at si Fr. Pedro Santos ang nagtatag ng Holy Angel noong 1933. Pitumpu\'t walong estudyante lang sila noon.' },
           { who: 'you', text: 'Magandang hapon po, Don Juan. Freshman po. Paki-ingatan po ang grades ko.', set: 'saw_bust' },
         ]),
