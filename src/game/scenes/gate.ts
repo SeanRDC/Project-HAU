@@ -1,36 +1,48 @@
-// The main gate on Sto. Rosario St. You come in from the street on the right,
-// pass under the gate, get your bag checked under the tent, tap your ID at the
-// turnstile, and walk on left to the boom barrier by Gate 1 and the DJN drive.
+// The gate on Sto. Rosario St. You start out on the street on the right, with
+// the traffic going by between you and the camera, pass the gatehouse, get
+// your bag checked under the tent, tap your ID at the turnstile, and walk on
+// left to the drive in front of the Main Building.
 
 import { Ctx, VIEW_H, VIEW_W, makeCanvas } from '../../engine/display';
 import { css, damp, hex, rng } from '../../engine/math';
 import { disc, line, poly, px, rect } from '../../engine/pix';
 import {
-  ARCH_WIDTH, ReaderState, bagOnTable, bagTable, canopy, gateArch, idCard, inspectionSign, noIdBoard, perimeterWall,
-  railing, readerScreen, turnstile, turnstileArm,
+  ARCH_WIDTH, BARRICADE_W, ReaderState, bagOnTable, bagTable, barricade, canopy, gateArch, idCard, inspectionSign,
+  noIdBoard, perimeterWall, railing, readerScreen, turnstile, turnstileArm,
 } from '../art/gate';
 import { P, shade } from '../art/palette';
 import { baseLook } from '../art/player';
 import { SILHOUETTE, boomBarrier, bush, foliage, hedge, lampPost, palm, pot, tree } from '../art/props';
+import { Sprite, VehicleKind, drawVehicle, lampAt, vehicleSprite } from '../art/traffic';
 import { Checkpoint, gateArrival, gateHotspots, gateNpcs } from '../story/gate';
-import { AreaDef, AreaLight } from '../types';
+import { AreaDef, AreaLight, Layer } from '../types';
 
-const WIDTH = 1010;
+const WIDTH = 1180;
 const GROUND = 206;
 const WALK = 242;
 /** the line the gate furniture stands on, just behind where people walk */
 const BACK = WALK - 6;
 
 const PLAZA_X = 34;
+/** the path off to the Epiphany of Angels, a little way in */
+const PARK_X = 104;
 const BOOM_X = 56;
 const BOARD_X = 372;
 const TURNSTILE_X = 440;
 const TABLE_A = 556;
 const TABLE_B = 646;
 const CANOPY: [number, number] = [508, 700];
-const SIGN_X = 718;
-const ARCH_X = 800;
-const STREET_X = 992;
+const SIGN_X = 710;
+const ARCH_X = 834;
+const STREET_X = 1160;
+/** where the campus drive ends and the public sidewalk and street begin; a big tree stands in front of the join */
+const KERB_X = 740;
+/** the two lanes of the street: where the wheels run, how big the vehicles are drawn, which way they go */
+const LANES = [
+  { base: VIEW_H - 4, scale: 1, dir: -1 as const, speed: 76, every: 3.2 },
+  // the near lane is right under the camera: twice the size, only the top half in frame
+  { base: VIEW_H + 30, scale: 2, dir: 1 as const, speed: 170, every: 7 },
+];
 
 function layerWidth(parallax: number): number {
   return Math.ceil(VIEW_W + (WIDTH - VIEW_W) * parallax) + 4;
@@ -67,7 +79,7 @@ function midLayer(): HTMLCanvasElement {
   const archAt = ARCH_X * 0.42;
 
   // banded high-rise, same build as the ones behind the DJN
-  const tower = (x: number, top: number, w: number, floors: number) => {
+  const tower = (x: number, top: number, w: number, floors: number, glass = ['#6b8fc4', '#8fb1dc']) => {
     const fh = Math.floor((GROUND - top) / floors);
     rect(c, x, top, w, GROUND - top, '#70747e');
     for (let f = 0; f < floors; f++) {
@@ -75,15 +87,17 @@ function midLayer(): HTMLCanvasElement {
       rect(c, x - 3, y, w + 6, 5, '#ecebe6');
       rect(c, x - 3, y + 5, w + 6, 1, '#b9b8b6');
       rect(c, x, y + 6, w, fh - 6, '#565c6c');
-      for (let wx = x + 3; wx < x + w - 6; wx += 9) rect(c, wx, y + 8, 6, fh - 10, rand() > 0.25 ? '#6b8fc4' : '#8fb1dc');
+      for (let wx = x + 3; wx < x + w - 6; wx += 9) rect(c, wx, y + 8, 6, fh - 10, rand() > 0.25 ? glass[0] : glass[1]);
     }
     rect(c, x + w - 10, top, 13, GROUND - top, '#5a5e68');
   };
   tower(40, 60, 130, 8);
-  tower(archAt - 150, 88, 96, 6);
+  // the green glass of SFJ over the fence to the left of the gatehouse, a banded block to the right
+  tower(archAt - 150, 84, 104, 6, ['#35a394', '#6fcdbc']);
+  tower(archAt + 96, 96, 150, 6, ['#55617a', '#6f7d98']);
 
   // two-storey shophouses across the side street
-  for (let x = archAt + 60; x < canvas.width; x += 70) {
+  for (let x = archAt + 270; x < canvas.width; x += 70) {
     const h = 50 + rand() * 20;
     rect(c, x, GROUND - h, 64, h, rand() > 0.5 ? '#d8c9a2' : '#c9b8a8');
     rect(c, x, GROUND - h, 64, 3, '#efe6d2');
@@ -91,14 +105,14 @@ function midLayer(): HTMLCanvasElement {
     rect(c, x + 4, GROUND - 26, 56, 4, rand() > 0.5 ? '#3d6a8a' : P.maroon); // awning
     rect(c, x + 6, GROUND - 22, 52, 22, '#5a5462');
   }
-  for (let x = -10; x < archAt; x += 44 + rand() * 50) tree(c, x, GROUND + 2, 50 + rand() * 30, 18 + rand() * 10, 960 + Math.round(x));
+  for (let x = -10; x < archAt + 250; x += 44 + rand() * 50) tree(c, x, GROUND + 2, 50 + rand() * 30, 18 + rand() * 10, 960 + Math.round(x));
   rect(c, 0, GROUND, canvas.width, VIEW_H - GROUND, P.grassDark);
   return canvas;
 }
 
 function ground(c: Ctx): void {
   const rand = rng(8);
-  const inside = ARCH_X;
+  const inside = KERB_X;
   // inside: sidewalk then the pebble-wash driveway, like the DJN drive
   rect(c, 0, GROUND, inside, 14, P.pave);
   rect(c, 0, GROUND, inside, 1, shade(P.pave, 0.35));
@@ -116,17 +130,22 @@ function ground(c: Ctx): void {
   // painted lane through the checkpoint
   for (let x = TURNSTILE_X + 14; x < CANOPY[1]; x += 10) rect(c, x, WALK + 4, 6, 1, '#d8c23a');
 
-  // outside: a wide public sidewalk, the curb, then Sto. Rosario St.
+  // outside: the public sidewalk, the kerb, then the concrete of Sto. Rosario St.
   const w = WIDTH - inside;
-  rect(c, inside, GROUND, w, 44, '#b3ab9c');
+  rect(c, inside, GROUND, w, 40, '#b3ab9c');
   rect(c, inside, GROUND, w, 1, shade('#b3ab9c', 0.35));
-  for (let x = inside; x < WIDTH; x += 18) rect(c, x, GROUND + 1, 1, 43, '#9c9487');
-  for (let y = GROUND + 11; y < GROUND + 44; y += 11) rect(c, inside, y, w, 1, '#9c9487');
-  rect(c, inside, GROUND + 44, w, 3, P.stoneHi);
-  rect(c, inside, GROUND + 47, w, 2, P.stoneDark);
-  rect(c, inside, GROUND + 49, w, VIEW_H - GROUND - 49, '#4f4c55');
-  for (let i = 0; i < 500; i++) px(c, inside + rand() * w, GROUND + 50 + rand() * 20, rand() > 0.5 ? '#5d5a63' : '#433f48');
-  for (let x = inside + 10; x < WIDTH; x += 26) rect(c, x, VIEW_H - 8, 14, 2, '#e8e2d2');
+  for (let x = inside; x < WIDTH; x += 18) rect(c, x, GROUND + 1, 1, 39, '#9c9487');
+  for (let y = GROUND + 10; y < GROUND + 40; y += 10) rect(c, inside, y, w, 1, '#9c9487');
+  rect(c, inside, GROUND + 40, w, 2, P.stoneHi);
+  rect(c, inside, GROUND + 42, w, 2, P.stoneDark);
+  const street = '#8b8a8f';
+  rect(c, inside, GROUND + 44, w, VIEW_H - GROUND - 44, street);
+  rect(c, inside, GROUND + 44, w, 4, shade(street, 0.12));
+  rect(c, inside, GROUND + 56, w, 8, shade(street, -0.1));
+  for (let i = 0; i < 700; i++) px(c, inside + rand() * w, GROUND + 45 + rand() * 19, rand() > 0.5 ? shade(street, 0.2) : shade(street, -0.2));
+  // the joints between the slabs, and the worn line down the middle
+  for (let x = inside + 30; x < WIDTH; x += 64) line(c, x, GROUND + 44, x - 8, VIEW_H, shade(street, -0.25), 1);
+  for (let x = inside + 10; x < WIDTH; x += 30) rect(c, x, GROUND + 55, 16, 1, '#dcd8c8');
 }
 
 function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement } {
@@ -137,16 +156,27 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   tree(c, 120, GROUND + 2, 110, 40, 401);
   tree(c, 610, GROUND - 40, 96, 34, 402);
   palm(c, 250, GROUND + 2, 80, 410);
+  // the palms and trees that stand inside the fence, behind the gatehouse
+  palm(c, ARCH_X - 96, GROUND + 2, 118, 411);
+  palm(c, ARCH_X + 92, GROUND + 2, 130, 412);
+  palm(c, ARCH_X + 118, GROUND + 2, 104, 413);
+  tree(c, ARCH_X + 190, GROUND + 2, 92, 38, 403);
+  tree(c, ARCH_X + 300, GROUND + 2, 104, 40, 404);
 
   // the wall runs the whole way, broken by the gate
   perimeterWall(c, 0, ARCH_X - ARCH_WIDTH / 2, GROUND);
   perimeterWall(c, ARCH_X + ARCH_WIDTH / 2, WIDTH, GROUND);
+  // a clipped hedge behind the railings on the street side
+  hedge(c, ARCH_X + ARCH_WIDTH / 2 + 16, GROUND - 9, 150, 12, 31);
   ground(c);
   gateArch(c, ARCH_X, GROUND);
-  for (const dx of [-ARCH_WIDTH / 2 + 10, ARCH_WIDTH / 2 - 10]) {
-    disc(g, ARCH_X + dx, GROUND - 76, 3, P.lamp);
-    lights.push({ x: ARCH_X + dx, y: GROUND - 76, r: 70, color: lampColor, strength: 0.8 });
+  // the spotlights on the beam, and the lit way through underneath it
+  for (const dx of [-ARCH_WIDTH / 2 + 7, ARCH_WIDTH / 2 - 6]) {
+    disc(g, ARCH_X + dx, GROUND - 110, 3, P.lamp);
+    lights.push({ x: ARCH_X + dx, y: GROUND - 96, r: 76, color: lampColor, strength: 0.85 });
   }
+  rect(g, ARCH_X - ARCH_WIDTH / 2 + 24, GROUND - 72, ARCH_WIDTH - 48, 12, '#8a744a');
+  lights.push({ x: ARCH_X, y: GROUND - 20, r: 90, color: [255, 232, 190], strength: 0.8 });
 
   // inside: planting along the wall, the barrier by Gate 1, the warning board
   hedge(c, 80, GROUND + 3, 200, 11, 21);
@@ -167,10 +197,7 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   bagTable(c, TABLE_B, BACK);
   inspectionSign(c, SIGN_X, BACK);
 
-  // outside on the street
-  bush(c, 900, GROUND + 4, 30, 16, 77);
-
-  for (const x of [170, 330, 890]) {
+  for (const x of [170, 330, 960, 1120]) {
     const l = lampPost(c, x, GROUND + 15);
     lights.push({ x: l.x, y: l.y, r: 92, color: lampColor, strength: 0.95 });
     disc(g, l.x, l.y, 4, P.lamp);
@@ -181,13 +208,15 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   return { canvas, glow };
 }
 
-/** Out-of-focus plants and a street sign close to the camera. */
+/** Out-of-focus plants close to the camera. Only branches on the street side: the road is kept clear for the traffic. */
 function frontLayer(): HTMLCanvasElement {
   const parallax = 1.35;
   const [canvas, c] = makeCanvas(layerWidth(parallax), VIEW_H);
   const rand = rng(99);
   for (let x = 80; x < canvas.width; x += 280 + rand() * 200) {
-    if (rand() < 0.6) bush(c, x, VIEW_H + 34, 120 + rand() * 60, 50 + rand() * 12, 800 + x, SILHOUETTE);
+    // the world x this part of the layer is in front of when it is mid-screen
+    const world = VIEW_W / 2 + (x - VIEW_W / 2) / parallax;
+    if (rand() < 0.6 && world < KERB_X - 120) bush(c, x, VIEW_H + 34, 120 + rand() * 60, 50 + rand() * 12, 800 + x, SILHOUETTE);
     else {
       foliage(c, x, -8, 84, 22, 840 + x, SILHOUETTE);
       foliage(c, x + 56, -2, 44, 14, 841 + x, SILHOUETTE);
@@ -195,6 +224,55 @@ function frontLayer(): HTMLCanvasElement {
   }
   return canvas;
 }
+
+/** The row of barricades along the kerb, a gap left in front of the gatehouse to walk in by. */
+function barricadeRow(): HTMLCanvasElement {
+  const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
+  for (let x = KERB_X + 34; x < WIDTH - 20; x += BARRICADE_W + 3) {
+    if (Math.abs(x + BARRICADE_W / 2 - ARCH_X) < 44) continue;
+    barricade(c, x, GROUND + 46);
+  }
+  return canvas;
+}
+
+/**
+ * The trunk of a big old tree between the street and the camera, where the
+ * campus drive meets the sidewalk, as in the photo. Drawn over the traffic
+ * and the people.
+ */
+function trunkLayer(): Layer {
+  const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
+  const rand = rng(77);
+  // the trunk: mottled bark, lighter where the sun catches its left side
+  const bark = '#6b5d4c';
+  const tx = KERB_X - 24;
+  const tw = 50;
+  poly(c, [[tx - 6, VIEW_H], [tx + 4, 150], [tx + 2, 0], [tx + tw - 2, 0], [tx + tw - 6, 150], [tx + tw + 8, VIEW_H]], bark);
+  poly(c, [[tx - 6, VIEW_H], [tx + 4, 150], [tx + 2, 0], [tx + 14, 0], [tx + 15, 150], [tx + 8, VIEW_H]], shade(bark, 0.16));
+  poly(c, [[tx + tw - 14, VIEW_H], [tx + tw - 14, 0], [tx + tw - 2, 0], [tx + tw - 6, 150], [tx + tw + 8, VIEW_H]], shade(bark, -0.3));
+  for (let i = 0; i < 46; i++) {
+    const bx = tx + 3 + rand() * (tw - 10);
+    const by = rand() * VIEW_H;
+    const r = rand();
+    rect(c, bx, by, 3 + rand() * 7, 2 + rand() * 6, r > 0.6 ? '#c9b06a' : r > 0.3 ? shade(bark, -0.35) : shade(bark, 0.25));
+  }
+  // and a bough of its leaves across the top of the frame
+  foliage(c, tx + 80, -6, 92, 20, 771, SILHOUETTE);
+  foliage(c, tx - 30, -10, 60, 16, 772, SILHOUETTE);
+  return { canvas, parallax: 1, front: true };
+}
+
+interface Vehicle {
+  sprite: Sprite;
+  lane: number;
+  x: number;
+  speed: number;
+}
+
+const FLEET: [VehicleKind, string][] = [
+  ['car', '#c9cdd3'], ['jeepney', '#c8342f'], ['car', '#3b4a66'], ['tricycle', '#2f5f9e'], ['suv', '#e2dccb'],
+  ['jeepney', '#2f7a5a'], ['car', '#8a2f34'], ['tricycle', '#c8342f'], ['suv', '#2a2c36'], ['jeepney', '#e3b33b'],
+];
 
 /** Live state of the checkpoint props, worked by the cutscenes in story/gate.ts. */
 interface Props {
@@ -234,6 +312,30 @@ export function buildGate(): AreaDef {
   let leafTimer = 0;
   let playerX = 0;
 
+  // the traffic on the street: a few vehicles already on the road, then one along every few seconds in each lane
+  const barricades = barricadeRow();
+  const sprites = FLEET.map(([kind, body]) => vehicleSprite(kind, body));
+  const traffic: Vehicle[] = [];
+  const due = LANES.map((_, i) => 0.6 + i * 1.7);
+  let pick = 0;
+  const send = (lane: number, x?: number) => {
+    const l = LANES[lane];
+    const sprite = sprites[pick++ % sprites.length];
+    const off = (sprite.canvas.width * l.scale) / 2 + 6;
+    traffic.push({ sprite, lane, x: x ?? (l.dir > 0 ? KERB_X - off : WIDTH + off), speed: l.speed * (0.85 + rand() * 0.3) });
+  };
+  send(0, KERB_X + 170);
+  send(0, KERB_X + 380);
+  /** vehicles are only seen on the street: they pass behind the big tree and are gone */
+  const onStreet = (ctx: Ctx, cam: number, draw: () => void) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(KERB_X - cam, 0, WIDTH, VIEW_H);
+    ctx.clip();
+    draw();
+    ctx.restore();
+  };
+
   return {
     id: 'gate',
     title: 'Main Gate',
@@ -246,15 +348,17 @@ export function buildGate(): AreaDef {
       { canvas: farLayer(), parallax: 0.16, haze: 0.62 },
       { canvas: midLayer(), parallax: 0.42, haze: 0.34 },
       { canvas: main.canvas, parallax: 1 },
+      trunkLayer(),
       { canvas: frontLayer(), parallax: 1.35, front: true },
     ],
     glow: main.glow,
     lights,
-    hotspots: gateHotspots({ street: STREET_X, arch: ARCH_X, board: BOARD_X, plaza: PLAZA_X }, cp),
+    hotspots: gateHotspots({ street: STREET_X, arch: ARCH_X, board: BOARD_X, plaza: PLAZA_X, park: PARK_X }, cp),
     npcs: gateNpcs(),
     spawns: {
-      street: { x: 980, facing: -1 },
+      street: { x: ARCH_X + 190, facing: -1 },
       plaza: { x: PLAZA_X + 24, facing: 1 },
+      park: { x: PARK_X + 14, facing: 1 },
     },
     barrier: { x: TURNSTILE_X + 12, until: 'scanned_id' },
 
@@ -271,6 +375,20 @@ export function buildGate(): AreaDef {
       const near = Math.abs(playerX - (TURNSTILE_X + 10)) < 24;
       st.arm = damp(st.arm, st.held || (st.unlocked && near) ? 1 : 0, 9, dt);
       if (st.reader !== 'idle' && (st.readerTime -= dt) <= 0) st.reader = 'idle';
+
+      for (let i = traffic.length - 1; i >= 0; i--) {
+        const v = traffic[i];
+        const l = LANES[v.lane];
+        v.x += l.dir * v.speed * dt;
+        const off = (v.sprite.canvas.width * l.scale) / 2 + 8;
+        if (v.x < KERB_X - off || v.x > WIDTH + off) traffic.splice(i, 1);
+      }
+      LANES.forEach((_, i) => {
+        if ((due[i] -= dt) <= 0) {
+          due[i] = LANES[i].every * (0.7 + rand() * 0.9);
+          send(i);
+        }
+      });
 
       leafTimer -= dt;
       if (leafTimer <= 0) {
@@ -299,10 +417,48 @@ export function buildGate(): AreaDef {
       const cam = Math.round(view.camX);
       turnstileArm(ctx, TURNSTILE_X - cam, BACK, st.arm);
       if (st.card) idCard(ctx, TURNSTILE_X + 10 - cam, BACK - 27);
+      // from the fence towards the camera: the barricades at the kerb, the far lane, the near lane
+      ctx.drawImage(barricades, -cam, 0);
+      onStreet(ctx, cam, () => {
+        for (const lane of LANES.keys()) {
+          const l = LANES[lane];
+          for (const v of traffic) {
+            if (v.lane !== lane) continue;
+            // a little bounce over the joints in the concrete
+            const bump = Math.sin(view.time * 11 + v.x * 0.09) > 0.93 ? 1 : 0;
+            drawVehicle(ctx, v.sprite, v.x - cam, l.base - bump, l.scale, l.dir);
+          }
+        }
+      });
     },
 
     drawOver(ctx, view) {
       const cam = Math.round(view.camX);
+      if (view.mood.night > 0.3) {
+        // headlights: a bright point and a short beam on the road ahead
+        onStreet(ctx, cam, () => {
+          ctx.globalCompositeOperation = 'lighter';
+          for (const v of traffic) {
+            const l = LANES[v.lane];
+            const [hx, hy] = lampAt(v.sprite, v.x - cam, l.base, l.scale, l.dir);
+            const reach = 46 * l.scale;
+            const grad = ctx.createLinearGradient(hx, 0, hx + l.dir * reach, 0);
+            grad.addColorStop(0, css([255, 240, 190], 0.5 * view.mood.night));
+            grad.addColorStop(1, css([255, 240, 190], 0));
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(hx, hy - 1);
+            ctx.lineTo(hx + l.dir * reach, hy - 5 * l.scale);
+            ctx.lineTo(hx + l.dir * reach, l.base + 2);
+            ctx.lineTo(hx, hy + 2);
+            ctx.fill();
+            ctx.globalAlpha = view.mood.night;
+            disc(ctx, hx, hy, 2 * l.scale, '#fff6d0');
+            ctx.globalAlpha = 1;
+          }
+          ctx.globalCompositeOperation = 'source-over';
+        });
+      }
       readerScreen(ctx, TURNSTILE_X - cam, BACK, st.reader, view.time);
       if (st.reader !== 'idle') {
         const x = TURNSTILE_X + 5 - cam;

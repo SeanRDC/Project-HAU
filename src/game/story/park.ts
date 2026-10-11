@@ -125,7 +125,7 @@ export function parkHotspots(x: {
   gate: number; memorare: number; guardian: number; archangels: number; seal: number; sfj: number; fountain: number; exit: number;
 }): Hotspot[] {
   return [
-    wayTo('gate', x.gate, 'Lumabas sa main gate', 'gate', 'plaza', 70),
+    wayTo('gate', x.gate, 'Lumabas sa main gate', 'gate', 'park', 70),
     {
       id: 'memorare',
       x: x.memorare,
@@ -186,7 +186,7 @@ export function parkHotspots(x: {
       height: 40,
       use: (g) =>
         g.say([
-          { who: '', text: 'Bilog na plaza na may maliit na fountain sa gitna, sa dulo ng hanay ng mga anghel.' },
+          { who: '', text: 'Bilog na fountain sa harap ng SFJ, sa dulo ng hanay ng mga anghel. Isang singsing ng bumubulang tubig sa paligid ng batong mangkok sa gitna.' },
           { who: '', text: 'Mula rito, kita na ang rotunda at ang harap ng Main Building.' },
         ]),
     },

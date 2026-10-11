@@ -1,5 +1,6 @@
-// The main gate on Sto. Rosario St. Everyone gets their bag checked and taps
-// their ID at the turnstile before they're let in. Edit freely.
+// The gate on Sto. Rosario St. Everyone gets their bag checked and taps
+// their ID at the turnstile before they're let in, and comes out on the drive
+// in front of the Main Building. Edit freely.
 
 import { Hotspot, NpcDef, Step } from '../types';
 import { ELLA, JOY, NONOY, TAHO } from './cast';
@@ -9,7 +10,10 @@ export interface GateSpots {
   street: number;
   arch: number;
   board: number;
+  /** the way on to the Main Building */
   plaza: number;
+  /** the path off to the Epiphany of Angels */
+  park: number;
 }
 
 /** The checkpoint props the cutscenes can work, handed over by scenes/gate.ts. */
@@ -275,7 +279,15 @@ export function gateHotspots(x: GateSpots, cp: Checkpoint): Hotspot[] {
       id: 'plaza',
       x: x.plaza,
       range: 24,
-      label: 'Pumasok sa Epiphany of Angels',
+      label: 'Pumasok papunta sa Main Building',
+      height: 56,
+      use: (g) => g.travel('plaza', 'start'),
+    },
+    {
+      id: 'park',
+      x: x.park,
+      range: 22,
+      label: 'Dumaan sa Epiphany of Angels',
       height: 56,
       use: (g) => g.travel('park', 'gate'),
     },
@@ -299,8 +311,8 @@ export function gateHotspots(x: GateSpots, cp: Checkpoint): Hotspot[] {
       height: 124,
       use: (g) =>
         g.say([
-          { who: '', text: 'HOLY ANGEL UNIVERSITY, sa gintong letra sa ibabaw ng gate. Sa itaas, ang selyo ng unibersidad.' },
-          { who: '', text: 'Bukas na ang mga bakal na pinto. Sunod-sunod ang pasok ng mga naka-puti at maroon.' },
+          { who: '', text: 'HOLY ANGEL UNIVERSITY, sa itim na letra sa puting gate. Sa itaas nito, ang selyo ng unibersidad at ang bubong na salamin.' },
+          { who: '', text: 'Bukas na ang mga bakal na pinto. Sunod-sunod ang pasok ng mga naka-puti at maroon, habang dumadaan ang mga jeep at trike sa likod mo.' },
         ]),
     },
     {
