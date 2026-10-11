@@ -4,7 +4,7 @@ import { Input } from '../engine/input';
 import { clamp, damp } from '../engine/math';
 import { moodAt } from '../engine/tod';
 import { Area, Target } from './area';
-import { Character, baseLook, character, isCharacter, setCharacter } from './art/player';
+import { Character, NAME_MAX, baseLook, character, isCharacter, playerName, setCharacter, setPlayerName } from './art/player';
 import { Sky } from './art/sky';
 import { whereAmI } from './campus/streets';
 import { Cutscene, CutsceneHost } from './cutscene';
@@ -26,7 +26,7 @@ import { AreaDef, GameApi, Line, Sound, Step } from './types';
 import { drawAreaTitle, drawClock, drawControlsHint, drawLetterbox, drawPrompt, drawToast } from './ui/hud';
 import { CampusMap } from './ui/map';
 import { Phone } from './ui/phone';
-import { drawSelect } from './ui/select';
+import { drawName, drawSelect } from './ui/select';
 import { drawTitle } from './ui/title';
 
 /** in-game hours per real second: a full day takes about 12 minutes */
@@ -65,6 +65,10 @@ export class Game implements GameApi {
   private choiceAnim = 0;
   /** the picker was opened with N, so confirming wipes the old save (Esc leaves it alone) */
   private startFresh = false;
+  /** the name box is showing on top of the picker */
+  private naming = false;
+  private nameFade = 0;
+  private nameDraft = '';
   /** 0 clear, 1 black */
   private fade = 0;
   private pending: { area: string; spawn: string } | null = null;
@@ -127,6 +131,7 @@ export class Game implements GameApi {
     this.hasSave = false;
     // ?char=girl plays as the girl
     this.applyCharacter(q.get('char') === 'girl' ? 'girl' : 'boy');
+    setPlayerName(q.get('name') ?? '');
     if (!q.has('title')) {
       this.mode = 'play';
       this.titleOut = 1;
@@ -166,7 +171,7 @@ export class Game implements GameApi {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return;
-      const data = JSON.parse(raw) as { flags: string[]; clock: number; area: string; x: number; character?: unknown };
+      const data = JSON.parse(raw) as { flags: string[]; clock: number; area: string; x: number; character?: unknown; name?: unknown };
       if (!this.areas.has(data.area)) return;
       this.flags = new Set(data.flags);
       this.clock = data.clock;
@@ -174,6 +179,8 @@ export class Game implements GameApi {
       this.hasSave = true;
       // saves from before character selection have no field: they were the boy
       this.applyCharacter(isCharacter(data.character) ? data.character : 'boy');
+      // and had no name, so the speech bubbles show none
+      setPlayerName(typeof data.name === 'string' ? data.name : '');
     } catch {
       // a broken or blocked save just means starting over
     }
@@ -190,6 +197,7 @@ export class Game implements GameApi {
         area: this.area.def.id,
         x: Math.round(this.area.player.x),
         character: character(),
+        name: playerName(),
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch {
@@ -365,6 +373,7 @@ export class Game implements GameApi {
     }
     this.selectFade = damp(this.selectFade, this.selecting ? 1 : 0, 12, dt);
     this.choiceAnim = damp(this.choiceAnim, this.choice === 'girl' ? 1 : 0, 14, dt);
+    this.nameFade = damp(this.nameFade, this.naming ? 1 : 0, 12, dt);
     this.updateAudio(mood.night);
   }
 
@@ -376,6 +385,10 @@ export class Game implements GameApi {
 
   private updateSelect(): void {
     const input = this.input;
+    if (this.naming) {
+      this.updateNaming();
+      return;
+    }
     if (input.pressed('left') && this.choice !== 'boy') {
       this.choice = 'boy';
       this.audio.select();
@@ -387,6 +400,28 @@ export class Game implements GameApi {
       this.startFresh = false;
       this.audio.select();
     } else if (input.pressed('interact')) {
+      this.naming = true;
+      this.nameDraft = '';
+      input.typing = true;
+      input.takeTyped();
+      this.audio.select();
+    }
+  }
+
+  private updateNaming(): void {
+    const input = this.input;
+    for (const k of input.takeTyped()) {
+      if (k === 'Backspace') this.nameDraft = this.nameDraft.slice(0, -1);
+      else if (/^[\p{L}\p{N} .'-]$/u.test(k) && this.nameDraft.length < NAME_MAX) this.nameDraft += k;
+    }
+    if (input.pressed('back')) {
+      this.naming = false;
+      input.typing = false;
+      this.audio.select();
+    } else if (input.pressed('interact') && this.nameDraft.trim()) {
+      input.typing = false;
+      this.naming = false;
+      setPlayerName(this.nameDraft);
       // a new day: forget any old save, keep the chosen student
       this.flags.clear();
       this.clock = START_HOUR;
@@ -433,7 +468,8 @@ export class Game implements GameApi {
       this.map.render(ui, whereAmI(area.def.id, area.player.x), this.time);
     }
     drawTitle(ui, this.time, Math.max(this.titleOut, this.selectFade), this.hasSave);
-    drawSelect(ui, this.time, this.selectFade * (1 - this.titleOut), this.choiceAnim);
+    drawSelect(ui, this.time, this.selectFade * (1 - this.titleOut) * (1 - this.nameFade), this.choiceAnim);
+    drawName(ui, this.time, this.selectFade * (1 - this.titleOut) * this.nameFade, this.choice, this.nameDraft, NAME_MAX);
     if (this.fade > 0) {
       ui.fillStyle = `rgba(13,11,16,${this.fade})`;
       ui.fillRect(0, 0, VIEW_W, VIEW_H);

@@ -5,6 +5,7 @@ import { Ctx, VIEW_H, VIEW_W } from '../engine/display';
 import { Input } from '../engine/input';
 import { clamp } from '../engine/math';
 import { Area } from './area';
+import { playerName } from './art/player';
 import { Line } from './types';
 import { GOLD, INK, MAROON, PAPER, SERIF, font, keyCap, roundRect, wrap } from './ui/draw';
 
@@ -82,7 +83,7 @@ export class Dialogue {
     // measure against the full line so the bubble doesn't resize while typing
     const lines = wrap(ui, l.text, BUBBLE_WIDTH);
     const textW = Math.max(...lines.map((s) => ui.measureText(s).width));
-    const name = mine ? '' : area.nameOf(l.who);
+    const name = mine ? playerName() : area.nameOf(l.who);
     const choiceH = done && l.choices ? l.choices.length * 11 + 3 : 0;
     const w = Math.max(textW, l.choices ? 110 : 0) + 14;
     const h = lines.length * 9.5 + 9 + choiceH;
