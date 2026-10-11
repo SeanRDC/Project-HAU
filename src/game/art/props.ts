@@ -49,10 +49,11 @@ export function tree(c: Ctx, x: number, base: number, h: number, spread: number,
   const dark = t === GREEN ? P.trunkDark : t.deep;
   const mid = t === GREEN ? P.trunk : t.dark;
   const hi = t === GREEN ? P.trunkHi : t.dark;
-  line(c, x, base, x + lean, top, dark, 5);
-  line(c, x - 1, base, x + lean - 1, top, mid, 3);
+  const girth = h > 100 ? 7 : 5;
+  line(c, x, base, x + lean, top, dark, girth);
+  line(c, x - 1, base, x + lean - 1, top, mid, girth - 2);
   line(c, x - 2, base - 2, x + lean - 2, top, hi, 1);
-  rect(c, x - 4, base - 2, 8, 2, dark);
+  rect(c, x - girth + 1, base - 2, girth * 2 - 2, 2, dark);
   // a couple of branches disappearing into the leaves
   line(c, x + lean, top, x + lean - spread * 0.4, top - h * 0.22, dark, 2);
   line(c, x + lean, top + 4, x + lean + spread * 0.45, top - h * 0.18, dark, 2);

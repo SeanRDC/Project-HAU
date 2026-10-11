@@ -11,6 +11,7 @@ import {
   SILHOUETTE, angelStatue, boomBarrier, bush, foliage, fountainBasin, guardHouse, hedge, lampPost, palm, pot,
   signBoard, stoneBench, tree, tricycle,
 } from '../art/props';
+import { plazaHotspots, plazaNpcs } from '../story/plaza';
 import { AreaDef, AreaLight } from '../types';
 
 const WIDTH = 1340;
@@ -259,8 +260,8 @@ export function buildPlaza(): AreaDef {
 
   // seven jets: one tall in the middle, a ring of short ones
   const jets = [
-    { x: 0, y: -8, power: 128, rate: 60 },
-    ...[-46, -30, -14, 14, 30, 46].map((dx) => ({ x: dx, y: -1 + (Math.abs(dx) === 30 ? 2 : 0), power: 66, rate: 20 })),
+    { x: 0, y: -8, power: 128, rate: 90 },
+    ...[-46, -30, -14, 14, 30, 46].map((dx) => ({ x: dx, y: -1 + (Math.abs(dx) === 30 ? 2 : 0), power: 66, rate: 30 })),
   ];
   let leafTimer = 0;
   let fireflyTimer = 0;
@@ -281,8 +282,9 @@ export function buildPlaza(): AreaDef {
     ],
     glow: main.glow,
     lights,
-    hotspots: [],
-    npcs: [],
+    hotspots: plazaHotspots(PLAZA_DOOR_X, FOUNTAIN_X, STATUE_X),
+    npcs: plazaNpcs(),
+    fountainX: FOUNTAIN_X,
     spawns: {
       start: { x: 1130, facing: -1 },
       door: { x: PLAZA_DOOR_X, facing: -1 },

@@ -267,6 +267,7 @@ export class Area implements AreaRuntime {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     }
+    def.drawOver?.(ctx, view);
     this.particles.render(ctx, cam, true);
 
     if (def.outdoor && mood.glow > 0.02) {

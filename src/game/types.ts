@@ -95,10 +95,14 @@ export interface AreaDef {
   hotspots: Hotspot[];
   npcs: NpcDef[];
   spawns: Record<string, { x: number; facing: 1 | -1 }>;
+  /** where the fountain is, if there is one, so its sound gets louder nearby */
+  fountainX?: number;
   /** per-frame logic, mostly particle emitters */
   update?(dt: number, area: AreaRuntime, view: AreaView): void;
   /** animated things drawn behind the characters */
   drawBack?(ctx: Ctx, view: AreaView): void;
+  /** drawn after lighting: sunbeams and anything else that should glow */
+  drawOver?(ctx: Ctx, view: AreaView): void;
 }
 
 /** The bits of the running area that scene callbacks need. */
