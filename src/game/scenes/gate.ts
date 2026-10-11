@@ -12,8 +12,7 @@ import {
 } from '../art/gate';
 import { P, shade } from '../art/palette';
 import { SILHOUETTE, boomBarrier, bush, foliage, hedge, lampPost, palm, pot, tree } from '../art/props';
-import { ELLA } from '../story/cast';
-import { gateHotspots, gateNpcs } from '../story/gate';
+import { Checkpoint, gateArrival, gateHotspots, gateNpcs } from '../story/gate';
 import { AreaDef, AreaLight } from '../types';
 
 const WIDTH = 1010;
@@ -197,10 +196,8 @@ function frontLayer(): HTMLCanvasElement {
   return canvas;
 }
 
-type BagState = 'none' | 'closed' | 'open';
-
-/** Live state of the checkpoint props, poked by the cutscenes in story/gate.ts. */
-interface Checkpoint {
+/** Live state of the checkpoint props, worked by the cutscenes in story/gate.ts. */
+interface Props {
   arm: number;
   /** a cutscene is holding the arm down */
   held: boolean;
@@ -209,7 +206,7 @@ interface Checkpoint {
   reader: ReaderState;
   readerTime: number;
   card: boolean;
-  bags: { a: BagState; b: BagState };
+  bag: 'none' | 'closed' | 'open';
   flashlight: boolean;
 }
 
@@ -217,9 +214,22 @@ export function buildGate(): AreaDef {
   const lights: AreaLight[] = [];
   const main = mainLayer(lights);
   const rand = rng(4321);
+  const st: Props = {
+    arm: 0, held: false, unlocked: false, reader: 'idle', readerTime: 0, card: false, bag: 'none', flashlight: false,
+  };
   const cp: Checkpoint = {
-    arm: 0, held: false, unlocked: false, reader: 'idle', readerTime: 0, card: false,
-    bags: { a: 'none', b: 'none' }, flashlight: false,
+    scanner: TURNSTILE_X + 16,
+    tableA: TABLE_A,
+    tableB: TABLE_B,
+    bag: (s) => (st.bag = s),
+    reader: (s) => {
+      st.reader = s;
+      st.readerTime = 1.6;
+    },
+    card: (show) => (st.card = show),
+    hold: (open) => (st.held = open),
+    flashlight: (on) => (st.flashlight = on),
+    unlock: () => (st.unlocked = true),
   };
   let leafTimer = 0;
   let playerX = 0;
@@ -240,18 +250,27 @@ export function buildGate(): AreaDef {
     ],
     glow: main.glow,
     lights,
-    hotspots: gateHotspots({ street: STREET_X, arch: ARCH_X, board: BOARD_X, plaza: PLAZA_X }),
+    hotspots: gateHotspots({ street: STREET_X, arch: ARCH_X, board: BOARD_X, plaza: PLAZA_X }, cp),
     npcs: gateNpcs(),
     spawns: {
       street: { x: 980, facing: -1 },
       plaza: { x: PLAZA_X + 24, facing: 1 },
     },
+    barrier: { x: TURNSTILE_X + 12, until: 'scanned_id' },
+
+    intro(game, x) {
+      // props back to rest, whatever a previous visit left them in
+      Object.assign(st, { held: false, card: false, bag: 'none', flashlight: false, reader: 'idle' });
+      st.unlocked = game.has('scanned_id');
+      if (game.has('passed_bag_check') || x < TURNSTILE_X + 12) return null;
+      return gateArrival(cp, game.hour());
+    },
 
     update(dt, area) {
       playerX = area.playerX();
       const near = Math.abs(playerX - (TURNSTILE_X + 10)) < 24;
-      cp.arm = damp(cp.arm, cp.held || (cp.unlocked && near) ? 1 : 0, 9, dt);
-      if (cp.reader !== 'idle' && (cp.readerTime -= dt) <= 0) cp.reader = 'idle';
+      st.arm = damp(st.arm, st.held || (st.unlocked && near) ? 1 : 0, 9, dt);
+      if (st.reader !== 'idle' && (st.readerTime -= dt) <= 0) st.reader = 'idle';
 
       leafTimer -= dt;
       if (leafTimer <= 0) {
@@ -273,22 +292,21 @@ export function buildGate(): AreaDef {
     drawBack(ctx, view) {
       const cam = Math.round(view.camX);
       const top = BACK - 15;
-      if (cp.bags.a !== 'none') bagOnTable(ctx, TABLE_A + 6 - cam, top, ELLA.bag!, cp.bags.a === 'open');
-      if (cp.bags.b !== 'none') bagOnTable(ctx, TABLE_B + 6 - cam, top, PLAYER_LOOK.bag!, cp.bags.b === 'open');
+      if (st.bag !== 'none') bagOnTable(ctx, TABLE_B + 6 - cam, top, PLAYER_LOOK.bag!, st.bag === 'open');
     },
 
     drawFront(ctx, view) {
       const cam = Math.round(view.camX);
-      turnstileArm(ctx, TURNSTILE_X - cam, BACK, cp.arm);
-      if (cp.card) idCard(ctx, TURNSTILE_X + 10 - cam, BACK - 27);
+      turnstileArm(ctx, TURNSTILE_X - cam, BACK, st.arm);
+      if (st.card) idCard(ctx, TURNSTILE_X + 10 - cam, BACK - 27);
     },
 
     drawOver(ctx, view) {
       const cam = Math.round(view.camX);
-      readerScreen(ctx, TURNSTILE_X - cam, BACK, cp.reader, view.time);
-      if (cp.reader !== 'idle') {
+      readerScreen(ctx, TURNSTILE_X - cam, BACK, st.reader, view.time);
+      if (st.reader !== 'idle') {
         const x = TURNSTILE_X + 5 - cam;
-        const glowCol = cp.reader === 'ok' ? [75, 220, 120] : [255, 74, 74];
+        const glowCol = st.reader === 'ok' ? [75, 220, 120] : [255, 74, 74];
         const grad = ctx.createRadialGradient(x, BACK - 22, 0, x, BACK - 22, 26);
         grad.addColorStop(0, css(glowCol as [number, number, number], 0.45));
         grad.addColorStop(1, css(glowCol as [number, number, number], 0));
@@ -297,7 +315,7 @@ export function buildGate(): AreaDef {
         ctx.fillRect(x - 26, BACK - 48, 52, 52);
         ctx.globalCompositeOperation = 'source-over';
       }
-      if (cp.flashlight) {
+      if (st.flashlight) {
         // the guard's flashlight poking around inside the bag
         const hx = TABLE_B - 20 - cam;
         const hy = BACK - 20;

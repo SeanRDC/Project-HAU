@@ -1,7 +1,7 @@
 // The main gate on Sto. Rosario St. Everyone gets their bag checked and taps
 // their ID at the turnstile before they're let in. Edit freely.
 
-import { Hotspot, NpcDef } from '../types';
+import { Hotspot, NpcDef, Step } from '../types';
 import { ELLA, JOY, NONOY, TAHO } from './cast';
 
 /** Where things stand in the scene, handed over by scenes/gate.ts. */
@@ -10,6 +10,156 @@ export interface GateSpots {
   arch: number;
   board: number;
   plaza: number;
+}
+
+/** The checkpoint props the cutscenes can work, handed over by scenes/gate.ts. */
+export interface Checkpoint {
+  /** where you stand to tap your ID */
+  scanner: number;
+  /** where Ella is being checked when you walk up */
+  tableA: number;
+  /** where you get your own bag checked */
+  tableB: number;
+  /** your bag on Kuya Nonoy's table */
+  bag(state: 'none' | 'closed' | 'open'): void;
+  reader(state: 'ok' | 'deny'): void;
+  /** someone holding an ID up to the reader */
+  card(show: boolean): void;
+  /** hold the turnstile arm down so someone can walk through */
+  hold(open: boolean): void;
+  flashlight(on: boolean): void;
+  /** from now on the arm drops whenever you walk up */
+  unlock(): void;
+}
+
+function greeting(hour: number): string {
+  if (hour < 12 && hour >= 4) return 'Magandang umaga';
+  if (hour < 18) return 'Magandang hapon';
+  return 'Magandang gabi';
+}
+
+/** Kuya Nonoy goes through your bag. Ends with the passed_bag_check flag. */
+function bagCheck(cp: Checkpoint, hour: number): Step[] {
+  return [
+    { walk: cp.tableB + 28 },
+    { face: 'you', dir: -1 },
+    { face: 'nonoy', dir: 1 },
+    {
+      say: [
+        { who: 'nonoy', text: `${greeting(hour)}! Bag check po tayo. Pakilapag lang dito sa mesa.` },
+        { who: 'you', text: 'Sige po.' },
+      ],
+    },
+    { look: { bag: undefined } },
+    { run: () => cp.bag('closed') },
+    { pause: 0.4 },
+    { sound: 'zip' },
+    { run: () => cp.bag('open') },
+    { pause: 0.5 },
+    { run: () => cp.flashlight(true) },
+    { pause: 1.2 },
+    {
+      say: [
+        { who: '', text: 'Binuksan ni Kuya Nonoy ang bag mo at sinilip gamit ang flashlight. Notebook, payong, charger, at baong kanin at adobo.' },
+        {
+          who: 'nonoy',
+          text: 'May dala ka bang matulis? Cutter, gunting?',
+          choices: [
+            { text: 'Wala po.', then: [{ who: 'nonoy', text: 'Good.' }] },
+            {
+              text: 'Ballpen lang po.',
+              then: [{ who: 'nonoy', text: 'Hahaha! Pwede \'yan. \'Yan nga ang pinaka-kailangan mo dito.' }],
+            },
+            {
+              text: '\'Yung tinidor po sa baon ko?',
+              then: [{ who: 'nonoy', text: '...Sige, pwede na rin. Basta pagkain lang ang tutusukin mo.' }],
+            },
+          ],
+        },
+        { who: 'nonoy', text: 'Okay, clear! Amoy adobo pa. Ingat, baka tumapon.' },
+      ],
+    },
+    { run: () => cp.flashlight(false) },
+    { sound: 'zip' },
+    { run: () => cp.bag('closed') },
+    { pause: 0.5 },
+    { run: () => cp.bag('none') },
+    { look: null },
+    { say: [{ who: 'nonoy', text: 'I-tap mo na lang ID mo sa scanner diyan. Welcome sa Holy Angel!', set: 'passed_bag_check' }] },
+    { face: 'you', dir: -1 },
+  ];
+}
+
+/**
+ * Walking in from the street for the first time: Ella is just finishing at
+ * the next table, beeps through the turnstile, then it's your turn.
+ */
+export function gateArrival(cp: Checkpoint, hour: number): Step[] {
+  return [
+    { place: 'ella', x: cp.tableA + 26, facing: -1 },
+    { walk: cp.tableB + 28 },
+    {
+      say: [
+        { who: 'joy', text: 'Okay ka na. Next!' },
+        { who: 'ella', text: 'Salamat po!' },
+      ],
+    },
+    { walk: cp.scanner, who: 'ella' },
+    { face: 'ella', dir: -1 },
+    { run: () => cp.card(true) },
+    { pause: 0.4 },
+    { sound: 'beep' },
+    { run: () => cp.reader('ok') },
+    { pause: 0.2 },
+    { run: () => cp.card(false) },
+    { sound: 'turnstile' },
+    { run: () => cp.hold(true) },
+    { walk: 300, who: 'ella', together: true },
+    { pause: 1.4 },
+    { run: () => cp.hold(false) },
+    ...bagCheck(cp, hour),
+  ];
+}
+
+/** Pressing E at the reader. */
+function tapId(cp: Checkpoint, g: { has(flag: string): boolean; hour(): number }): Step[] {
+  if (!g.has('passed_bag_check')) {
+    return [
+      { say: [{ who: 'nonoy', text: 'Teka lang, boss! Bag check muna bago mag-tap.' }] },
+      ...bagCheck(cp, g.hour()),
+    ];
+  }
+  const tap: Step[] = [{ walk: cp.scanner }, { face: 'you', dir: -1 }, { run: () => cp.card(true) }, { pause: 0.5 }];
+  if (g.has('scanned_id')) {
+    return [...tap, { sound: 'beep' }, { run: () => cp.reader('ok') }, { pause: 0.3 }, { run: () => cp.card(false) }];
+  }
+  return [
+    ...tap,
+    { sound: 'buzz' },
+    { run: () => cp.reader('deny') },
+    { pause: 0.8 },
+    { run: () => cp.card(false) },
+    {
+      say: [
+        { who: '', text: 'Pula ang ilaw. Ayaw basahin.' },
+        { who: 'you', text: 'Ha? Bakit?' },
+        { who: 'joy', text: 'Tanggalin mo muna sa plastic case \'yung ID mo. Hindi nababasa \'pag nakabalot pa.' },
+        { who: 'you', text: 'Ay, opo. Sorry po!', set: 'id_fumble' },
+      ],
+    },
+    { pause: 0.4 },
+    { run: () => cp.card(true) },
+    { pause: 0.5 },
+    { sound: 'beep' },
+    { run: () => cp.reader('ok') },
+    { run: () => cp.unlock() },
+    { pause: 0.3 },
+    { run: () => cp.card(false) },
+    { sound: 'turnstile' },
+    { run: (game) => game.set('scanned_id') },
+    { walk: cp.scanner - 56 },
+    { say: [{ who: 'you', text: 'Okay. Unang araw. Kaya ko \'to.' }] },
+  ];
 }
 
 export function gateNpcs(): NpcDef[] {
@@ -103,8 +253,16 @@ export function gateNpcs(): NpcDef[] {
   ];
 }
 
-export function gateHotspots(x: GateSpots): Hotspot[] {
+export function gateHotspots(x: GateSpots, cp: Checkpoint): Hotspot[] {
   return [
+    {
+      id: 'scanner',
+      x: cp.scanner,
+      range: 16,
+      label: 'I-tap ang ID',
+      height: 46,
+      use: (g) => g.play(tapId(cp, g)),
+    },
     {
       id: 'plaza',
       x: x.plaza,
