@@ -141,7 +141,17 @@ try {
       const seen = await run('hau.target ? hau.target.label : null');
       await key('KeyE', 'e');
       await sleep(180);
-      const after = await run(`({ went: window.__went, talking: hau.dialogue.active, cutscene: !!hau.cutscene })`);
+      // a cutscene can end by walking you somewhere else (the gate does): play it through, skipping the talk
+      const cutscene = await run('!!hau.cutscene');
+      if (cutscene) {
+        await run(`
+          for (let i = 0; i < 60 * 40 && hau.cutscene && !window.__went; i++) {
+            hau.update(1 / 60);
+            if (hau.dialogue.active) { hau.dialogue.line = null; hau.dialogue.queue = []; }
+          }
+        `);
+      }
+      const after = await run(`({ went: window.__went, talking: hau.dialogue.active, cutscene: ${cutscene} })`);
       let what;
       if (seen !== h.label) {
         what = `not the nearest thing here ("${seen}" is)`;
