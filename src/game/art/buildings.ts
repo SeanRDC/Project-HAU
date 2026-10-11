@@ -204,24 +204,26 @@ export function chapel(c: Ctx, g: Ctx, cx: number, base: number, w: number): voi
     const tw = w * (1 - i * 0.13);
     const y = base - (i + 1) * tierH;
     const x = cx - tw / 2;
-    // the glass ring, then the white eave that hangs over it
-    rect(c, x + 5, y + 5, tw - 10, tierH - 5, glass);
-    for (let wx = x + 7; wx < x + tw - 8; wx += 7) rect(c, wx, y + 6, 1, tierH - 6, shade(glass, -0.3));
-    rect(c, x + 5, y + tierH - 3, tw - 10, 1, blue);
-    rect(c, x + tw * 0.62, y + 5, tw * 0.38 - 5, tierH - 5, shade(glass, -0.25));
-    if (i < 3) for (let wx = x + 12; wx < x + tw - 14; wx += 14) rect(g, wx, y + 7, 9, tierH - 9, '#ffe2a0');
-    rect(c, x, y, tw, 5, white);
-    rect(c, x, y + 4, tw, 1, whiteLo);
-    rect(c, x + tw * 0.7, y, tw * 0.3, 5, whiteLo);
+    // each ring is mostly white: a deep eave, then a band of glass behind white fins
+    const eave = Math.round(tierH * 0.55);
+    rect(c, x + 5, y + eave, tw - 10, tierH - eave, glass);
+    rect(c, x + tw * 0.7, y + eave, tw * 0.3 - 5, tierH - eave, shade(glass, -0.25));
+    rect(c, x + 5, y + tierH - 2, tw - 10, 1, blue);
+    if (i < 3) for (let wx = x + 12; wx < x + tw - 14; wx += 12) rect(g, wx, y + eave + 1, 8, tierH - eave - 2, '#ffe2a0');
+    for (let wx = x + 8; wx < x + tw - 8; wx += 6) rect(c, wx, y + eave, 2, tierH - eave, wx > x + tw * 0.7 ? whiteLo : white);
+    rect(c, x, y, tw, eave, white);
+    rect(c, x, y + eave - 1, tw, 1, whiteLo);
+    rect(c, x + tw * 0.7, y, tw * 0.3, eave, whiteLo);
+    rect(c, x, y + Math.round(eave / 2), tw * 0.7, 1, '#e2e3e6');
     rect(c, x, y, tw, 1, '#ffffff');
   }
   // roof cap and cross
   const capW = w * (1 - tiers * 0.13);
   const capY = base - tiers * tierH;
-  ellipse(c, cx, capY, capW / 2, tierH * 0.6, white);
+  ellipse(c, cx, capY, capW / 2 - 6, tierH * 0.35, white);
   rect(c, cx - capW / 2, capY, capW, 2, whiteLo);
-  rect(c, cx - 1, capY - tierH * 0.6 - 16, 2, 16, '#8a8d95');
-  rect(c, cx - 5, capY - tierH * 0.6 - 12, 10, 2, '#8a8d95');
+  rect(c, cx - 1, capY - tierH * 0.35 - 16, 2, 16, '#8a8d95');
+  rect(c, cx - 5, capY - tierH * 0.35 - 12, 10, 2, '#8a8d95');
   // entrance: glass doors under a flat canopy
   const dw = Math.round(w * 0.2);
   rect(c, cx - dw / 2, base - tierH - 4, dw, tierH + 4, '#26303f');
