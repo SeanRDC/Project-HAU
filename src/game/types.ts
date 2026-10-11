@@ -95,6 +95,8 @@ export interface AreaDef {
   hotspots: Hotspot[];
   npcs: NpcDef[];
   spawns: Record<string, { x: number; facing: 1 | -1 }>;
+  /** story flag set the first time the player walks in */
+  visitFlag?: string;
   /** where the fountain is, if there is one, so its sound gets louder nearby */
   fountainX?: number;
   /** per-frame logic, mostly particle emitters */

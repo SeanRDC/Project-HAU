@@ -34,6 +34,20 @@ export const MIGS: Look = {
   skin: '#c08a5e', hair: '#241a1a', hairStyle: 'short', top: '#2f8f7f', bottom: '#3b3f58', shoes: '#e8e4da', lace: '#e3b33b',
 };
 
+export const KATH: Look = {
+  skin: '#dba67c', hair: '#2a1e20', hairStyle: 'bun', top: '#f3f0e8', bottom: '#7c1f2c', shoes: '#22202a', skirt: true,
+  lace: '#7c1f2c', bag: '#5a7a4a',
+};
+
+export const BONG: Look = {
+  skin: '#9c6a46', hair: '#c9b78a', hairStyle: 'cap', top: '#4f7a4a', bottom: '#4a4438', shoes: '#2a2420', sleeves: true,
+};
+
+export const ENZO: Look = {
+  skin: '#c89268', hair: '#1a1416', hairStyle: 'short', top: '#2a2a34', bottom: '#6a6a5a', shoes: '#e8e4da', bag: '#3a3a44',
+  lace: '#e3b33b', height: 1,
+};
+
 export const CAT: Look = {
   skin: '#d98b3a', hair: '#d98b3a', hairStyle: 'bald', top: '#d98b3a', bottom: '#d98b3a', shoes: '#d98b3a',
 };

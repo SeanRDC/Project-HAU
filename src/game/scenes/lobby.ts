@@ -283,6 +283,7 @@ export function buildLobby(): AreaDef {
     walkY: WALK,
     bounds: [34, WIDTH - 30],
     outdoor: false,
+    visitFlag: 'entered_djn',
     layers: [
       { canvas: main.canvas, parallax: 1 },
       { canvas: frontLayer(), parallax: 1.3, front: true },
