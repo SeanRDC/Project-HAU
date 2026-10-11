@@ -67,6 +67,11 @@ export const TAHO: Look = {
   skin: '#9c6a46', hair: '#e8e2d2', hairStyle: 'cap', top: '#d9c79a', bottom: '#4a4438', shoes: '#2a2420', bag: '#b9bcc4',
 };
 
+/** the city traffic enforcer writing a ticket outside the gate: black cap, red polo, reflective vest, boots */
+export const ACTDO: Look = {
+  skin: '#a87650', hair: '#17171c', hairStyle: 'cap', top: '#c8342f', bottom: '#3a2f2a', shoes: '#15141a', vest: '#c8e83a', height: 1,
+};
+
 export const CAT: Look = {
   skin: '#d98b3a', hair: '#d98b3a', hairStyle: 'bald', top: '#d98b3a', bottom: '#d98b3a', shoes: '#d98b3a',
 };

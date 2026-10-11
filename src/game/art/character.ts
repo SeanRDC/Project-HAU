@@ -26,6 +26,8 @@ export interface Look {
   height?: number;
   /** umbrella colour, when it rains */
   umbrella?: string;
+  /** a reflective vest over the shirt, in this colour */
+  vest?: string;
 }
 
 export interface Pose {
@@ -117,6 +119,15 @@ export function drawCharacter(ctx: Ctx, x: number, feetY: number, look: Look, po
   } else {
     rect(ctx, -4, hip - 1, 7, 3, look.bottom);
     rect(ctx, -4, hip - 1, 2, 3, pantsBack);
+  }
+  if (look.vest) {
+    // open at the front, a grey mesh panel and a reflective band across it
+    rect(ctx, -4, sh + 1, 7, hip - sh - 1, '#6f7278');
+    rect(ctx, -4, sh + 1, 2, hip - sh - 1, shade(look.vest, -0.25));
+    rect(ctx, -2, sh + 1, 2, hip - sh - 1, look.vest);
+    rect(ctx, 2, sh + 1, 1, hip - sh - 1, look.vest);
+    rect(ctx, -4, sh + 5, 7, 2, look.vest);
+    rect(ctx, -4, hip - 2, 7, 1, '#15141a');
   }
   if (look.lace) {
     rect(ctx, 1, sh, 1, 5, look.lace);

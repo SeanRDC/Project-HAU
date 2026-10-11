@@ -8,7 +8,7 @@ import { P, shade } from './palette';
 import { tricycle } from './props';
 import { car } from './street';
 
-export type VehicleKind = 'car' | 'suv' | 'jeepney' | 'tricycle';
+export type VehicleKind = 'car' | 'suv' | 'jeepney' | 'tricycle' | 'pickup';
 
 export interface Sprite {
   canvas: HTMLCanvasElement;
@@ -74,9 +74,60 @@ function suv(c: Ctx, base: number, body: string): void {
   wheel(c, 40, base, 5);
 }
 
+/**
+ * A red double-cab Chevrolet pickup, from the photo in `assets/`: black
+ * bonnet stripe, black roof rails and wheels, a dark splash of decal down the
+ * rear door, the gold bowtie on the nose and the sports bar behind the cab.
+ */
+function pickup(c: Ctx, base: number, body: string): void {
+  const lo = shade(body, -0.3);
+  const hi = shade(body, 0.3);
+  const black = '#1f1f25';
+  // the bed, the cab and the bonnet
+  rect(c, 2, base - 19, 24, 12, body);
+  rect(c, 2, base - 19, 24, 2, hi);
+  rect(c, 24, base - 19, 30, 12, body);
+  rect(c, 52, base - 18, 18, 11, body);
+  rect(c, 52, base - 18, 18, 2, black);
+  rect(c, 2, base - 8, 68, 1, lo);
+  poly(c, [[25, base - 19], [28, base - 30], [47, base - 30], [54, base - 19]], body);
+  rect(c, 28, base - 31, 19, 1, black);
+  rect(c, 27, base - 32, 2, 1, black);
+  rect(c, 45, base - 32, 2, 1, black);
+  // windows, dark tint
+  rect(c, 29, base - 28, 8, 8, '#2a3040');
+  poly(c, [[39, base - 20], [39, base - 28], [46, base - 28], [51, base - 20]], '#3a4458');
+  rect(c, 37, base - 28, 2, 9, body);
+  rect(c, 52, base - 22, 3, 3, black);
+  // sports bar and the tailgate
+  poly(c, [[20, base - 19], [23, base - 26], [26, base - 26], [26, base - 19]], black);
+  rect(c, 1, base - 18, 2, 10, lo);
+  rect(c, 1, base - 16, 1, 4, '#ffb0a0');
+  // the decal sweeping down the rear door, the side step, the door handles
+  poly(c, [[30, base - 9], [36, base - 18], [39, base - 18], [34, base - 9]], black);
+  poly(c, [[26, base - 9], [30, base - 15], [32, base - 15], [29, base - 9]], black);
+  rect(c, 26, base - 7, 26, 2, '#55585f');
+  rect(c, 35, base - 17, 3, 1, black);
+  rect(c, 47, base - 17, 3, 1, black);
+  // the nose: grille, headlight, the bowtie, the bumper
+  rect(c, 69, base - 17, 2, 9, black);
+  rect(c, 66, base - 16, 4, 3, '#eef2f6');
+  rect(c, 70, base - 13, 1, 2, P.gold);
+  rect(c, 66, base - 9, 5, 3, lo);
+  // wheel arches and black wheels
+  for (const wx of [14, 58]) {
+    disc(c, wx, base - 6, 7, black);
+    disc(c, wx, base - 5, 5, '#111114');
+    disc(c, wx, base - 5, 3, '#34343c');
+    disc(c, wx, base - 5, 1, '#111114');
+  }
+}
+
 /** Draws one vehicle facing right onto its own canvas. */
 export function vehicleSprite(kind: VehicleKind, body: string): Sprite {
-  const size: Record<VehicleKind, [number, number]> = { car: [50, 24], suv: [54, 30], jeepney: [66, 34], tricycle: [50, 30] };
+  const size: Record<VehicleKind, [number, number]> = {
+    car: [50, 24], suv: [54, 30], jeepney: [66, 34], tricycle: [50, 30], pickup: [74, 34],
+  };
   const [w, h] = size[kind];
   const [canvas, c] = makeCanvas(w, h);
   switch (kind) {
@@ -89,6 +140,9 @@ export function vehicleSprite(kind: VehicleKind, body: string): Sprite {
     case 'jeepney':
       jeepney(c, h - 1, body);
       return { canvas, lamp: [63, 12] };
+    case 'pickup':
+      pickup(c, h - 1, body);
+      return { canvas, lamp: [68, 15] };
     case 'tricycle': {
       // the stock tricycle faces left, so turn it round
       const [tmp, t] = makeCanvas(w, h);
