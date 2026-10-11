@@ -39,6 +39,8 @@ Add these to the URL to jump straight somewhere while testing:
 * `flags` - comma-separated story flags to set
 * `phone` - open the phone
 * `map` - open the campus map
+* `rain` - start raining, 0 to 1 (`rain=1` is a downpour)
+* `pesos` - how much baon to start with (default 150)
 * `warm` - simulate this many seconds before the first frame
 
 Any of these also turns the save game off for that run, so testing never touches your real progress.

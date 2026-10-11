@@ -2,7 +2,7 @@ import { Audio } from '../engine/audio';
 import { Display, VIEW_H, VIEW_W } from '../engine/display';
 import { Input } from '../engine/input';
 import { clamp, damp } from '../engine/math';
-import { moodAt } from '../engine/tod';
+import { Mood, moodAt } from '../engine/tod';
 import { Area, Target } from './area';
 import { Character, NAME_MAX, baseLook, character, isCharacter, playerName, setCharacter, setPlayerName } from './art/player';
 import { Sky } from './art/sky';
@@ -24,6 +24,7 @@ import { buildWalkway } from './scenes/walkway';
 import { TASKS } from './story/tasks';
 import { AreaDef, GameApi, Line, Sound, Step } from './types';
 import { drawAreaTitle, drawClock, drawControlsHint, drawLetterbox, drawPrompt, drawToast } from './ui/hud';
+import { RAINING, Weather, WeatherSave } from './weather';
 import { CampusMap, STOPS } from './ui/map';
 import { Phone } from './ui/phone';
 import { drawName, drawSelect } from './ui/select';
@@ -33,6 +34,8 @@ import { drawTitle } from './ui/title';
 const TIME_RATE = 24 / (12 * 60);
 const FADE_TIME = 0.35;
 const START_HOUR = 16.4;
+/** a day's allowance, in pesos. Refilled each morning once the game has more than one day. */
+const BAON = 150;
 const SAVE_KEY = 'project-hau-save-v1';
 const SAVE_EVERY = 10;
 /** a new day starts out on the street, in front of the main gate */
@@ -55,6 +58,13 @@ export class Game implements GameApi {
   private clock = START_HOUR;
   private flags = new Set<string>();
   private time = 0;
+  private weather = new Weather();
+  /** baon left, in pesos */
+  private wallet = BAON;
+  /** the last thing bought, for the phone, e.g. "Taho −₱20" */
+  private lastBuy: string | null = null;
+  /** the last money change and how long ago, for the HUD */
+  private change: { amount: number; age: number } | null = null;
 
   private mode: 'title' | 'play' = 'title';
   private titleOut = 0;
@@ -113,6 +123,7 @@ export class Game implements GameApi {
     input.onFirstGesture = () => this.audio.start();
     this.dialogue.onBlip = (who) => this.audio.blip(VOICES[who] ?? 300);
     this.dialogue.onFlag = (flag) => this.set(flag);
+    this.dialogue.onPesos = (amount, item) => this.pay(amount, item);
     this.dialogue.onSpeaker = (who) => {
       if (who && who !== 'you') this.area.face(who);
     };
@@ -134,6 +145,11 @@ export class Game implements GameApi {
     this.clock = START_HOUR;
     this.resume = null;
     this.hasSave = false;
+    this.wallet = BAON;
+    this.lastBuy = null;
+    // ?pesos=20 starts with that much baon; ?rain=1 starts a downpour (0.5 for steady rain)
+    if (q.has('pesos')) this.wallet = Number(q.get('pesos'));
+    this.weather.force(Number(q.get('rain') ?? 0));
     // ?char=girl plays as the girl
     this.applyCharacter(q.get('char') === 'girl' ? 'girl' : 'boy');
     setPlayerName(q.get('name') ?? '');
@@ -176,10 +192,24 @@ export class Game implements GameApi {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return;
-      const data = JSON.parse(raw) as { flags: string[]; clock: number; area: string; x: number; character?: unknown; name?: unknown };
+      const data = JSON.parse(raw) as {
+        flags: string[];
+        clock: number;
+        area: string;
+        x: number;
+        character?: unknown;
+        name?: unknown;
+        pesos?: number;
+        last?: string | null;
+        weather?: WeatherSave;
+      };
       if (!this.areas.has(data.area)) return;
       this.flags = new Set(data.flags);
       this.clock = data.clock;
+      // saves from before baon existed start with a full day's worth
+      this.wallet = typeof data.pesos === 'number' ? data.pesos : BAON;
+      this.lastBuy = data.last ?? null;
+      this.weather.load(data.weather);
       this.resume = { area: data.area, x: data.x };
       this.hasSave = true;
       // saves from before character selection have no field: they were the boy
@@ -203,6 +233,9 @@ export class Game implements GameApi {
         x: Math.round(this.area.player.x),
         character: character(),
         name: playerName(),
+        pesos: this.wallet,
+        last: this.lastBuy,
+        weather: this.weather.save(),
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch {
@@ -212,6 +245,23 @@ export class Game implements GameApi {
 
   has(flag: string): boolean {
     return this.flags.has(flag);
+  }
+
+  pesos(): number {
+    return this.wallet;
+  }
+
+  raining(): boolean {
+    return this.weather.rain > RAINING;
+  }
+
+  /** Money in (positive) or out (negative), from a dialogue line. Never goes below zero. */
+  private pay(amount: number, item: string): void {
+    this.wallet = Math.max(0, this.wallet + amount);
+    if (amount < 0) this.lastBuy = `${item} −₱${-amount}`;
+    this.change = { amount, age: 0 };
+    this.audio.coin();
+    this.save();
   }
 
   set(flag: string): void {
@@ -261,8 +311,11 @@ export class Game implements GameApi {
     const input = this.input;
     this.time += dt;
     this.clock = (this.clock + dt * TIME_RATE) % 24;
+    this.weather.update(dt, dt * TIME_RATE);
+    for (const a of this.areas.values()) a.rain = this.weather.rain;
+    if (this.change) this.change.age += dt;
     if (input.pressed('mute')) this.audio.toggleMute();
-    const mood = moodAt(this.clock);
+    const mood = this.weather.mood(moodAt(this.clock));
     this.sky.update(dt);
 
     if (this.mode === 'title') {
@@ -321,7 +374,10 @@ export class Game implements GameApi {
         this.audio.chime();
         this.travel(stop.area, stop.spawn);
       }
-      if (input.pressed('time') && !this.phone.open && !this.map.open) this.clock = (this.clock + 1.5) % 24;
+      if (input.pressed('time') && !this.phone.open && !this.map.open) {
+        this.clock = (this.clock + 1.5) % 24;
+        this.weather.update(0, 1.5);
+      }
     }
     this.phone.update(dt);
     this.map.update(dt);
@@ -346,7 +402,7 @@ export class Game implements GameApi {
     input.endFrame();
   }
 
-  private updateTitle(dt: number, mood: ReturnType<typeof moodAt>): void {
+  private updateTitle(dt: number, mood: Mood): void {
     this.area.update(dt, this.input, mood, true);
     // slow drift across the front of the building
     const span = this.area.def.width - VIEW_W;
@@ -437,6 +493,8 @@ export class Game implements GameApi {
       this.flags.clear();
       this.clock = START_HOUR;
       this.resume = null;
+      this.wallet = BAON;
+      this.lastBuy = null;
       if (this.startFresh && this.persist) {
         try {
           localStorage.removeItem(SAVE_KEY);
@@ -456,12 +514,16 @@ export class Game implements GameApi {
     const def = this.area.def;
     const camMid = this.area.camera.x + VIEW_W / 2;
     const water = def.fountainX === undefined ? 0 : clamp(1 - Math.abs(camMid - def.fountainX) / 320, 0, 1);
-    this.audio.update(water, night, !def.outdoor);
+    this.audio.update(water, night, !def.outdoor, this.weather.rain);
   }
 
   render(): void {
     const area = this.area;
-    area.render(this.display.ctx, moodAt(this.clock));
+    const mood = this.weather.mood(moodAt(this.clock));
+    area.render(this.display.ctx, mood);
+    if (area.def.outdoor) {
+      this.weather.render(this.display.ctx, Math.round(area.camera.x), area.def.walkY, area.def.width, this.time, mood.night);
+    }
     this.display.present();
 
     const ui = this.display.ui();
@@ -473,13 +535,13 @@ export class Game implements GameApi {
       if (this.target) drawPrompt(ui, this.target, area.camera.x, this.time);
       this.dialogue.render(ui, area);
       if (!this.dialogue.active) {
-        if (!this.cutscene) drawClock(ui, this.clock);
-        if (!this.cutscene && !this.phone.open) this.map.renderMini(ui, here, ahead, this.time, moodAt(this.clock).night);
+        if (!this.cutscene) drawClock(ui, this.clock, this.wallet, this.raining(), this.change);
+        if (!this.cutscene && !this.phone.open) this.map.renderMini(ui, here, ahead, this.time, mood.night);
         drawAreaTitle(ui, area.def.title, area.def.subtitle, this.areaAge);
         if (!this.cutscene) drawControlsHint(ui, clamp(14 - this.playAge, 0, 1));
       }
       if (this.toast) drawToast(ui, this.toast.text, this.toast.age);
-      this.phone.render(ui, this.clock, (f) => this.has(f));
+      this.phone.render(ui, this.clock, (f) => this.has(f), { pesos: this.wallet, last: this.lastBuy });
       this.map.render(ui, here, ahead, this.time);
     }
     drawTitle(ui, this.time, Math.max(this.titleOut, this.selectFade), this.hasSave);

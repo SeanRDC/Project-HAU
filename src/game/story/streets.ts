@@ -6,8 +6,18 @@
 // knows where things are. Writers: change labels and lines freely.
 
 import { BUILDINGS } from '../campus/plan';
-import { Hotspot } from '../types';
+import { Choice, GameApi, Hotspot, Line } from '../types';
 import { closedDoor, deadEnd, wayTo } from './campus';
+
+/** A menu choice that costs `price` out of your baon, or tells you you are short. */
+function buy(g: GameApi, item: string, price: number, lines: Line[]): Choice {
+  const text = `${item} (₱${price})`;
+  if (g.pesos() < price) {
+    return { text, then: [{ who: '', text: `Kinapa mo ang bulsa mo. ₱${g.pesos()} na lang ang natitira.` }] };
+  }
+  const [first, ...rest] = lines;
+  return { text, then: [{ ...first, pesos: -price, item }, ...rest] };
+}
 
 export function walkwayHotspots(x: { rotunda: number; stl: number; courtyard: number; pgn: number; lawn: number }): Hotspot[] {
   return [
@@ -39,12 +49,42 @@ export function hallsHotspots(x: {
       range: 30,
       label: 'Tingnan ang Yellow Food Court',
       height: 60,
-      use: (g) =>
+      use: (g) => {
+        const open = g.hour() >= 7 && g.hour() < 19;
+        if (!open) {
+          g.say([
+            { who: '', text: '"YELLOW FOOD COURT." Building 6 sa campus map. Dilaw ang bubong, kaya \'yun na rin ang tawag.' },
+            { who: '', text: 'Sarado na ang mga stall. Bukas ulit ng alas-siyete ng umaga.' },
+            { who: 'you', text: 'Dito yata \'yung kwek-kwek na ipinangako ni Kath.' },
+          ]);
+          return;
+        }
         g.say([
-          { who: '', text: '"YELLOW FOOD COURT." Building 6 sa campus map. Dilaw ang bubong, kaya \'yun na rin ang tawag.' },
-          { who: '', text: 'Bukas ang ilaw ng mga stall pero wala pang nagtitinda.' },
-          { who: 'you', text: 'Dito yata \'yung kwek-kwek na ipinangako ni Kath.' },
-        ]),
+          {
+            who: '',
+            text: g.raining()
+              ? 'Siksikan sa Yellow Food Court, lahat sumilong sa ulan. Amoy prito at kanin.'
+              : 'Yellow Food Court. Mahaba ang pila sa siomai, maikli sa palamig.',
+            choices: [
+              buy(g, 'Kwek-kwek', 25, [
+                { who: '', text: 'Limang kwek-kwek sa stick, may suka na may sibuyas.' },
+                { who: 'you', text: 'Mainit pa. Sulit.' },
+              ]),
+              buy(g, 'Siomai rice', 55, [
+                { who: '', text: 'Apat na siomai, kanin, toyo-kalamansi, at maraming chili garlic.' },
+                { who: 'you', text: 'Busog na ako hanggang uwian.' },
+              ]),
+              buy(g, 'Palamig', 15, [
+                { who: '', text: 'Sago\'t gulaman sa plastic cup. Malamig, matamis.' },
+              ]),
+              {
+                text: 'May baon akong adobo.',
+                then: [{ who: 'you', text: 'Tipid muna. Sayang ang adobo ni Mama.' }],
+              },
+            ],
+          },
+        ]);
+      },
     },
     wayTo('lane', x.lane, 'Bumaba sa parking lane', 'lane', 'halls', 30),
     closedDoor('sgh', x.sgh, BUILDINGS.sgh),

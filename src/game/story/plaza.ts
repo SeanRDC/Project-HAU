@@ -104,8 +104,28 @@ export function plazaNpcs(): NpcDef[] {
       facing: -1,
       wander: [262, 352],
       talk: (g) =>
-        g.has('met_jopet')
-          ? [{ who: 'jopet', text: 'May piso ka ba diyan? Pang-apat na subok.' }]
+        g.has('gave_piso')
+          ? [{ who: 'jopet', text: 'Nahulog ko na. Ngayon, aaral na talaga ako. Promise.' }]
+          : g.has('met_jopet')
+          ? [
+              {
+                who: 'jopet',
+                text: 'May piso ka ba diyan? Pang-apat na subok.',
+                choices: [
+                  {
+                    text: 'Eto, o.',
+                    then:
+                      g.pesos() >= 1
+                        ? [
+                            { who: '', text: 'Inabot mo ang piso. Hinalikan niya ito bago ihulog sa fountain.', pesos: -1, item: 'Piso kay Jopet', set: 'gave_piso' },
+                            { who: 'jopet', text: 'Salamat, freshie. Pag pumasa ako, libre kita.' },
+                          ]
+                        : [{ who: 'you', text: 'Ay, ubos na pala ang barya ko.' }, { who: 'jopet', text: 'Pareho tayo, pare. Pareho tayo.' }],
+                  },
+                  { text: 'Wala, eh.', then: [{ who: 'jopet', text: 'Sige. Baka nga kailangan ko lang talagang mag-aral.' }] },
+                ],
+              },
+            ]
           : [
               { who: 'jopet', text: 'Sabi nila, pag naghulog ka ng piso dito bago mag-exam, papasa ka.' },
               { who: 'you', text: 'Totoo ba?' },

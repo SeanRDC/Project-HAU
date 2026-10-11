@@ -73,7 +73,12 @@ export function parkNpcs(x: { kath: number; bong: [number, number]; enzo: [numbe
       facing: 1,
       wander: x.bong,
       talk: (g) =>
-        g.has('met_bong')
+        g.has('met_bong') && g.raining()
+          ? [
+              { who: 'bong', text: 'O, buti may payong ka. Ako, sanay na. Basa na rin naman ako kanina pa.' },
+              { who: 'bong', text: 'At least hindi ko na kailangang diligan ang damo ngayon.' },
+            ]
+          : g.has('met_bong')
           ? [
               { who: 'bong', text: 'Dahon na naman. Walis ka nang walis, bukas meron ulit.' },
               { who: 'bong', text: 'Pero ayos lang. Ibig sabihin buhay pa \'yung mga puno.' },

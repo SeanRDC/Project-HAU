@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-12 (Character and name; real building outlines from OpenStreetMap)
+Last updated: 2026-10-12 (Baon and rain; character and name; real building outlines from OpenStreetMap)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -46,7 +46,7 @@ The seven campus streets, outsides only, no people yet:
 
 Every building's door names it, gives its number on the 2022 campus map and the offices inside, and says it is not open yet.
 
-Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key (pixel art, painted from the plan, with teleport) and a minimap in the top right, title screen, character picker and name entry, synthesised audio, autosave.
+Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key (pixel art, painted from the plan, with teleport) and a minimap in the top right, baon (allowance) money, rain that comes and goes with umbrellas, title screen, character picker and name entry, synthesised audio, autosave.
 
 ## Where Things Live
 * `src/engine/` - generic engine parts. Knows nothing about HAU.
@@ -64,13 +64,16 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * Flags are plain strings in a set (`met_bea`, `saw_bust`, ...). A dialogue line can set one with `set: 'flag'`.
 * `src/game/story/tasks.ts` lists the checklist; each task is ticked by a flag.
 * An area can name a `visitFlag` that is set the first time the player walks in.
-* Progress autosaves to `localStorage` (`project-hau-save-v1`). If you rename or remove flags, bump that key so old saves are ignored. The save also holds `character` (`boy` or `girl`) and `name`; saves without them load as the boy with no name, so the key was not bumped.
+* Progress autosaves to `localStorage` (`project-hau-save-v1`). If you rename or remove flags, bump that key so old saves are ignored. The save also holds `character` (`boy` or `girl`), `name`, `pesos`, the last purchase and the weather; saves without them load as the boy with no name, ₱150 and dry weather, so the key was not bumped.
 * The player's look: `src/game/art/player.ts` holds both looks and the chosen one (`baseLook()`). Areas and cutscenes reset to it, so never use a fixed look for the player. Dev shortcuts: `?char=girl&name=Mikko`.
 * Title flow: Enter continues a save, or opens the picker (A/D, Enter), then the name box (type, Enter). N with a save opens the picker too and only wipes the save once you confirm; Esc backs out.
 * An NPC's `talk(game)` returns the lines to say, so it can branch on `game.has('flag')`.
 * A cutscene is `game.play(steps)` from a hotspot, or an area's `intro(game, x)` that returns steps when you walk in. Steps: `walk`, `place`, `face`, `say`, `pause`, `sound`, `look` (swap what the player wears) and `run` (anything else). The game never saves in the middle of one.
 * An area can have a `barrier`: an x the player can't cross leftwards until a flag is set.
 * Main Gate flags: `passed_bag_check`, `id_fumble`, `scanned_id`, `met_joy`, `met_ella`.
+* **Money:** a line with `pesos: -20, item: 'Taho'` spends ₱20 when it is shown (positive gives money). `g.pesos()` says how much is left, so a talk function can offer a cheaper line when the player is short. `buy()` in `story/streets.ts` makes a menu choice that does both. New games start with ₱150 (`BAON` in `game.ts`).
+* **Weather:** `g.raining()` is true while it rains, for lines like Manong Taho's and Mang Bong's. Rain is in `src/game/weather.ts`.
+* `gave_piso` is set when you give Jopet a coin (his quest draft uses it).
 * Campus flags: `visited_chapel` (walked onto the lawn), `saw_chapel` (looked at the chapel). Neither is a checklist task yet.
 
 ## Needs Checking by a Human

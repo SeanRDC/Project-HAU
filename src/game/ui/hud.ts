@@ -16,13 +16,52 @@ export function drawPrompt(ui: Ctx, t: Target, camX: number, time: number): void
   ui.fillText(t.label, x + 16, y + 3);
 }
 
-export function drawClock(ui: Ctx, hour: number): void {
+/**
+ * Top left: the clock, an umbrella while it rains, and the baon left. `change`
+ * is the last amount spent or received and how many seconds ago, so it can
+ * float up beside the wallet.
+ */
+export function drawClock(
+  ui: Ctx,
+  hour: number,
+  pesos: number,
+  raining: boolean,
+  change: { amount: number; age: number } | null,
+): void {
   const label = clockLabel(hour);
   font(ui, 6.5, 600);
-  const w = ui.measureText(label).width + 12;
+  const icon = raining ? 10 : 0;
+  const w = ui.measureText(label).width + 12 + icon;
   roundRect(ui, 8, 8, w, 12, 6, 'rgba(22,16,34,0.55)');
+  if (raining) {
+    // a little umbrella
+    ui.fillStyle = '#9fc2e8';
+    ui.fillRect(14, 11, 7, 1);
+    ui.fillRect(13, 12, 9, 2);
+    ui.fillStyle = PAPER;
+    ui.fillRect(17, 14, 1, 3);
+    ui.fillRect(16, 16, 1, 1);
+  }
   ui.fillStyle = PAPER;
-  ui.fillText(label, 14, 10.6);
+  ui.fillText(label, 14 + icon, 10.6);
+
+  const money = `₱${pesos}`;
+  font(ui, 6.5, 700);
+  const mw = ui.measureText(money).width + 12;
+  const mx = 8 + w + 3;
+  roundRect(ui, mx, 8, mw, 12, 6, 'rgba(22,16,34,0.55)');
+  ui.fillStyle = GOLD;
+  ui.fillText(money, mx + 6, 10.6);
+
+  if (change && change.age < 2.2) {
+    const a = Math.min(1, (2.2 - change.age) * 2);
+    ui.globalAlpha = a;
+    font(ui, 6, 700);
+    ui.fillStyle = change.amount < 0 ? '#ff9a8a' : '#a8e6a0';
+    const sign = change.amount < 0 ? '−' : '+';
+    ui.fillText(`${sign}₱${Math.abs(change.amount)}`, mx + 4, 22 + change.age * 4);
+    ui.globalAlpha = 1;
+  }
 }
 
 /** Location card shown for a few seconds after walking into an area. `t` is seconds since entering. */

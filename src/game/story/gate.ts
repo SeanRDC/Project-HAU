@@ -230,17 +230,25 @@ export function gateNpcs(): NpcDef[] {
       depth: -4,
       facing: -1,
       wander: [900, 970],
-      talk: () => [
+      talk: (g) => [
         {
           who: 'taho',
-          text: 'Tahooo! Bente lang, may sago pa. Pampagising bago klase!',
+          text: g.raining()
+            ? 'Tahooo! Mainit-init, bagay sa ulan. Bente lang!'
+            : 'Tahooo! Bente lang, may sago pa. Pampagising bago klase!',
           choices: [
             {
               text: 'Sige po, isa.',
-              then: [
-                { who: '', text: 'Sinandok niya ang mainit na taho, binuhusan ng arnibal at sago.' },
-                { who: 'you', text: 'Ang sarap. Parang elementary ulit.' },
-              ],
+              then:
+                g.pesos() >= 20
+                  ? [
+                      { who: '', text: 'Sinandok niya ang mainit na taho, binuhusan ng arnibal at sago.', pesos: -20, item: 'Taho' },
+                      { who: 'you', text: 'Ang sarap. Parang elementary ulit.' },
+                    ]
+                  : [
+                      { who: '', text: 'Kinapa mo ang bulsa mo. Kulang ang barya.' },
+                      { who: 'taho', text: 'Ay, sige na. Bukas na lang, ha? Hindi ka naman tatakbo.' },
+                    ],
             },
             {
               text: 'Mamaya na lang po.',
