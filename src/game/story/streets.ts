@@ -1,0 +1,135 @@
+// What you can press E on along the campus streets: the ways from one street
+// to the next, and the doors of buildings that are not open yet. No one lives
+// on these streets yet; the people come once the buildings have insides.
+//
+// Each function is given the x of everything by its scene, so nothing here
+// knows where things are. Writers: change labels and lines freely.
+
+import { BUILDINGS } from '../campus/plan';
+import { Hotspot } from '../types';
+import { closedDoor, deadEnd, wayTo } from './campus';
+
+export function walkwayHotspots(x: { rotunda: number; stl: number; courtyard: number; pgn: number; lawn: number }): Hotspot[] {
+  return [
+    wayTo('rotunda', x.rotunda, 'Bumalik sa rotunda', 'plaza', 'walkway'),
+    closedDoor('stl', x.stl, BUILDINGS.stl),
+    wayTo('courtyard', x.courtyard, 'Tumawid papunta sa courtyard ng Main Bldg.', 'courtyard', 'gate', 30),
+    closedDoor('pgn', x.pgn, BUILDINGS.pgn),
+    wayTo('lawn', x.lawn, 'Pumunta sa chapel', 'lawn', 'walkway'),
+  ];
+}
+
+export function laneHotspots(x: { halls: number; stl: number; sfj: number; plaza: number }): Hotspot[] {
+  return [
+    wayTo('halls', x.halls, 'Pumunta sa back road', 'halls', 'lane'),
+    closedDoor('sfj', x.sfj, BUILDINGS.sfj, true),
+    closedDoor('stl', x.stl, BUILDINGS.stl),
+    wayTo('plaza', x.plaza, 'Pumunta sa rotunda', 'plaza', 'lane'),
+  ];
+}
+
+export function hallsHotspots(x: {
+  warehouse: number; food: number; lane: number; sgh: number; srh: number; smh: number; ggn: number; lawn: number; aps: number;
+}): Hotspot[] {
+  return [
+    closedDoor('warehouse', x.warehouse, BUILDINGS.warehouse),
+    {
+      id: 'food',
+      x: x.food,
+      range: 30,
+      label: 'Tingnan ang Yellow Food Court',
+      height: 60,
+      use: (g) =>
+        g.say([
+          { who: '', text: '"YELLOW FOOD COURT." Building 6 sa campus map. Dilaw ang bubong, kaya \'yun na rin ang tawag.' },
+          { who: '', text: 'Bukas ang ilaw ng mga stall pero wala pang nagtitinda.' },
+          { who: 'you', text: 'Dito yata \'yung kwek-kwek na ipinangako ni Kath.' },
+        ]),
+    },
+    wayTo('lane', x.lane, 'Bumaba sa parking lane', 'lane', 'halls', 30),
+    closedDoor('sgh', x.sgh, BUILDINGS.sgh),
+    closedDoor('srh', x.srh, BUILDINGS.srh),
+    closedDoor('smh', x.smh, BUILDINGS.smh),
+    closedDoor('ggn', x.ggn, BUILDINGS.ggn),
+    wayTo('lawn', x.lawn, 'Pumunta sa chapel lawn', 'lawn', 'halls', 30),
+    wayTo('aps', x.aps, 'Dumiretso sa APS', 'aps', 'halls'),
+  ];
+}
+
+export function apsHotspots(x: { halls: number; lawn: number; aps: number; gym: number; sh: number }): Hotspot[] {
+  return [
+    wayTo('halls', x.halls, 'Bumalik sa back road', 'halls', 'aps'),
+    wayTo('lawn', x.lawn, 'Pumunta sa chapel lawn', 'lawn', 'aps', 30),
+    closedDoor('aps', x.aps, BUILDINGS.aps),
+    wayTo('gym', x.gym, 'Pumunta sa covered court at gym', 'gym', 'aps', 30),
+    closedDoor('sh', x.sh, BUILDINGS.sh),
+  ];
+}
+
+export function lawnHotspots(x: { halls: number; aps: number; walkway: number; chapel: number; sjh: number }): Hotspot[] {
+  return [
+    wayTo('halls', x.halls, 'Pumunta sa back road', 'halls', 'lawn', 30),
+    wayTo('aps', x.aps, 'Dumaan sa tabi ng APS', 'aps', 'lawn'),
+    wayTo('walkway', x.walkway, 'Bumalik sa walkway', 'walkway', 'lawn', 30),
+    {
+      id: 'chapel',
+      x: x.chapel,
+      range: 34,
+      label: 'Tingnan ang chapel',
+      height: 70,
+      use: (g) =>
+        g.say([
+          { who: '', text: '"CHAPEL OF THE HOLY GUARDIAN ANGEL." Bilog, puti, patong-patong na parang mga singsing, may krus sa tuktok.' },
+          { who: '', text: 'Dito nakasentro ang buong campus. Kahit saan ka manggaling, dito ka rin dadaan.' },
+          { who: '', text: 'Sarado pa ang pinto. Tahimik sa loob.', set: 'saw_chapel' },
+          { who: 'you', text: 'Babalik ako \'pag bukas na.' },
+        ]),
+    },
+    wayTo('sjh', x.sjh, 'Pumunta sa St. Joseph Hall', 'sjh', 'lawn'),
+  ];
+}
+
+export function sjhHotspots(x: { gym: number; education: number; sjh: number; computing: number; lawn: number; mgn: number }): Hotspot[] {
+  return [
+    wayTo('gym', x.gym, 'Pumunta sa gym', 'gym', 'sjh', 30),
+    deadEnd('education', x.education, 'Tingnan ang pinto', '"SCHOOL OF EDUCATION" at "SCHOOL OF ARTS AND SCIENCES." Sarado pa ang pinto.'),
+    closedDoor('sjh', x.sjh, BUILDINGS.sjh),
+    {
+      id: 'computing',
+      x: x.computing,
+      range: 22,
+      label: 'Basahin ang karatula',
+      height: 60,
+      use: (g) =>
+        g.say([
+          { who: '', text: '"SCHOOL OF COMPUTING." Nasa St. Joseph Hall pala ang Dean\'s Office.' },
+          { who: '', text: 'May papel na nakadikit: "Inaayos pa ang loob. Balik ka sa susunod."' },
+          { who: 'you', text: 'Malapit na. Konting hintay na lang.' },
+        ]),
+    },
+    wayTo('lawn', x.lawn, 'Pumunta sa chapel lawn', 'lawn', 'sjh', 30),
+    closedDoor('mgn', x.mgn, BUILDINGS.mgn),
+  ];
+}
+
+export function gymHotspots(x: { aps: number; court: number; formation: number; gym: number; sjh: number; annex: number }): Hotspot[] {
+  return [
+    wayTo('aps', x.aps, 'Pumunta sa APS', 'aps', 'gym'),
+    {
+      id: 'court',
+      x: x.court,
+      range: 40,
+      label: 'Tingnan ang Covered Court',
+      height: 70,
+      use: (g) =>
+        g.say([
+          { who: '', text: '"COVERED COURT." Building 19 sa campus map. Bukas sa lahat ng gilid, bubong lang at mga poste.' },
+          { who: '', text: 'Walang naglalaro ngayon. Rinig mo pa rin ang talbog ng bola sa isip mo.' },
+        ]),
+    },
+    closedDoor('formation', x.formation, BUILDINGS.formation, true),
+    closedDoor('gym', x.gym, BUILDINGS.gym),
+    wayTo('sjh', x.sjh, 'Pumunta sa St. Joseph Hall', 'sjh', 'gym', 30),
+    closedDoor('annex', x.annex, BUILDINGS.annex),
+  ];
+}

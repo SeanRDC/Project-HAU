@@ -73,7 +73,7 @@ export function drawControlsHint(ui: Ctx, alpha: number): void {
   if (alpha <= 0) return;
   ui.globalAlpha = alpha;
   let x = VIEW_W - 8;
-  const items: [string, string][] = [['T', 'Oras'], ['Q', 'Phone'], ['E', 'Kausapin'], ['Shift', 'Takbo'], ['A D', 'Lakad']];
+  const items: [string, string][] = [['T', 'Oras'], ['C', 'Mapa'], ['Q', 'Phone'], ['E', 'Kausapin'], ['Shift', 'Takbo'], ['A D', 'Lakad']];
   for (const [key, label] of items) {
     font(ui, 6, 500);
     const lw = ui.measureText(label).width;

@@ -14,4 +14,4 @@ Since we are a small 4-person team, keeping our tools standardized is crucial so
 If anyone needs to introduce a new tool into the pipeline (like a specific tilemap editor or audio plugin), let the team know first so we don't run into compatibility issues.
 
 ## Custom Scripts
-*(Currently empty. When we write custom scripts to automate things—like packing sprite sheets or generating dialogue trees—they will live here, along with instructions on how to run them).*
+* `check-links.mjs` - presses E on every hotspot in every area and checks that each way out leads somewhere real and has a way back. Start the game with `npm run dev`, then run `npm run check:links` in a second terminal. Needs Chrome; set the `CHROME` environment variable to its path if it is not found, and `GAME_URL` if the dev server is not on `http://localhost:5173`.

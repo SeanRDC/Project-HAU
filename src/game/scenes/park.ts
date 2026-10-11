@@ -1,92 +1,54 @@
-// Epiphany of Angels park. Coming from the courtyard gate you pass the covered
-// walk and the Pinatubo memorial, then the row of stone angels along the road
-// with the university seal set into the pavers.
+// Epiphany of Angels: the paved road that runs from the Sto. Rosario Gate
+// into the campus, with stone angels on pedestals down both sides and the
+// university seal set into the pavers. You are looking north-west: the main
+// gate is at the left end, the covered shed runs behind the far row of
+// angels with St. Martha Hall beyond it, and at the right end the road opens
+// into the fountain plaza in front of the San Francisco de Javier Building.
+// The near row of angels stands between you and the camera.
 
-import { Ctx, VIEW_H, VIEW_W, makeCanvas } from '../../engine/display';
+import { Ctx, VIEW_H, makeCanvas } from '../../engine/display';
 import { hex, rng } from '../../engine/math';
-import { disc, ellipse, line, poly, px, rect } from '../../engine/pix';
-import { P, shade } from '../art/palette';
+import { disc, ellipse, poly, px, rect } from '../../engine/pix';
+import { facade } from '../art/buildings';
+import { P } from '../art/palette';
 import { RED_TIP, bamboo, crookLamp, memorare, pedestal, pergola, scrollBench, stoneAngel } from '../art/park';
-import { SILHOUETTE, bush, foliage, hedge, pot, signBoard, stoneBench, tree } from '../art/props';
+import { bush, hedge, palm, pot, signBoard, tree } from '../art/props';
+import { fountainPlaza, gatePillar } from '../art/street';
+import { BUILDINGS, PLACES } from '../campus/plan';
+import { STREETS, frontage, streetWidth, xOf } from '../campus/streets';
 import { parkHotspots, parkNpcs } from '../story/park';
-import { AreaDef, AreaLight } from '../types';
+import { AreaDef, AreaLight, Layer } from '../types';
+import { GROUND, WALK, ambience, doorLight, farCity, frontPlants, midCampus } from './kit';
 
-const WIDTH = 1760;
-const GROUND = 206;
-const WALK = 242;
-const GATE_X = 44;
-const PERGOLA_X = 120;
-const PERGOLA_BAYS = 7;
-const MEMORARE_X = 668;
-const ANGELS_X = 800;
-const ANGEL_GAP = 104;
-const ANGELS = 8;
-const SEAL_X = 1180;
-const SOC_X = 1560;
-const EXIT_X = 1716;
+const S = STREETS.park;
+const WIDTH = streetWidth(S);
+const GATE_X = xOf(S, PLACES.mainGate);
+const SEAL_X = xOf(S, PLACES.seal);
+/** where the angels stop and the road opens into the fountain plaza */
+const END_X = xOf(S, PLACES.epiphanyEnd);
+const FOUNTAIN_X = xOf(S, PLACES.fountainPlaza);
+const FOUNTAIN_Y = GROUND + 30;
+const [SFJ_L] = frontage(S, BUILDINGS.sfj.blocks[0]);
+const [MARTHA_L, MARTHA_R] = frontage(S, BUILDINGS.martha.blocks[0]);
+const [CORAZON_L, CORAZON_R] = frontage(S, BUILDINGS.corazon.blocks[0]);
 
-function layerWidth(parallax: number): number {
-  return Math.ceil(VIEW_W + (WIDTH - VIEW_W) * parallax) + 4;
-}
-
-function farLayer(): HTMLCanvasElement {
-  const [canvas, c] = makeCanvas(layerWidth(0.16), VIEW_H);
-  const rand = rng(51);
-  for (let x = -10; x < canvas.width; x += 30 + rand() * 40) {
-    const h = 30 + rand() * 70;
-    const w = 26 + rand() * 30;
-    rect(c, x, GROUND - h, w, h, rand() > 0.5 ? '#a9a6ae' : '#b9ad9c');
-    for (let wy = GROUND - h + 5; wy < GROUND - 6; wy += 8) {
-      for (let wx = x + 3; wx < x + w - 4; wx += 6) rect(c, wx, wy, 3, 4, '#7d8698');
-    }
-  }
-  for (let x = -20; x < canvas.width; x += 16 + rand() * 20) {
-    foliage(c, x, GROUND - 8 - rand() * 12, 14 + rand() * 10, 10 + rand() * 8, 520 + x, {
-      deep: '#31543f', dark: '#3b6347', mid: '#48754f', lit: '#5a8a5a', hi: '#6b9a62',
-    });
-  }
-  rect(c, 0, GROUND, canvas.width, VIEW_H - GROUND, '#3b6347');
-  return canvas;
-}
-
-/** Newer campus buildings behind the park: concrete blocks and a glass skylight. */
-function midLayer(): HTMLCanvasElement {
-  const [canvas, c] = makeCanvas(layerWidth(0.45), VIEW_H);
-  const rand = rng(53);
-
-  const block = (x: number, w: number, h: number, wall: string, glass: string) => {
-    rect(c, x, GROUND - h, w, h, wall);
-    rect(c, x, GROUND - h, w, 3, shade(wall, 0.35));
-    rect(c, x + w - 8, GROUND - h, 8, h, shade(wall, -0.2));
-    for (let wy = GROUND - h + 10; wy < GROUND - 14; wy += 16) {
-      rect(c, x + 4, wy, w - 16, 8, glass);
-      for (let wx = x + 4; wx < x + w - 12; wx += 9) rect(c, wx, wy, 1, 8, shade(wall, -0.1));
-    }
-  };
-  block(20, 130, 96, '#d9c88f', '#56627a');
-  block(190, 90, 60, '#8a8d93', '#5d6c88');
-  // glass pyramid skylight
-  poly(c, [[300, GROUND - 40], [420, GROUND - 40], [360, GROUND - 84]], '#8fb7c9');
-  poly(c, [[300, GROUND - 40], [360, GROUND - 40], [360, GROUND - 84]], '#b4d6e2');
-  for (let i = 0; i <= 6; i++) line(c, 300 + i * 20, GROUND - 40, 360, GROUND - 84, '#e8f2f4', 1);
-  rect(c, 290, GROUND - 40, 140, 40, '#d9c88f');
-  block(450, 150, 120, '#74777f', '#6b8fc4');
-  block(620, 110, 70, '#e0d3a8', '#56627a');
-  block(760, 180, 104, '#9a9da3', '#7da0cc');
-  block(960, 100, 54, '#d9c88f', '#56627a');
-  for (let x = -10; x < canvas.width; x += 50 + rand() * 60) {
-    tree(c, x, GROUND + 2, 50 + rand() * 30, 18 + rand() * 9, 950 + Math.round(x));
-  }
-  rect(c, 0, GROUND, canvas.width, VIEW_H - GROUND, P.grassDark);
-  return canvas;
-}
+/** four angels on each side of the road: the Holy Guardian Angel and seven archangels */
+const ANGELS = 4;
+const ANGEL_GAP = Math.round((END_X - GATE_X) / ANGELS);
+const ANGELS_X = GATE_X + Math.round(ANGEL_GAP / 2);
+const PERGOLA_BAY = 62;
+const PERGOLA_BAYS = Math.floor((END_X - GATE_X - 50) / PERGOLA_BAY);
+const PERGOLA_X = GATE_X + 36;
+const MEMORARE_X = END_X + 30;
+const SFJ_X = SFJ_L + 8;
+const SFJ_DOOR = FOUNTAIN_X - 70;
 
 function ground(c: Ctx): void {
   const rand = rng(57);
   // lawn the statues stand on
   rect(c, 0, GROUND - 6, WIDTH, 16, P.grass);
   rect(c, 0, GROUND - 6, WIDTH, 2, P.grassHi);
-  for (let i = 0; i < 900; i++) px(c, rand() * WIDTH, GROUND - 5 + rand() * 14, rand() > 0.5 ? P.grassHi : P.grassDark);
+  for (let i = 0; i < 420; i++) px(c, rand() * WIDTH, GROUND - 5 + rand() * 14, rand() > 0.5 ? P.grassHi : P.grassDark);
   // kerb and concrete sidewalk with inset tiles
   rect(c, 0, GROUND + 10, WIDTH, 2, '#e4dfd2');
   rect(c, 0, GROUND + 12, WIDTH, 10, '#c9c4b6');
@@ -108,8 +70,11 @@ function ground(c: Ctx): void {
     }
     rect(c, 0, y + 5, WIDTH, 1, '#48464f');
   }
-  // painted parking ticks
-  for (let x = 720; x < 1640; x += 46) rect(c, x, GROUND + 27, 16, 2, '#dcdad2');
+  // white dashes down both edges of the road
+  for (let x = GATE_X + 8; x < END_X; x += 46) {
+    rect(c, x, GROUND + 27, 16, 2, '#dcdad2');
+    rect(c, x - 6, VIEW_H - 5, 20, 3, '#dcdad2');
+  }
 }
 
 /** The seal in the road, flattened by the low camera angle. */
@@ -131,61 +96,46 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
   const [glow, g] = makeCanvas(WIDTH, VIEW_H);
   const lamp = hex(P.lamp);
-  const pergolaEnd = PERGOLA_X + PERGOLA_BAYS * 62;
+  const pergolaEnd = PERGOLA_X + PERGOLA_BAYS * PERGOLA_BAY;
 
-  // trees at the back
-  for (const [i, x] of [640, 742, 962, 1170, 1378, 1590, 1700].entries()) {
-    tree(c, x, GROUND - 2, 96 + (i % 3) * 14, 34 + (i % 2) * 6, 1200 + i * 3);
+  // trees behind the covered shed
+  for (const [i, x] of [GATE_X + 20, PERGOLA_X + 150, pergolaEnd - 40, END_X + 6].entries()) {
+    tree(c, x, GROUND - 2, 100 + (i % 3) * 14, 34 + (i % 2) * 6, 1200 + i * 3);
   }
 
-  // grey wall and bamboo behind the covered walk
-  rect(c, 60, GROUND - 60, pergolaEnd - 40, 60, '#7f8790');
-  rect(c, 60, GROUND - 60, pergolaEnd - 40, 2, '#a3aab2');
-  for (let x = 96; x < pergolaEnd; x += 6) rect(c, x, GROUND - 58, 1, 56, '#737b84');
-  for (let i = 0; i < PERGOLA_BAYS; i++) bamboo(c, PERGOLA_X + 31 + i * 62, GROUND - 2, 58, 1300 + i);
+  // San Francisco de Javier: glass between cream bands, facing the fountain plaza
+  facade(c, g, SFJ_X, WIDTH - SFJ_X + 12, GROUND - 4, {
+    floors: 6, style: 'curtain', wall: '#e2dccb', glass: '#3f8f86', accent: P.maroon, doors: [SFJ_DOOR - SFJ_X], name: 'SFJ', seed: 21,
+  });
+  doorLight(lights, SFJ_DOOR);
+
+  // the covered shed, with its grey wall and bamboo, runs behind the angels
+  rect(c, PERGOLA_X - 30, GROUND - 60, pergolaEnd - PERGOLA_X + 50, 60, '#7f8790');
+  rect(c, PERGOLA_X - 30, GROUND - 60, pergolaEnd - PERGOLA_X + 50, 2, '#a3aab2');
+  for (let x = PERGOLA_X - 26; x < pergolaEnd + 18; x += 6) rect(c, x, GROUND - 58, 1, 56, '#737b84');
+  for (let i = 0; i < PERGOLA_BAYS; i++) bamboo(c, PERGOLA_X + 31 + i * PERGOLA_BAY, GROUND - 2, 58, 1300 + i);
+  pergola(c, PERGOLA_X, GROUND - 2, PERGOLA_BAYS, PERGOLA_BAY);
+  for (let i = 0; i < PERGOLA_BAYS; i += 2) {
+    const lx = PERGOLA_X + 31 + i * PERGOLA_BAY;
+    rect(c, lx - 2, GROUND - 62, 5, 3, '#f4f2ec');
+    rect(g, lx - 2, GROUND - 60, 5, 2, P.lamp);
+    lights.push({ x: lx, y: GROUND - 40, r: 76, color: lamp, strength: 0.7 });
+  }
 
   ground(c);
 
-  // courtyard gate at the left edge
-  rect(c, 0, GROUND - 110, 76, 110, P.wall);
-  rect(c, 68, GROUND - 110, 8, 110, P.wallShade);
-  rect(c, 0, GROUND - 114, 80, 5, P.trim);
-  rect(c, GATE_X - 22, GROUND - 84, 44, 84, P.trim);
-  disc(c, GATE_X, GROUND - 84, 22, P.trim);
-  rect(c, GATE_X - 18, GROUND - 84, 36, 84, '#463a3c');
-  disc(c, GATE_X, GROUND - 84, 18, '#463a3c');
-  rect(c, GATE_X - 18, GROUND - 14, 36, 14, P.terracotta);
-  foliage(c, GATE_X + 4, GROUND - 46, 12, 12, 1401);
-  for (let x = GATE_X - 18; x < GATE_X - 4; x += 4) rect(c, x, GROUND - 96, 1, 96, P.iron); // gate swung open
-  rect(g, GATE_X - 18, GROUND - 84, 36, 70, '#a9763a');
-  lights.push({ x: GATE_X, y: GROUND - 30, r: 80, color: [255, 208, 140], strength: 0.7 });
+  // the Sto. Rosario Gate at the left end, seen from inside
+  rect(c, 0, GROUND - 46, GATE_X - 20, 60, P.wall);
+  rect(c, 0, GROUND - 50, GATE_X - 20, 4, P.trim);
+  for (let x = 3; x < GATE_X - 20; x += 5) rect(c, x, GROUND - 64, 1, 14, P.iron);
+  rect(c, 0, GROUND - 64, GATE_X - 20, 1, P.iron);
+  const gl = gatePillar(c, GATE_X - 14, GROUND + 22);
+  for (let x = GATE_X - 5; x < GATE_X + 6; x += 3) rect(c, x, GROUND - 26, 1, 48, P.iron); // gate leaf swung open
+  rect(c, GATE_X - 5, GROUND - 26, 11, 1, P.iron);
+  rect(g, gl.x - 8, gl.y - 8, 17, 8, P.lamp);
+  lights.push({ x: gl.x, y: gl.y, r: 90, color: lamp, strength: 0.9 });
 
-  // covered walk floor, benches, pillars
-  rect(c, PERGOLA_X - 14, GROUND - 2, pergolaEnd - PERGOLA_X + 28, 12, '#d6d2c6');
-  rect(c, PERGOLA_X - 14, GROUND - 2, pergolaEnd - PERGOLA_X + 28, 1, '#ebe8de');
-  for (let i = 0; i < PERGOLA_BAYS; i++) stoneBench(c, PERGOLA_X + 14 + i * 62, GROUND + 4, 34);
-  pergola(c, PERGOLA_X, GROUND + 8, PERGOLA_BAYS);
-  for (let i = 0; i < PERGOLA_BAYS; i += 2) {
-    const lx = PERGOLA_X + 31 + i * 62;
-    rect(c, lx - 2, GROUND - 52, 5, 3, '#f4f2ec');
-    rect(g, lx - 2, GROUND - 50, 5, 2, P.lamp);
-    lights.push({ x: lx, y: GROUND - 34, r: 76, color: lamp, strength: 0.85 });
-  }
-  // planting along the front of the walk
-  for (let i = 0; i < PERGOLA_BAYS; i++) {
-    const bx = PERGOLA_X + 30 + i * 62;
-    if (i % 2) bush(c, bx, GROUND + 22, 34, 20, 1500 + i, RED_TIP);
-    else hedge(c, bx - 16, GROUND + 22, 32, 9, 1510 + i);
-  }
-
-  // memorial
-  memorare(c, MEMORARE_X, GROUND + 8);
-  pot(c, MEMORARE_X - 22, GROUND + 12, 1430);
-  pot(c, MEMORARE_X + 26, GROUND + 12, 1431);
-  bush(c, MEMORARE_X + 46, GROUND + 10, 24, 14, 1432, RED_TIP);
-  lights.push({ x: MEMORARE_X, y: GROUND - 20, r: 60, color: [255, 226, 180], strength: 0.6 });
-
-  // the angels
+  // the far row of angels, benches between them
   for (let i = 0; i < ANGELS; i++) {
     const x = ANGELS_X + i * ANGEL_GAP;
     rect(c, x - 24, GROUND + 6, 48, 4, '#6f6d76');
@@ -201,42 +151,49 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
     disc(g, l.x, l.y, 3, P.lamp);
   }
   for (let i = 0; i < ANGELS - 1; i++) {
-    bush(c, ANGELS_X + i * ANGEL_GAP + 78, GROUND + 2, 22, 13, 1600 + i, i % 3 ? undefined : RED_TIP);
+    bush(c, ANGELS_X + i * ANGEL_GAP + 82, GROUND + 2, 22, 13, 1600 + i, i % 2 ? undefined : RED_TIP);
   }
 
   roadSeal(c, SEAL_X, GROUND + 50);
 
-  // way to the School of Computing, closed for now
-  signBoard(c, SOC_X, GROUND + 10, ['SCHOOL OF', 'COMPUTING'], P.maroon, P.goldHi);
-  for (const dx of [-28, 28]) {
-    rect(c, SOC_X + dx - 4, GROUND + 28, 9, 2, P.iron);
-    poly(c, [[SOC_X + dx - 3, GROUND + 28], [SOC_X + dx + 4, GROUND + 28], [SOC_X + dx + 1, GROUND + 14], [SOC_X + dx, GROUND + 14]], '#e8742c');
-    rect(c, SOC_X + dx - 1, GROUND + 20, 4, 2, '#f4f2ec');
-  }
-  line(c, SOC_X - 27, GROUND + 17, SOC_X + 29, GROUND + 17, '#f0cf3a', 1);
+  // the Pinatubo memorial, where the angels end
+  memorare(c, MEMORARE_X, GROUND + 8);
+  pot(c, MEMORARE_X - 22, GROUND + 12, 1430);
+  pot(c, MEMORARE_X + 26, GROUND + 12, 1431);
+  lights.push({ x: MEMORARE_X, y: GROUND - 20, r: 60, color: [255, 226, 180], strength: 0.6 });
 
-  // right edge: the road bends round to the front of the DJN building
-  hedge(c, EXIT_X - 60, GROUND + 10, 104, 11, 1700);
-  signBoard(c, EXIT_X - 30, GROUND + 4, ['DJN', 'BUILDING']);
+  // the fountain plaza
+  hedge(c, SFJ_X + 4, GROUND + 2, SFJ_DOOR - SFJ_X - 30, 9, 1700);
+  hedge(c, SFJ_DOOR + 26, GROUND + 2, WIDTH - SFJ_DOOR - 26, 9, 1701);
+  palm(c, SFJ_DOOR - 34, GROUND + 6, 64, 1710);
+  palm(c, FOUNTAIN_X + 62, GROUND + 6, 70, 1711);
+  fountainPlaza(c, FOUNTAIN_X, FOUNTAIN_Y);
+  lights.push({ x: FOUNTAIN_X, y: FOUNTAIN_Y - 10, r: 80, color: [200, 226, 255], strength: 0.55 });
+  signBoard(c, WIDTH - 36, GROUND + 6, ['MAIN BLDG', 'ROTUNDA'], P.maroon, P.goldHi);
   return { canvas, glow };
 }
 
-function frontLayer(): HTMLCanvasElement {
-  const [canvas, c] = makeCanvas(layerWidth(1.35), VIEW_H);
-  const rand = rng(59);
-  for (let x = 90; x < canvas.width; x += 280 + rand() * 220) {
-    if (rand() < 0.65) bush(c, x, VIEW_H + 34, 120 + rand() * 50, 50 + rand() * 10, 1800 + x, SILHOUETTE);
-    else foliage(c, x, -12, 76, 18, 1810 + x, SILHOUETTE);
+/** The row of angels on the camera's side of the road: you see them from behind, dark against the scene. */
+function nearRow(): Layer {
+  const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
+  for (let i = 0; i < ANGELS; i++) {
+    const x = ANGELS_X + i * ANGEL_GAP;
+    pedestal(c, x, VIEW_H + 36);
+    stoneAngel(c, x, VIEW_H - 10, i + 2);
   }
-  return canvas;
+  // in shade and out of focus
+  c.globalCompositeOperation = 'source-atop';
+  c.fillStyle = 'rgba(24,30,42,0.82)';
+  c.fillRect(0, 0, WIDTH, VIEW_H);
+  c.globalCompositeOperation = 'source-over';
+  return { canvas, parallax: 1, front: true };
 }
 
 export function buildPark(): AreaDef {
   const lights: AreaLight[] = [];
   const main = mainLayer(lights);
   const rand = rng(6060);
-  let leaf = 0;
-  let fly = 0;
+  const drift = ambience(6061, [GATE_X + 20, PERGOLA_X + 150, END_X + 6]);
 
   return {
     id: 'park',
@@ -244,62 +201,59 @@ export function buildPark(): AreaDef {
     subtitle: 'Ang Banal na Anghel de la Guardia at ang pitong arkanghel',
     width: WIDTH,
     walkY: WALK,
-    bounds: [30, WIDTH - 24],
+    bounds: [GATE_X - 4, WIDTH - 24],
     outdoor: true,
     visitFlag: 'visited_park',
     layers: [
-      { canvas: farLayer(), parallax: 0.16, haze: 0.6 },
-      { canvas: midLayer(), parallax: 0.45, haze: 0.32 },
+      farCity(WIDTH, 51),
+      midCampus(WIDTH, 53, [
+        // Plaza de Corazon (the red building) and St. Martha Hall, beyond the shed and the bus terminal
+        { x: (CORAZON_L + CORAZON_R) / 2, w: 112, h: 96, wall: '#a8423e', glass: '#4a3a44' },
+        { x: (MARTHA_L + MARTHA_R) / 2, w: 150, h: 78, wall: '#e9e2cf', roof: '#a8503e' },
+      ]),
       { canvas: main.canvas, parallax: 1 },
-      { canvas: frontLayer(), parallax: 1.35, front: true },
+      nearRow(),
+      frontPlants(WIDTH, 59),
     ],
     glow: main.glow,
     lights,
     hotspots: parkHotspots({
-      gate: GATE_X,
-      memorare: MEMORARE_X,
+      gate: GATE_X + 2,
       guardian: ANGELS_X,
-      archangels: ANGELS_X + ANGEL_GAP * 4,
       seal: SEAL_X,
-      soc: SOC_X,
-      exit: EXIT_X,
+      archangels: ANGELS_X + ANGEL_GAP * 2,
+      memorare: MEMORARE_X,
+      sfj: SFJ_DOOR,
+      fountain: FOUNTAIN_X,
+      exit: WIDTH - 36,
     }),
-    npcs: parkNpcs(),
+    npcs: parkNpcs({
+      kath: ANGELS_X + Math.round(ANGEL_GAP / 2),
+      bong: [MEMORARE_X - 26, MEMORARE_X + 44],
+      enzo: [SEAL_X + 20, ANGELS_X + ANGEL_GAP * 3 - 20],
+    }),
+    fountainX: FOUNTAIN_X,
     spawns: {
-      gate: { x: GATE_X + 8, facing: 1 },
-      drive: { x: EXIT_X - 8, facing: -1 },
+      gate: { x: GATE_X + 14, facing: 1 },
+      plaza: { x: WIDTH - 44, facing: -1 },
     },
 
     update(dt, area, view) {
-      leaf -= dt;
-      if (leaf <= 0) {
-        leaf = 0.5 + rand() * 0.8;
+      drift(dt, area, view);
+      // the low jet in the middle of the plaza fountain
+      let n = 40 * dt;
+      while (n > rand()) {
+        n -= 1;
         area.spawnParticle({
-          x: view.camX + rand() * VIEW_W,
-          y: 90 + rand() * 40,
-          vx: 5 + rand() * 8,
-          vy: 8 + rand() * 6,
-          sway: 15,
-          max: 10,
-          floor: GROUND + 10 + rand() * 50,
-          color: rand() > 0.5 ? '#d9b048' : '#9cc65e',
+          x: FOUNTAIN_X + (rand() - 0.5) * 3,
+          y: FOUNTAIN_Y - 13,
+          vx: (rand() - 0.5) * 16,
+          vy: -34 * (0.8 + rand() * 0.3),
+          gravity: 150,
+          max: 1.4,
+          floor: FOUNTAIN_Y - 4 + rand() * 3,
+          color: rand() > 0.35 ? '#f2fbff' : '#b9dcf0',
         });
-      }
-      if (view.mood.night > 0.55) {
-        fly -= dt;
-        if (fly <= 0) {
-          fly = 0.2;
-          area.spawnParticle({
-            x: view.camX + rand() * VIEW_W,
-            y: 150 + rand() * 60,
-            vx: (rand() - 0.5) * 8,
-            vy: -2 - rand() * 4,
-            sway: 14,
-            max: 4 + rand() * 3,
-            color: '#e9ff9a',
-            glow: true,
-          });
-        }
       }
     },
   };

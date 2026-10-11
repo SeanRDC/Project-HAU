@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-11 (Main Gate)
+Last updated: 2026-10-11 (Campus layout)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -12,30 +12,49 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Engine | Our own, TypeScript on the browser canvas | Wanted everything written from scratch; easy to run and share |
 | Later | Port to Godot 4 | Decided up front; do it once the prototype's look and feel are settled |
 | Language | Taglish with a little Kapampangan | Sounds like actual students here |
-| Scope | One area at a time | Done: Main Gate, DJN Building, Epiphany of Angels park. Next: School of Computing (needs reference photos first) |
+| Scope | The whole campus outdoors first, interiors after | Done: all 21 buildings from the outside, on ten connected outdoor scenes. Interiors (other than the DJN lobby and courtyard) wait for reference photos of each one |
+| Layout | One-to-one with the real campus, anchored on the chapel | Positions are read off an aerial photo into `src/game/campus/plan.ts` and the scenes are placed from it. Scale set by one Google Earth measurement (140.36 m, rotunda statue to the chapel) |
+| Scale | 9 game pixels per metre | The DJN Building and the angel pedestals were already drawn at about this |
+| Camera per street | Each street picks the side with the most to see | A side view only shows one side of a road. Buildings behind the camera get a sign and a "look back" hotspot |
 | Saving | Autosave to the browser | No menus to build; Enter continues, N starts over |
 | Art | Drawn by code, no image files yet | Lets the time-of-day lighting recolour everything; replace with real sprites later |
 | Opening | New games start outside the Main Gate with a cutscene | Bag check and ID tap are the first thing every HAU student does each day |
 | Cutscenes | A list of steps in the story files, played by `src/game/cutscene.ts` | Writers can script scenes without touching the engine; no timeline editor to build |
 
 ## What Exists
-Five connected areas. The Main Gate opens onto the plaza, and the rest form a loop (plaza -> lobby -> courtyard -> park -> plaza):
+Twelve connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
 
-* **Main Gate** (`src/game/scenes/gate.ts`, art in `src/game/art/gate.ts`) - Sto. Rosario St. sidewalk, the gateway with the HAU name board, the bag inspection tent with two tables, the ID turnstile, and the boom barrier by Gate 1 on the inside. NPCs: Kuya Nonoy and Ate Joy (guards), Ella (freshman), Manong Taho. Cutscenes: walking in and getting your bag checked (`gateArrival`), then pressing E at the reader to tap your ID (the first tap fails because it's still in its plastic case). The turnstile won't let you in until `scanned_id` is set.
-* **Plaza** (`src/game/scenes/plaza.ts`) - driveway, fountain, Guardian Angel statue, Gate 1 (leads out to the Main Gate). NPCs: Kuya Ramil (guard), Mang Dado (tricycle), Trisha, Jopet.
+The first five, with people and story:
+
+* **Main Gate** (`src/game/scenes/gate.ts`, art in `src/game/art/gate.ts`) - Sto. Rosario St. sidewalk, the gateway with the HAU name board, the bag inspection tent with two tables, the ID turnstile, and the boom barrier on the inside. NPCs: Kuya Nonoy and Ate Joy (guards), Ella (freshman), Manong Taho. Cutscenes: walking in and getting your bag checked (`gateArrival`), then pressing E at the reader to tap your ID (the first tap fails because it's still in its plastic case). The turnstile won't let you in until `scanned_id` is set. Leads in to the Epiphany of Angels.
+* **Epiphany of Angels** (`src/game/scenes/park.ts`) - the road in from the main gate: four stone angels on each side, the covered shed, the seal in the pavers, the Memorare stone, and the fountain plaza in front of SFJ. NPCs: Kath, Mang Bong, Enzo. Leads on to the front of the Main Building.
+* **Plaza** (`src/game/scenes/plaza.ts`) - the front of the Main Building: the rotunda with the Holy Guardian Angel statue fountain, the DJN Building, St. Barachiel Gate (vehicles only). NPCs: Kuya Ramil (guard), Mang Dado (tricycle), Trisha, Jopet. The parking lane, the chapel walkway and the Epiphany all leave from the rotunda.
 * **Lobby** (`src/game/scenes/lobby.ts`) - bust of Juan D. Nepomuceno, bulletin board, Center for Kapampangan Studies door. NPC: Ate Liza.
-* **Courtyard** (`src/game/scenes/courtyard.ts`) - Laus Deo Semper arch, trees, string lights. NPCs: Bea, Migs, Mingming the cat.
-* **Park** (`src/game/scenes/park.ts`) - covered walk, Memorare stone, Holy Guardian Angel and seven archangels, the seal in the road. NPCs: Kath, Mang Bong, Enzo.
+* **Courtyard** (`src/game/scenes/courtyard.ts`) - Laus Deo Semper arch, trees, string lights. NPCs: Bea, Migs, Mingming the cat. Its gate comes out on the chapel walkway.
 
-Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, title screen, synthesised audio, autosave.
+The seven campus streets, outsides only, no people yet:
+
+* **Chapel Walkway** (`walkway.ts`) - brick sidewalk from the rotunda to the lawn, past STL and the PGN tower. Lamps and waving flags.
+* **Parking Lane** (`lane.ts`) - STL with the PGN tower over it; SFJ is behind the camera.
+* **Back Road** (`halls.ts`) - warehouse, Yellow Food Court, St. Gabriel, St. Raphael and St. Michael Halls, GGN.
+* **APS** (`aps.ts`) - the Archbishop Pedro Santos Building and Sacred Heart.
+* **Chapel lawn** (`lawn.ts`) - the Chapel of the Holy Guardian Angel across its lawn, the formation center behind. The junction the campus turns on.
+* **St. Joseph Hall** (`sjh.ts`) - SJH, MGN and the corner of the gym. The School of Computing sign is here.
+* **Gym lane** (`gym.ts`) - Covered Court, Immaculate Heart Gymnasium, the annex.
+
+Every building's door names it, gives its number on the 2022 campus map and the offices inside, and says it is not open yet.
+
+Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key, title screen, synthesised audio, autosave.
 
 ## Where Things Live
 * `src/engine/` - generic engine parts. Knows nothing about HAU.
-* `src/game/art/` - all drawing code (building, props, characters, sky, palette).
-* `src/game/scenes/` - one file per location.
+* `src/game/campus/` - the campus plan: where every building is (`plan.ts`) and how that becomes scenes (`streets.ts`). **Move things here, not in the scenes.**
+* `src/game/art/` - all drawing code (buildings, props, characters, sky, palette). `buildings.ts` is the facade painter for everything that is not the DJN.
+* `src/game/scenes/` - one file per location. `kit.ts` has what the street scenes share.
 * `src/game/story/` - NPCs, dialogue, checklist. **Writers edit here.**
 * `src/game/ui/` - bubbles, HUD, phone, title.
 * `src/game/game.ts` - ties it together: scene travel, flags, tasks, audio.
+* `tools/check-links.mjs` - `npm run check:links` presses E on every hotspot and checks the scenes still join up.
 
 See `src/README.md` for the URL shortcuts that jump to any scene, position and time of day while testing.
 
@@ -48,21 +67,28 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * A cutscene is `game.play(steps)` from a hotspot, or an area's `intro(game, x)` that returns steps when you walk in. Steps: `walk`, `place`, `face`, `say`, `pause`, `sound`, `look` (swap what the player wears) and `run` (anything else). The game never saves in the middle of one.
 * An area can have a `barrier`: an x the player can't cross leftwards until a flag is set.
 * Main Gate flags: `passed_bag_check`, `id_fumble`, `scanned_id`, `met_joy`, `met_ella`.
+* Campus flags: `visited_chapel` (walked onto the lawn), `saw_chapel` (looked at the chapel). Neither is a checklist task yet.
 
 ## Needs Checking by a Human
 * **Dialogue:** written by a non-native speaker. Proofread all Taglish and especially the Kapampangan phrases ("Mayap a gatpanapun", "Dakal a salamat").
 * **History facts** in the lobby dialogue (built 1940, founded 1933 with 78 students, used as barracks in the war) came from Wikipedia, the HAU history page and the Angeles City tourism site. Verify before showing this officially.
 * **Interiors** are an interpretation from a few photos, not the real floor plan.
-* **Main Gate** was drawn without reference photos, from how campus gates here usually look. The name board, tent, tables and turnstile layout are guesses. Compare with the real gate and fix the art in `src/game/art/gate.ts`. Also check whether Gate 1 really is the main entrance.
+* **The campus plan.** Positions were read off one aerial photo by eye and are good to about 5 m. Buildings 1, 5 and 6 are guesses. Check the map (C key) against the real campus; `docs/campus-layout.md` lists everything that is still a guess.
+* **What the buildings look like.** Only the DJN, the Epiphany, the rotunda statue and the walkway were drawn from photos. Every other building uses a generic facade with guessed colours and floor counts.
+* **Door text** on every building lists offices from the 2022 campus map. Offices move; check them.
+* **Main Gate** was drawn without reference photos, from how campus gates here usually look. The name board, tent, tables and turnstile layout are guesses. Compare with the real gate and fix the art in `src/game/art/gate.ts`. The main gate is the Sto. Rosario Gate; the "GATE 1" lettering on the guard house at St. Barachiel Gate is left over and should be renamed.
 * **Memorare text** in the park is a paraphrase of the marker. Check it against the real stone.
 * **Archangel names** are not in the game; the plaques were unreadable in the photos.
 * **Audio** has never been listened to critically. It may need rebalancing.
 * **University permission** for using the HAU name and likeness has not been asked for yet.
 
 ## Not Done Yet
+* **Interiors of every building except the DJN.** Waiting on reference photos of each one. Do not guess at them.
+* **People on the seven new streets.** They are empty.
+* The plaza and the main gate scenes are not to scale (see `docs/campus-layout.md`).
+* The other gates on the gate-area diagram: Guardian Angel, St. Raphael, St. Uriel and the pedestrian gate.
 * No touch controls (it loads on a phone but you cannot move).
-* School of Computing area (signposted in the park, coned off). Needs reference photos before it can be drawn.
-* University Chapel and the library building, both mentioned in sources but not built.
 * Real sprite art and recorded audio.
 * The Godot 4 port.
+* The reference images in `assets/` are not committed (they are Google Earth and university material). Share them with the team another way.
 * The older `docs/`, `assets/` and `tools/` READMEs still describe the original top-down plan in places.
