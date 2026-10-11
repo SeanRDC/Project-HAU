@@ -40,13 +40,13 @@ const START_HOUR = 16.4;
 const BAON = 150;
 const SAVE_KEY = 'project-hau-save-v1';
 const SAVE_EVERY = 10;
-/** a new day starts out on the street, in front of the main gate */
+/** a new day starts out on the street, outside the side gate by the Main Building */
 const NEW_GAME = { area: 'gate', spawn: 'street' };
 
 /** blip pitch per speaker so voices are told apart by ear */
 const VOICES: Record<string, number> = {
   you: 440, guard: 220, driver: 196, trisha: 587, jopet: 330, liza: 494, bea: 659, migs: 370, cat: 990, kath: 622, bong: 185, enzo: 392,
-  nonoy: 233, joy: 523, ella: 698, taho: 165, actdo: 208,
+  nonoy: 233, joy: 523, ella: 698, taho: 165, actdo: 208, mikko: 277,
 };
 
 export class Game implements GameApi {

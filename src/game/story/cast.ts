@@ -72,6 +72,11 @@ export const ACTDO: Look = {
   skin: '#a87650', hair: '#17171c', hairStyle: 'cap', top: '#c8342f', bottom: '#3a2f2a', shoes: '#15141a', vest: '#c8e83a', height: 1,
 };
 
+/** the owner of the pickup, who comes running when he sees the ticket being written. Named for a teammate, at Sean's asking. */
+export const MIKKO: Look = {
+  skin: '#c99468', hair: '#1c1618', hairStyle: 'short', top: '#2f4a6a', bottom: '#c9c0a8', shoes: '#e8e4da', height: 1,
+};
+
 export const CAT: Look = {
   skin: '#d98b3a', hair: '#d98b3a', hairStyle: 'bald', top: '#d98b3a', bottom: '#d98b3a', shoes: '#d98b3a',
 };

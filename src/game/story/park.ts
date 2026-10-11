@@ -3,7 +3,7 @@
 
 import { BUILDINGS } from '../campus/plan';
 import { Hotspot, Line, NpcDef } from '../types';
-import { closedDoor, wayTo } from './campus';
+import { closedDoor, deadEnd, wayTo } from './campus';
 import { BONG, ENZO, KATH } from './cast';
 
 function quiz(): Line[] {
@@ -125,7 +125,12 @@ export function parkHotspots(x: {
   gate: number; memorare: number; guardian: number; archangels: number; seal: number; sfj: number; fountain: number; exit: number;
 }): Hotspot[] {
   return [
-    wayTo('gate', x.gate, 'Lumabas sa main gate', 'gate', 'park', 70),
+    deadEnd(
+      'gate',
+      x.gate,
+      'Tingnan ang gate',
+      'Ang gate sa dulo ng Epiphany of Angels. Sarado ito ngayon: sa side gate sa tabi ng Main Building pumapasok at lumalabas ang mga estudyante.',
+    ),
     {
       id: 'memorare',
       x: x.memorare,

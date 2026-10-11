@@ -4,9 +4,12 @@
 import { Hotspot, NpcDef } from '../types';
 import { wayTo } from './campus';
 import { DRIVER, GUARD, JOPET, TRISHA } from './cast';
+import { ella } from './gate';
 
 export function plazaNpcs(): NpcDef[] {
   return [
+    // she came in through the gate just ahead of you
+    ella(1010, [980, 1060]),
     {
       id: 'guard',
       name: 'Kuya Ramil',
@@ -180,6 +183,6 @@ export function plazaHotspots(x: {
         ]),
     },
     // the way students come in and go out: the gate scene sets you down here
-    wayTo('gate', x.gate, 'Lumabas sa gate', 'gate', 'plaza', 60),
+    wayTo('gate', x.gate, 'Lumabas sa side gate', 'gate', 'plaza', 60),
   ];
 }

@@ -1,8 +1,9 @@
-// The gate on Sto. Rosario St. You start out on the street on the right, with
-// the traffic going by between you and the camera, pass a pickup parked where
-// it shouldn't be and the enforcer ticketing it, and walk in under the
-// gatehouse: the bag tables and the ID turnstile stand under its roof. Past
-// the turnstile you come out on the drive in front of the Main Building.
+// The side gate by the Main Building, the one students come in by. You start
+// out on the street on the right, with the traffic going by between you and
+// the camera, pass a pickup parked where it shouldn't be and the enforcer
+// ticketing it, and walk in under the gatehouse: the bag tables and the two
+// ID turnstiles stand under its roof. Tap your ID and you walk in through
+// the gate, away from the camera, and come out in front of the Main Building.
 
 import { Ctx, VIEW_H, VIEW_W, makeCanvas } from '../../engine/display';
 import { css, damp, hex, rng } from '../../engine/math';
@@ -15,7 +16,7 @@ import { P, shade } from '../art/palette';
 import { baseLook } from '../art/player';
 import { SILHOUETTE, boomBarrier, bush, foliage, hedge, lampPost, palm, pot, tree } from '../art/props';
 import { Sprite, VehicleKind, drawVehicle, lampAt, vehicleSprite } from '../art/traffic';
-import { Checkpoint, gateArrival, gateHotspots, gateNpcs } from '../story/gate';
+import { Checkpoint, gateArrival, gateHotspots, gateNpcs, ownerWaiting } from '../story/gate';
 import { AreaDef, AreaLight, Layer } from '../types';
 
 const WIDTH = 1200;
@@ -24,11 +25,7 @@ const WALK = 242;
 /** the line the gate furniture stands on, just behind where people walk */
 const BACK = WALK - 6;
 
-const PLAZA_X = 34;
-/** the path off to the Epiphany of Angels, a little way in */
-const PARK_X = 104;
 const BOOM_X = 56;
-const BOARD_X = 372;
 /** the gatehouse: its front piers stand at the kerb, just nearer the camera than the line people walk on */
 const ARCH_X = 600;
 const GATE_BASE = WALK + 2;
@@ -37,6 +34,8 @@ const TURNSTILE_X = ARCH_X - ARCH_WIDTH / 2 + PIER_W + 20;
 const TABLE_A = ARCH_X - 10;
 const TABLE_B = ARCH_X + 60;
 const SIGN_X = ARCH_X + ARCH_WIDTH / 2 + 22;
+/** the NO ID, NO ENTRY board hangs on the fence just past the gatehouse */
+const BOARD_X = SIGN_X + 56;
 /** the pickup parked up on the sidewalk, the sign it is parked beside, and where the enforcer stands writing it up */
 const TRUCK_X = 912;
 const TRUCK_BASE = GROUND + 27;
@@ -192,9 +191,14 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   pot(c, 300, GROUND + 6, 23);
   pot(c, 330, GROUND + 6, 24);
   boomBarrier(c, BOOM_X, GROUND + 22, 84, 2.05);
-  noIdBoard(c, BOARD_X - 23, GROUND - 34);
+  noIdBoard(c, BOARD_X - 23, GROUND - 36);
 
   // the checkpoint, under the gatehouse roof
+  // two turnstiles side by side: the far lane is drawn first, a little up the screen
+  turnstile(c, TURNSTILE_X - 9, BACK - 13);
+  turnstileArm(c, TURNSTILE_X - 9, BACK - 13, 0);
+  readerScreen(c, TURNSTILE_X - 9, BACK - 13, 'idle', 0);
+  railing(c, TURNSTILE_X + 9, TURNSTILE_X + 33, BACK - 13);
   railing(c, TURNSTILE_X + 18, TURNSTILE_X + 42, BACK);
   turnstile(c, TURNSTILE_X, BACK);
   bagTable(c, TABLE_A, BACK);
@@ -312,6 +316,7 @@ export function buildGate(): AreaDef {
     tableA: TABLE_A,
     tableB: TABLE_B,
     pickup: ENFORCER_X + 46,
+    owner: TRUCK_X + 22,
     bag: (s) => (st.bag = s),
     reader: (s) => {
       st.reader = s;
@@ -351,11 +356,12 @@ export function buildGate(): AreaDef {
 
   return {
     id: 'gate',
-    title: 'Main Gate',
-    subtitle: 'Sto. Rosario St., Angeles City',
+    title: 'Side Gate',
+    subtitle: 'Sa tabi ng Main Building',
     width: WIDTH,
     walkY: WALK,
-    bounds: [22, WIDTH - 16],
+    // the turnstiles are as far in as you can walk: from there you go in through the gate
+    bounds: [TURNSTILE_X + 4, WIDTH - 16],
     outdoor: true,
     layers: [
       { canvas: farLayer(), parallax: 0.16, haze: 0.62 },
@@ -366,12 +372,14 @@ export function buildGate(): AreaDef {
     ],
     glow: main.glow,
     lights,
-    hotspots: gateHotspots({ street: STREET_X, arch: SIGN_X - 8, board: BOARD_X, plaza: PLAZA_X, park: PARK_X, pickup: TRUCK_X }, cp),
-    npcs: gateNpcs({ joy: TABLE_A - 26, nonoy: TABLE_B - 26, enforcer: ENFORCER_X, taho: [1080, 1160] }),
+    hotspots: gateHotspots({ street: STREET_X, arch: SIGN_X - 8, board: BOARD_X, pickup: TRUCK_X }, cp),
+    npcs: gateNpcs({
+      joy: TABLE_A - 26, nonoy: TABLE_B - 26, enforcer: ENFORCER_X, taho: [1080, 1160], owner: TRUCK_X + 22, away: WIDTH + 260,
+    }),
     spawns: {
       street: { x: TRUCK_X + 150, facing: -1 },
-      plaza: { x: PLAZA_X + 24, facing: 1 },
-      park: { x: PARK_X + 14, facing: 1 },
+      // coming back out from the Main Building: just this side of the turnstiles
+      plaza: { x: TURNSTILE_X + 36, facing: 1 },
     },
     barrier: { x: TURNSTILE_X + 12, until: 'scanned_id' },
 
@@ -379,8 +387,9 @@ export function buildGate(): AreaDef {
       // props back to rest, whatever a previous visit left them in
       Object.assign(st, { held: false, card: false, bag: 'none', flashlight: false, reader: 'idle' });
       st.unlocked = game.has('scanned_id');
-      if (game.has('passed_bag_check') || x < TURNSTILE_X + 12) return null;
-      return gateArrival(cp, game.hour());
+      if (!game.has('passed_bag_check')) return gateArrival(cp, game.hour());
+      // the pickup's owner has turned up by now and is still standing by it
+      return game.has('saw_ticket') ? ownerWaiting(cp) : null;
     },
 
     update(dt, area) {
