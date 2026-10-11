@@ -6,6 +6,7 @@ import { moodAt } from '../engine/tod';
 import { Area, Target } from './area';
 import { Character, baseLook, character, isCharacter, setCharacter } from './art/player';
 import { Sky } from './art/sky';
+import { whereAmI } from './campus/streets';
 import { Cutscene, CutsceneHost } from './cutscene';
 import { Dialogue } from './dialogue';
 import { buildAps } from './scenes/aps';
@@ -23,6 +24,7 @@ import { buildWalkway } from './scenes/walkway';
 import { TASKS } from './story/tasks';
 import { AreaDef, GameApi, Line, Sound, Step } from './types';
 import { drawAreaTitle, drawClock, drawControlsHint, drawLetterbox, drawPrompt, drawToast } from './ui/hud';
+import { CampusMap } from './ui/map';
 import { Phone } from './ui/phone';
 import { drawSelect } from './ui/select';
 import { drawTitle } from './ui/title';
@@ -47,6 +49,7 @@ export class Game implements GameApi {
   private audio = new Audio();
   private dialogue = new Dialogue();
   private phone = new Phone();
+  private map = new CampusMap();
   private areas = new Map<string, Area>();
   private area: Area;
   private clock = START_HOUR;
@@ -141,6 +144,7 @@ export class Game implements GameApi {
     for (const f of (q.get('flags') ?? '').split(',')) if (f) this.flags.add(f);
     if (this.mode === 'play') this.startIntro();
     if (q.has('phone')) this.phone.open = true;
+    if (q.has('map')) this.map.open = true;
     const npc = this.area.npcs.find((n) => n.def.id === q.get('talk'));
     if (npc) {
       this.area.face(npc.def.id);
@@ -224,6 +228,7 @@ export class Game implements GameApi {
     this.cutscene = new Cutscene(steps);
     this.target = null;
     this.phone.open = false;
+    this.map.open = false;
   }
 
   private sound(s: Sound): void {
@@ -289,15 +294,21 @@ export class Game implements GameApi {
     this.bars = damp(this.bars, this.cutscene ? 1 : 0, 6, dt);
 
     if (!wasTalking && !this.pending && !scripted) {
-      if (input.pressed('phone') || (this.phone.open && input.pressed('back'))) {
+      if (!this.map.open && (input.pressed('phone') || (this.phone.open && input.pressed('back')))) {
         this.phone.toggle();
         this.audio.select();
       }
-      if (input.pressed('time') && !this.phone.open) this.clock = (this.clock + 1.5) % 24;
+      if (!this.phone.open && (input.pressed('map') || (this.map.open && input.pressed('back')))) {
+        this.map.toggle();
+        this.audio.select();
+      }
+      if (input.pressed('time') && !this.phone.open && !this.map.open) this.clock = (this.clock + 1.5) % 24;
     }
     this.phone.update(dt);
+    this.map.update(dt);
 
-    const locked = this.dialogue.active || wasTalking || this.phone.open || this.pending !== null || scripted;
+    const locked =
+      this.dialogue.active || wasTalking || this.phone.open || this.map.open || this.pending !== null || scripted;
     const before = this.area.player.x;
     this.area.update(dt, input, mood, locked);
     const bar = this.area.def.barrier;
@@ -419,6 +430,7 @@ export class Game implements GameApi {
       }
       if (this.toast) drawToast(ui, this.toast.text, this.toast.age);
       this.phone.render(ui, this.clock, (f) => this.has(f));
+      this.map.render(ui, whereAmI(area.def.id, area.player.x), this.time);
     }
     drawTitle(ui, this.time, Math.max(this.titleOut, this.selectFade), this.hasSave);
     drawSelect(ui, this.time, this.selectFade * (1 - this.titleOut), this.choiceAnim);
