@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-11
+Last updated: 2026-10-11 (Main Gate)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -12,19 +12,22 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Engine | Our own, TypeScript on the browser canvas | Wanted everything written from scratch; easy to run and share |
 | Later | Port to Godot 4 | Decided up front; do it once the prototype's look and feel are settled |
 | Language | Taglish with a little Kapampangan | Sounds like actual students here |
-| Scope | One area at a time | Done: DJN Building, Epiphany of Angels park. Next: School of Computing (needs reference photos first) |
+| Scope | One area at a time | Done: Main Gate, DJN Building, Epiphany of Angels park. Next: School of Computing (needs reference photos first) |
 | Saving | Autosave to the browser | No menus to build; Enter continues, N starts over |
 | Art | Drawn by code, no image files yet | Lets the time-of-day lighting recolour everything; replace with real sprites later |
+| Opening | New games start outside the Main Gate with a cutscene | Bag check and ID tap are the first thing every HAU student does each day |
+| Cutscenes | A list of steps in the story files, played by `src/game/cutscene.ts` | Writers can script scenes without touching the engine; no timeline editor to build |
 
 ## What Exists
-Four connected areas that form a loop (plaza -> lobby -> courtyard -> park -> plaza):
+Five connected areas. The Main Gate opens onto the plaza, and the rest form a loop (plaza -> lobby -> courtyard -> park -> plaza):
 
-* **Plaza** (`src/game/scenes/plaza.ts`) - driveway, fountain, Guardian Angel statue, Gate 1. NPCs: Kuya Ramil (guard), Mang Dado (tricycle), Trisha, Jopet.
+* **Main Gate** (`src/game/scenes/gate.ts`, art in `src/game/art/gate.ts`) - Sto. Rosario St. sidewalk, the gateway with the HAU name board, the bag inspection tent with two tables, the ID turnstile, and the boom barrier by Gate 1 on the inside. NPCs: Kuya Nonoy and Ate Joy (guards), Ella (freshman), Manong Taho. Cutscenes: walking in and getting your bag checked (`gateArrival`), then pressing E at the reader to tap your ID (the first tap fails because it's still in its plastic case). The turnstile won't let you in until `scanned_id` is set.
+* **Plaza** (`src/game/scenes/plaza.ts`) - driveway, fountain, Guardian Angel statue, Gate 1 (leads out to the Main Gate). NPCs: Kuya Ramil (guard), Mang Dado (tricycle), Trisha, Jopet.
 * **Lobby** (`src/game/scenes/lobby.ts`) - bust of Juan D. Nepomuceno, bulletin board, Center for Kapampangan Studies door. NPC: Ate Liza.
 * **Courtyard** (`src/game/scenes/courtyard.ts`) - Laus Deo Semper arch, trees, string lights. NPCs: Bea, Migs, Mingming the cat.
 * **Park** (`src/game/scenes/park.ts`) - covered walk, Memorare stone, Holy Guardian Angel and seven archangels, the seal in the road. NPCs: Kath, Mang Bong, Enzo.
 
-Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, phone with an eight-item checklist, title screen, synthesised audio, autosave.
+Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, title screen, synthesised audio, autosave.
 
 ## Where Things Live
 * `src/engine/` - generic engine parts. Knows nothing about HAU.
@@ -42,11 +45,15 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * An area can name a `visitFlag` that is set the first time the player walks in.
 * Progress autosaves to `localStorage` (`project-hau-save-v1`). If you rename or remove flags, bump that key so old saves are ignored.
 * An NPC's `talk(game)` returns the lines to say, so it can branch on `game.has('flag')`.
+* A cutscene is `game.play(steps)` from a hotspot, or an area's `intro(game, x)` that returns steps when you walk in. Steps: `walk`, `place`, `face`, `say`, `pause`, `sound`, `look` (swap what the player wears) and `run` (anything else). The game never saves in the middle of one.
+* An area can have a `barrier`: an x the player can't cross leftwards until a flag is set.
+* Main Gate flags: `passed_bag_check`, `id_fumble`, `scanned_id`, `met_joy`, `met_ella`.
 
 ## Needs Checking by a Human
 * **Dialogue:** written by a non-native speaker. Proofread all Taglish and especially the Kapampangan phrases ("Mayap a gatpanapun", "Dakal a salamat").
 * **History facts** in the lobby dialogue (built 1940, founded 1933 with 78 students, used as barracks in the war) came from Wikipedia, the HAU history page and the Angeles City tourism site. Verify before showing this officially.
 * **Interiors** are an interpretation from a few photos, not the real floor plan.
+* **Main Gate** was drawn without reference photos, from how campus gates here usually look. The name board, tent, tables and turnstile layout are guesses. Compare with the real gate and fix the art in `src/game/art/gate.ts`. Also check whether Gate 1 really is the main entrance.
 * **Memorare text** in the park is a paraphrase of the marker. Check it against the real stone.
 * **Archangel names** are not in the game; the plaques were unreadable in the photos.
 * **Audio** has never been listened to critically. It may need rebalancing.

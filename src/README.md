@@ -21,16 +21,17 @@ Once a system (like the player controller or dialogue manager) is tested and app
 ## Layout
 * `engine/` - reusable parts that know nothing about HAU: display buffer, game loop, input, camera, lighting, particles, time of day, audio, pixel drawing helpers.
 * `game/art/` - everything you see is drawn by code here (building, props, characters, sky). There are no image files yet.
-* `game/scenes/` - one file per location: `plaza`, `lobby`, `courtyard`, `park`.
-* `game/story/` - NPCs, dialogue and the checklist. **Writers: this is the folder to edit.**
+* `game/scenes/` - one file per location: `gate`, `plaza`, `lobby`, `courtyard`, `park`.
+* `game/story/` - NPCs, dialogue, cutscene scripts and the checklist. **Writers: this is the folder to edit.**
 * `game/ui/` - speech bubbles, phone, title screen.
+* `game/cutscene.ts` - plays a cutscene: a list of steps like `{ walk: 300 }`, `{ say: [...] }`, `{ pause: 1 }`, `{ sound: 'beep' }`. See the `Step` type in `game/types.ts`, and `story/gate.ts` for a worked example.
 
 ## Dev Shortcuts
 Add these to the URL to jump straight somewhere while testing:
 
 `http://localhost:5173/?area=courtyard&x=500&hour=19&talk=bea`
 
-* `area` - `plaza`, `lobby`, `courtyard` or `park`
+* `area` - `gate`, `plaza`, `lobby`, `courtyard` or `park` (`?area=gate` with no flags plays the bag check cutscene; add `&flags=passed_bag_check` to skip it)
 * `x` - where to stand
 * `hour` - time of day, 0 to 24
 * `talk` - start talking to an NPC by id
