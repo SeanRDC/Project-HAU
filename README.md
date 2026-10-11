@@ -2,14 +2,37 @@
 
 > **The Elevator Pitch:** A 2D pixel art adventure that lets players explore the Holy Angel University campus, complete student-life quests, and uncover university secrets.
 
-## Project Status: Concept & Prototyping
-We are currently in the pre-production and prototyping phase. The team is drafting the core campus layout, designing the 2D pixel art style, and testing initial quest mechanics.
+## Project Status: First Playable Area
+The first area is playable: the **Don Juan D. Nepomuceno Building**. You can walk the driveway out front, go into the lobby, and hang out in the courtyard. It is a prototype running on our own small engine in the browser. The plan is to port it to Godot 4 once the look and feel are settled.
+
+## Play It
+You need [Node.js](https://nodejs.org) 20 or newer.
+
+```
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173 in your browser.
+
+| Key | Action |
+| --- | --- |
+| `A` / `D` or arrow keys | Walk |
+| `Shift` | Run |
+| `E` / `Enter` | Talk, look, go through doors |
+| `W` / `S` | Pick a dialogue choice |
+| `Q` | Phone (first-day checklist) |
+| `T` | Skip ahead 1.5 hours |
+| `M` | Mute |
 
 ## The Core Vision
-* **Genre:** 2D Top-Down Adventure / RPG
-* **Art Style:** Retro 2D Pixel Art
-* **Setting:** The Holy Angel University campus (including key landmarks, the School of Computing, library, etc.)
-* **Core Loop:** Explore the campus, interact with NPCs (students/professors), and complete fetch quests, puzzles, and minigames.
+* **Genre:** 2D Side-View Narrative Adventure (free roam)
+* **Art Style:** Pixel art with soft lighting and a time-of-day cycle
+* **Setting:** The Holy Angel University campus in Angeles City, starting with the DJN Building
+* **Core Loop:** Walk around campus, talk to people, look at things, tick off small goals on your phone.
+* **Language:** Taglish, with a bit of Kapampangan.
+
+> This is a student project. It is not an official product of Holy Angel University, and every character in it is made up.
 
 ## Repository Navigation
 * `docs/` - Game Design Document (GDD), quest outlines, and campus lore.
