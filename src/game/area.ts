@@ -9,6 +9,7 @@ import { RGB, clamp, css, damp, mix, smooth } from '../engine/math';
 import { Particle, Particles } from '../engine/particles';
 import { Mood } from '../engine/tod';
 import { CHAR_HEIGHT, Look, drawCat, drawCharacter, drawShadow } from './art/character';
+import { baseLook } from './art/player';
 import { Sky } from './art/sky';
 import { AreaDef, AreaRuntime, AreaView, GameApi, Layer, NpcDef } from './types';
 
@@ -41,23 +42,12 @@ export interface Target {
   use(game: GameApi): void;
 }
 
-export const PLAYER_LOOK: Look = {
-  skin: '#d9a273',
-  hair: '#231a1c',
-  hairStyle: 'short',
-  top: '#f3f0e8',
-  bottom: '#3b3f58',
-  shoes: '#22202a',
-  bag: '#7c1f2c',
-  lace: '#7c1f2c',
-};
-
 export class Area implements AreaRuntime {
   readonly camera: Camera;
   readonly player: Walker;
   readonly npcs: Npc[];
   /** what the player is wearing right now; cutscenes can swap it (bag off, etc) */
-  playerLook: Look = PLAYER_LOOK;
+  playerLook: Look = baseLook();
   /** set by a cutscene: the player walks here on their own, then stops */
   walkTo: number | null = null;
   private particles = new Particles();
@@ -93,7 +83,7 @@ export class Area implements AreaRuntime {
     this.player.vx = 0;
     this.player.stride = 0;
     this.walkTo = null;
-    this.playerLook = PLAYER_LOOK;
+    this.playerLook = baseLook();
     this.camera.snap(s.x);
   }
 
