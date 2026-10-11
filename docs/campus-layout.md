@@ -56,7 +56,7 @@ A side-view scene can only show one side of a road. Each street below says which
 
 | Scene | Street | Camera looks | Length | What you see |
 | --- | --- | --- | --- | --- |
-| `gate` | Sto. Rosario St. at the main gate | SE | not to scale | The gatehouse from the street with traffic passing, bag check, turnstile |
+| `gate` | The side gate by the Main Building, from the street | not checked | not to scale | The gatehouse with traffic passing, bag check and turnstiles under its roof |
 | `park` | Epiphany of Angels | NW | 69 m | Covered shed, St. Martha Hall (2) and the Red Building (1) beyond, SFJ (3) and its pool at the end |
 | `plaza` | Front of the Main Building | NE | not to scale | Rotunda, DJDN (12), St. Barachiel Gate |
 | `walkway` | Rotunda to the chapel lawn | NW | 104 m | STL (4), PGN (11) |
@@ -72,8 +72,8 @@ All 21 numbered buildings appear in at least one scene.
 How they join:
 
 ```
-Sto. Rosario St. -- gate ---------------------- plaza (rotunda, Main Bldg.) -- lobby -- courtyard
-                      \---- park (Epiphany) ------/ |        \                              |
+    street -- gate (side gate) -- plaza (rotunda, Main Bldg.) -- lobby -- courtyard
+              park (Epiphany) ----/               |        \                              |
                                                 lane      walkway ------------------------+
                                                   |           |
                                                 halls ----- lawn (chapel) ---- sjh
@@ -123,7 +123,7 @@ Positions are the centre of the main block. OSM outlines are traced from satelli
 * **What every building looks like**, apart from the DJN and its courtyard, the Epiphany, the rotunda fountain, the walkway, St. Joseph Hall, SFJ and the gatehouse, which were drawn from photos. The others are drawn from five generic facade styles with colours and floor counts taken from the campus map drawing. Floor counts in particular are guesses.
 * **SJH and SFJ are squeezed.** A real storey is about 3.5 m, 31 pixels at this scale, and eight of them would not fit on the screen, so their floors are 20 to 24 pixels. The floor counts (SJH: seven on the left wing, eight on the right; SFJ: five, with the glass bay and the pylon taller) were counted off one photo each.
 * **SFJ is wider than its plot.** The front in the photo is drawn across about 38 m so that its doors sit straight behind the pool, as they do; the plan gives that side 31 m. The scene got 9 m longer at that end to hold it.
-* **Which gate the gate scene is.** The photo is named "HAU side gate"; the scene is still titled Main Gate, Sto. Rosario St., and now opens on to the front of the Main Building, with a second path to the Epiphany. Its place on the map (`FIXED` in `streets.ts`) is still the Sto. Rosario Gate.
+* **Where the side gate is.** Sean says the gate students use is a side gate near the Main Building, so the gate scene now sits at the plan's `barachielGate` spot (the gate beside the Main Building, read off the aerial photo as the vehicle gate on Holy Angel Avenue) and opens straight on to the plaza. Whether the side gate is that gate or another one close by, and what street it is on, has not been checked. The gate at the street end of the Epiphany is now a closed gate you can only look at.
 * **Which side of each building the door is on.**
 * **The courtyard gate** of the Main Building. The game puts it on the walkway side; this has not been checked.
 * **The junction points** where roads meet. Most were read off the aerial; four (`hallsCorner`, `northJunction`, `northEastJunction`, `gymCorner`) were moved onto OSM paths. The game's street network is still simpler than the real one.
