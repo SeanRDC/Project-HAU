@@ -13,5 +13,7 @@ If you have an idea for a cool quest or a campus secret, pitch it here!
 2. Title it clearly (e.g., `quest_find_lost_usb.md` or `npc_cafeteria_vendor.md`).
 3. Outline the idea and bring it up in our next team sync.
 
-## Master Documents (Coming Soon)
-Approved ideas will be moved to the main directory to form our official Game Design Document (GDD) and Quest Log.
+## Master Documents
+* `campus-layout.md` - how the real campus maps onto the game: the chapel anchor, the scale, the streets, the 21 buildings, and what is still a guess.
+
+More approved ideas will be moved here to form our official Game Design Document (GDD) and Quest Log.
