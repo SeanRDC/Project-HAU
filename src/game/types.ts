@@ -132,6 +132,8 @@ export interface AreaDef {
   update?(dt: number, area: AreaRuntime, view: AreaView): void;
   /** animated things drawn behind the characters */
   drawBack?(ctx: Ctx, view: AreaView): void;
+  /** animated things drawn in front of the characters, still lit like the world */
+  drawFront?(ctx: Ctx, view: AreaView): void;
   /** drawn after lighting: sunbeams and anything else that should glow */
   drawOver?(ctx: Ctx, view: AreaView): void;
 }

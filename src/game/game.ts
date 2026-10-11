@@ -8,6 +8,7 @@ import { Sky } from './art/sky';
 import { Cutscene, CutsceneHost } from './cutscene';
 import { Dialogue } from './dialogue';
 import { buildCourtyard } from './scenes/courtyard';
+import { buildGate } from './scenes/gate';
 import { buildLobby } from './scenes/lobby';
 import { buildPark } from './scenes/park';
 import { buildPlaza } from './scenes/plaza';
@@ -27,6 +28,7 @@ const SAVE_EVERY = 10;
 /** blip pitch per speaker so voices are told apart by ear */
 const VOICES: Record<string, number> = {
   you: 440, guard: 220, driver: 196, trisha: 587, jopet: 330, liza: 494, bea: 659, migs: 370, cat: 990, kath: 622, bong: 185, enzo: 392,
+  nonoy: 233, joy: 523, ella: 698, taho: 165,
 };
 
 export class Game implements GameApi {
@@ -65,7 +67,7 @@ export class Game implements GameApi {
   };
 
   constructor(private display: Display, private input: Input) {
-    const defs: AreaDef[] = [buildPlaza(), buildLobby(), buildCourtyard(), buildPark()];
+    const defs: AreaDef[] = [buildGate(), buildPlaza(), buildLobby(), buildCourtyard(), buildPark()];
     for (const d of defs) {
       const area = new Area(d, this.sky);
       area.onStep = () => this.audio.footstep(!d.outdoor);

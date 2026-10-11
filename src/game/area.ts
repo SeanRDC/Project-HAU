@@ -311,6 +311,7 @@ export class Area implements AreaRuntime {
       });
     }
 
+    def.drawFront?.(ctx, view);
     for (const l of def.layers) if (l.front) this.drawLayer(ctx, l, mood);
 
     // indoors the sun matters less, the walls keep things warm and even
