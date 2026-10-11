@@ -98,3 +98,90 @@ export function drawSelect(ui: Ctx, t: number, a: number, girl: number): void {
 
   ui.globalAlpha = 1;
 }
+
+/**
+ * Name entry, shown after the character is picked: the chosen student on a
+ * panel with a text box under it. `a` is the opacity.
+ */
+export function drawName(ui: Ctx, t: number, a: number, who: Character, name: string, max: number): void {
+  if (a <= 0.01) return;
+  ui.globalAlpha = a;
+
+  const g = ui.createLinearGradient(0, 0, 0, VIEW_H);
+  g.addColorStop(0, 'rgba(20,10,35,0.7)');
+  g.addColorStop(0.5, 'rgba(20,10,35,0.45)');
+  g.addColorStop(1, 'rgba(20,10,35,0.75)');
+  ui.fillStyle = g;
+  ui.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  ui.textAlign = 'center';
+  font(ui, 7, 600);
+  ui.fillStyle = GOLD;
+  ui.fillText('H O L Y   A N G E L   U N I V E R S I T Y', VIEW_W / 2, 24);
+  font(ui, 17, 400, SERIF, true);
+  ui.fillStyle = '#fff6e0';
+  ui.fillText("WHAT'S YOUR NAME?", VIEW_W / 2, 38);
+  ui.fillStyle = GOLD;
+  ui.fillRect(VIEW_W / 2 - 22, 62, 44, 1);
+
+  const cx = VIEW_W / 2;
+  const py = 70;
+  roundRect(ui, cx - PANEL_W / 2, py, PANEL_W, 88, 6, 'rgba(251,245,230,0.14)');
+  ui.save();
+  ui.translate(cx, py + 76);
+  ui.scale(SCALE, SCALE);
+  drawShadow(ui, 0, 0, 7);
+  drawCharacter(ui, 0, 0, LOOKS[who], { facing: 1, phase: 0, stride: 0, time: t });
+  ui.restore();
+
+  // the text box
+  const bw = 140;
+  const bx = cx - bw / 2;
+  const by = 168;
+  roundRect(ui, bx, by, bw, 18, 4, 'rgba(251,245,230,0.92)');
+  ui.strokeStyle = GOLD;
+  ui.lineWidth = 1.2;
+  ui.beginPath();
+  ui.roundRect(bx, by, bw, 18, 4);
+  ui.stroke();
+  font(ui, 10, 400, SERIF, true);
+  ui.textAlign = 'left';
+  const tw = ui.measureText(name).width;
+  const tx = cx - tw / 2;
+  if (name) {
+    ui.fillStyle = '#2a2030';
+    ui.fillText(name, tx, by + 4);
+  } else {
+    ui.fillStyle = 'rgba(42,32,48,0.4)';
+    ui.textAlign = 'center';
+    ui.fillText('Type your name', cx, by + 4);
+    ui.textAlign = 'left';
+  }
+  if (Math.floor(t * 1.8) % 2 === 0) {
+    ui.fillStyle = '#7c1f2c';
+    ui.fillRect(Math.round((name ? tx + tw : cx) + 1), by + 4, 1, 10);
+  }
+  font(ui, 5, 500);
+  ui.fillStyle = 'rgba(255,246,224,0.6)';
+  ui.textAlign = 'right';
+  ui.fillText(`${name.length}/${max}`, bx + bw, by + 21);
+
+  // key hints
+  ui.textAlign = 'left';
+  const hy = VIEW_H - 30;
+  font(ui, 5.5, 500);
+  const w1 = ui.measureText('simulan').width;
+  const w2 = ui.measureText('bumalik').width;
+  let hx = cx - (24 + w1 + 14 + 18 + w2) / 2;
+  hx += keyCap(ui, 'Enter', hx, hy) + 4;
+  font(ui, 5.5, 500);
+  ui.fillStyle = 'rgba(255,246,224,0.85)';
+  ui.fillText('simulan', hx, hy + 1.6);
+  hx += w1 + 14;
+  hx += keyCap(ui, 'Esc', hx, hy) + 4;
+  font(ui, 5.5, 500);
+  ui.fillStyle = 'rgba(255,246,224,0.85)';
+  ui.fillText('bumalik', hx, hy + 1.6);
+
+  ui.globalAlpha = 1;
+}

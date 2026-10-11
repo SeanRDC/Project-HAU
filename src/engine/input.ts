@@ -29,12 +29,21 @@ export class Input {
   /** Fires once on the very first key press. Browsers need a gesture before audio can start. */
   onFirstGesture: (() => void) | null = null;
 
+  /** While true, letters, digits and Space are typed text instead of game keys. Enter and Esc still work. */
+  typing = false;
+  private typed: string[] = [];
+
   constructor() {
     window.addEventListener('keydown', (e) => {
       const action = BINDINGS[e.code];
       if (this.onFirstGesture) {
         this.onFirstGesture();
         this.onFirstGesture = null;
+      }
+      if (this.typing && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key.length === 1 || e.key === 'Backspace')) {
+        e.preventDefault();
+        this.typed.push(e.key);
+        return;
       }
       if (!action) return;
       e.preventDefault();
@@ -54,6 +63,13 @@ export class Input {
 
   pressed(a: Action): boolean {
     return this.justPressed.has(a);
+  }
+
+  /** Characters typed since the last call ('Backspace' for the delete key). */
+  takeTyped(): string[] {
+    const t = this.typed;
+    this.typed = [];
+    return t;
   }
 
   /** -1, 0 or 1 */

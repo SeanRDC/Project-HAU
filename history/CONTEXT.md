@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-11 (Campus layout)
+Last updated: 2026-10-12 (Character and name)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -18,6 +18,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Camera per street | Each street picks the side with the most to see | A side view only shows one side of a road. Buildings behind the camera get a sign and a "look back" hotspot |
 | Saving | Autosave to the browser | No menus to build; Enter continues, N starts over |
 | Art | Drawn by code, no image files yet | Lets the time-of-day lighting recolour everything; replace with real sprites later |
+| Player | Choose Boy or Girl, then type a name, before a new game | Same rig for both (`Look`), so the girl is just a different look; the name only labels the player's speech bubbles |
 | Opening | New games start outside the Main Gate with a cutscene | Bag check and ID tap are the first thing every HAU student does each day |
 | Cutscenes | A list of steps in the story files, played by `src/game/cutscene.ts` | Writers can script scenes without touching the engine; no timeline editor to build |
 
@@ -44,7 +45,7 @@ The seven campus streets, outsides only, no people yet:
 
 Every building's door names it, gives its number on the 2022 campus map and the offices inside, and says it is not open yet.
 
-Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key, title screen, synthesised audio, autosave.
+Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key, title screen, character picker and name entry, synthesised audio, autosave.
 
 ## Where Things Live
 * `src/engine/` - generic engine parts. Knows nothing about HAU.
@@ -52,7 +53,7 @@ Systems: time-of-day cycle, light map with lamps and window glow, particles (fou
 * `src/game/art/` - all drawing code (buildings, props, characters, sky, palette). `buildings.ts` is the facade painter for everything that is not the DJN.
 * `src/game/scenes/` - one file per location. `kit.ts` has what the street scenes share.
 * `src/game/story/` - NPCs, dialogue, checklist. **Writers edit here.**
-* `src/game/ui/` - bubbles, HUD, phone, title.
+* `src/game/ui/` - bubbles, HUD, phone, title, character picker (`select.ts`).
 * `src/game/game.ts` - ties it together: scene travel, flags, tasks, audio.
 * `tools/check-links.mjs` - `npm run check:links` presses E on every hotspot and checks the scenes still join up.
 
@@ -62,7 +63,9 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * Flags are plain strings in a set (`met_bea`, `saw_bust`, ...). A dialogue line can set one with `set: 'flag'`.
 * `src/game/story/tasks.ts` lists the checklist; each task is ticked by a flag.
 * An area can name a `visitFlag` that is set the first time the player walks in.
-* Progress autosaves to `localStorage` (`project-hau-save-v1`). If you rename or remove flags, bump that key so old saves are ignored.
+* Progress autosaves to `localStorage` (`project-hau-save-v1`). If you rename or remove flags, bump that key so old saves are ignored. The save also holds `character` (`boy` or `girl`) and `name`; saves without them load as the boy with no name, so the key was not bumped.
+* The player's look: `src/game/art/player.ts` holds both looks and the chosen one (`baseLook()`). Areas and cutscenes reset to it, so never use a fixed look for the player. Dev shortcuts: `?char=girl&name=Mikko`.
+* Title flow: Enter continues a save, or opens the picker (A/D, Enter), then the name box (type, Enter). N with a save opens the picker too and only wipes the save once you confirm; Esc backs out.
 * An NPC's `talk(game)` returns the lines to say, so it can branch on `game.has('flag')`.
 * A cutscene is `game.play(steps)` from a hotspot, or an area's `intro(game, x)` that returns steps when you walk in. Steps: `walk`, `place`, `face`, `say`, `pause`, `sound`, `look` (swap what the player wears) and `run` (anything else). The game never saves in the middle of one.
 * An area can have a `barrier`: an x the player can't cross leftwards until a flag is set.

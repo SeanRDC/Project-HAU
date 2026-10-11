@@ -43,6 +43,19 @@ export function character(): Character {
   return current;
 }
 
+export const NAME_MAX = 12;
+
+let name = '';
+
+/** The name the player typed; empty for saves from before names existed. */
+export function playerName(): string {
+  return name;
+}
+
+export function setPlayerName(n: string): void {
+  name = n.trim().slice(0, NAME_MAX);
+}
+
 /** What the chosen student wears when nothing special is going on. */
 export function baseLook(): Look {
   return LOOKS[current];
