@@ -1,6 +1,12 @@
-// The driveway in front of the Don Juan D. Nepomuceno Building: fountain
-// rotonda on the left, the building in the middle, the guardian angel and
-// the gate on the right. Holy Rosary Parish peeks over the rooftops.
+// The road in front of the Don Juan D. Nepomuceno Building, looking
+// north-east. The rotunda with the Holy Guardian Angel statue fountain is on
+// the left, where the chapel walkway and the parking lane meet; the building
+// is in the middle; St. Barachiel Gate, the vehicle entrance on Holy Angel
+// Avenue, is on the right. The Epiphany of Angels is behind the camera.
+// Holy Rosary Parish peeks over the rooftops.
+//
+// This scene was drawn before the campus plan existed and keeps its own
+// spacing; see FIXED in campus/streets.ts for how it is tied to the plan.
 
 import { VIEW_H, VIEW_W, makeCanvas, Ctx } from '../../engine/display';
 import { hex, rng } from '../../engine/math';
@@ -8,9 +14,10 @@ import { disc, ellipse, line, poly, px, rect, sign } from '../../engine/pix';
 import { DJN_DOOR_X, DJN_WIDTH, drawDJN } from '../art/djn';
 import { P, shade } from '../art/palette';
 import {
-  SILHOUETTE, angelStatue, boomBarrier, bush, foliage, fountainBasin, guardHouse, hedge, lampPost, palm, pot,
+  SILHOUETTE, boomBarrier, bush, foliage, fountainBasin, guardHouse, hedge, lampPost, palm, pot,
   signBoard, stoneBench, tree, tricycle,
 } from '../art/props';
+import { guardianGroup } from '../art/street';
 import { plazaHotspots, plazaNpcs } from '../story/plaza';
 import { AreaDef, AreaLight } from '../types';
 
@@ -20,8 +27,15 @@ const WALK = 240;
 const DJN_X = 410;
 const FOUNTAIN_X = 190;
 const FOUNTAIN_Y = 222;
-const STATUE_X = 1100;
+/** a small lawn island on the drive, where the first version of this scene had the statue */
+const ISLAND_X = 1100;
 const GATE_X = 1250;
+/** the parking lane carries on off the left edge */
+const LANE_X = 44;
+/** the chapel walkway leaves the rotunda away from the camera */
+const WALKWAY_X = 100;
+/** the path down to the fountain plaza and the Epiphany of Angels, towards the camera */
+const EPIPHANY_X = 344;
 
 export const PLAZA_DOOR_X = DJN_X + DJN_DOOR_X;
 
@@ -191,20 +205,22 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   // light spilling out of the open door and across the steps
   lights.push({ x: PLAZA_DOOR_X, y: GROUND - 30, r: 110, color: [255, 208, 140], strength: 0.9 });
 
-  // fountain rotonda
+  // the rotunda: the Holy Guardian Angel and two children stand in the fountain
   fountainBasin(c, FOUNTAIN_X, FOUNTAIN_Y);
-  stoneBench(c, 40, GROUND + 13);
-  hedge(c, 0, GROUND + 4, 104, 10, 9);
-  signBoard(c, 70, GROUND + 3, ['EPIPHANY', 'OF ANGELS'], P.maroon, P.goldHi);
-  bush(c, 320, GROUND + 4, 30, 18, 61);
+  guardianGroup(c, FOUNTAIN_X, FOUNTAIN_Y - 4);
+  lights.push({ x: FOUNTAIN_X, y: FOUNTAIN_Y - 60, r: 84, color: [255, 214, 150], strength: 0.8 });
+  hedge(c, 0, GROUND + 4, 26, 10, 9);
+  signBoard(c, LANE_X, GROUND + 3, ['PARKING', 'SFJ STL']);
+  signBoard(c, WALKWAY_X, GROUND + 3, ['CHAPEL', 'WALKWAY'], P.maroon, P.goldHi);
+  stoneBench(c, EPIPHANY_X - 64, GROUND + 13);
+  signBoard(c, EPIPHANY_X, GROUND + 3, ['EPIPHANY', 'OF ANGELS'], P.maroon, P.goldHi);
 
-  // guardian angel on its little lawn
-  ellipse(c, STATUE_X, GROUND + 22, 58, 7, P.pave);
-  ellipse(c, STATUE_X, GROUND + 21, 54, 6, P.grass);
-  ellipse(c, STATUE_X - 6, GROUND + 19, 40, 3, P.grassHi);
-  angelStatue(c, STATUE_X, GROUND + 22);
-  palm(c, STATUE_X + 42, GROUND + 20, 54, 315);
-  lights.push({ x: STATUE_X, y: GROUND - 40, r: 70, color: [255, 214, 150], strength: 0.75 });
+  // a lawn island on the drive
+  ellipse(c, ISLAND_X, GROUND + 22, 58, 7, P.pave);
+  ellipse(c, ISLAND_X, GROUND + 21, 54, 6, P.grass);
+  ellipse(c, ISLAND_X - 6, GROUND + 19, 40, 3, P.grassHi);
+  bush(c, ISLAND_X - 8, GROUND + 22, 34, 18, 316);
+  palm(c, ISLAND_X + 42, GROUND + 20, 54, 315);
 
   tricycle(c, 1168, GROUND + 28);
   guardHouse(c, GATE_X, GROUND + 14);
@@ -214,7 +230,7 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   rect(c, GATE_X + 52, GROUND - 44, WIDTH - GATE_X - 52, 4, P.trim);
   for (let x = GATE_X + 58; x < WIDTH; x += 5) rect(c, x, GROUND - 62, 1, 18, P.iron);
   rect(c, GATE_X + 52, GROUND - 62, WIDTH - GATE_X - 52, 1, P.iron);
-  sign(c, 'STO. ROSARIO ST.', GATE_X + 56, GROUND - 26, P.maroon);
+  sign(c, 'HOLY ANGEL AVE.', GATE_X + 56, GROUND - 26, P.maroon);
   rect(g, GATE_X + 8, GROUND - 22, 20, 15, '#ffd98a');
   lights.push({ x: GATE_X + 18, y: GROUND - 10, r: 54, color: [255, 220, 160], strength: 0.7 });
 
@@ -244,10 +260,10 @@ export function buildPlaza(): AreaDef {
   const main = mainLayer(lights);
   const rand = rng(1234);
 
-  // seven jets: one tall in the middle, a ring of short ones
+  // a ring of short jets around the statue, and the two spouts from the ram's heads on its pedestal
   const jets = [
-    { x: 0, y: -8, power: 128, rate: 90 },
-    ...[-46, -30, -14, 14, 30, 46].map((dx) => ({ x: dx, y: -1 + (Math.abs(dx) === 30 ? 2 : 0), power: 66, rate: 30 })),
+    ...[-50, -36, 36, 50].map((dx) => ({ x: dx, y: -1 + (Math.abs(dx) === 36 ? 2 : 0), power: 66, rate: 30, push: 0 })),
+    ...[-1, 1].map((side) => ({ x: side * 27, y: -17, power: 16, rate: 46, push: side * 16 })),
   ];
   let leafTimer = 0;
   let fireflyTimer = 0;
@@ -268,14 +284,17 @@ export function buildPlaza(): AreaDef {
     ],
     glow: main.glow,
     lights,
-    hotspots: plazaHotspots(PLAZA_DOOR_X, FOUNTAIN_X, STATUE_X),
+    hotspots: plazaHotspots({
+      lane: LANE_X, walkway: WALKWAY_X, statue: FOUNTAIN_X, epiphany: EPIPHANY_X, door: PLAZA_DOOR_X, gate: 1262,
+    }),
     npcs: plazaNpcs(),
     fountainX: FOUNTAIN_X,
     spawns: {
       start: { x: 1130, facing: -1 },
       door: { x: PLAZA_DOOR_X, facing: -1 },
-      park: { x: 44, facing: 1 },
-      gate: { x: 1236, facing: -1 },
+      epiphany: { x: EPIPHANY_X, facing: 1 },
+      walkway: { x: WALKWAY_X + 4, facing: 1 },
+      lane: { x: LANE_X, facing: 1 },
     },
 
     update(dt, area, view) {
@@ -286,7 +305,7 @@ export function buildPlaza(): AreaDef {
           area.spawnParticle({
             x: FOUNTAIN_X + j.x + (rand() - 0.5) * 2,
             y: FOUNTAIN_Y + j.y - 2,
-            vx: (rand() - 0.5) * (j.power * 0.22),
+            vx: j.push + (rand() - 0.5) * (j.power * 0.22),
             vy: -j.power * (0.8 + rand() * 0.3),
             gravity: 170,
             max: 2.2,

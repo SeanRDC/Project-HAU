@@ -5,7 +5,7 @@ export const TASKS: { flag: string; text: string }[] = [
   { flag: 'saw_bust', text: 'Bumati kay Don Juan' },
   { flag: 'met_bea', text: 'Hanapin si Bea' },
   { flag: 'pet_cat', text: 'Himasin ang pusa' },
-  { flag: 'saw_angel', text: 'Tingnan ang rebulto sa driveway' },
+  { flag: 'saw_angel', text: 'Tingnan ang rebulto sa rotunda' },
   { flag: 'visited_park', text: 'Dumaan sa Epiphany of Angels' },
   { flag: 'saw_memorare', text: 'Basahin ang Memorare' },
   { flag: 'quiz_kath', text: 'Tulungan si Kath mag-review' },

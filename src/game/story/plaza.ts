@@ -2,6 +2,7 @@
 // Dialogue is Taglish with a bit of Kapampangan. Edit freely.
 
 import { Hotspot, NpcDef } from '../types';
+import { deadEnd, wayTo } from './campus';
 import { DRIVER, GUARD, JOPET, TRISHA } from './cast';
 
 export function plazaNpcs(): NpcDef[] {
@@ -117,55 +118,40 @@ export function plazaNpcs(): NpcDef[] {
   ];
 }
 
-export function plazaHotspots(doorX: number, fountainX: number, statueX: number): Hotspot[] {
+export function plazaHotspots(x: {
+  lane: number; walkway: number; statue: number; epiphany: number; door: number; gate: number;
+}): Hotspot[] {
   return [
+    wayTo('lane', x.lane, 'Pumunta sa parking lane', 'lane', 'plaza', 66),
+    wayTo('walkway', x.walkway, 'Pumunta sa chapel walkway', 'walkway', 'rotunda', 66),
+    {
+      id: 'angel',
+      x: x.statue,
+      range: 40,
+      label: 'Tingnan ang rebulto',
+      height: 96,
+      use: (g) =>
+        g.say([
+          { who: '', text: 'Ang Holy Guardian Angel sa gitna ng rotunda, nakatayo sa likod ng dalawang batang nagbabasa ng iisang libro.' },
+          { who: '', text: 'May kasamang ambon ang hangin galing sa fountain sa paanan nila.' },
+          { who: '', text: 'Nakapatong ang mga kamay ng anghel sa balikat ng mga bata. Parang sinasabing: sige, magbasa lang kayo, nandito ako.', set: 'saw_angel' },
+          { who: 'you', text: 'Ang sarap tumambay dito.' },
+        ]),
+    },
+    wayTo('epiphany', x.epiphany, 'Bumaba sa Epiphany of Angels', 'park', 'plaza', 30),
     {
       id: 'door',
-      x: doorX,
+      x: x.door,
       range: 26,
       label: 'Pumasok sa DJN Building',
       height: 64,
       use: (g) => g.travel('lobby', 'front'),
     },
-    {
-      id: 'fountain',
-      x: fountainX,
-      range: 40,
-      label: 'Tingnan ang fountain',
-      height: 56,
-      use: (g) =>
-        g.say([
-          { who: '', text: 'May kasamang ambon ang hangin galing sa fountain. Sa likod, tanaw ang mga kampanaryo ng Holy Rosary.' },
-          { who: 'you', text: 'Ang sarap tumambay dito.' },
-        ]),
-    },
-    {
-      id: 'angel',
-      x: statueX,
-      range: 30,
-      label: 'Tingnan ang rebulto',
-      height: 96,
-      use: (g) =>
-        g.say([
-          { who: '', text: 'Ang Holy Guardian Angel, may kasamang bata. Nakaturo sa langit ang isang kamay.' },
-          { who: '', text: 'Parang sinasabing: doon ang tingin, hindi sa cellphone.', set: 'saw_angel' },
-        ]),
-    },
-    {
-      id: 'park',
-      x: 50,
-      range: 28,
-      label: 'Pumunta sa Epiphany of Angels',
-      height: 66,
-      use: (g) => g.travel('park', 'drive'),
-    },
-    {
-      id: 'gate',
-      x: 1262,
-      range: 22,
-      label: 'Lumabas sa main gate',
-      height: 50,
-      use: (g) => g.travel('gate', 'plaza'),
-    },
+    deadEnd(
+      'gate',
+      x.gate,
+      'Tingnan ang gate',
+      '"ST. BARACHIEL GATE." Sasakyan lang ang dumadaan dito, papuntang Holy Angel Avenue. Ang mga estudyante, sa main gate sa Sto. Rosario St. pumapasok at lumalabas, sa dulo ng Epiphany of Angels.',
+    ),
   ];
 }
