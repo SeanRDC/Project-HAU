@@ -22,6 +22,7 @@ The other sources, all in `assets/` (see "Reference images" below):
 | `epiphany begin...`, `epiphany end...`, `rotounda statue fountain.png`, `walkway going to the chapel.png` | What those places look like at eye level. |
 | `SJH BUILDING.jpg`, `SJH BUILDING BESIDE CHAPEL.jpg` | St. Joseph Hall, drawn in `src/game/art/sjh.ts`. |
 | `SFJ BUILDING AND FOUNTAIN.jpg`, `SFJ BUILDING CORNER VIEW.jpg` | The front of SFJ and the round pool of jets in front of it, drawn in `src/game/art/sfj.ts`. |
+| `FOUNTAIN IN FRONT OF SFJ.png` | The plaza the pool sits in, from above: the ring, the pattern in the paving, the trees that close off the Epiphany (`fountainPlaza` in `src/game/art/sfj.ts`). |
 | `SFJ AND FOUNTAIN SIDE VIEW.jpg` | The brick basin of the rotunda statue fountain (`brickBasin` in `src/game/art/street.ts`). |
 | `INSIDE DJN BUILDING.jpg`, `CLOSER VIEW INSIDE DJN.jpg` | The Main Building's courtyard: theatre front, stage, stairs, glass roof and vines (`src/game/scenes/courtyard.ts`). |
 | `HAU SIDE GATE DESIGN.jpg` | The gatehouse, the fence and the barricades (`src/game/art/gate.ts`). |
@@ -57,7 +58,7 @@ A side-view scene can only show one side of a road. Each street below says which
 | Scene | Street | Camera looks | Length | What you see |
 | --- | --- | --- | --- | --- |
 | `gate` | The side gate by the Main Building, from the street | not checked | not to scale | The gatehouse with traffic passing, bag check and turnstiles under its roof |
-| `park` | Epiphany of Angels | NW | 69 m | Covered shed, St. Martha Hall (2) and the Red Building (1) beyond, SFJ (3) and its pool at the end |
+| `park` | Epiphany of Angels | NW | 69 m | Covered shed, St. Martha Hall (2) and the Red Building (1) beyond, a stand of trees, then SFJ (3) and its round plaza and pool at the end |
 | `plaza` | Front of the Main Building | NE | not to scale | Rotunda, DJDN (12), St. Barachiel Gate |
 | `walkway` | Rotunda to the chapel lawn | NW | 104 m | STL (4), PGN (11) |
 | `lane` | Parking lane | NE | 74 m | STL (4), PGN tower over it; SFJ behind you |

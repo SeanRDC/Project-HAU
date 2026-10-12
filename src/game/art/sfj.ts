@@ -3,17 +3,18 @@
 // VIEW.jpg` in `assets/`: a tall bay of green glass over the entrance, a tan
 // pylon beside it that rises past the roof, cream wings with long strips of
 // the same glass, a two-storey glass podium carrying the building's name,
-// and a flat canopy on columns across the whole front.
+// and a flat canopy on columns across the whole front. The round plaza the
+// fountain sits in is from the aerial photo `FOUNTAIN IN FRONT OF SFJ.png`.
 
 import { Ctx } from '../../engine/display';
 import { rng } from '../../engine/math';
-import { ellipse, line, poly, rect, signCentered, signWidth } from '../../engine/pix';
+import { ellipse, line, poly, px, rect, signCentered, signWidth } from '../../engine/pix';
 import { P, shade } from './palette';
 
-const GROUND_H = 34;
-const FLOOR_H = 24;
-/** the entrance sits this far above the plaza, up the front steps */
-const RISE = 8;
+const GROUND_H = 36;
+const FLOOR_H = 26;
+/** the entrance sits this far above the plaza, up the broad front steps */
+const RISE = 16;
 
 const CREAM = '#ece6d4';
 const CREAM_HI = '#f8f4e6';
@@ -115,7 +116,7 @@ export function drawSFJ(c: Ctx, g: Ctx, x: number, w: number, base: number): Sfj
   rect(c, linkX, linkTop - 2, linkW, 3, CREAM_HI);
 
   // the tan pylon, taller than everything, with its dark sloped cap
-  const pylonTop = bayTop - 18;
+  const pylonTop = bayTop - 14;
   rect(c, pylonX, pylonTop, pylonW, floor - pylonTop, TAN);
   rect(c, pylonX, pylonTop, 4, floor - pylonTop, TAN_HI);
   rect(c, pylonX + pylonW - 6, pylonTop, 6, floor - pylonTop, TAN_LO);
@@ -190,51 +191,133 @@ export function drawSFJ(c: Ctx, g: Ctx, x: number, w: number, base: number): Sfj
   rect(c, sx - 4, floor - 3, 9, 3, '#d8d8dc');
 
   // the front steps, the full width of the canopy, and the rails down them
-  for (let i = 0; i < RISE / 2; i++) {
-    rect(c, canX - 6 - i * 3, floor + i * 2, canW + 6 + i * 3, 2, i % 2 ? '#b9b4a8' : '#cfcabd');
-    rect(c, canX - 6 - i * 3, floor + i * 2, canW + 6 + i * 3, 1, '#e6e2d6');
-  }
+  // each step is a pale tread over the shadow of its riser, and comes out further than the one above
   rect(c, x, floor, canX - x - 6, RISE, '#5a5249');
-  for (const rx0 of [door - 34, door + 34]) {
-    line(c, rx0, floor - 9, rx0 + 6, base - 7, P.iron, 1);
+  for (let i = 0; i < RISE / 2; i++) {
+    const sx0 = canX - 6 - i * 4;
+    rect(c, sx0, floor + i * 2, canW + 6 + i * 4, 1, '#eceae3');
+    rect(c, sx0, floor + i * 2 + 1, canW + 6 + i * 4, 1, '#7f7e7a');
+    rect(c, sx0, floor + i * 2, 1, 2, '#f6f5f0');
+  }
+  // a landing at the top, in front of the doors
+  rect(c, canX - 6, floor - 1, canW + 6, 1, '#d6d4cc');
+  for (const rx0 of [door - 62, door - 30, door + 30, door + 62]) {
+    line(c, rx0, floor - 9, rx0 + 10, base - 8, P.iron, 1);
     rect(c, rx0, floor - 9, 1, 9, P.iron);
-    rect(c, rx0 + 6, base - 7, 1, 7, P.iron);
+    rect(c, rx0 + 5, floor - 1, 1, 8, P.iron);
+    rect(c, rx0 + 10, base - 8, 1, 8, P.iron);
   }
   return { door };
+}
+
+/** The plaza's radius out to its white ring: about 10.5 m, measured off the campus aerial. */
+export const PLAZA_R = 96;
+/** how much the low camera flattens a circle on the ground */
+const FLAT = 0.2;
+// the rings of the plaza as fractions of its radius, read off the aerial photo
+const BAND = 0.77;
+const LAWN = 0.41;
+const RIM = 0.29;
+const WATER = 0.25;
+
+const BAND_GREY = '#84858b';
+const DISC = '#cdccc7';
+const STRAP = '#f4f3ee';
+const ARC = '#7e7f86';
+const RING = '#e3e1db';
+
+/** What the paving is at a point of the plaza, with the plaza's radius as 1. Null outside the white ring. */
+function paving(u: number, v: number): 'ring' | 'band' | 'strap' | 'arc' | 'disc' | null {
+  const r = Math.hypot(u, v);
+  if (r > 1) return null;
+  if (r > 0.95) return 'ring';
+  if (r > BAND) return 'band';
+  // pale straps: a square set inside the disc, its corners on the dark band
+  for (let k = 0; k < 4; k++) {
+    const a = 0.2 + Math.PI / 4 + (k * Math.PI) / 2;
+    if (Math.abs(u * Math.cos(a) + v * Math.sin(a) - BAND / Math.SQRT2) < 0.034) return 'strap';
+  }
+  // eight circles outlined in dark grey round the lawn, running out under the band
+  for (let k = 0; k < 8; k++) {
+    const a = 0.2 + (k * Math.PI) / 4;
+    if (Math.abs(Math.hypot(u - Math.cos(a) * 0.6, v - Math.sin(a) * 0.6) - 0.21) < 0.011) return 'arc';
+  }
+  return 'disc';
+}
+
+/**
+ * The round plaza the fountain stands in, flattened by the low camera: a
+ * white ring, a band of darker concrete inside it, then a pale disc with a
+ * square of lighter straps and eight outlined circles round the lawn.
+ * `cy` is the middle of the pool. Draw `jetPool` over it.
+ */
+export function fountainPlaza(c: Ctx, g: Ctx, x: number, cy: number): void {
+  const rand = rng(336);
+  const ry = Math.round(PLAZA_R * FLAT);
+  const tone = { disc: DISC, arc: ARC, strap: STRAP, band: BAND_GREY, ring: RING };
+  for (let dy = -ry; dy <= ry; dy++) {
+    for (let dx = -PLAZA_R; dx <= PLAZA_R; dx++) {
+      // a ground pixel covers far more depth than width, so look at three depths and keep the thin lines
+      const at = (sub: number) => paving(dx / PLAZA_R, (dy + sub) / (PLAZA_R * FLAT));
+      let best = at(0);
+      if (!best) continue;
+      if (best === 'disc' || best === 'arc') {
+        const near = [at(-0.33), at(0.33)];
+        if (near.includes('strap')) best = 'strap';
+        else if (near.includes('arc')) best = 'arc';
+      }
+      let col = tone[best];
+      if (best !== 'strap' && best !== 'ring' && rand() > 0.9) col = shade(col, rand() > 0.5 ? 0.07 : -0.07);
+      px(c, x + dx, cy + dy, col);
+    }
+  }
+  // the low black lamps that stand round the ring and the lawn; the near ones would be in front of you
+  const post = (r: number, a: number) => {
+    const bx = x + Math.cos(a) * PLAZA_R * r;
+    const by = cy + Math.sin(a) * PLAZA_R * r * FLAT;
+    rect(c, bx, by - 3, 1, 4, '#22242a');
+    px(c, bx, by - 4, '#3a3d45');
+    px(g, bx, by - 4, LIT);
+  };
+  for (let k = 0; k < 7; k++) post(0.93, Math.PI + 0.2 + (k * (Math.PI - 0.4)) / 6);
+  for (let k = 0; k < 5; k++) post(LAWN + 0.03, Math.PI + 0.1 + (k * (Math.PI - 0.2)) / 4);
 }
 
 /** How far out from the middle of the pool the ring of jets stands, as [x, y] offsets. */
 export const POOL_JETS: [number, number][] = Array.from({ length: 8 }, (_, i) => {
   const t = (i / 8) * Math.PI * 2 + 0.39;
-  return [Math.round(Math.cos(t) * 33), Math.round(Math.sin(t) * 4.5)];
+  return [Math.round(Math.cos(t) * PLAZA_R * WATER * 0.62), Math.round(Math.sin(t) * PLAZA_R * WATER * FLAT * 0.62)];
 });
 
 /**
- * The round pool in front of SFJ, flattened by the low camera: lawn round
- * it, a rim of grey stone slabs, green water and a stone bowl in the middle.
- * The jets are animated by the scene. `cy` is the middle of the water.
+ * The round pool in the middle of the plaza: a ring of lawn, a rim of grey
+ * stone slabs, green water and a stone bowl in the middle. The jets are
+ * animated by the scene. `cy` is the middle of the water.
  */
 export function jetPool(c: Ctx, x: number, cy: number): void {
-  ellipse(c, x, cy + 1, 86, 13, P.grassDark);
-  ellipse(c, x, cy, 86, 13, P.grass);
-  ellipse(c, x - 8, cy - 3, 70, 8, P.grassHi);
+  const lawn = PLAZA_R * LAWN;
+  const rim = PLAZA_R * RIM;
+  const water = PLAZA_R * WATER;
+  ellipse(c, x, cy + 1, lawn, lawn * FLAT, P.grassDark);
+  ellipse(c, x, cy, lawn, lawn * FLAT, P.grass);
+  ellipse(c, x - 4, cy - 2, lawn * 0.8, lawn * FLAT * 0.6, P.grassHi);
   // the rim: wedge-shaped slabs with dark joints between them
-  ellipse(c, x, cy + 2, 68, 10.5, '#4a4d55');
-  ellipse(c, x, cy, 68, 10.5, '#8f949c');
-  ellipse(c, x, cy - 1, 66, 9.5, '#aab0b8');
-  for (let a = 0; a < 22; a++) {
-    const t = (a / 22) * Math.PI * 2;
-    line(c, x + Math.cos(t) * 55, cy + Math.sin(t) * 7.6, x + Math.cos(t) * 67, cy + Math.sin(t) * 10, '#5f646c', 1);
+  ellipse(c, x, cy + 1, rim, rim * FLAT, '#4a4d55');
+  ellipse(c, x, cy, rim, rim * FLAT, '#8f949c');
+  ellipse(c, x, cy - 1, rim - 1, rim * FLAT - 0.5, '#aab0b8');
+  for (let a = 0; a < 16; a++) {
+    const t = (a / 16) * Math.PI * 2;
+    line(c, x + Math.cos(t) * water, cy + Math.sin(t) * water * FLAT, x + Math.cos(t) * rim, cy + Math.sin(t) * rim * FLAT, '#5f646c', 1);
   }
-  ellipse(c, x, cy, 55, 7.6, '#1f4f55');
-  ellipse(c, x, cy - 1, 55, 7, '#2f7b7c');
-  ellipse(c, x - 8, cy - 2, 34, 3.5, '#45989a');
-  ellipse(c, x + 14, cy + 2, 22, 2, '#3a8a8b');
+  ellipse(c, x, cy, water, water * FLAT, '#1f4f55');
+  ellipse(c, x, cy - 1, water, water * FLAT - 0.5, '#2f7b7c');
+  ellipse(c, x - 4, cy - 2, water * 0.6, water * FLAT * 0.45, '#45989a');
+  ellipse(c, x + 7, cy + 2, water * 0.4, 1.2, '#3a8a8b');
   // the bowl in the middle
-  ellipse(c, x, cy + 1, 12, 3, '#3d4148');
-  rect(c, x - 9, cy - 5, 19, 6, '#8f949c');
-  rect(c, x - 9, cy - 5, 4, 6, '#b4bac1');
-  rect(c, x + 6, cy - 5, 4, 6, '#6b7078');
-  ellipse(c, x, cy - 5, 11, 2.5, '#c3c8ce');
-  ellipse(c, x, cy - 5, 8, 1.5, '#3f8f90');
+  ellipse(c, x, cy + 1, 7, 2, '#3d4148');
+  rect(c, x - 5, cy - 4, 11, 5, '#8f949c');
+  rect(c, x - 5, cy - 4, 3, 5, '#b4bac1');
+  rect(c, x + 3, cy - 4, 3, 5, '#6b7078');
+  ellipse(c, x, cy - 4, 6, 1.6, '#c3c8ce');
+  ellipse(c, x, cy - 4, 4, 1, '#3f8f90');
 }
