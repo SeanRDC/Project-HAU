@@ -46,7 +46,7 @@ The seven campus streets, outsides only, no people yet:
 
 Every building's door names it, gives its number on the 2022 campus map and the offices inside, and says it is not open yet.
 
-Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key (pixel art, painted from the plan, with teleport) and a minimap in the top right, baon (allowance) money, rain that comes and goes with umbrellas, title screen, character picker and name entry, synthesised audio, autosave.
+Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices and a portrait of the speaker, faces and emotes, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key (pixel art, painted from the plan, with teleport) and a minimap in the top right, baon (allowance) money, rain that comes and goes with umbrellas, title screen, character picker and name entry, synthesised audio, autosave.
 
 ## Where Things Live
 * `src/engine/` - generic engine parts. Knows nothing about HAU.
@@ -68,7 +68,8 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * The player's look: `src/game/art/player.ts` holds both looks and the chosen one (`baseLook()`). Areas and cutscenes reset to it, so never use a fixed look for the player. Dev shortcuts: `?char=girl&name=Mikko`.
 * Title flow: Enter continues a save, or opens the picker (A/D, Enter), then the name box (type, Enter). N with a save opens the picker too and only wipes the save once you confirm; Esc backs out.
 * An NPC's `talk(game)` returns the lines to say, so it can branch on `game.has('flag')`.
-* A cutscene is `game.play(steps)` from a hotspot, or an area's `intro(game, x)` that returns steps when you walk in. Steps: `walk`, `place`, `face`, `say`, `pause`, `sound`, `look` (swap what the player wears) and `run` (anything else). The game never saves in the middle of one.
+* **Faces:** a line can say how the speaker looks, `face: 'happy'` (neutral, happy, sad, angry, surprised, worried, shy, smug). It shows on the sprite, in the arms when standing still, and in the bubble's portrait (`art/portrait.ts`), and pops an emote unless the line picks its own with `emote` ('!', '?', '...', 'note', 'anger', 'sweat', 'heart', 'none'). Only the side gate lines are tagged so far.
+* A cutscene is `game.play(steps)` from a hotspot, or an area's `intro(game, x)` that returns steps when you walk in. Steps: `walk`, `place`, `face`, `say`, `pause`, `sound`, `look` (swap what the player wears), `walkIn` / `walkOut` (into or out of a doorway, seen from behind or the front) and `run` (anything else). The game never saves in the middle of one.
 * An area can have a `barrier`: an x the player can't cross leftwards until a flag is set.
 * Main Gate flags: `passed_bag_check`, `id_fumble`, `scanned_id`, `met_joy`, `met_ella`.
 * **Money:** a line with `pesos: -20, item: 'Taho'` spends ₱20 when it is shown (positive gives money). `g.pesos()` says how much is left, so a talk function can offer a cheaper line when the player is short. `buy()` in `story/streets.ts` makes a menu choice that does both. New games start with ₱150 (`BAON` in `game.ts`).
@@ -93,7 +94,8 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 See `sessions/2026-10-12-minimap-teleport-and-plans.md` for the details.
 * **Photo trip, Tuesday 2026-10-13.** The shot list is in that session file. Fix the maps from the photos afterwards, Main Gate first.
 * **Characters easier to tell apart.** One signature feature each (hair, glasses, build, accessories), then talking and idle animations. Trisha, Bea, Kath and Ella currently look almost the same.
-* **Close-up cutscenes** with portraits drawn by code from each `Look`, replaced later by hand-drawn art.
+* **Close-up cutscenes.** Bubble portraits drawn by code from each `Look` exist now; full-screen close-ups do not. Hand-drawn art may replace both later.
+* **Faces on the rest of the dialogue.** Only `story/gate.ts` (and Ella) are tagged.
 * **Quest "Ang Ikaapat na Piso"** (Jopet), drafted in `docs/drafts/` on branch `quest-ikaapat-na-piso`. It needs a day system, close-ups, the library and the SOC org room.
 
 ## Not Done Yet
@@ -102,7 +104,7 @@ See `sessions/2026-10-12-minimap-teleport-and-plans.md` for the details.
 * The plaza and the main gate scenes are not to scale (see `docs/campus-layout.md`).
 * The other gates on the gate-area diagram: Guardian Angel, St. Raphael, St. Uriel and the pedestrian gate.
 * No touch controls (it loads on a phone but you cannot move).
-* Real sprite art and recorded audio.
+* Real sprite art and recorded audio. `assets/drafts/girl-test/` is a test of sprite sheets made from one AI-generated girl image (idle, front walk, talking with expressions). The game does not use it.
 * The Godot 4 port.
 * The reference images in `assets/` are committed as of 2026-10-12, at Sean's decision, so the team shares them. They are Google Earth, university and found-online material, references only: the game does not load them.
 * The older `docs/`, `assets/` and `tools/` READMEs still describe the original top-down plan in places.

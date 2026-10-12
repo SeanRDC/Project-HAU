@@ -16,7 +16,7 @@ import { P, shade } from '../art/palette';
 import { baseLook } from '../art/player';
 import { SILHOUETTE, boomBarrier, bush, foliage, hedge, lampPost, palm, pot, tree } from '../art/props';
 import { Sprite, VehicleKind, drawVehicle, lampAt, vehicleSprite } from '../art/traffic';
-import { Checkpoint, gateArrival, gateHotspots, gateNpcs, ownerWaiting } from '../story/gate';
+import { Checkpoint, comeOut, gateArrival, gateHotspots, gateNpcs, ownerWaiting } from '../story/gate';
 import { AreaDef, AreaLight, Layer } from '../types';
 
 const WIDTH = 1200;
@@ -32,6 +32,10 @@ const ARCH_X = 600;
 const GATE_BASE = WALK + 2;
 /** the whole checkpoint is under its roof: the turnstile by the inner pier, then the two bag tables */
 const TURNSTILE_X = ARCH_X - ARCH_WIDTH / 2 + PIER_W + 20;
+/** the way in: between the gate leaves folded back at the far end of the gatehouse, a little left of the middle */
+const DOOR_X = ARCH_X - 30;
+/** where you stand after walking back out of the gate */
+const OUT_X = TURNSTILE_X + 36;
 const TABLE_A = ARCH_X - 10;
 const TABLE_B = ARCH_X + 60;
 const SIGN_X = ARCH_X + ARCH_WIDTH / 2 + 22;
@@ -48,9 +52,9 @@ const STREET_X = 1180;
 const KERB_X = 450;
 /** the two lanes of the street: where the wheels run, how big the vehicles are drawn, which way they go */
 const LANES = [
-  { base: VIEW_H - 19, scale: 1.25, dir: -1 as const, speed: 84, every: 3.4 },
+  { base: VIEW_H - 19, scale: 1.4, dir: -1 as const, speed: 84, every: 3.4 },
   // the near lane is a little bigger and quicker, and still whole on the screen
-  { base: VIEW_H - 2, scale: 1.5, dir: 1 as const, speed: 122, every: 4.6 },
+  { base: VIEW_H - 2, scale: 1.7, dir: 1 as const, speed: 122, every: 4.6 },
 ];
 
 function layerWidth(parallax: number): number {
@@ -315,6 +319,9 @@ export function buildGate(): AreaDef {
   };
   const cp: Checkpoint = {
     scanner: TURNSTILE_X + 16,
+    door: DOOR_X,
+    // up to just short of the back edge of the gatehouse floor, so their feet stay on the paving
+    doorRise: WALK - GROUND - 3,
     tableA: TABLE_A,
     tableB: TABLE_B,
     pickup: ENFORCER_X + 46,
@@ -381,7 +388,7 @@ export function buildGate(): AreaDef {
     spawns: {
       street: { x: TRUCK_X + 150, facing: -1 },
       // coming back out from the Main Building: just this side of the turnstiles
-      plaza: { x: TURNSTILE_X + 36, facing: 1 },
+      plaza: { x: OUT_X, facing: 1 },
     },
     barrier: { x: TURNSTILE_X + 12, until: 'scanned_id' },
 
@@ -390,8 +397,10 @@ export function buildGate(): AreaDef {
       Object.assign(st, { held: false, card: false, bag: 'none', flashlight: false, reader: 'idle' });
       st.unlocked = game.has('scanned_id');
       if (!game.has('passed_bag_check')) return gateArrival(cp, game.hour());
+      const steps = x === OUT_X ? comeOut(cp) : [];
       // the pickup's owner has turned up by now and is still standing by it
-      return game.has('saw_ticket') ? ownerWaiting(cp) : null;
+      if (game.has('saw_ticket')) steps.unshift(...ownerWaiting(cp));
+      return steps.length ? steps : null;
     },
 
     update(dt, area) {

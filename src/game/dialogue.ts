@@ -1,11 +1,13 @@
-// Conversations play as speech bubbles over whoever is talking. Narration
-// (looking at things) goes in a strip along the bottom instead.
+// Conversations play as speech bubbles over whoever is talking, with a
+// close-up of their face in the corner. Narration (looking at things) goes in
+// a strip along the bottom instead.
 
 import { Ctx, VIEW_H, VIEW_W } from '../engine/display';
 import { Input } from '../engine/input';
 import { clamp } from '../engine/math';
 import { Area } from './area';
 import { playerName } from './art/player';
+import { PORTRAIT_SIZE, portrait } from './art/portrait';
 import { Line } from './types';
 import { GOLD, INK, MAROON, PAPER, SERIF, font, keyCap, roundRect, wrap } from './ui/draw';
 
@@ -22,6 +24,8 @@ export class Dialogue {
   onFlag: ((flag: string) => void) | null = null;
   onPesos: ((amount: number, item: string) => void) | null = null;
   onSpeaker: ((who: string) => void) | null = null;
+  /** every line as it comes up, for the speaker's face and emote */
+  onLine: ((line: Line) => void) | null = null;
 
   get active(): boolean {
     return this.line !== null;
@@ -40,7 +44,16 @@ export class Dialogue {
     this.shown = 0;
     this.choice = 0;
     this.age = 0;
-    if (this.line) this.onSpeaker?.(this.line.who);
+    if (this.line) {
+      this.onSpeaker?.(this.line.who);
+      this.onLine?.(this.line);
+    }
+  }
+
+  /** Whoever's words are still coming out, or null. */
+  speaking(): string | null {
+    const l = this.line;
+    return l && l.who && this.shown < l.text.length ? l.who : null;
   }
 
   update(dt: number, input: Input): void {
@@ -87,8 +100,11 @@ export class Dialogue {
     const textW = Math.max(...lines.map((s) => ui.measureText(s).width));
     const name = mine ? playerName() : area.nameOf(l.who);
     const choiceH = done && l.choices ? l.choices.length * 11 + 3 : 0;
-    const w = Math.max(textW, l.choices ? 110 : 0) + 14;
-    const h = lines.length * 9.5 + 9 + choiceH;
+    const face = area.portraitOf(l.who);
+    // room on the left for the portrait
+    const pad = face ? PORTRAIT_SIZE + 5 : 0;
+    const w = Math.max(textW, l.choices ? 110 : 0) + 14 + pad;
+    const h = Math.max(lines.length * 9.5 + 9 + choiceH, face ? PORTRAIT_SIZE + 6 : 0);
     const pop = Math.min(1, this.age * 9);
     const x = clamp(anchor.x - w / 2, 6, VIEW_W - w - 6);
     const y = Math.max(name ? 14 : 6, anchor.y - h - 7) + (1 - pop) * 4;
@@ -105,12 +121,27 @@ export class Dialogue {
     ui.lineTo(tx, y + h + 5);
     ui.fill();
 
+    if (face) {
+      // the close-up, on a card of the speaker's shirt colour, with a little hop when their face changes
+      const hop = face.since < 0.25 ? Math.round(Math.sin((face.since / 0.25) * Math.PI) * 2) : 0;
+      const open = this.shown < l.text.length && this.age % 0.22 < 0.12;
+      const blink = (this.age * 0.37 + 0.3) % 1 > 0.96;
+      roundRect(ui, x + 3, y + 3, PORTRAIT_SIZE, PORTRAIT_SIZE, 3, mine ? 'rgba(255,255,255,0.1)' : 'rgba(124,31,44,0.1)');
+      ui.save();
+      ui.imageSmoothingEnabled = false;
+      ui.beginPath();
+      ui.rect(x + 3, y + 3, PORTRAIT_SIZE, PORTRAIT_SIZE);
+      ui.clip();
+      ui.drawImage(portrait(face.look, face.face, open, blink), x + 3, y + 3 - hop + 1);
+      ui.restore();
+    }
+
     if (name) {
       font(ui, 5.5, 700);
       const nw = ui.measureText(name).width + 8;
-      roundRect(ui, x + 5, y - 6, nw, 9, 3, MAROON);
+      roundRect(ui, x + 5 + pad, y - 6, nw, 9, 3, MAROON);
       ui.fillStyle = '#fbeed0';
-      ui.fillText(name, x + 9, y - 4.4);
+      ui.fillText(name, x + 9 + pad, y - 4.4);
     }
 
     font(ui, 7, 500);
@@ -119,17 +150,17 @@ export class Dialogue {
     lines.forEach((s, i) => {
       const part = s.slice(0, Math.max(0, left));
       left -= s.length + 1;
-      ui.fillText(part, x + 7, y + 5 + i * 9.5);
+      ui.fillText(part, x + 7 + pad, y + 5 + i * 9.5);
     });
 
     if (done && l.choices) {
       const cy = y + 6 + lines.length * 9.5 + 1;
       l.choices.forEach((c, i) => {
         const sel = i === this.choice;
-        roundRect(ui, x + 5, cy + i * 11, w - 10, 9.5, 3, sel ? GOLD : mine ? 'rgba(255,255,255,0.1)' : 'rgba(42,32,48,0.08)');
+        roundRect(ui, x + 5 + pad, cy + i * 11, w - 10 - pad, 9.5, 3, sel ? GOLD : mine ? 'rgba(255,255,255,0.1)' : 'rgba(42,32,48,0.08)');
         font(ui, 6.2, sel ? 700 : 500);
         ui.fillStyle = sel ? INK : fg;
-        ui.fillText(c.text, x + 10, cy + i * 11 + 1.8);
+        ui.fillText(c.text, x + 10 + pad, cy + i * 11 + 1.8);
       });
     } else if (done && Math.floor(this.age * 2.5) % 2 === 0) {
       ui.fillStyle = mine ? GOLD : MAROON;

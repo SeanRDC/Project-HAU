@@ -3,7 +3,7 @@
 // bigger and faster in the lane nearer the camera, so the street has depth.
 
 import { Ctx, makeCanvas } from '../../engine/display';
-import { disc, poly, rect } from '../../engine/pix';
+import { disc, line, poly, rect } from '../../engine/pix';
 import { P, shade } from './palette';
 import { tricycle } from './props';
 import { car } from './street';
@@ -19,6 +19,40 @@ export interface Sprite {
 function wheel(c: Ctx, x: number, base: number, r = 4): void {
   disc(c, x, base - r, r, '#1c1b20');
   disc(c, x, base - r, r - 2, '#8a8d95');
+}
+
+const SKINS = ['#c99468', '#b8825a', '#d9a878', '#a8704a'];
+const SHIRTS = ['#f4f1ea', '#3b6ea8', '#c8342f', '#2f8f4e', '#55585f'];
+
+/** Picks a driver's skin and shirt from the body colour, so each vehicle keeps the same one. */
+function look(body: string): [string, string] {
+  let h = 0;
+  for (const ch of body) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return [SKINS[h % SKINS.length], SHIRTS[(h >> 3) % SHIRTS.length]];
+}
+
+/** A driver seen through the side window, facing right: `y` is the middle of the head. */
+function driver(c: Ctx, x: number, y: number, body: string): void {
+  const [skin, shirt] = look(body);
+  rect(c, x - 3, y + 2, 7, 2, shirt);
+  disc(c, x, y, 2, skin);
+  rect(c, x - 2, y - 3, 5, 2, '#241a18');
+  rect(c, x - 2, y - 1, 1, 1, '#241a18');
+  // the steering wheel in front
+  rect(c, x + 3, y + 1, 1, 3, '#1c1b20');
+}
+
+/** The tricycle driver astride the motorcycle, leaning to the handlebar; faces left like the stock tricycle. */
+function rider(c: Ctx, x: number, base: number, body: string): void {
+  const [skin, shirt] = look(body);
+  rect(c, x - 4, base - 13, 7, 2, '#2c3442');
+  rect(c, x - 5, base - 12, 2, 6, '#2c3442');
+  rect(c, x - 6, base - 6, 3, 1, '#1c1b20');
+  rect(c, x - 2, base - 22, 6, 10, shirt);
+  line(c, x - 1, base - 20, x - 8, base - 18, skin);
+  disc(c, x, base - 25, 3, skin);
+  rect(c, x - 3, base - 29, 7, 3, '#241a18');
+  rect(c, x + 1, base - 26, 3, 2, '#241a18');
 }
 
 /** A jeepney: long body, a stripe down the side, open windows, the roof rack, a chrome nose. */
@@ -46,6 +80,7 @@ function jeepney(c: Ctx, base: number, body: string): void {
   rect(c, 22, base - 16, 18, 3, '#f4f1ea');
   // the nose: windscreen, long bonnet, chrome grille and the horse on top
   poly(c, [[50, base - 26], [56, base - 26], [60, base - 17], [50, base - 17]], '#55657c');
+  driver(c, 53, base - 22, body);
   rect(c, 54, base - 17, 9, 12, body);
   rect(c, 54, base - 17, 9, 2, shade(body, 0.3));
   rect(c, 62, base - 15, 2, 9, '#cfd3d8');
@@ -69,6 +104,7 @@ function suv(c: Ctx, base: number, body: string): void {
   rect(c, 8, base - 27, 28, 1, shade(body, 0.3));
   rect(c, 10, base - 24, 11, 8, '#3a4a60');
   poly(c, [[23, base - 16], [23, base - 24], [34, base - 24], [39, base - 16]], '#52647e');
+  driver(c, 28, base - 20, body);
   rect(c, 49, base - 13, 2, 3, '#fff0b8');
   rect(c, 2, base - 13, 1, 4, '#b8322e');
   wheel(c, 13, base, 5);
@@ -98,6 +134,7 @@ function pickup(c: Ctx, base: number, body: string): void {
   // windows, dark tint
   rect(c, 29, base - 28, 8, 8, '#2a3040');
   poly(c, [[39, base - 20], [39, base - 28], [46, base - 28], [51, base - 20]], '#3a4458');
+  driver(c, 43, base - 24, body);
   rect(c, 37, base - 28, 2, 9, body);
   rect(c, 52, base - 22, 3, 3, black);
   // sports bar and the tailgate
@@ -134,6 +171,7 @@ export function vehicleSprite(kind: VehicleKind, body: string): Sprite {
   switch (kind) {
     case 'car':
       car(c, 25, h - 1, body);
+      driver(c, 31, h - 18, body);
       return { canvas, lamp: [47, 11] };
     case 'suv':
       suv(c, h - 1, body);
@@ -148,6 +186,7 @@ export function vehicleSprite(kind: VehicleKind, body: string): Sprite {
       // the stock tricycle faces left, so turn it round
       const [tmp, t] = makeCanvas(w, h);
       tricycle(t, 12, h - 1, body);
+      rider(t, 12, h - 1, body);
       c.translate(w, 0);
       c.scale(-1, 1);
       c.drawImage(tmp, 0, 0);

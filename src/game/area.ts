@@ -8,12 +8,18 @@ import { LightMap, drawVignette } from '../engine/lighting';
 import { RGB, clamp, css, damp, mix, smooth } from '../engine/math';
 import { Particle, Particles } from '../engine/particles';
 import { Mood } from '../engine/tod';
-import { CHAR_HEIGHT, Look, drawCat, drawCharacter, drawShadow } from './art/character';
+import { CHAR_HEIGHT, Face, Look, drawCat, drawCharacter, drawCharacterFacing, drawShadow } from './art/character';
 import { baseLook } from './art/player';
 import { P } from './art/palette';
 import { Sky } from './art/sky';
-import { AreaDef, AreaRuntime, AreaView, GameApi, Layer, NpcDef } from './types';
+import { px, rect } from '../engine/pix';
+import { AreaDef, AreaRuntime, AreaView, Emote, GameApi, Layer, NpcDef } from './types';
 import { RAINING } from './weather';
+
+/** the emote a change of face brings with it, if it doesn't name its own */
+const FACE_EMOTE: Partial<Record<Face, Emote>> = { surprised: '!', angry: 'anger', worried: 'sweat', happy: 'note', sad: '...', shy: 'heart' };
+/** how long an emote stays up */
+const EMOTE_TIME = 1.6;
 
 /** umbrella colours for students, picked by NPC */
 const UMBRELLAS = ['#2f5f8a', '#c8553d', '#3f7a52', '#6a4a8a', '#e3b33b', '#22202a'];
@@ -29,10 +35,22 @@ interface Walker {
   vx: number;
   phase: number;
   stride: number;
-  /** set while walking away from the camera through a doorway: 0 just starting, 1 gone inside */
-  away?: number | null;
-  /** how many seconds that walk takes */
-  awayTime?: number;
+  /** set while walking in through a doorway away from the camera, or out of one towards it */
+  trip?: Trip | null;
+}
+
+/**
+ * A walk into or out of the depth of the scene, seen from behind going in and
+ * from the front coming out. `x` stays where the walk starts (going in) or
+ * ends (coming out); `far` is the doorway end.
+ */
+interface Trip {
+  /** 0..1 along the way */
+  t: number;
+  time: number;
+  out: boolean;
+  far: number;
+  rise: number;
 }
 
 interface Npc extends Walker {
@@ -49,7 +67,14 @@ interface Npc extends Walker {
 
 /** how far up the screen someone moves while walking in through a doorway, and how much smaller they get */
 const AWAY_RISE = 15;
-const AWAY_SHRINK = 0.26;
+const AWAY_SHRINK = 0.3;
+/** how far into the doorway they get before the shade swallows them */
+const AWAY_FADE = 0.7;
+
+/** How deep into the doorway someone on a trip is: 0 where they stand, 1 inside. */
+function depth(tr: Trip): number {
+  return tr.out ? 1 - tr.t : tr.t;
+}
 
 /** Something the player can press E on right now. */
 export interface Target {
@@ -76,6 +101,11 @@ export class Area implements AreaRuntime {
   private hazeCtx: Ctx;
   /** called every time a foot lands, for the footstep sound */
   onStep: (() => void) | null = null;
+  /** who is speaking right now, mouth moving while the words come out */
+  talker: string | null = null;
+  /** how everyone in the conversation looks, and when that last changed */
+  private faces = new Map<string, { face: Face; since: number }>();
+  private emotes: { who: string; kind: Emote; since: number }[] = [];
 
   constructor(readonly def: AreaDef, private sky: Sky) {
     this.camera = new Camera(def.width);
@@ -101,7 +131,7 @@ export class Area implements AreaRuntime {
     this.player.facing = s.facing;
     this.player.vx = 0;
     this.player.stride = 0;
-    this.player.away = null;
+    this.player.trip = null;
     this.walkTo = null;
     this.playerLook = baseLook();
     this.camera.snap(s.x);
@@ -120,24 +150,72 @@ export class Area implements AreaRuntime {
     }
   }
 
+  private walker(who: string): Walker | undefined {
+    return who === 'you' ? this.player : this.npcs.find((n) => n.def.id === who);
+  }
+
+  /** `rise` is measured from the walk line: someone standing further back has that much less of the way to go. */
+  private riseFrom(w: Walker, rise: number): number {
+    return Math.max(0, rise - (this.def.walkY - w.y));
+  }
+
   /**
-   * Cutscene helper: someone turns away from the camera and walks in through
-   * the doorway behind them, getting smaller and fading as they go. An NPC is
-   * gone from the scene afterwards; the player stays out of sight until the
-   * scene is entered again.
+   * Cutscene helper: someone turns their back to the camera and walks in
+   * through the doorway behind them, over to x = `to` (straight back if not
+   * given) and on until their feet are `rise` pixels above the walk line,
+   * whatever depth they stand at, getting smaller as they go and
+   * fading only once they are in its shade. An NPC is gone from the scene
+   * afterwards; the player stays out of sight until the scene is entered again.
    */
-  walkIn(who: string, time = 1.2): void {
-    const w = who === 'you' ? this.player : this.npcs.find((n) => n.def.id === who);
+  walkIn(who: string, time = 1.2, to?: number, rise = AWAY_RISE): void {
+    const w = this.walker(who);
     if (!w) return;
-    w.away = 0;
-    w.awayTime = time;
+    w.trip = { t: 0, time, out: false, far: to ?? w.x, rise: this.riseFrom(w, rise) };
     w.vx = 0;
   }
 
-  /** True while someone sent in by walkIn() is still on the way. */
+  /**
+   * Cutscene helper: the other way round. Someone comes out of the doorway at
+   * x = `from`, facing the camera, and walks forward to where they stand now.
+   */
+  walkOut(who: string, time = 1.2, from?: number, rise = AWAY_RISE): void {
+    const w = this.walker(who);
+    if (!w) return;
+    w.trip = { t: 0, time, out: true, far: from ?? w.x, rise: this.riseFrom(w, rise) };
+    w.vx = 0;
+    if ('def' in w) (w as Npc).gone = false;
+  }
+
+  /** True while someone sent by walkIn() or walkOut() is still on the way. */
   walkingIn(who: string): boolean {
-    const w = who === 'you' ? this.player : this.npcs.find((n) => n.def.id === who);
-    return !!w && w.away != null && w.away < 1;
+    const tr = this.walker(who)?.trip;
+    return !!tr && tr.t < 1;
+  }
+
+  /** A line is said: the speaker takes on its face, and an emote pops up if it brings one. */
+  express(who: string, face: Face = 'neutral', emote?: Emote | 'none'): void {
+    if (!who) return;
+    const before = this.faces.get(who)?.face ?? 'neutral';
+    if (face !== before) this.faces.set(who, { face, since: this.time });
+    const kind = emote === 'none' ? undefined : emote ?? (face !== before ? FACE_EMOTE[face] : undefined);
+    if (kind) {
+      this.emotes = this.emotes.filter((e) => e.who !== who);
+      this.emotes.push({ who, kind, since: this.time });
+    }
+  }
+
+  /** The conversation is over: everyone goes back to a plain face. */
+  calm(): void {
+    this.faces.clear();
+    this.talker = null;
+  }
+
+  /** What the dialogue portrait should show for a speaker, or null for narration and the cat. */
+  portraitOf(who: string): { look: Look; face: Face; since: number } | null {
+    const n = who === 'you' ? null : this.npcs.find((n) => n.def.id === who);
+    if (who !== 'you' && (!n || n.def.cat)) return null;
+    const f = this.faces.get(who);
+    return { look: n ? n.def.look : this.playerLook, face: f?.face ?? 'neutral', since: f ? this.time - f.since : Infinity };
   }
 
   /** Cutscene helper: put an NPC somewhere instantly. */
@@ -148,7 +226,7 @@ export class Area implements AreaRuntime {
     n.goal = null;
     n.target = null;
     n.gone = false;
-    n.away = null;
+    n.trip = null;
     if (facing) n.facing = facing;
   }
 
@@ -227,13 +305,25 @@ export class Area implements AreaRuntime {
   }
 
   private advance(w: Walker, dt: number): void {
-    if (w.away != null) {
-      // walking in: the legs keep going while they move away from the camera
-      if (w.away < 1) {
-        w.away = Math.min(1, w.away + dt / (w.awayTime ?? 1.2));
+    const tr = w.trip;
+    if (tr) {
+      // walking in or out: the legs keep going while they move through the depth of the scene
+      if (tr.t < 1) {
+        tr.t = Math.min(1, tr.t + dt / tr.time);
         w.stride = 1;
-        w.phase += dt * 9;
-        if (w.away >= 1 && 'def' in w) (w as Npc).gone = true;
+        // steps as long as the ground covered, allowing for them getting smaller with distance, so the feet don't slide
+        const path = Math.hypot(tr.far - w.x, tr.rise) / (1 - AWAY_SHRINK / 2);
+        const before = Math.floor(w.phase / Math.PI);
+        w.phase += (path / tr.time) * dt * ((Math.PI * 2) / STRIDE_LENGTH);
+        if (w === this.player && Math.floor(w.phase / Math.PI) !== before) this.onStep?.();
+      }
+      if (tr.t >= 1) {
+        if (tr.out) {
+          // out on the near side now: back to the ordinary side view, standing
+          w.trip = null;
+          w.stride = 0;
+          w.phase = 0;
+        } else if ('def' in w) (w as Npc).gone = true;
       }
       return;
     }
@@ -325,6 +415,24 @@ export class Area implements AreaRuntime {
     }
   }
 
+  /** The emotes over people's heads: popping up, bobbing, then fading. */
+  private drawEmotes(ctx: Ctx, cam: number): void {
+    this.emotes = this.emotes.filter((e) => this.time - e.since < EMOTE_TIME);
+    for (const e of this.emotes) {
+      const a = this.anchor(e.who);
+      if (!a) continue;
+      const t = this.time - e.since;
+      const pop = Math.min(1, t * 8);
+      // beside the head rather than over it, where the speech bubble's tail would hide it
+      const x = Math.round(a.x + 6);
+      const y = Math.round(a.y + 13 - pop * 3 - Math.sin(t * 5) * 0.8);
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (EMOTE_TIME - t) * 4);
+      emoteIcon(ctx, x, y, e.kind, t);
+      ctx.restore();
+    }
+  }
+
   render(ctx: Ctx, mood: Mood): void {
     const def = this.def;
     const cam = Math.round(this.camera.x);
@@ -337,32 +445,50 @@ export class Area implements AreaRuntime {
     this.particles.render(ctx, cam, false);
 
     const walkers: (Walker | Npc)[] = [...this.npcs, this.player];
-    walkers.sort((a, b) => a.y - b.y);
+    // someone deep in a doorway is further away than everyone on the walk line
+    const sortY = (w: Walker) => w.y - (w.trip ? w.trip.rise * depth(w.trip) : 0);
+    walkers.sort((a, b) => sortY(a) - sortY(b));
     for (const w of walkers) {
       const npc = 'def' in w ? w.def : null;
-      const sx = w.x - cam;
+      const tr = w.trip;
+      // a steady pace, so the body keeps up with the legs instead of gliding at the start and end
+      const k = tr ? depth(tr) : 0;
+      const sx = (tr ? w.x + (tr.far - w.x) * k : w.x) - cam;
       if (sx < -30 || sx > VIEW_W + 30) continue;
-      if (('gone' in w && w.gone) || w.away === 1) continue;
+      if (('gone' in w && w.gone) || (tr && !tr.out && tr.t >= 1)) continue;
       if (npc?.cat) {
         drawShadow(ctx, sx, w.y, 6);
         drawCat(ctx, sx, w.y, this.time);
         continue;
       }
-      drawShadow(ctx, sx, w.y);
+      if (!tr) drawShadow(ctx, sx, w.y);
       let look = npc ? npc.look : this.playerLook;
       // out in the rain, you and the students put up umbrellas; guards and vendors have their tents
       if (def.outdoor && this.rain > RAINING && (!npc || look.lace)) {
         look = { ...look, umbrella: npc ? UMBRELLAS[npc.id.length % UMBRELLAS.length] : P.maroon };
       }
-      const pose = { facing: w.facing, phase: w.phase, stride: w.stride, time: this.time + w.x * 0.37 };
-      if (w.away != null) {
-        // further from the camera with every step: higher up, smaller, and lost in the shade of the doorway
-        const k = smooth(w.away);
+      const id = npc ? npc.id : 'you';
+      const felt = this.faces.get(id);
+      const pose = {
+        facing: w.facing,
+        phase: w.phase,
+        stride: w.stride,
+        time: this.time + w.x * 0.37,
+        face: felt?.face,
+        react: felt ? this.time - felt.since : undefined,
+        talk: this.talker === id && this.time % 0.22 < 0.12,
+      };
+      if (tr) {
+        // further from the camera with every step: higher up and smaller, seen from behind going in
+        // and from the front coming out, and lost in the shade once deep enough in the doorway
+        const size = 1 - AWAY_SHRINK * k;
+        const y = w.y - tr.rise * k;
         ctx.save();
-        ctx.globalAlpha = 1 - k * k;
-        ctx.translate(Math.round(sx), Math.round(w.y - AWAY_RISE * k));
-        ctx.scale(1 - AWAY_SHRINK * k, 1 - AWAY_SHRINK * k);
-        drawCharacter(ctx, 0, 0, look, pose);
+        ctx.globalAlpha = clamp((1 - k) / (1 - AWAY_FADE), 0, 1);
+        ctx.translate(Math.round(sx), Math.round(y));
+        ctx.scale(size, size);
+        drawShadow(ctx, 0, 0);
+        drawCharacterFacing(ctx, 0, 0, look, pose, tr.out ? 'front' : 'back');
         ctx.restore();
         continue;
       }
@@ -371,6 +497,7 @@ export class Area implements AreaRuntime {
 
     def.drawFront?.(ctx, view);
     for (const l of def.layers) if (l.front) this.drawLayer(ctx, l, mood);
+    this.drawEmotes(ctx, cam);
 
     // indoors the sun matters less, the walls keep things warm and even
     const ambient: RGB = def.outdoor ? mood.ambient : mix(mix(mood.ambient, [255, 236, 210], 0.45), [70, 62, 96], night * 0.35);
@@ -406,5 +533,62 @@ export class Area implements AreaRuntime {
       ctx.globalCompositeOperation = 'source-over';
     }
     drawVignette(ctx, 0.75 + night * 0.25);
+  }
+}
+
+/** One emote, its bottom-left corner at x, y: most in a little white bubble, sweat as a bare drop. */
+function emoteIcon(ctx: Ctx, x: number, y: number, kind: Emote, t: number): void {
+  if (kind === 'sweat') {
+    const drip = Math.min(3, Math.floor(t * 4));
+    rect(ctx, x - 1, y - 9 + drip, 2, 3, '#9fd0f0');
+    px(ctx, x - 1, y - 9 + drip, '#ffffff');
+    px(ctx, x, y - 10 + drip, '#9fd0f0');
+    return;
+  }
+  if (kind === 'anger') {
+    // the throbbing cross of a vein, no bubble
+    const c = Math.sin(t * 14) > 0 ? '#e0483c' : '#b8322e';
+    for (const [dx, dy] of [[0, -6], [0, -5], [4, -6], [4, -5], [1, -8], [2, -8], [1, -3], [2, -3], [-1, -6], [5, -5]]) {
+      px(ctx, x + dx, y + dy, c);
+    }
+    return;
+  }
+  // the bubble and its tail
+  rect(ctx, x, y - 10, 9, 8, '#2a2030');
+  rect(ctx, x + 1, y - 11, 7, 10, '#2a2030');
+  rect(ctx, x + 1, y - 10, 7, 8, '#fbf5e6');
+  px(ctx, x + 1, y - 1, '#2a2030');
+  px(ctx, x, y, '#2a2030');
+  const ink = '#2a2030';
+  const ox = x + 1;
+  const oy = y - 10;
+  switch (kind) {
+    case '!':
+      rect(ctx, ox + 3, oy + 1, 1, 4, '#c8342f');
+      px(ctx, ox + 3, oy + 6, '#c8342f');
+      break;
+    case '?':
+      rect(ctx, ox + 2, oy + 1, 3, 1, ink);
+      px(ctx, ox + 5, oy + 2, ink);
+      px(ctx, ox + 4, oy + 3, ink);
+      px(ctx, ox + 3, oy + 4, ink);
+      px(ctx, ox + 3, oy + 6, ink);
+      break;
+    case '...':
+      for (let i = 0; i < 3; i++) if (t * 3 > i) px(ctx, ox + 1 + i * 2, oy + 5, ink);
+      break;
+    case 'note':
+      rect(ctx, ox + 4, oy + 1, 1, 5, ink);
+      rect(ctx, ox + 5, oy + 1, 1, 1, ink);
+      px(ctx, ox + 6, oy + 2, ink);
+      rect(ctx, ox + 2, oy + 5, 2, 2, ink);
+      break;
+    case 'heart':
+      rect(ctx, ox + 1, oy + 2, 2, 2, '#d84a62');
+      rect(ctx, ox + 4, oy + 2, 2, 2, '#d84a62');
+      rect(ctx, ox + 1, oy + 3, 5, 2, '#d84a62');
+      rect(ctx, ox + 2, oy + 5, 3, 1, '#d84a62');
+      px(ctx, ox + 3, oy + 6, '#d84a62');
+      break;
   }
 }
