@@ -48,9 +48,9 @@ const STREET_X = 1180;
 const KERB_X = 450;
 /** the two lanes of the street: where the wheels run, how big the vehicles are drawn, which way they go */
 const LANES = [
-  { base: VIEW_H - 19, scale: 1.25, dir: -1 as const, speed: 84, every: 3.4 },
+  { base: VIEW_H - 19, scale: 1.4, dir: -1 as const, speed: 84, every: 3.4 },
   // the near lane is a little bigger and quicker, and still whole on the screen
-  { base: VIEW_H - 2, scale: 1.5, dir: 1 as const, speed: 122, every: 4.6 },
+  { base: VIEW_H - 2, scale: 1.7, dir: 1 as const, speed: 122, every: 4.6 },
 ];
 
 function layerWidth(parallax: number): number {
