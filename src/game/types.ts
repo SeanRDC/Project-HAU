@@ -33,8 +33,13 @@ export type Sound = 'beep' | 'buzz' | 'turnstile' | 'zip';
 export type Step =
   /** walk 'you' (default) or an NPC to x; `together` starts the next step right away; `run` makes an NPC run there */
   | { walk: number; who?: string; together?: boolean; run?: boolean }
-  /** 'you' or an NPC turns and walks in through the doorway behind them, out of the scene, taking `time` seconds */
-  | { walkIn: string; time?: number; together?: boolean }
+  /**
+   * 'you' or an NPC turns their back and walks in through the doorway behind them, out of the scene, taking
+   * `time` seconds; `to` is the x of the doorway, `rise` how far up the screen it is from the walk line
+   */
+  | { walkIn: string; time?: number; to?: number; rise?: number; together?: boolean }
+  /** the other way: 'you' or an NPC comes out of the doorway at x = `from`, facing the camera, to where they stand */
+  | { walkOut: string; time?: number; from?: number; rise?: number; together?: boolean }
   /** put an NPC somewhere instantly */
   | { place: string; x: number; facing?: 1 | -1 }
   /** turn 'you' or an NPC to face left (-1) or right (1) */

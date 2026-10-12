@@ -39,6 +39,7 @@ export class Cutscene {
     if ('say' in s) return host.talking();
     if ('walk' in s) return !s.together && host.area().walking(s.who ?? 'you');
     if ('walkIn' in s) return !s.together && host.area().walkingIn(s.walkIn);
+    if ('walkOut' in s) return !s.together && host.area().walkingIn(s.walkOut);
     if ('pause' in s) return (this.timer -= dt) > 0;
     return false;
   }
@@ -51,7 +52,11 @@ export class Cutscene {
       return !s.together;
     }
     if ('walkIn' in s) {
-      area.walkIn(s.walkIn, s.time);
+      area.walkIn(s.walkIn, s.time, s.to, s.rise);
+      return !s.together;
+    }
+    if ('walkOut' in s) {
+      area.walkOut(s.walkOut, s.time, s.from, s.rise);
       return !s.together;
     }
     if ('say' in s) {

@@ -31,6 +31,9 @@ export interface GatePeople {
 export interface Checkpoint {
   /** where you stand to tap your ID */
   scanner: number;
+  /** the way in, between the gate leaves at the back of the gatehouse, and how far up the screen it is */
+  door: number;
+  doorRise: number;
   /** where Ella is being checked when you walk up */
   tableA: number;
   /** where you get your own bag checked */
@@ -180,15 +183,20 @@ export function ownerWaiting(cp: Checkpoint): Step[] {
   return [{ place: 'mikko', x: cp.owner, facing: -1 }];
 }
 
-/** Through the lowered arm and in through the gate, away from the camera. */
+/** Through the lowered arm, then back turned to the street, in between the gate leaves and on into the campus. */
 function goIn(cp: Checkpoint, who = 'you'): Step[] {
   return [
     { sound: 'turnstile' },
     { run: () => cp.hold(true) },
     { walk: cp.scanner - 8, who },
-    { walkIn: who, time: who === 'you' ? 1.3 : 1.1 },
+    { walkIn: who, to: cp.door, rise: cp.doorRise, time: who === 'you' ? 2.4 : 2.2 },
     { run: () => cp.hold(false) },
   ];
+}
+
+/** Back out from the Main Building: out between the gate leaves, facing the street. */
+export function comeOut(cp: Checkpoint): Step[] {
+  return [{ walkOut: 'you', from: cp.door, rise: cp.doorRise, time: 2 }];
 }
 
 /**

@@ -196,6 +196,177 @@ export function drawCharacter(ctx: Ctx, x: number, feetY: number, look: Look, po
   ctx.restore();
 }
 
+/**
+ * The same rig seen straight on: 'front' walking towards the camera, 'back'
+ * walking away from it. The legs step up and down instead of swinging, the
+ * arms swing shorter and longer, and a backpack shows as its straps from the
+ * front and the whole bag from behind. `pose.facing` is ignored.
+ */
+export function drawCharacterFacing(ctx: Ctx, x: number, feetY: number, look: Look, pose: Pose, view: 'front' | 'back'): void {
+  const m = pose.stride;
+  const ph = pose.phase;
+  const extra = look.height ?? 0;
+  const bob = m > 0.3 ? Math.round(Math.abs(Math.sin(ph)) * 1.2) : Math.sin(pose.time * 1.8) > 0.75 ? 1 : 0;
+  const hip = -13 - extra;
+  const sh = -23 - extra + bob;
+  const hy = sh - 9;
+  const blink = (pose.time * 0.37) % 1 > 0.965;
+  const front = view === 'front';
+
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(feetY));
+
+  const topBack = shade(look.top, -0.25);
+  const skinBack = shade(look.skin, -0.22);
+  const hairDark = shade(look.hair, -0.3);
+  const legColor = look.skirt ? look.skin : look.bottom;
+  const shoe = front ? look.shoes : shade(look.shoes, -0.2);
+
+  // legs: the one stepping lifts its foot a little, the other takes the weight
+  const swing = Math.sin(ph) * m;
+  const legs: [number, number][] = [[-4, Math.max(0, swing) * 2], [1, Math.max(0, -swing) * 2]];
+  for (const [lx, lift] of legs) {
+    const foot = Math.round(-2 - lift);
+    rect(ctx, lx, hip + 1, 3, foot - hip - 1, legColor);
+    if (look.skirt) rect(ctx, lx, foot - 2, 3, 2, '#f2efe6');
+    rect(ctx, lx, foot, 3, 2, shoe);
+  }
+
+  // torso, lit from the right as in the side view
+  rect(ctx, -4, sh, 8, hip - sh + 2, look.top);
+  rect(ctx, -4, sh, 1, hip - sh + 2, topBack);
+  if (front) rect(ctx, 2, sh + 1, 1, 4, shade(look.top, 0.25));
+  if (look.skirt) {
+    rect(ctx, -4, hip - 1, 8, 3, look.bottom);
+    rect(ctx, -5, hip + 2, 10, 4, look.bottom);
+    rect(ctx, -5, hip + 2, 2, 4, shade(look.bottom, -0.28));
+  } else {
+    rect(ctx, -4, hip - 1, 8, 3, look.bottom);
+  }
+  if (look.vest) {
+    rect(ctx, -4, sh + 1, 8, hip - sh - 1, '#6f7278');
+    if (front) {
+      rect(ctx, -3, sh + 1, 2, hip - sh - 1, look.vest);
+      rect(ctx, 1, sh + 1, 2, hip - sh - 1, look.vest);
+    }
+    rect(ctx, -4, sh + 5, 8, 2, look.vest);
+    rect(ctx, -4, hip - 2, 8, 1, '#15141a');
+  }
+  if (look.bag && front) {
+    // just the straps over the shoulders
+    rect(ctx, -4, sh + 1, 1, 6, shade(look.bag, -0.3));
+    rect(ctx, 3, sh + 1, 1, 6, shade(look.bag, -0.3));
+  }
+  if (look.lace) {
+    if (front) {
+      rect(ctx, -2, sh, 1, 4, look.lace);
+      rect(ctx, 1, sh, 1, 4, look.lace);
+      rect(ctx, -2, sh + 4, 4, 3, '#f4f1ea');
+      rect(ctx, -1, sh + 5, 2, 1, look.lace);
+    } else {
+      rect(ctx, -2, sh, 4, 1, look.lace);
+    }
+  }
+
+  // arms hang at the sides, a swing forward or back makes them look shorter
+  const arm = (ax: number, s: number) => {
+    const len = Math.round(10 - Math.abs(s) * 1.5);
+    const sleeve = look.sleeves ? len - 1 : 4;
+    rect(ctx, ax, sh + 1, 2, sleeve, ax < 0 ? topBack : look.top);
+    rect(ctx, ax, sh + 1 + sleeve, 2, len - sleeve, ax < 0 ? skinBack : look.skin);
+  };
+  arm(-6, swing);
+  arm(4, -swing);
+
+  // neck and head
+  rect(ctx, -1, sh - 1, 2, 1, skinBack);
+  rect(ctx, -4, hy, 8, 8, look.skin);
+  rect(ctx, -4, hy, 1, 8, skinBack);
+  rect(ctx, -5, hy + 3, 1, 2, skinBack);
+  rect(ctx, 4, hy + 3, 1, 2, look.skin);
+  if (front) {
+    for (const ex of [-2, 1]) {
+      if (!blink) rect(ctx, ex, hy + 3, 1, 2, '#2a2030');
+      else rect(ctx, ex, hy + 4, 1, 1, '#2a2030');
+    }
+    rect(ctx, -1, hy + 6, 2, 1, shade(look.skin, -0.3));
+  }
+
+  // the backpack sits on the back, under long hair
+  if (look.bag && !front) {
+    rect(ctx, -4, sh + 1, 8, 9, look.bag);
+    rect(ctx, -4, sh + 1, 1, 9, shade(look.bag, -0.3));
+    rect(ctx, -3, sh + 6, 6, 3, shade(look.bag, -0.2));
+    rect(ctx, -3, sh + 6, 6, 1, shade(look.bag, -0.4));
+  }
+
+  const tips = Math.round(Math.sin(ph - 1) * m);
+  switch (look.hairStyle) {
+    case 'short':
+      if (front) {
+        rect(ctx, -4, hy - 1, 8, 3, look.hair);
+        rect(ctx, -5, hy, 1, 3, look.hair);
+        rect(ctx, 4, hy, 1, 3, look.hair);
+      } else {
+        rect(ctx, -4, hy - 1, 8, 7, look.hair);
+        rect(ctx, -4, hy + 4, 8, 1, hairDark);
+      }
+      break;
+    case 'long':
+    case 'shoulder': {
+      const len = look.hairStyle === 'long' ? 13 : 10;
+      if (front) {
+        rect(ctx, -4, hy - 1, 8, 3, look.hair);
+        rect(ctx, -5, hy, 2, len - 1, look.hair);
+        rect(ctx, 3, hy, 2, len - 1, look.hair);
+        rect(ctx, -5, hy + 4, 1, len - 5, hairDark);
+      } else {
+        rect(ctx, -5, hy - 1, 10, len, look.hair);
+        rect(ctx, -4 + tips, hy + len - 1, 8, 1, look.hair);
+        rect(ctx, -5, hy + 3, 1, len - 4, hairDark);
+        rect(ctx, -1, hy + 2, 1, len - 3, hairDark);
+      }
+      break;
+    }
+    case 'bun':
+      rect(ctx, -4, hy - 1, 8, front ? 3 : 7, look.hair);
+      if (front) {
+        rect(ctx, -2, hy - 4, 4, 3, look.hair);
+        rect(ctx, -5, hy, 1, 3, look.hair);
+        rect(ctx, 4, hy, 1, 3, look.hair);
+      } else {
+        rect(ctx, -2, hy - 2, 4, 4, shade(look.hair, 0.1));
+        rect(ctx, -2, hy + 1, 4, 1, hairDark);
+      }
+      break;
+    case 'cap':
+      rect(ctx, -4, hy - 1, 8, 3, look.hair);
+      if (front) rect(ctx, -5, hy + 1, 10, 1, shade(look.hair, -0.25));
+      else {
+        rect(ctx, -4, hy + 2, 8, 3, hairDark);
+        rect(ctx, -1, hy + 1, 2, 1, '#2a2030');
+      }
+      break;
+    case 'bald':
+      rect(ctx, -4, hy - 1, 8, 1, look.skin);
+      if (front) {
+        rect(ctx, -5, hy + 2, 1, 3, look.hair);
+        rect(ctx, 4, hy + 2, 1, 3, look.hair);
+      } else {
+        rect(ctx, -4, hy + 3, 8, 3, look.hair);
+      }
+      break;
+  }
+
+  if (look.umbrella) {
+    ctx.translate(-2, 0);
+    umbrella(ctx, sh, look.umbrella);
+    rect(ctx, 1, sh + 4, 2, 2, look.skin);
+  }
+
+  ctx.restore();
+}
+
 /** An open umbrella over the head, held at x = 2. `sh` is the shoulder line. */
 function umbrella(ctx: Ctx, sh: number, c: string): void {
   const dark = shade(c, -0.3);
