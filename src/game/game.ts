@@ -132,6 +132,7 @@ export class Game implements GameApi {
     this.dialogue.onBlip = (who) => this.audio.blip(VOICES[who] ?? 300);
     this.dialogue.onFlag = (flag) => this.set(flag);
     this.dialogue.onPesos = (amount, item) => this.pay(amount, item);
+    this.dialogue.onLine = (l) => this.area.express(l.who, l.face, l.emote);
     this.dialogue.onSpeaker = (who) => {
       if (who && who !== 'you') this.area.face(who);
     };
@@ -356,6 +357,8 @@ export class Game implements GameApi {
 
     const wasTalking = this.dialogue.active;
     if (wasTalking) this.dialogue.update(dt, input);
+    this.area.talker = this.dialogue.speaking();
+    if (wasTalking && !this.dialogue.active) this.area.calm();
 
     const scripted = this.cutscene !== null;
     if (this.cutscene && !this.pending) {

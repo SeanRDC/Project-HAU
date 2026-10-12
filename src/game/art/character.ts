@@ -3,10 +3,13 @@
 // facing right and mirrored for the other direction.
 
 import { Ctx } from '../../engine/display';
-import { ellipse, line, rect } from '../../engine/pix';
+import { ellipse, line, px, rect } from '../../engine/pix';
 import { shade } from './palette';
 
 export type Hair = 'short' | 'long' | 'shoulder' | 'bun' | 'cap' | 'bald';
+
+/** How someone looks while they talk: the eyes, brows and mouth, and standing still, the arms. */
+export type Face = 'neutral' | 'happy' | 'sad' | 'angry' | 'surprised' | 'worried' | 'shy' | 'smug';
 
 export interface Look {
   skin: string;
@@ -38,6 +41,128 @@ export interface Pose {
   stride: number;
   /** seconds, drives breathing and blinking */
   time: number;
+  /** how they feel right now */
+  face?: Face;
+  /** mouth open, mid-word */
+  talk?: boolean;
+  /** seconds since the face last changed, for the little jump or shake that goes with it */
+  react?: number;
+}
+
+const INK = '#2a2030';
+const MOUTH = '#5a2630';
+const BLUSH = '#e0787a';
+
+/** The jump of surprise, the happy bounce, the angry shake: how far off their spot it puts them, [x, up]. */
+function reaction(face: Face, t: number): [number, number] {
+  if (t > 1) return [0, 0];
+  if (face === 'surprised' && t < 0.35) return [0, Math.round(Math.sin((t / 0.35) * Math.PI) * 3)];
+  if (face === 'happy' && t < 0.5) return [0, Math.round(Math.abs(Math.sin((t / 0.25) * Math.PI)) * 2)];
+  if (face === 'angry' && t < 0.45) return [Math.floor(t * 30) % 2 ? 1 : -1, 0];
+  return [0, 0];
+}
+
+/** Eyes, brows, mouth and cheeks on the side-on head, facing right; `hy` is the top of the head. */
+function sideFace(ctx: Ctx, hy: number, look: Look, face: Face, talk: boolean, blink: boolean): void {
+  const brow = shade(look.hair, -0.1);
+  const lip = shade(look.skin, -0.35);
+  if (face === 'happy') {
+    px(ctx, 2, hy + 3, INK);
+    px(ctx, 1, hy + 4, INK);
+  } else if (face === 'surprised') rect(ctx, 2, hy + 2, 1, 3, INK);
+  else if (blink || face === 'angry' || face === 'sad' || face === 'smug' || face === 'shy') px(ctx, 2, hy + 4, INK);
+  else rect(ctx, 2, hy + 3, 1, 2, INK);
+
+  if (face === 'angry') {
+    px(ctx, 1, hy + 2, brow);
+    px(ctx, 2, hy + 3, brow);
+  } else if (face === 'sad' || face === 'worried') {
+    px(ctx, 1, hy + 3, brow);
+    px(ctx, 2, hy + 2, brow);
+  } else if (face === 'surprised') rect(ctx, 1, hy + 1, 2, 1, brow);
+  else if (face === 'smug') rect(ctx, 1, hy + 3, 2, 1, brow);
+
+  if (face === 'surprised') rect(ctx, 2, hy + 5, 2, 2, MOUTH);
+  else if (talk) rect(ctx, 2, hy + 6, 2, 2, MOUTH);
+  else if (face === 'happy' || face === 'smug') {
+    px(ctx, 2, hy + 6, MOUTH);
+    px(ctx, 3, hy + 5, MOUTH);
+  } else if (face === 'angry') rect(ctx, 2, hy + 6, 2, 1, MOUTH);
+  else if (face === 'sad') {
+    px(ctx, 2, hy + 6, lip);
+    px(ctx, 3, hy + 7, lip);
+  } else px(ctx, 3, hy + 6, lip);
+
+  if (face === 'happy') px(ctx, 1, hy + 5, BLUSH);
+  if (face === 'shy') rect(ctx, 0, hy + 5, 2, 1, BLUSH);
+}
+
+/** The same, looking straight at the camera: eyes at x = -2 and 1. */
+function frontFace(ctx: Ctx, hy: number, look: Look, face: Face, talk: boolean, blink: boolean): void {
+  const brow = shade(look.hair, -0.1);
+  const lip = shade(look.skin, -0.3);
+  for (const ex of [-2, 1]) {
+    if (face === 'happy') px(ctx, ex, hy + 3, INK);
+    else if (face === 'surprised') rect(ctx, ex, hy + 2, 1, 3, INK);
+    else if (blink || face === 'angry' || face === 'sad' || face === 'smug' || face === 'shy') px(ctx, ex, hy + 4, INK);
+    else rect(ctx, ex, hy + 3, 1, 2, INK);
+  }
+  for (const [outer, inner] of [[-3, -2], [2, 1]]) {
+    if (face === 'angry') {
+      px(ctx, outer, hy + 2, brow);
+      px(ctx, inner, hy + 3, brow);
+    } else if (face === 'sad' || face === 'worried') {
+      px(ctx, outer, hy + 3, brow);
+      px(ctx, inner, hy + 2, brow);
+    } else if (face === 'surprised') rect(ctx, Math.min(outer, inner), hy + 1, 2, 1, brow);
+    else if (face === 'smug') rect(ctx, Math.min(outer, inner), hy + 3, 2, 1, brow);
+  }
+  if (face === 'surprised') rect(ctx, -1, hy + 5, 2, 2, MOUTH);
+  else if (talk) rect(ctx, -1, hy + 6, 2, 2, MOUTH);
+  else if (face === 'happy') {
+    rect(ctx, -1, hy + 6, 2, 1, MOUTH);
+    px(ctx, -2, hy + 5, MOUTH);
+    px(ctx, 1, hy + 5, MOUTH);
+  } else if (face === 'angry') rect(ctx, -2, hy + 6, 4, 1, MOUTH);
+  else if (face === 'sad') {
+    rect(ctx, -1, hy + 6, 2, 1, lip);
+    px(ctx, -2, hy + 7, lip);
+    px(ctx, 1, hy + 7, lip);
+  } else rect(ctx, -1, hy + 6, 2, 1, lip);
+  if (face === 'happy' || face === 'shy') {
+    // shy blushes wider
+    const w = face === 'shy' ? 2 : 1;
+    rect(ctx, -2 - w, hy + 5, w, 1, BLUSH);
+    rect(ctx, 2, hy + 5, w, 1, BLUSH);
+  }
+}
+
+/**
+ * Standing still, the front arm (side view) shows how they feel: hands up in
+ * surprise, a wave when happy, a fist on the hip when angry, a hand to the
+ * chin when worried, scratching the back of the head when embarrassed.
+ * Returns false when the arm should just hang as usual.
+ */
+function gesture(ctx: Ctx, face: Face, t: number, sh: number, hip: number, look: Look): boolean {
+  const fore = look.sleeves ? look.top : look.skin;
+  if (face === 'surprised' && t < 0.9) {
+    line(ctx, 0, sh + 1, 3, sh - 2, look.top, 2);
+    line(ctx, 3, sh - 2, 4, sh - 7, fore, 2);
+  } else if (face === 'happy' && t < 1.1) {
+    const wave = Math.sin(t * 22) > 0 ? 1 : 0;
+    line(ctx, 0, sh + 1, 3, sh - 2, look.top, 2);
+    line(ctx, 3, sh - 2, 4 + wave, sh - 8, fore, 2);
+  } else if (face === 'angry') {
+    line(ctx, 0, sh + 1, 3, sh + 5, look.top, 2);
+    line(ctx, 3, sh + 5, 1, hip - 1, fore, 2);
+  } else if (face === 'worried') {
+    line(ctx, 0, sh + 1, 3, sh + 6, look.top, 2);
+    line(ctx, 3, sh + 6, 3, sh - 1, fore, 2);
+  } else if (face === 'shy') {
+    line(ctx, 0, sh + 1, -2, sh - 1, look.top, 2);
+    line(ctx, -2, sh - 1, -3, sh - 6, fore, 2);
+  } else return false;
+  return true;
 }
 
 export const CHAR_HEIGHT = 33;
@@ -54,11 +179,14 @@ export function drawCharacter(ctx: Ctx, x: number, feetY: number, look: Look, po
   const extra = look.height ?? 0;
   const bob = m > 0.3 ? Math.round(Math.abs(Math.sin(ph)) * 1.2) : Math.sin(pose.time * 1.8) > 0.75 ? 1 : 0;
   const hip = -13 - extra;
-  const sh = -23 - extra + bob; // shoulder line
+  const face = pose.face ?? 'neutral';
+  // sad shoulders drop a pixel, and the head with them
+  const sh = -23 - extra + bob + (face === 'sad' ? 1 : 0); // shoulder line
   const blink = (pose.time * 0.37) % 1 > 0.965;
+  const [jx, jy] = reaction(face, pose.react ?? Infinity);
 
   ctx.save();
-  ctx.translate(Math.round(x), Math.round(feetY));
+  ctx.translate(Math.round(x) + jx, Math.round(feetY) - jy);
   ctx.scale(pose.facing, 1);
 
   const pantsBack = shade(look.bottom, -0.28);
@@ -141,8 +269,6 @@ export function drawCharacter(ctx: Ctx, x: number, feetY: number, look: Look, po
   rect(ctx, -4, hy, 8, 8, look.skin);
   rect(ctx, -4, hy + 7, 2, 1, skinBack);
   rect(ctx, 4, hy + 4, 1, 1, look.skin); // nose
-  if (!blink) rect(ctx, 2, hy + 3, 1, 2, '#2a2030');
-  else rect(ctx, 2, hy + 4, 1, 1, '#2a2030');
   rect(ctx, -1, hy + 4, 1, 2, skinBack); // ear
 
   const hairDark = shade(look.hair, -0.3);
@@ -183,12 +309,14 @@ export function drawCharacter(ctx: Ctx, x: number, feetY: number, look: Look, po
       break;
   }
 
+  sideFace(ctx, hy, look, face, !!pose.talk, blink);
+
   if (look.umbrella) {
     umbrella(ctx, sh, look.umbrella);
     // the front arm bends up to hold the handle instead of swinging
     line(ctx, 0, sh + 1, 3, sh + 6, look.top, 2);
     line(ctx, 3, sh + 6, 2, sh + 3, look.sleeves ? look.top : look.skin, 2);
-  } else {
+  } else if (m > 0.3 || !gesture(ctx, face, pose.react ?? Infinity, sh, hip, look)) {
     // front arm goes over the torso
     arm(ph + Math.PI, look.top, look.skin);
   }
@@ -208,13 +336,15 @@ export function drawCharacterFacing(ctx: Ctx, x: number, feetY: number, look: Lo
   const extra = look.height ?? 0;
   const bob = m > 0.3 ? Math.round(Math.abs(Math.sin(ph)) * 1.2) : Math.sin(pose.time * 1.8) > 0.75 ? 1 : 0;
   const hip = -13 - extra;
-  const sh = -23 - extra + bob;
+  const face = pose.face ?? 'neutral';
+  const sh = -23 - extra + bob + (face === 'sad' ? 1 : 0);
   const hy = sh - 9;
   const blink = (pose.time * 0.37) % 1 > 0.965;
   const front = view === 'front';
+  const [jx, jy] = reaction(face, pose.react ?? Infinity);
 
   ctx.save();
-  ctx.translate(Math.round(x), Math.round(feetY));
+  ctx.translate(Math.round(x) + jx, Math.round(feetY) - jy);
 
   const topBack = shade(look.top, -0.25);
   const skinBack = shade(look.skin, -0.22);
@@ -284,13 +414,7 @@ export function drawCharacterFacing(ctx: Ctx, x: number, feetY: number, look: Lo
   rect(ctx, -4, hy, 1, 8, skinBack);
   rect(ctx, -5, hy + 3, 1, 2, skinBack);
   rect(ctx, 4, hy + 3, 1, 2, look.skin);
-  if (front) {
-    for (const ex of [-2, 1]) {
-      if (!blink) rect(ctx, ex, hy + 3, 1, 2, '#2a2030');
-      else rect(ctx, ex, hy + 4, 1, 1, '#2a2030');
-    }
-    rect(ctx, -1, hy + 6, 2, 1, shade(look.skin, -0.3));
-  }
+  if (front) frontFace(ctx, hy, look, face, !!pose.talk, blink);
 
   // the backpack sits on the back, under long hair
   if (look.bag && !front) {

@@ -2,17 +2,27 @@ import { Ctx } from '../engine/display';
 import { RGB } from '../engine/math';
 import { Particle } from '../engine/particles';
 import { Mood } from '../engine/tod';
-import { Look } from './art/character';
+import { Face, Look } from './art/character';
 
 export interface Choice {
   text: string;
   then: Line[];
 }
 
+/** A little picture that pops up over someone's head: a shock, a question, a song, a temper, a bead of sweat, a heart, a sigh. */
+export type Emote = '!' | '?' | '...' | 'note' | 'anger' | 'sweat' | 'heart';
+
 export interface Line {
   /** npc id, 'you' for the player, or '' for narration */
   who: string;
   text: string;
+  /**
+   * how the speaker looks saying it, on their face, in their arms and in the portrait by the bubble;
+   * they keep it while others talk, until their next line. Leave it out for a plain face.
+   */
+  face?: Face;
+  /** pops up over the speaker's head; a change of face brings its own (surprised '!', angry, worried sweat, happy note) unless this says otherwise */
+  emote?: Emote | 'none';
   choices?: Choice[];
   /** flag to set once this line has been shown */
   set?: string;

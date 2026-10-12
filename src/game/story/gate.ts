@@ -2,7 +2,7 @@
 // taps their ID at a turnstile, then walks in through the gate and comes out
 // in front of the Main Building. Edit freely.
 
-import { Hotspot, NpcDef, Step } from '../types';
+import { Hotspot, Line, NpcDef, Step } from '../types';
 import { ACTDO, ELLA, JOY, MIKKO, NONOY, TAHO } from './cast';
 
 /** Where things stand in the scene, handed over by scenes/gate.ts. */
@@ -68,7 +68,7 @@ function bagCheck(cp: Checkpoint, hour: number): Step[] {
     { face: 'nonoy', dir: 1 },
     {
       say: [
-        { who: 'nonoy', text: `${greeting(hour)}! Bag check po tayo. Pakilapag lang dito sa mesa.` },
+        { who: 'nonoy', face: 'happy', text: `${greeting(hour)}! Bag check po tayo. Pakilapag lang dito sa mesa.` },
         { who: 'you', text: 'Sige po.' },
       ],
     },
@@ -90,15 +90,15 @@ function bagCheck(cp: Checkpoint, hour: number): Step[] {
             { text: 'Wala po.', then: [{ who: 'nonoy', text: 'Good.' }] },
             {
               text: 'Ballpen lang po.',
-              then: [{ who: 'nonoy', text: 'Hahaha! Pwede \'yan. \'Yan nga ang pinaka-kailangan mo dito.' }],
+              then: [{ who: 'nonoy', face: 'happy', text: 'Hahaha! Pwede \'yan. \'Yan nga ang pinaka-kailangan mo dito.' }],
             },
             {
               text: '\'Yung tinidor po sa baon ko?',
-              then: [{ who: 'nonoy', text: '...Sige, pwede na rin. Basta pagkain lang ang tutusukin mo.' }],
+              then: [{ who: 'nonoy', face: 'worried', text: '...Sige, pwede na rin. Basta pagkain lang ang tutusukin mo.' }],
             },
           ],
         },
-        { who: 'nonoy', text: 'Okay, clear! Amoy adobo pa. Ingat, baka tumapon.' },
+        { who: 'nonoy', face: 'happy', text: 'Okay, clear! Amoy adobo pa. Ingat, baka tumapon.' },
       ],
     },
     { run: () => cp.flashlight(false) },
@@ -107,7 +107,7 @@ function bagCheck(cp: Checkpoint, hour: number): Step[] {
     { pause: 0.5 },
     { run: () => cp.bag('none') },
     { look: null },
-    { say: [{ who: 'nonoy', text: 'I-tap mo na lang ID mo sa scanner diyan. Welcome sa Holy Angel!', set: 'passed_bag_check' }] },
+    { say: [{ who: 'nonoy', face: 'happy', text: 'I-tap mo na lang ID mo sa scanner diyan. Welcome sa Holy Angel!', set: 'passed_bag_check' }] },
     { face: 'you', dir: -1 },
   ];
 }
@@ -126,9 +126,9 @@ function parkedPickup(cp: Checkpoint): Step[] {
     {
       say: [
         { who: '', text: 'Isang pulang Chevrolet pickup, nakasampa sa sidewalk, katabi mismo ng karatulang "NO PARKING". Halos harang na sa daanan papasok ng gate.' },
-        { who: 'you', text: 'Seryoso? Dito pa talaga, sa tapat mismo ng gate? Saan dadaan ang mga tao?' },
+        { who: 'you', face: 'surprised', text: 'Seryoso? Dito pa talaga, sa tapat mismo ng gate? Saan dadaan ang mga tao?' },
         { who: 'actdo', text: 'Sa gilid ka muna dumaan. Tinitiketan ko na \'to.' },
-        { who: 'you', text: 'Ang laki-laki ng sasakyan, tapos sa bawal pa pumarada. May parking naman sa loob!' },
+        { who: 'you', face: 'angry', text: 'Ang laki-laki ng sasakyan, tapos sa bawal pa pumarada. May parking naman sa loob!' },
         { who: 'actdo', text: 'Araw-araw \'yan. O, ayan, pipirmahan ko na lang...' },
       ],
     },
@@ -142,12 +142,12 @@ function parkedPickup(cp: Checkpoint): Step[] {
     { face: 'mikko', dir: -1 },
     {
       say: [
-        { who: 'mikko', text: 'Sorry po! Sorry! Sandali lang po, Sir! Sandali lang!' },
-        { who: 'mikko', text: 'Aalisin ko na po! May hinatid lang ako sa loob, promise, limang minuto lang!' },
-        { who: 'actdo', text: 'Limang minuto? Kanina pa ako nakatayo rito. Nakasampa ka pa sa sidewalk, o.' },
-        { who: 'mikko', text: 'Sir, baka naman po pwede pang pag-usapan...' },
-        { who: 'actdo', text: 'Pwede. Sa opisina. Pangalan?' },
-        { who: 'mikko', text: '...Mikko Panergo po.' },
+        { who: 'mikko', face: 'worried', text: 'Sorry po! Sorry! Sandali lang po, Sir! Sandali lang!' },
+        { who: 'mikko', face: 'worried', text: 'Aalisin ko na po! May hinatid lang ako sa loob, promise, limang minuto lang!' },
+        { who: 'actdo', face: 'angry', text: 'Limang minuto? Kanina pa ako nakatayo rito. Nakasampa ka pa sa sidewalk, o.' },
+        { who: 'mikko', face: 'shy', text: 'Sir, baka naman po pwede pang pag-usapan...' },
+        { who: 'actdo', face: 'smug', text: 'Pwede. Sa opisina. Pangalan?' },
+        { who: 'mikko', face: 'sad', text: '...Mikko Panergo po.' },
         { who: 'actdo', text: 'Pa-ner-go. O, ayan. Illegal parking, obstruction. Sa susunod, sa parking sa loob.' },
         {
           who: 'you',
@@ -156,21 +156,21 @@ function parkedPickup(cp: Checkpoint): Step[] {
             {
               text: 'Kami ngang naglalakad, pumipila.',
               then: [
-                { who: 'you', text: 'Kuya, kami ngang naglalakad, pumipila at nagpapa-bag check. Ikaw, apat na ang gulong mo, ayaw mo pang sumunod.' },
-                { who: 'mikko', text: 'Oo na, oo na. Mali ako. Sorry na rin sa \'yo, boss.' },
+                { who: 'you', face: 'angry', text: 'Kuya, kami ngang naglalakad, pumipila at nagpapa-bag check. Ikaw, apat na ang gulong mo, ayaw mo pang sumunod.' },
+                { who: 'mikko', face: 'sad', text: 'Oo na, oo na. Mali ako. Sorry na rin sa \'yo, boss.' },
               ],
             },
             {
               text: 'Sandali lang pala, ha.',
               then: [
-                { who: 'you', text: '"Sandali lang." Kuya, \'yang sandali mo, kalahati ng sidewalk ang sakop.' },
-                { who: 'mikko', text: 'Grabe ka naman. ...Pero tama ka. Sorry na.' },
+                { who: 'you', face: 'smug', text: '"Sandali lang." Kuya, \'yang sandali mo, kalahati ng sidewalk ang sakop.' },
+                { who: 'mikko', face: 'shy', text: 'Grabe ka naman. ...Pero tama ka. Sorry na.' },
               ],
             },
           ],
         },
         { who: 'actdo', text: 'Sige na, pumasok ka na. Baka ma-late ka pa dahil sa kanya.' },
-        { who: 'you', text: 'Unang araw pa lang, may reklamo na agad ako. Welcome to college.', set: 'saw_ticket' },
+        { who: 'you', face: 'sad', text: 'Unang araw pa lang, may reklamo na agad ako. Welcome to college.', set: 'saw_ticket' },
       ],
     },
     { face: 'actdo', dir: 1 },
@@ -211,8 +211,8 @@ export function gateArrival(cp: Checkpoint, hour: number): Step[] {
     { walk: cp.tableB + 28 },
     {
       say: [
-        { who: 'joy', text: 'Okay ka na. Next!' },
-        { who: 'ella', text: 'Salamat po!' },
+        { who: 'joy', face: 'happy', text: 'Okay ka na. Next!' },
+        { who: 'ella', face: 'happy', text: 'Salamat po!' },
       ],
     },
     { walk: cp.scanner, who: 'ella' },
@@ -232,7 +232,7 @@ export function gateArrival(cp: Checkpoint, hour: number): Step[] {
 function tapId(cp: Checkpoint, g: { has(flag: string): boolean; hour(): number }): Step[] {
   if (!g.has('passed_bag_check')) {
     return [
-      { say: [{ who: 'nonoy', text: 'Teka lang, boss! Bag check muna bago mag-tap.' }] },
+      { say: [{ who: 'nonoy', face: 'surprised', text: 'Teka lang, boss! Bag check muna bago mag-tap.' }] },
       ...bagCheck(cp, g.hour()),
     ];
   }
@@ -251,9 +251,9 @@ function tapId(cp: Checkpoint, g: { has(flag: string): boolean; hour(): number }
     {
       say: [
         { who: '', text: 'Pula ang ilaw. Ayaw basahin.' },
-        { who: 'you', text: 'Ha? Bakit?' },
+        { who: 'you', face: 'surprised', emote: '?', text: 'Ha? Bakit?' },
         { who: 'joy', text: 'Tanggalin mo muna sa plastic case \'yung ID mo. Hindi nababasa \'pag nakabalot pa.' },
-        { who: 'you', text: 'Ay, opo. Sorry po!', set: 'id_fumble' },
+        { who: 'you', face: 'shy', text: 'Ay, opo. Sorry po!', set: 'id_fumble' },
       ],
     },
     { pause: 0.4 },
@@ -265,7 +265,7 @@ function tapId(cp: Checkpoint, g: { has(flag: string): boolean; hour(): number }
     { pause: 0.3 },
     { run: () => cp.card(false) },
     { run: (game) => game.set('scanned_id') },
-    { say: [{ who: 'you', text: 'Okay. Unang araw. Kaya ko \'to.' }] },
+    { say: [{ who: 'you', face: 'happy', text: 'Okay. Unang araw. Kaya ko \'to.' }] },
     ...enter,
   ];
 }
@@ -280,22 +280,20 @@ export function ella(x: number, wander: [number, number]): NpcDef {
     depth: -8,
     facing: -1,
     wander,
-    talk: (g) =>
-      g.has('met_ella')
-        ? [{ who: 'ella', text: 'Kung makita mo \'yung Accountancy building, sabihan mo \'ko ha.' }]
+    talk: (g) => {
+      if (g.has('met_ella')) return [{ who: 'ella', text: 'Kung makita mo \'yung Accountancy building, sabihan mo \'ko ha.' }];
+      const opener: Line[] = g.has('id_fumble')
+        ? [
+            { who: 'ella', face: 'happy', text: 'Uy, nakita kita sa pila kanina. \'Yung ID mo, ayaw mabasa, \'no?' },
+            { who: 'you', face: 'shy', text: 'Naka-plastic pa kasi. Nakakahiya.' },
+            { who: 'ella', face: 'happy', text: 'Ako nga, ilang beses ko tinap \'yung library card ko bago ko na-realize.' },
+          ]
         : [
-            ...(g.has('id_fumble')
-              ? [
-                  { who: 'ella', text: 'Uy, nakita kita sa pila kanina. \'Yung ID mo, ayaw mabasa, \'no?' },
-                  { who: 'you', text: 'Naka-plastic pa kasi. Nakakahiya.' },
-                  { who: 'ella', text: 'Ako nga, ilang beses ko tinap \'yung library card ko bago ko na-realize.' },
-                ]
-              : [
-                  { who: 'ella', text: 'Uy, freshie ka rin? Ang laki pala ng campus, \'no?' },
-                  { who: 'you', text: 'Oo nga. Hindi ko pa alam kung saan pupunta.' },
-                ]),
-            { who: 'ella', text: 'Ella nga pala. Freshie din. Kita tayo sa orientation!', set: 'met_ella' },
-          ],
+            { who: 'ella', face: 'happy', text: 'Uy, freshie ka rin? Ang laki pala ng campus, \'no?' },
+            { who: 'you', face: 'worried', text: 'Oo nga. Hindi ko pa alam kung saan pupunta.' },
+          ];
+      return [...opener, { who: 'ella', face: 'happy', text: 'Ella nga pala. Freshie din. Kita tayo sa orientation!', set: 'met_ella' }];
+    },
   };
 }
 
@@ -310,11 +308,11 @@ export function gateNpcs(at: GatePeople): NpcDef[] {
       facing: -1,
       talk: (g) =>
         g.raining()
-          ? [{ who: 'mikko', text: 'Umuulan pa. Tiket na nga, basa pa. Ang malas ko ngayong araw.' }]
+          ? [{ who: 'mikko', face: 'sad', text: 'Umuulan pa. Tiket na nga, basa pa. Ang malas ko ngayong araw.' }]
           : [
-              { who: 'mikko', text: 'Limang daan. Para sa "sandali lang".' },
+              { who: 'mikko', face: 'sad', text: 'Limang daan. Para sa "sandali lang".' },
               { who: 'you', text: 'May parking po sa loob, Kuya.' },
-              { who: 'mikko', text: 'Alam ko na. Ngayon alam ko na.' },
+              { who: 'mikko', face: 'sad', text: 'Alam ko na. Ngayon alam ko na.' },
             ],
     },
     {
@@ -359,10 +357,10 @@ export function gateNpcs(at: GatePeople): NpcDef[] {
         g.has('met_joy')
           ? [{ who: 'joy', text: 'Isuot mo \'yang ID mo ha. Lagi kaming nagro-roving.' }]
           : [
-              { who: 'joy', text: 'Freshie? Kita ko sa mukha mo, kinakabahan ka pa.' },
+              { who: 'joy', face: 'smug', text: 'Freshie? Kita ko sa mukha mo, kinakabahan ka pa.' },
               { who: 'joy', text: 'Tatlong taon na ako sa gate na \'to. Lahat ng freshman ganyan ang itsura sa unang araw.' },
-              { who: 'you', text: 'Halata po pala.' },
-              { who: 'joy', text: 'Okay lang \'yan. Pagdating ng finals, iba na \'yang kaba mo.', set: 'met_joy' },
+              { who: 'you', face: 'shy', text: 'Halata po pala.' },
+              { who: 'joy', face: 'happy', text: 'Okay lang \'yan. Pagdating ng finals, iba na \'yang kaba mo.', set: 'met_joy' },
             ],
     },
     // only here for the arrival cutscene: she starts off the end of the street and is put at her table when it begins
@@ -388,16 +386,16 @@ export function gateNpcs(at: GatePeople): NpcDef[] {
                 g.pesos() >= 20
                   ? [
                       { who: '', text: 'Sinandok niya ang mainit na taho, binuhusan ng arnibal at sago.', pesos: -20, item: 'Taho' },
-                      { who: 'you', text: 'Ang sarap. Parang elementary ulit.' },
+                      { who: 'you', face: 'happy', text: 'Ang sarap. Parang elementary ulit.' },
                     ]
                   : [
                       { who: '', text: 'Kinapa mo ang bulsa mo. Kulang ang barya.' },
-                      { who: 'taho', text: 'Ay, sige na. Bukas na lang, ha? Hindi ka naman tatakbo.' },
+                      { who: 'taho', face: 'happy', text: 'Ay, sige na. Bukas na lang, ha? Hindi ka naman tatakbo.' },
                     ],
             },
             {
               text: 'Mamaya na lang po.',
-              then: [{ who: 'taho', text: 'Sige, nandito lang ako hanggang tanghali. Pag naubos, wala na!' }],
+              then: [{ who: 'taho', face: 'happy', text: 'Sige, nandito lang ako hanggang tanghali. Pag naubos, wala na!' }],
             },
           ],
         },

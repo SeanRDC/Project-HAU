@@ -8,12 +8,18 @@ import { LightMap, drawVignette } from '../engine/lighting';
 import { RGB, clamp, css, damp, mix, smooth } from '../engine/math';
 import { Particle, Particles } from '../engine/particles';
 import { Mood } from '../engine/tod';
-import { CHAR_HEIGHT, Look, drawCat, drawCharacter, drawCharacterFacing, drawShadow } from './art/character';
+import { CHAR_HEIGHT, Face, Look, drawCat, drawCharacter, drawCharacterFacing, drawShadow } from './art/character';
 import { baseLook } from './art/player';
 import { P } from './art/palette';
 import { Sky } from './art/sky';
-import { AreaDef, AreaRuntime, AreaView, GameApi, Layer, NpcDef } from './types';
+import { px, rect } from '../engine/pix';
+import { AreaDef, AreaRuntime, AreaView, Emote, GameApi, Layer, NpcDef } from './types';
 import { RAINING } from './weather';
+
+/** the emote a change of face brings with it, if it doesn't name its own */
+const FACE_EMOTE: Partial<Record<Face, Emote>> = { surprised: '!', angry: 'anger', worried: 'sweat', happy: 'note', sad: '...', shy: 'heart' };
+/** how long an emote stays up */
+const EMOTE_TIME = 1.6;
 
 /** umbrella colours for students, picked by NPC */
 const UMBRELLAS = ['#2f5f8a', '#c8553d', '#3f7a52', '#6a4a8a', '#e3b33b', '#22202a'];
@@ -95,6 +101,11 @@ export class Area implements AreaRuntime {
   private hazeCtx: Ctx;
   /** called every time a foot lands, for the footstep sound */
   onStep: (() => void) | null = null;
+  /** who is speaking right now, mouth moving while the words come out */
+  talker: string | null = null;
+  /** how everyone in the conversation looks, and when that last changed */
+  private faces = new Map<string, { face: Face; since: number }>();
+  private emotes: { who: string; kind: Emote; since: number }[] = [];
 
   constructor(readonly def: AreaDef, private sky: Sky) {
     this.camera = new Camera(def.width);
@@ -179,6 +190,32 @@ export class Area implements AreaRuntime {
   walkingIn(who: string): boolean {
     const tr = this.walker(who)?.trip;
     return !!tr && tr.t < 1;
+  }
+
+  /** A line is said: the speaker takes on its face, and an emote pops up if it brings one. */
+  express(who: string, face: Face = 'neutral', emote?: Emote | 'none'): void {
+    if (!who) return;
+    const before = this.faces.get(who)?.face ?? 'neutral';
+    if (face !== before) this.faces.set(who, { face, since: this.time });
+    const kind = emote === 'none' ? undefined : emote ?? (face !== before ? FACE_EMOTE[face] : undefined);
+    if (kind) {
+      this.emotes = this.emotes.filter((e) => e.who !== who);
+      this.emotes.push({ who, kind, since: this.time });
+    }
+  }
+
+  /** The conversation is over: everyone goes back to a plain face. */
+  calm(): void {
+    this.faces.clear();
+    this.talker = null;
+  }
+
+  /** What the dialogue portrait should show for a speaker, or null for narration and the cat. */
+  portraitOf(who: string): { look: Look; face: Face; since: number } | null {
+    const n = who === 'you' ? null : this.npcs.find((n) => n.def.id === who);
+    if (who !== 'you' && (!n || n.def.cat)) return null;
+    const f = this.faces.get(who);
+    return { look: n ? n.def.look : this.playerLook, face: f?.face ?? 'neutral', since: f ? this.time - f.since : Infinity };
   }
 
   /** Cutscene helper: put an NPC somewhere instantly. */
@@ -378,6 +415,24 @@ export class Area implements AreaRuntime {
     }
   }
 
+  /** The emotes over people's heads: popping up, bobbing, then fading. */
+  private drawEmotes(ctx: Ctx, cam: number): void {
+    this.emotes = this.emotes.filter((e) => this.time - e.since < EMOTE_TIME);
+    for (const e of this.emotes) {
+      const a = this.anchor(e.who);
+      if (!a) continue;
+      const t = this.time - e.since;
+      const pop = Math.min(1, t * 8);
+      // beside the head rather than over it, where the speech bubble's tail would hide it
+      const x = Math.round(a.x + 6);
+      const y = Math.round(a.y + 13 - pop * 3 - Math.sin(t * 5) * 0.8);
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (EMOTE_TIME - t) * 4);
+      emoteIcon(ctx, x, y, e.kind, t);
+      ctx.restore();
+    }
+  }
+
   render(ctx: Ctx, mood: Mood): void {
     const def = this.def;
     const cam = Math.round(this.camera.x);
@@ -412,7 +467,17 @@ export class Area implements AreaRuntime {
       if (def.outdoor && this.rain > RAINING && (!npc || look.lace)) {
         look = { ...look, umbrella: npc ? UMBRELLAS[npc.id.length % UMBRELLAS.length] : P.maroon };
       }
-      const pose = { facing: w.facing, phase: w.phase, stride: w.stride, time: this.time + w.x * 0.37 };
+      const id = npc ? npc.id : 'you';
+      const felt = this.faces.get(id);
+      const pose = {
+        facing: w.facing,
+        phase: w.phase,
+        stride: w.stride,
+        time: this.time + w.x * 0.37,
+        face: felt?.face,
+        react: felt ? this.time - felt.since : undefined,
+        talk: this.talker === id && this.time % 0.22 < 0.12,
+      };
       if (tr) {
         // further from the camera with every step: higher up and smaller, seen from behind going in
         // and from the front coming out, and lost in the shade once deep enough in the doorway
@@ -432,6 +497,7 @@ export class Area implements AreaRuntime {
 
     def.drawFront?.(ctx, view);
     for (const l of def.layers) if (l.front) this.drawLayer(ctx, l, mood);
+    this.drawEmotes(ctx, cam);
 
     // indoors the sun matters less, the walls keep things warm and even
     const ambient: RGB = def.outdoor ? mood.ambient : mix(mix(mood.ambient, [255, 236, 210], 0.45), [70, 62, 96], night * 0.35);
@@ -470,3 +536,59 @@ export class Area implements AreaRuntime {
   }
 }
 
+/** One emote, its bottom-left corner at x, y: most in a little white bubble, sweat as a bare drop. */
+function emoteIcon(ctx: Ctx, x: number, y: number, kind: Emote, t: number): void {
+  if (kind === 'sweat') {
+    const drip = Math.min(3, Math.floor(t * 4));
+    rect(ctx, x - 1, y - 9 + drip, 2, 3, '#9fd0f0');
+    px(ctx, x - 1, y - 9 + drip, '#ffffff');
+    px(ctx, x, y - 10 + drip, '#9fd0f0');
+    return;
+  }
+  if (kind === 'anger') {
+    // the throbbing cross of a vein, no bubble
+    const c = Math.sin(t * 14) > 0 ? '#e0483c' : '#b8322e';
+    for (const [dx, dy] of [[0, -6], [0, -5], [4, -6], [4, -5], [1, -8], [2, -8], [1, -3], [2, -3], [-1, -6], [5, -5]]) {
+      px(ctx, x + dx, y + dy, c);
+    }
+    return;
+  }
+  // the bubble and its tail
+  rect(ctx, x, y - 10, 9, 8, '#2a2030');
+  rect(ctx, x + 1, y - 11, 7, 10, '#2a2030');
+  rect(ctx, x + 1, y - 10, 7, 8, '#fbf5e6');
+  px(ctx, x + 1, y - 1, '#2a2030');
+  px(ctx, x, y, '#2a2030');
+  const ink = '#2a2030';
+  const ox = x + 1;
+  const oy = y - 10;
+  switch (kind) {
+    case '!':
+      rect(ctx, ox + 3, oy + 1, 1, 4, '#c8342f');
+      px(ctx, ox + 3, oy + 6, '#c8342f');
+      break;
+    case '?':
+      rect(ctx, ox + 2, oy + 1, 3, 1, ink);
+      px(ctx, ox + 5, oy + 2, ink);
+      px(ctx, ox + 4, oy + 3, ink);
+      px(ctx, ox + 3, oy + 4, ink);
+      px(ctx, ox + 3, oy + 6, ink);
+      break;
+    case '...':
+      for (let i = 0; i < 3; i++) if (t * 3 > i) px(ctx, ox + 1 + i * 2, oy + 5, ink);
+      break;
+    case 'note':
+      rect(ctx, ox + 4, oy + 1, 1, 5, ink);
+      rect(ctx, ox + 5, oy + 1, 1, 1, ink);
+      px(ctx, ox + 6, oy + 2, ink);
+      rect(ctx, ox + 2, oy + 5, 2, 2, ink);
+      break;
+    case 'heart':
+      rect(ctx, ox + 1, oy + 2, 2, 2, '#d84a62');
+      rect(ctx, ox + 4, oy + 2, 2, 2, '#d84a62');
+      rect(ctx, ox + 1, oy + 3, 5, 2, '#d84a62');
+      rect(ctx, ox + 2, oy + 5, 3, 1, '#d84a62');
+      px(ctx, ox + 3, oy + 6, '#d84a62');
+      break;
+  }
+}
