@@ -5,6 +5,7 @@
 
 import { VIEW_H, makeCanvas } from '../../engine/display';
 import { facade, nameWall } from '../art/buildings';
+import { ggnCorner } from '../art/ggn';
 import { P } from '../art/palette';
 import { bush, hedge, palm, signBoard, stoneBench, tree } from '../art/props';
 import { BUILDINGS, PLACES } from '../campus/plan';
@@ -34,10 +35,8 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
 
   tree(c, APS_R + 4, GROUND + 2, 100, 30, 2701);
 
-  // the corner of GGN, cut off by the edge of the scene
-  facade(c, g, -160, 160 + APS_X - 26, GROUND, {
-    floors: 7, style: 'fins', wall: '#ece3c4', accent: '#b8322e', glass: '#3d4a63', seed: 54,
-  });
+  // the corner of GGN, cut off by the edge of the scene: the louvred tower at its far end
+  ggnCorner(c, -40, 40 + APS_X - 36, GROUND);
 
   facade(c, g, APS_X, APS_W, GROUND, {
     floors: 4, style: 'corridor', wall: '#e9e4d4', accent: P.maroon, doors: APS_DOORS, name: 'APS', seed: 61,
