@@ -12,6 +12,8 @@ Lined up against OSM, the aerial-photo plan had the scale right (to 0.6%) and mo
 
 The aerial photo is still the source for the gates, the junctions, GGN (10) and the Formation Center (16). OSM still shows the old Sta. Clara buildings where GGN stands now; those are left out.
 
+**Since 2026-10-14 the campus map (the C key) follows the aerial photo wherever OSM and the photo disagree.** Laid over the photo, OSM's outlines fit well on the chapel side of the campus but not on the west side: the five buildings in the north-west corner (5 to 9) have the right shapes but sit about 14 m from where the photo shows them, and the Red Building and St. Martha Hall are about 7 m off. Those, GGN, the chapel and the Formation Center are now traced off the photo corner by corner (`TRACED` in `plan.ts`). The map's roofs are also the photo's colours now, with its solar panels and tiles, instead of the 2022 campus map's. **Only the map moved.** The street scenes are still laid out from each building's `blocks`, which were left alone, so on the Back Road the halls are drawn about 12 m further from GGN than the map shows them.
+
 The other sources, all in `assets/` (see "Reference images" below):
 
 | File | What it gave us |
@@ -49,6 +51,8 @@ The walkway direction read off the photo was 2.64 degrees off the true grid; OSM
 
 So to move a building: fix it on openstreetmap.org and run `npm run import:osm`, or for the ones OSM does not have, read the new pixel off the aerial photo and change it in `plan.ts`. The scenes and the map follow.
 
+A building has two shapes in `plan.ts`. `blocks` are the rectangles the street scenes are laid out from. `outline` (and `wings`, for extra roofs of the same building) is what the campus map draws: the OSM outline, or one traced off the aerial photo. To fix how a building looks on the map, change the pixels in `TRACED`. The roof colours and the patches on them (solar panels, tiles) are in `src/game/art/campusmap.ts`.
+
 Press **C** in the game for the campus map. It paints the real OSM outlines, so it is the quickest check of the plan.
 
 ## The streets
@@ -62,7 +66,7 @@ A side-view scene can only show one side of a road. Each street below says which
 | `plaza` | Front of the Main Building | NE | not to scale | Rotunda, DJDN (12), St. Barachiel Gate |
 | `walkway` | Rotunda to the chapel lawn | NW | 104 m | STL (4), PGN (11) |
 | `lane` | Parking lane | NE | 74 m | STL (4), PGN tower over it; SFJ behind you |
-| `halls` | The street outside the halls, to the corner of GGN | NW | 105 m | Warehouse (5), Food Court (6), SGH (7), SRH (8), SMH (9), GGN (10) |
+| `halls` | The street outside the halls, then the whole front of GGN | NW | 105 m, and 36 m more past the corner for GGN | Warehouse (5), Food Court (6), SGH (7), SRH (8), SMH (9), GGN (10) |
 | `aps` | Path along the lawn side of APS | NW | 108 m | APS (13), Sacred Heart (18) |
 | `lawn` | Road along the chapel lawn | NE | 89 m | The Chapel (15), Formation Center (16) |
 | `sjh` | Road in front of St. Joseph Hall | SE | 97 m | SJH (17), MGN (14), corner of the gym |
@@ -118,11 +122,14 @@ Positions are the centre of the main block. OSM outlines are traced from satelli
 
 ## What is still a guess
 
-* **GGN (10) and the Formation Center (16).** Not in OSM. The Formation Center as placed overlaps the chapel; it may be attached to it, or it may be the small unnamed building OSM has about 25 m away.
-* **Building 1** is matched to an unnamed OSM building by size and place.
+* **GGN (10) and the Formation Center (16)** are not in OSM. On the map they are traced off the aerial photo: the chapel is the round end of the white roof facing the lawn, and the Formation Center is the other end of the same roof, with the terraces. In the street scenes both are still rough boxes.
+* **Building 1.** Sean confirmed on 2026-10-14 that it is the dark roof with solar panels on the street corner. The small pink and white roof between it and St. Martha Hall is not identified and is drawn as a town building.
+* **The dark hipped roof beside the Covered Court** is part of Sacred Heart (18), says Sean (2026-10-14). OSM has it as a separate unnamed building.
+* **Roofs traced off the photo lean.** The photo was not taken from straight overhead, so the roof of a tall building sits a few metres from its foot. GGN is traced at its roof.
 * **The scenes still use blocks.** The map draws the real outlines, but the street scenes lay buildings out from rectangles: the box round each outline, or two or three parts for the L-shaped ones.
 * **What every building looks like**, apart from the DJN and its courtyard, the Epiphany, the rotunda fountain, the walkway, St. Joseph Hall, SFJ and the gatehouse, which were drawn from photos. The others are drawn from five generic facade styles with colours and floor counts taken from the campus map drawing. Floor counts in particular are guesses.
 * **SJH and SFJ are squeezed.** A real storey is about 3.5 m, 31 pixels at this scale, and eight of them would not fit on the screen, so their floors are 20 to 24 pixels. The floor counts (SJH: seven on the left wing, eight on the right; SFJ: five, with the glass bay and the pylon taller) were counted off one photo each.
+* **GGN is on the wrong road, and cut off at the top.** It is drawn from the photos in `assets/GGN BUILDING/` (`src/game/art/ggn.ts`): the lobby behind its columns and canopy, the red slabs and louvre panels over it, the patchwork of panels and fins either side, the louvred towers at the ends. That is its long front, which on the aerial photo faces the street on its north-east side. The game has no scene for that street, so the front is shown on the Back Road, where its door already was; the scene runs 36 m past the corner to hold all 53 m of it. It is eleven storeys (three under the canopy and eight over it, counted off the photos) at the same 22 pixels a floor as the halls beside it, which makes it 264 pixels tall where only 206 pixels of screen are above the ground: its top two and a half storeys are off the screen, on purpose.
 * **SFJ is wider than its plot.** The front in the photo is drawn across about 38 m so that its doors sit straight behind the pool, as they do; the plan gives that side 31 m. The scene got 9 m longer at that end to hold it.
 * **Where the side gate is.** Sean says the gate students use is a side gate near the Main Building, so the gate scene now sits at the plan's `barachielGate` spot (the gate beside the Main Building, read off the aerial photo as the vehicle gate on Holy Angel Avenue) and opens straight on to the plaza. Whether the side gate is that gate or another one close by, and what street it is on, has not been checked. The gate at the street end of the Epiphany is now a closed gate you can only look at.
 * **Which side of each building the door is on.**
