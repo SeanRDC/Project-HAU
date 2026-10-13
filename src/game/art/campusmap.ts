@@ -7,33 +7,114 @@
 // and a strip of front wall with windows, the way the official campus map
 // shows them. Buildings are painted pixel by pixel from their real outlines.
 //
+// The roofs are the colours of the aerial photo
+// (assets/other references/Aerial shot of HAU enclosed in red line.png), with
+// its solar panels and tiles, so the map can be checked against it.
+//
 // Map data (c) OpenStreetMap contributors, ODbL 1.0.
 
 import { Ctx, makeCanvas } from '../../engine/display';
 import { rng } from '../../engine/math';
 import { disc, ellipse, line, rect, sign, signWidth } from '../../engine/pix';
 import { CAMPUS, NEIGHBOURS, Pt, ROADS } from '../campus/osm';
-import { BUILDINGS, Building, BuildingId, PLACES, Spot } from '../campus/plan';
+import { BUILDINGS, Building, BuildingId, PLACES, Px, Spot, spot } from '../campus/plan';
 import { STREETS } from '../campus/streets';
 import { P, shade } from './palette';
 
 const ALL = Object.entries(BUILDINGS) as [BuildingId, Building][];
 
-/** Roof colours, picked off the official campus map. Anything not listed is a white roof. */
+/** Roof colours, picked off the aerial photo. Anything not listed is a white roof. */
 const ROOF: Partial<Record<BuildingId, string>> = {
-  corazon: '#b8473d',
-  foodcourt: '#e8bf45',
-  pgn: '#45475a',
-  djdn: P.wall,
-  ggn: '#e6d6b4',
-  court: '#8e9db2',
-  gym: '#c3c6cc',
-  annex: '#5d6070',
-  warehouse: '#a8a196',
-  sh: '#dfe3e6',
+  corazon: '#5f626c',
+  martha: '#9d6257',
+  sfj: '#cfdcc0',
+  stl: '#e2dabb',
+  warehouse: '#dcd6b2',
+  foodcourt: '#98a279',
+  sgh: '#e9e2b6',
+  srh: '#e9e2b6',
+  smh: '#ddd5ae',
+  ggn: '#bcb5a6',
+  pgn: '#dfe2e4',
+  djdn: '#e3dcb8',
+  aps: '#e2dcae',
+  mgn: '#e6e0bc',
   chapel: P.marbleHi,
+  formation: '#dddcd6',
+  sjh: '#e3d9b6',
+  sh: '#e1dba2',
+  court: '#eceae6',
+  gym: '#e1e3e5',
+  annex: '#cfc7a4',
 };
 const WHITE_ROOF = '#e9e5dc';
+/** The roof of each extra wing in plan.ts, in the order they are listed there. */
+const WING_ROOF: Partial<Record<BuildingId, string[]>> = {
+  sh: ['#615f69'],
+};
+/** Walls that are not just a darker roof: the Red Building is red under its dark roof. */
+const WALL: Partial<Record<BuildingId, string>> = {
+  corazon: '#b8473d',
+  ggn: '#9c4a48',
+  pgn: '#7f8ea6',
+};
+
+const SOLAR = '#3d4557';
+const TILE = '#d98a72';
+const CONCRETE = '#94938d';
+
+/** A flat patch on a roof: solar panels, tiles, a lower roof. `grid` dots it like a field of panels. */
+interface Patch {
+  pts: Spot[];
+  colour: string;
+  grid?: boolean;
+}
+/** A patch read off the aerial photo, one pixel per corner. */
+const seen = (colour: string, grid: boolean, ...px: Px[]): Patch => ({ pts: px.map(spot), colour, grid });
+/** A patch given in plan metres: u from..to, v from..to. */
+const laid = (colour: string, grid: boolean, u0: number, u1: number, v0: number, v1: number): Patch => ({
+  pts: [{ u: u0, v: v0 }, { u: u1, v: v0 }, { u: u1, v: v1 }, { u: u0, v: v1 }],
+  colour,
+  grid,
+});
+
+/**
+ * What the aerial photo shows on each roof. The tall buildings lean in the
+ * photo, so theirs are given in plan metres on the footprint instead of in
+ * the photo's pixels.
+ */
+const PATCHES: Partial<Record<BuildingId, Patch[]>> = {
+  foodcourt: [
+    // the blue-grey roof at its south end
+    seen('#8d97ad', false, [385, 303.8], [396.3, 299.5], [411.3, 323.8], [398, 333.8]),
+  ],
+  ggn: [
+    // the tiled roofs along the St. Michael Hall side
+    seen(TILE, false, [482.5, 118.8], [507.5, 102.5], [512.5, 83.8], [542.5, 70], [560, 71.3], [586.3, 48], [588.8, 60], [567.5, 90], [538.8, 103.8], [510, 130], [487.5, 150], [480, 145]),
+    // the maroon fins down the street side
+    seen('#9c3f45', false, [586.3, 48], [665.5, 152], [653, 183], [625, 145], [607.5, 92.5]),
+    seen(SOLAR, true, [491.3, 163.8], [532.5, 140], [540, 153.8], [501.3, 178.8]),
+    seen(SOLAR, true, [580, 137.5], [602.5, 125], [612.5, 145], [590, 160]),
+    seen(SOLAR, true, [545, 217.5], [580, 198.8], [586.3, 212.5], [552.5, 233.8]),
+  ],
+  pgn: [
+    // the podium is bare concrete; the tower roof is white under its panels
+    laid(CONCRETE, false, -134.9, -91.5, -37, -7.6),
+    laid(SOLAR, true, -88.5, -72, -72, -36),
+  ],
+  djdn: [
+    // the roof over the courtyard
+    seen('#5b5d66', false, [618.3, 513.3], [683.3, 485], [713.3, 530], [646.7, 567]),
+  ],
+  court: [
+    // the lower roof on the gym side
+    laid('#cfcfcd', false, 43.7, 100.7, -17, -1.8),
+  ],
+  gym: [
+    seen(SOLAR, true, [973, 250], [1007, 231], [1073, 342], [1040, 360]),
+    seen(SOLAR, false, [1012, 220], [1032, 210], [1100, 326], [1082, 340]),
+  ],
+};
 
 const CITY = '#a9a796';
 const CITY_ROOF = '#b9b5a6';
@@ -47,6 +128,10 @@ for (const [, b] of ALL) {
   for (const k of b.blocks) {
     us.push(k.at.u - k.along / 2, k.at.u + k.along / 2);
     vs.push(k.at.v - k.across / 2, k.at.v + k.across / 2);
+  }
+  for (const p of shapesOf(b).flat()) {
+    us.push(p.u);
+    vs.push(p.v);
   }
 }
 for (const p of Object.values(PLACES)) {
@@ -83,34 +168,53 @@ export function paintCampus(scale: number): CampusPicture {
 
   // the town round the campus, then the campus grounds on top
   rect(ctx, 0, 0, w, h, CITY);
-  for (const r of NEIGHBOURS) solid(ctx, r.map(pt), CITY_ROOF, Math.min(2, m(3)), false, true);
+  // OSM still lists a few campus roofs as plain buildings; anything under one of ours is left out
+  const ours = ALL.flatMap(([, b]) => shapesOf(b)).map((s) => s.map((p): [number, number] => [p.u, p.v]));
+  const town = NEIGHBOURS.filter((r) => {
+    const cu = r.reduce((a, p) => a + p[0], 0) / r.length;
+    const cv = r.reduce((a, p) => a + p[1], 0) / r.length;
+    return !ours.some((o) => inside(o, cu, cv));
+  });
+  for (const r of town) solid(ctx, r.map(pt), CITY_ROOF, Math.min(2, m(3)), false, true);
   for (const r of CAMPUS) ground(ctx, r.map(pt), rand);
   lawns(ctx, at, m);
   roads(ctx, at, pt, m);
   water(ctx, at, m);
 
-  const shapes = ALL.flatMap(([id, b]) => shapesOf(b).map((s) => ({ id, b, pts: s.map((p) => at(p)) })));
+  const shapes = ALL.flatMap(([id, b]) => {
+    const all = shapesOf(b);
+    // the wings come after the building's own shapes, and bring their own roofs
+    const own = all.length - (b.wings?.length ?? 0);
+    return all.map((s, i) => ({
+      id,
+      b,
+      pts: s.map((p) => at(p)),
+      wing: i >= own,
+      roof: (i >= own ? WING_ROOF[id]?.[i - own] : undefined) ?? ROOF[id] ?? WHITE_ROOF,
+    }));
+  });
   trees(ctx, at, m, rand, shapes.map((s) => s.pts), CAMPUS.map((r) => r.map(pt)));
   // further back first, so nearer buildings overlap the ones behind them
   shapes.sort((a, b) => Math.max(...a.pts.map((p) => p[1])) - Math.max(...b.pts.map((p) => p[1])));
-  for (const { id, b, pts } of shapes) {
-    const roof = ROOF[id] ?? WHITE_ROOF;
-    const wall = id === 'chapel' ? Math.max(1, m(2)) : Math.max(2, m(5));
-    solid(ctx, pts, roof, wall, !b.sure);
-    if (id === 'djdn') skylight(ctx, b, at);
-    if (id === 'chapel') cross(ctx, at(PLACES.chapel));
+  for (const { id, b, pts, roof, wing } of shapes) {
+    const wall = id === 'chapel' || id === 'formation' ? Math.max(1, m(2)) : Math.max(2, m(5));
+    solid(ctx, pts, roof, wall, !b.sure, false, WALL[id]);
+    if (!wing) for (const p of PATCHES[id] ?? []) patch(ctx, p, pts, at, wall);
+    if (id === 'chapel') cross(ctx, at(b.label ?? PLACES.chapel));
   }
   for (const [id, b] of ALL) badge(ctx, b, id, at);
   return { canvas, scale, at };
 }
 
-/** A building's footprint: its OSM outline if it has one, otherwise each block as a rectangle. */
+/** A building's footprint: its outline if it has one, otherwise each block as a rectangle. Then any wings. */
 function shapesOf(b: Building): Spot[][] {
-  if (b.outline) return [b.outline];
-  return b.blocks.map((k) => {
-    const [u0, u1, v0, v1] = [k.at.u - k.along / 2, k.at.u + k.along / 2, k.at.v - k.across / 2, k.at.v + k.across / 2];
-    return [{ u: u0, v: v0 }, { u: u1, v: v0 }, { u: u1, v: v1 }, { u: u0, v: v1 }];
-  });
+  const own = b.outline
+    ? [b.outline]
+    : b.blocks.map((k) => {
+        const [u0, u1, v0, v1] = [k.at.u - k.along / 2, k.at.u + k.along / 2, k.at.v - k.across / 2, k.at.v + k.across / 2];
+        return [{ u: u0, v: v0 }, { u: u1, v: v0 }, { u: u1, v: v1 }, { u: u0, v: v1 }];
+      });
+  return [...own, ...(b.wings ?? [])];
 }
 
 /** Even-odd point in polygon. */
@@ -128,9 +232,10 @@ function inside(pts: [number, number][], x: number, y: number): boolean {
  * One building, pixel by pixel: a soft shadow, the front wall dropped below
  * the roof with rows of windows, then the roof with a lit top edge and a dark
  * right edge. `guess` dots the outline in maroon. `plain` leaves the windows
- * off, for the town round the campus.
+ * off, for the town round the campus. `walls` is the wall colour when it is not
+ * just a darker roof.
  */
-function solid(ctx: Ctx, pts: [number, number][], roof: string, wall: number, guess: boolean, plain = false): void {
+function solid(ctx: Ctx, pts: [number, number][], roof: string, wall: number, guess: boolean, plain = false, walls?: string): void {
   const xs = pts.map((p) => p[0]);
   const ys = pts.map((p) => p[1]);
   const x0 = Math.floor(Math.min(...xs)) - 1;
@@ -140,7 +245,7 @@ function solid(ctx: Ctx, pts: [number, number][], roof: string, wall: number, gu
   // the roof sits `wall` pixels up from the footprint, so the wall shows below it
   const isRoof = (x: number, y: number) => inside(pts, x + 0.5, y + 0.5 + wall);
   const isBase = (x: number, y: number) => inside(pts, x + 0.5, y + 0.5);
-  const front = shade(roof === WHITE_ROOF ? P.trim : roof, -0.28);
+  const front = walls ?? shade(roof === WHITE_ROOF ? P.trim : roof, -0.28);
   const hi = shade(roof, 0.35);
   const left = shade(roof, 0.12);
   const right = shade(roof, -0.2);
@@ -213,7 +318,8 @@ function roads(ctx: Ctx, at: At, pt: (p: Pt) => [number, number], m: (x: number)
     for (let i = 0; i + 1 < pts.length; i++) line(ctx, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], colour, width);
   };
   const streets = ROADS.filter((r) => r.kind === 'street').map((r) => r.pts.map(pt));
-  const paths = ROADS.filter((r) => r.kind === 'path').map((r) => r.pts.map(pt));
+  // only the paths that come on to the campus: driveways out in the town are not on the aerial photo as roads
+  const paths = ROADS.filter((r) => r.kind === 'path' && r.pts.some((p) => CAMPUS.some((c) => inside(c, p[0], p[1])))).map((r) => r.pts.map(pt));
   const game = [
     ...Object.values(STREETS).map((s) => s.path),
     [PLACES.rotunda, PLACES.barachielGate],
@@ -291,14 +397,24 @@ function trees(
   for (let i = 0; i < 60; i++) tree(Math.round(rand() * ctx.canvas.width), Math.round(rand() * ctx.canvas.height));
 }
 
-/** The Main Building's courtyard skylight, a glass roof on the campus map. */
-function skylight(ctx: Ctx, b: Building, at: At): void {
-  const k = b.blocks[0];
-  const [x0, y0] = at({ u: k.at.u - k.along * 0.2, v: k.at.v - k.across * 0.28 });
-  const [x1, y1] = at({ u: k.at.u + k.along * 0.2, v: k.at.v + k.across * 0.05 });
-  if (x1 - x0 < 3) return;
-  rect(ctx, x0, y0, x1 - x0, y1 - y0, '#8fb6cc');
-  rect(ctx, x0, y0, x1 - x0, 1, '#c3dde9');
+/**
+ * One patch on a roof, lifted by the wall height like the roof it sits on and
+ * kept inside it, with a one pixel rim of roof left showing round the edge.
+ */
+function patch(ctx: Ctx, p: Patch, roofPts: [number, number][], at: At, wall: number): void {
+  const pts = p.pts.map((s) => at(s));
+  const xs = pts.map((q) => q[0]);
+  const ys = pts.map((q) => q[1]);
+  const onRoof = (x: number, y: number) => inside(roofPts, x + 0.5, y + 0.5 + wall);
+  const lit = shade(p.colour, 0.22);
+  for (let y = Math.floor(Math.min(...ys)) - wall; y <= Math.ceil(Math.max(...ys)) - wall; y++) {
+    for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+      if (!inside(pts, x + 0.5, y + 0.5 + wall)) continue;
+      if (!onRoof(x, y) || !onRoof(x - 1, y) || !onRoof(x + 1, y) || !onRoof(x, y - 1) || !onRoof(x, y + 1)) continue;
+      ctx.fillStyle = p.grid && x % 2 === 0 && y % 2 === 0 ? lit : p.colour;
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
 }
 
 /** The gold cross on the chapel roof. */
@@ -310,7 +426,7 @@ function cross(ctx: Ctx, [x, y]: [number, number]): void {
 /** The number each building has on the official campus map, in a maroon tag like the real one. */
 function badge(ctx: Ctx, b: Building, id: BuildingId, at: At): void {
   if (b.no === undefined) return;
-  const [cx, cy] = at(b.blocks[0].at);
+  const [cx, cy] = at(b.label ?? b.blocks[0].at);
   const text = String(b.no);
   const w = signWidth(text) + 4;
   const x = Math.round(cx - w / 2);

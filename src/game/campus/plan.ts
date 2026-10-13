@@ -13,6 +13,11 @@
 // their real outlines, surveyed, in `osm.ts`, made by `npm run import:osm`.
 // The aerial photo is still used for the gates, junctions and the two
 // buildings OSM does not have yet (GGN and the Formation Center).
+//
+// Since 2026-10-14 the campus map follows the photo wherever OSM and the photo
+// disagree: those outlines are traced off the photo, corner by corner (see
+// TRACED below). The street scenes are still laid out from `blocks`, which did
+// not move.
 
 import { OUTLINES } from './osm';
 
@@ -108,6 +113,74 @@ function outline(id: string): Spot[] | undefined {
   return OUTLINES[id]?.map(([u, v]) => ({ u, v }));
 }
 
+/** An outline traced off the aerial photo, one pixel per corner. */
+function traced(...px: Px[]): Spot[] {
+  return px.map(spot);
+}
+
+/** The middle of an outline, for the number it carries on the campus map. */
+function middle(pts: Spot[]): Spot {
+  let area = 0;
+  let u = 0;
+  let v = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[(i + 1) % pts.length];
+    const k = a.u * b.v - b.u * a.v;
+    area += k;
+    u += (a.u + b.u) * k;
+    v += (a.v + b.v) * k;
+  }
+  return { u: u / (3 * area), v: v / (3 * area) };
+}
+
+// Traced off the aerial photo on 2026-10-14, for the buildings OSM does not
+// have or puts somewhere the photo does not.
+//
+// The five on the north-west corner (5 to 9) have the right shapes in OSM but
+// sit about 14 m from where the photo shows them. The Red Building and St.
+// Martha Hall are about 7 m off. GGN and the Formation Center are not in OSM
+// at all, and OSM's "chapel" is the chapel and the Formation Center together.
+//
+// St. Gabriel and St. Raphael are the two long sides of one building round a
+// courtyard; these four points are that building, and the courtyard inside it.
+const HALL: Px[] = [[427, 176.3], [498, 285], [447, 318], [375.5, 210]];
+const HALL_YARD: Px[] = [[424, 209], [470, 280], [458.8, 288.8], [410, 217.5]];
+const mid = (a: Px, b: Px): Px => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+// the line the two halls meet on, end to end
+const SEAM: Px[] = [mid(HALL[0], HALL[3]), mid(HALL_YARD[0], HALL_YARD[3]), mid(HALL_YARD[1], HALL_YARD[2]), mid(HALL[1], HALL[2])];
+
+const TRACED = {
+  corazon: traced([235, 507.6], [259, 499.6], [281, 538], [257, 546]),
+  martha: traced([293, 478.4], [322.4, 463], [376.9, 553.9], [347.5, 569.3]),
+  // a row of small roofs and the shed at its south end
+  warehouse: traced([326.3, 278.8], [341.3, 269.5], [350, 285.5], [372.5, 329.5], [392.5, 325], [398, 347.5], [380.8, 358], [360, 338.8], [336.3, 297]),
+  foodcourt: traced([342, 220.8], [358, 211.8], [411.3, 323.8], [398, 333.8]),
+  // the west side of the courtyard building
+  sgh: traced(HALL[3], SEAM[0], SEAM[1], HALL_YARD[3], HALL_YARD[2], SEAM[2], SEAM[3], HALL[2]),
+  // the east side
+  srh: traced(SEAM[0], HALL[0], HALL[1], SEAM[3], SEAM[2], HALL_YARD[1], HALL_YARD[0], SEAM[1]),
+  smh: traced([446, 150], [466, 138], [533, 246], [513, 258]),
+  // the spine along the street, two wings towards St. Michael Hall, the courtyard between them
+  ggn: traced(
+    [586.3, 48], [665.5, 152], [653, 183], [622.5, 206.3], [587, 240], [550, 257.5], [526.3, 223.8], [525, 198.8],
+    [582.5, 167.5], [572.5, 151.3], [516.3, 181.3], [501.3, 192.5], [476.3, 156.3], [482.5, 118.8], [507.5, 102.5],
+    [512.5, 83.8], [542.5, 70], [560, 71.3],
+  ),
+  // the round end of the white roof, facing the lawn
+  chapel: traced(
+    [827.6, 268], [816, 278], [800, 282.4], [786, 286], [777, 295], [773, 310], [778, 330], [790, 346], [804, 354.4],
+    [816, 356.4], [827, 351.6], [834, 342], [838, 330], [845.6, 320],
+  ),
+  // the other end of the same roof, with the terraces and the curved wall behind
+  formation: traced(
+    [827.6, 268], [845.6, 320], [856, 318], [870, 326], [883, 328], [906, 314.4], [906.4, 299], [902, 278], [890, 258],
+    [878, 242], [865, 227], [854, 224], [836, 237], [833, 248], [828.4, 256],
+  ),
+  // the dark hipped roof beside the covered court. Sean, 2026-10-14: it is part of Sacred Heart.
+  shWing: traced([947, 96.3], [983.8, 75.5], [1020, 133.8], [983.3, 154.5]),
+};
+
 export interface Building {
   /** its number on the official 2022 campus map, if it has one */
   no?: number;
@@ -116,8 +189,15 @@ export interface Building {
   short: string;
   /** the first block is the main one. The street scenes are laid out from these. */
   blocks: Block[];
-  /** the real footprint from OpenStreetMap, for the campus map. Missing if OSM does not have it. */
+  /**
+   * the footprint the campus map draws: from OpenStreetMap, or traced off the
+   * aerial photo where the two disagree. Missing means the map draws the blocks.
+   */
   outline?: Spot[];
+  /** other roofs of the same building, drawn on the campus map beside the outline */
+  wings?: Spot[][];
+  /** where its number goes on the campus map, when the first block is not on the outline */
+  label?: Spot;
   /** what the campus map says is inside */
   inside: string[];
   /**
@@ -133,16 +213,19 @@ export const BUILDINGS = {
     name: 'Plaza de Corazon Building',
     short: 'Red Bldg.',
     blocks: [bounds('corazon')],
-    outline: outline('corazon'),
+    outline: TRACED.corazon,
+    label: middle(TRACED.corazon),
     inside: ['Human Resource Development Office', 'Dormitory'],
-    sure: false,
+    // Sean, 2026-10-14: it is the dark roof with the solar panels, on the street corner
+    sure: true,
   },
   martha: {
     no: 2,
     name: 'St. Martha Hall',
     short: 'St. Martha',
     blocks: [bounds('martha')],
-    outline: outline('martha'),
+    outline: TRACED.martha,
+    label: middle(TRACED.martha),
     inside: ['Admissions Office & Testing Center', 'Dormitory'],
     sure: true,
   },
@@ -170,7 +253,8 @@ export const BUILDINGS = {
     name: 'Warehouse & Carpentry',
     short: 'Warehouse',
     blocks: [bounds('warehouse')],
-    outline: outline('warehouse'),
+    outline: TRACED.warehouse,
+    label: middle(TRACED.warehouse),
     inside: [],
     sure: true,
   },
@@ -179,7 +263,8 @@ export const BUILDINGS = {
     name: 'Yellow Food Court',
     short: 'Food Court',
     blocks: [bounds('foodcourt')],
-    outline: outline('foodcourt'),
+    outline: TRACED.foodcourt,
+    label: middle(TRACED.foodcourt),
     inside: [],
     sure: true,
   },
@@ -188,7 +273,8 @@ export const BUILDINGS = {
     name: 'St. Gabriel Hall',
     short: 'SGH',
     blocks: [bounds('sgh')],
-    outline: outline('sgh'),
+    outline: TRACED.sgh,
+    label: middle(TRACED.sgh),
     inside: [],
     sure: true,
   },
@@ -197,7 +283,8 @@ export const BUILDINGS = {
     name: 'St. Raphael Hall',
     short: 'SRH',
     blocks: [bounds('srh')],
-    outline: outline('srh'),
+    outline: TRACED.srh,
+    label: middle(TRACED.srh),
     inside: [],
     sure: true,
   },
@@ -206,7 +293,8 @@ export const BUILDINGS = {
     name: 'St. Michael Hall',
     short: 'SMH',
     blocks: [bounds('smh')],
-    outline: outline('smh'),
+    outline: TRACED.smh,
+    label: middle(TRACED.smh),
     inside: [],
     sure: true,
   },
@@ -215,6 +303,9 @@ export const BUILDINGS = {
     name: 'Geromin G. Nepomuceno Building',
     short: 'GGN',
     blocks: [block([590, 150], 110, 175)],
+    outline: TRACED.ggn,
+    // on the spine, clear of the courtyard
+    label: spot([600, 150]),
     inside: ["Principal's Office / Faculty Room", 'High School Library'],
     sure: true,
   },
@@ -265,7 +356,8 @@ export const BUILDINGS = {
     name: 'Chapel of the Holy Guardian Angel',
     short: 'Chapel',
     blocks: [bounds('chapel')],
-    outline: outline('chapel'),
+    outline: TRACED.chapel,
+    label: middle(TRACED.chapel),
     inside: [],
     sure: true,
   },
@@ -274,8 +366,10 @@ export const BUILDINGS = {
     name: 'Sister Josefina Nepomuceno Formation Center',
     short: 'Formation Center',
     blocks: [block([873, 262], 50, 44)],
+    outline: TRACED.formation,
+    label: spot([872, 285]),
     inside: [],
-    sure: false,
+    sure: true,
   },
   sjh: {
     no: 17,
@@ -298,6 +392,7 @@ export const BUILDINGS = {
     // the main block, then the two wings that come forward
     blocks: [part(50, 100, -83, -65), part(47, 68, -65, -42), part(89, 103, -67, -52)],
     outline: outline('sh'),
+    wings: [TRACED.shWing],
     inside: ["School of Engineering & Architecture Dean's Office"],
     sure: true,
   },

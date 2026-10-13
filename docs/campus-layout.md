@@ -12,6 +12,8 @@ Lined up against OSM, the aerial-photo plan had the scale right (to 0.6%) and mo
 
 The aerial photo is still the source for the gates, the junctions, GGN (10) and the Formation Center (16). OSM still shows the old Sta. Clara buildings where GGN stands now; those are left out.
 
+**Since 2026-10-14 the campus map (the C key) follows the aerial photo wherever OSM and the photo disagree.** Laid over the photo, OSM's outlines fit well on the chapel side of the campus but not on the west side: the five buildings in the north-west corner (5 to 9) have the right shapes but sit about 14 m from where the photo shows them, and the Red Building and St. Martha Hall are about 7 m off. Those, GGN, the chapel and the Formation Center are now traced off the photo corner by corner (`TRACED` in `plan.ts`). The map's roofs are also the photo's colours now, with its solar panels and tiles, instead of the 2022 campus map's. **Only the map moved.** The street scenes are still laid out from each building's `blocks`, which were left alone, so on the Back Road the halls are drawn about 12 m further from GGN than the map shows them.
+
 The other sources, all in `assets/` (see "Reference images" below):
 
 | File | What it gave us |
@@ -48,6 +50,8 @@ The walkway direction read off the photo was 2.64 degrees off the true grid; OSM
 * Each scene in `src/game/scenes/` asks those functions where to draw things. Nothing is typed in by hand.
 
 So to move a building: fix it on openstreetmap.org and run `npm run import:osm`, or for the ones OSM does not have, read the new pixel off the aerial photo and change it in `plan.ts`. The scenes and the map follow.
+
+A building has two shapes in `plan.ts`. `blocks` are the rectangles the street scenes are laid out from. `outline` (and `wings`, for extra roofs of the same building) is what the campus map draws: the OSM outline, or one traced off the aerial photo. To fix how a building looks on the map, change the pixels in `TRACED`. The roof colours and the patches on them (solar panels, tiles) are in `src/game/art/campusmap.ts`.
 
 Press **C** in the game for the campus map. It paints the real OSM outlines, so it is the quickest check of the plan.
 
@@ -118,8 +122,10 @@ Positions are the centre of the main block. OSM outlines are traced from satelli
 
 ## What is still a guess
 
-* **GGN (10) and the Formation Center (16).** Not in OSM. The Formation Center as placed overlaps the chapel; it may be attached to it, or it may be the small unnamed building OSM has about 25 m away.
-* **Building 1** is matched to an unnamed OSM building by size and place.
+* **GGN (10) and the Formation Center (16)** are not in OSM. On the map they are traced off the aerial photo: the chapel is the round end of the white roof facing the lawn, and the Formation Center is the other end of the same roof, with the terraces. In the street scenes both are still rough boxes.
+* **Building 1.** Sean confirmed on 2026-10-14 that it is the dark roof with solar panels on the street corner. The small pink and white roof between it and St. Martha Hall is not identified and is drawn as a town building.
+* **The dark hipped roof beside the Covered Court** is part of Sacred Heart (18), says Sean (2026-10-14). OSM has it as a separate unnamed building.
+* **Roofs traced off the photo lean.** The photo was not taken from straight overhead, so the roof of a tall building sits a few metres from its foot. GGN is traced at its roof.
 * **The scenes still use blocks.** The map draws the real outlines, but the street scenes lay buildings out from rectangles: the box round each outline, or two or three parts for the L-shaped ones.
 * **What every building looks like**, apart from the DJN and its courtyard, the Epiphany, the rotunda fountain, the walkway, St. Joseph Hall, SFJ and the gatehouse, which were drawn from photos. The others are drawn from five generic facade styles with colours and floor counts taken from the campus map drawing. Floor counts in particular are guesses.
 * **SJH and SFJ are squeezed.** A real storey is about 3.5 m, 31 pixels at this scale, and eight of them would not fit on the screen, so their floors are 20 to 24 pixels. The floor counts (SJH: seven on the left wing, eight on the right; SFJ: five, with the glass bay and the pylon taller) were counted off one photo each.
