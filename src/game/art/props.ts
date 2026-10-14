@@ -104,17 +104,33 @@ export function layeredTree(c: Ctx, x: number, base: number, h: number, spread: 
   rect(c, x + lean - girth / 2, top, girth, 3, shade(P.trunkDark, -0.2));
 }
 
-/** the rows of trees far behind the buildings, darker still, a little blue with distance */
-const FAR_LEAVES: Tones = { deep: '#1c2f27', dark: '#22392e', mid: '#2a4535', lit: '#33523d', hi: '#3d5e45' };
+/** the rows of trees behind the buildings: muted, a little blue with distance, so they sit back */
+const FAR_LEAVES: Tones = { deep: '#2c4639', dark: '#34513f', mid: '#3d5d48', lit: '#4a6b53', hi: '#587a5f' };
 
-/** A row of trees far behind the buildings, crowns overlapping, a trunk showing here and there. */
+/**
+ * A row of trees behind the buildings, so they blend into one canopy rather
+ * than standing about like cut-outs: their crowns overlap, the trees get
+ * shorter towards both ends of the row, slim trunks show between the crowns
+ * and the undergrowth, and low shrubs run along their foot. `base` is the
+ * ground they stand on.
+ */
 export function treeline(c: Ctx, x0: number, x1: number, base: number, seed: number): void {
   const rand = rng(seed);
-  for (let x = x0; x < x1; x += 22 + rand() * 18) {
-    const h = 30 + rand() * 26;
-    if (rand() > 0.5) rect(c, x, base - h * 0.4, 3, h * 0.4, '#2b2320');
-    foliage(c, x, base - h * 0.6, 18 + rand() * 12, h * 0.42, seed + Math.round(x), FAR_LEAVES);
+  const span = x1 - x0;
+  const trees: [number, number, number][] = [];
+  for (let x = x0; x < x1; x += 14 + rand() * 10) {
+    const edge = Math.min(x - x0, x1 - x) / Math.min(90, span / 2);
+    const h = (44 + rand() * 30) * (0.55 + 0.45 * Math.min(1, edge));
+    trees.push([x, h, 16 + rand() * 10]);
   }
+  for (const [x, h] of trees) {
+    rect(c, x - 1, base - h * 0.6, 2, h * 0.6, '#3a332c');
+    rect(c, x, base - h * 0.6, 1, h * 0.6, '#4a4036');
+  }
+  // the crowns, back ones first so the canopy reads as one mass
+  for (const [x, h, r] of trees) foliage(c, x, base - h * 0.72, r, h * 0.28, seed + Math.round(x), FAR_LEAVES, true);
+  // the undergrowth along their foot
+  for (let x = x0 - 6; x < x1 + 6; x += 9 + rand() * 6) foliage(c, x, base - 5, 9 + rand() * 5, 6, seed + 7 + Math.round(x), FAR_LEAVES);
 }
 
 export function tree(c: Ctx, x: number, base: number, h: number, spread: number, seed: number, t: Tones = GREEN): void {

@@ -19,7 +19,6 @@ import { GROUND, WALK, ambience, doorLight, endWall, farCity, frontPlants, lamp,
 const S = STREETS.halls;
 const WIDTH = streetWidth(S);
 const LANE_X = xOf(S, PLACES.westJunction);
-const CORNER_X = xOf(S, PLACES.hallsCorner);
 const [SHED_L, SHED_R] = frontage(S, BUILDINGS.warehouse.blocks[0]);
 const [FOOD_L] = frontage(S, BUILDINGS.foodcourt.blocks[0]);
 const [SGH_L] = frontage(S, BUILDINGS.sgh.blocks[0]);
@@ -43,7 +42,7 @@ const GGN_W = WIDTH - 30 - GGN_X;
 
 const HALL = { floors: 4, style: 'corridor', wall: '#ece3c4', roof: '#d9cf9f', accent: P.maroon } as const;
 
-function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement; ggn: Ggn; lawnX: number } {
+function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement; ggn: Ggn } {
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
   const [glow, g] = makeCanvas(WIDTH, VIEW_H);
 
@@ -84,12 +83,10 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   bush(c, lobbyR + 62, GROUND + 2, 24, 13, 2544);
 
   signBoard(c, LANE_X - 2, GROUND + 5, ['PARKING', 'ROTUNDA']);
-  // the way to the chapel is at the corner, but its sign stands clear of GGN's steps
-  const lawnX = Math.min(CORNER_X - 22, lobbyL - 26);
-  signBoard(c, lawnX, GROUND + 5, ['CHAPEL', 'PGN'], P.maroon, P.goldHi);
+  // no way to the chapel from the corner: it is round by APS (the chapel lawn's left end has only the APS way)
 
   for (const x of [SHED_R + 50, RING_L + HALL_W + 32, SMH_L - 22, GGN_L - 30, lobbyR + 40]) lamp(c, g, lights, x);
-  return { canvas, glow, ggn, lawnX };
+  return { canvas, glow, ggn };
 }
 
 export function buildHalls(): AreaDef {
@@ -124,13 +121,11 @@ export function buildHalls(): AreaDef {
       srh: SRH_DOOR,
       smh: SMH_DOOR,
       ggn: main.ggn.door,
-      lawn: main.lawnX,
       aps: WIDTH - 28,
     }),
     npcs: [],
     spawns: {
       lane: { x: LANE_X + 10, facing: 1 },
-      lawn: { x: main.lawnX - 8, facing: -1 },
       aps: { x: WIDTH - 40, facing: -1 },
     },
     update: ambience(254, [SHED_R + 22, SMH_L - 6, SMH_R + 30]),

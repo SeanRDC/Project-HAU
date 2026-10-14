@@ -23,7 +23,6 @@ import { GROUND, WALK, ambience, farCity, frontPlants, lamp, lawnStrip, midCampu
 
 const S = STREETS.lawn;
 const WIDTH = streetWidth(S);
-const CORNER_X = xOf(S, PLACES.northJunction);
 const WALKWAY_X = xOf(S, PLACES.walkwayEnd);
 const SOUTH_X = xOf(S, PLACES.southJunction);
 const CHAPEL_X = xOf(S, PLACES.chapel);
@@ -39,7 +38,8 @@ const MGN_EXIT = WIDTH - 40;
 const LAWN_L = APS_R + 40;
 /** the shady corner across from APS: grass under tall trees, worn to earth round the green picnic sheds */
 const SHADE_R = LAWN_L + 250;
-const APS_ROAD_X = APS_R + 18;
+/** the way along APS to Sacred Heart, the only way on at the left-hand end, right of the first tree */
+const APS_ROAD_X = LAWN_L + 92;
 
 /** the mouth of the chapel parking, past the shady corner, with the NO PARKING stand in it */
 const LOT_MOUTH = SHADE_R + 34;
@@ -181,7 +181,7 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   const [glow, g] = makeCanvas(WIDTH, VIEW_H);
 
   // far behind it all, a dark row of trees over the roofs of the chapel's rear and the Formation Center
-  treeline(c, CHAPEL_L - 120, WIDTH + 20, GROUND - 46, 2980);
+  treeline(c, SHADE_R - 60, WIDTH + 20, GROUND - 22, 2980);
 
   // trees beyond the parking and the grove
   for (const [i, x] of [LAWN_L + 40, LAWN_L + 150, LAWN_L + 270, CHAPEL_X - 230].entries()) {
@@ -248,7 +248,6 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   noParkingStand(c, LOT_MOUTH, GROUND + 8);
   palm(c, CHAPEL_X - CHAPEL_W / 2 - 16, GROUND - 6, 60, 2931);
 
-  signBoard(c, CORNER_X - 20, GROUND + 5, ['BACK ROAD', 'GGN']);
   signBoard(c, APS_ROAD_X, GROUND + 5, ['APS', 'SACRED HEART']);
   signBoard(c, WALKWAY_X, GROUND + 5, ['WALKWAY', 'ROTUNDA'], P.maroon, P.goldHi);
   signBoard(c, MGN_EXIT + 8, GROUND + 5, ['MGN', 'SJH']);
@@ -283,7 +282,6 @@ export function buildLawn(): AreaDef {
     glow: main.glow,
     lights,
     hotspots: lawnHotspots({
-      halls: CORNER_X - 20,
       aps: APS_ROAD_X,
       walkway: WALKWAY_X,
       chapel: CHAPEL_X,
@@ -292,7 +290,6 @@ export function buildLawn(): AreaDef {
     npcs: [],
     spawns: {
       walkway: { x: WALKWAY_X, facing: 1 },
-      halls: { x: CORNER_X - 10, facing: 1 },
       aps: { x: APS_ROAD_X + 4, facing: 1 },
       sjh: { x: MGN_EXIT - 10, facing: -1 },
       mgn: { x: MGN_EXIT - 10, facing: -1 },

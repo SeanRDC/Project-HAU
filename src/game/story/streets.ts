@@ -30,7 +30,7 @@ export function laneHotspots(x: { halls: number; stl: number; sfj: number; entry
 }
 
 export function hallsHotspots(x: {
-  warehouse: number; food: number; lane: number; sgh: number; srh: number; smh: number; ggn: number; lawn: number; aps: number;
+  warehouse: number; food: number; lane: number; sgh: number; srh: number; smh: number; ggn: number; aps: number;
 }): Hotspot[] {
   return [
     closedDoor('warehouse', x.warehouse, BUILDINGS.warehouse),
@@ -82,7 +82,6 @@ export function hallsHotspots(x: {
     closedDoor('srh', x.srh, BUILDINGS.srh),
     closedDoor('smh', x.smh, BUILDINGS.smh),
     closedDoor('ggn', x.ggn, BUILDINGS.ggn),
-    wayTo('lawn', x.lawn, 'Pumunta sa chapel lawn', 'lawn', 'halls', 30),
     wayTo('aps', x.aps, 'Dumiretso sa APS', 'aps', 'halls'),
   ];
 }
@@ -99,9 +98,8 @@ export function apsHotspots(x: { halls: number; canteen: number; lawn: number; a
   ];
 }
 
-export function lawnHotspots(x: { halls: number; aps: number; walkway: number; chapel: number; sjh: number }): Hotspot[] {
+export function lawnHotspots(x: { aps: number; walkway: number; chapel: number; sjh: number }): Hotspot[] {
   return [
-    wayTo('halls', x.halls, 'Pumunta sa back road', 'halls', 'lawn', 30),
     wayTo('aps', x.aps, 'Dumaan sa tabi ng APS', 'aps', 'lawn'),
     wayTo('walkway', x.walkway, 'Bumalik sa walkway', 'walkway', 'lawn', 30),
     {
