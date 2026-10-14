@@ -29,97 +29,125 @@ const STEEL_DARK = '#5e646c';
 const SHEET = '#e9eae6';
 const SHEET_LINE = '#c7c9c6';
 
-/** The front of the covered court, its gable end, centred on `cx`, `w` wide, standing on `base`. */
+/**
+ * The front of the covered court, its gable end on the gym lane, as in `front
+ * view of the covered court...jpg` (without the parked cars): a wide, low
+ * gable of white corrugated sheeting with a ventilator box on its ridge and a
+ * big window across it, glass panes between panels of louvres and a curved
+ * bar sweeping across them; under it a lower roof wraps all round the hall,
+ * its edge running across the whole front, and in the shade under that the
+ * open hall: grey steel columns and arched trusses, the bleachers, and a steel
+ * mesh fence along the front. Centred on `cx`, `w` wide, standing on `base`.
+ */
 export function ccFront(c: Ctx, g: Ctx, cx: number, w: number, base: number): void {
   const half = w / 2;
-  const eave = base - 58;
-  const shoulder = base - 66;
-  const ridge = base - 178;
-  const inner = half * 0.62;
-  // the far end seen through the open hall: the aero gate, the light at the back
-  rect(c, cx - half, eave, w, base - eave, '#5c5f63');
-  rect(c, cx - inner + 20, eave + 18, (inner - 20) * 2, base - eave - 22, '#7a7d80');
-  rect(c, cx - 40, eave + 26, 80, 28, '#d8d48e');
-  for (let x = cx - 40; x < cx + 40; x += 4) rect(c, x, eave + 26, 1, 28, '#b9b46c');
-  rect(g, cx - inner + 24, eave + 18, 30, 16, '#fff0c0');
-  // the courts under the roof: maroon floor, a hoop, people in white PE shirts
-  rect(c, cx - half, base - 12, w, 12, '#7b3436');
-  rect(c, cx - half, base - 12, w, 1, '#a45453');
-  rect(c, cx - 70, base - 40, 2, 28, STEEL_LIT);
-  rect(c, cx - 76, base - 46, 12, 8, '#f1f2f0');
+  // the lower roof's edge, and where the gable wall comes down onto it
+  const gutter = base - 64;
+  const wallFoot = base - 80;
+  const gHalf = half * 0.88;
+  const shoulder = wallFoot - 22;
+  const ridge = shoulder - Math.round(gHalf * 0.5);
+  const roofY = (x: number) => shoulder - (1 - Math.abs(x - cx) / gHalf) * (shoulder - ridge);
+
+  // the open hall in the shade under the lower roof
+  rect(c, cx - half - 10, gutter, w + 20, base - gutter, '#4a4d52');
+  // its ceiling: the arched steel trusses, running back into the dark
+  for (let k = -5; k <= 5; k++) {
+    const x = cx + (k * (half + 8)) / 5;
+    for (let t = 0; t <= 1; t += 0.05) {
+      const xx = x + (cx - x) * 0.18 * t;
+      const yy = gutter + 2 + Math.sin(t * Math.PI) * -1 + t * 24;
+      px(c, xx, yy, '#6f747b');
+    }
+  }
+  for (let y = gutter + 6; y < gutter + 28; y += 5) rect(c, cx - half - 10, y, w + 20, 1, '#575b61');
+  // the light at the far end of the hall, and the court floor
+  rect(c, cx - half * 0.55, gutter + 26, half * 1.1, 20, '#9da3a8');
+  rect(c, cx - half * 0.45, gutter + 28, 30, 14, '#cfd5d8');
+  rect(g, cx - half * 0.45, gutter + 28, 30, 14, '#fff0c0');
+  rect(c, cx - half - 10, base - 18, w + 20, 18, '#7b4a3c');
+  // a backboard on the left
+  rect(c, cx - half * 0.6, gutter + 18, 18, 11, '#f1f2f0');
+  rect(c, cx - half * 0.6 + 6, gutter + 22, 6, 5, '#2a2a30');
+  rect(c, cx - half * 0.6 + 8, gutter + 29, 1, 26, '#8d949c');
+  // the bleachers behind the fence: rows of wooden benches on steel
+  for (let i = 0; i < 4; i++) {
+    const y = base - 24 + i * 5;
+    rect(c, cx - half * 0.1, y, half * 1.05, 2, '#8a6a50');
+    rect(c, cx - half * 0.1, y + 2, half * 1.05, 1, '#5e4838');
+  }
   // the columns of the portal frames
-  for (const k of [-1, -0.62, -0.22, 0.22, 0.62, 1]) {
-    const x = Math.round(cx + k * (half - 4));
-    rect(c, x - 3, eave, 6, base - eave, STEEL);
-    rect(c, x - 3, eave, 2, base - eave, STEEL_LIT);
+  for (const k of [-1, -0.55, -0.12, 0.33, 0.78]) {
+    const x = Math.round(cx + k * half);
+    rect(c, x - 2, gutter, 5, base - gutter, STEEL);
+    rect(c, x - 2, gutter, 1, base - gutter, STEEL_LIT);
+    line(c, x + 2, gutter + 4, x + 18, gutter + 22, STEEL_DARK, 1);
   }
-  // the low side roofs, sweeping out over the sides of the hall, their trusses showing underneath
-  for (const s of [-1, 1]) {
-    const outer = cx + s * (half + 14);
-    const join = cx + s * inner;
-    // the shade under the side roof, its trusses and purlins seen from below
-    poly(c, [[outer, eave], [join, shoulder - 26], [join, eave]], '#4c4f54');
-    for (let k = 1; k < 8; k++) {
-      const t = k / 8;
-      const x = outer + (join - outer) * t;
-      const y = eave + (shoulder - 26 - eave) * t;
-      line(c, x, y, x, eave, '#3a3d42', 1);
-      line(c, x, y + 2, x - s * ((join - outer) / 8) * s, eave, '#5e6268', 1);
-    }
-    // the roof sheeting itself, a band of white corrugations
-    poly(c, [[outer - s * 4, eave + 2], [join, shoulder - 34], [join, shoulder - 24], [outer - s * 4, eave + 8]], '#dfe1de');
-    line(c, outer - s * 4, eave + 2, join, shoulder - 34, '#f8f9f8', 1);
-    line(c, outer - s * 4, eave + 8, join, shoulder - 24, '#a9adb0', 1);
-    for (let k = 0; k < 24; k++) {
-      const t = k / 24;
-      const x = outer - s * 4 + (join - outer + s * 4) * t;
-      const y = eave + 2 + (shoulder - 34 - eave - 2) * t;
-      px(c, x, y + 3, '#c4c7c5');
-    }
+
+  // the gable wall: white corrugated sheeting from the lower roof up to the roof line
+  for (let x = Math.round(cx - gHalf); x < cx + gHalf; x++) {
+    const top = Math.round(roofY(x));
+    rect(c, x, top, 1, wallFoot - top, x % 3 === 0 ? SHEET_LINE : SHEET);
   }
-  // the gable: white corrugated sheeting from the shoulder up to the ridge
-  poly(c, [[cx - inner, shoulder], [cx - inner, shoulder - 24], [cx, ridge], [cx + inner, shoulder - 24], [cx + inner, shoulder]], SHEET);
-  for (let x = cx - inner + 2; x < cx + inner; x += 3) {
-    const top = ridge + (Math.abs(x - cx) / inner) * (shoulder - 24 - ridge);
-    rect(c, x, top, 1, shoulder - top, SHEET_LINE);
-  }
-  // the fan of glass: a big triangle of grid panes, a few of them darker
-  const gl = cx - inner + 18;
-  const gr = cx + inner - 18;
-  const gb = shoulder - 10;
-  const gt = ridge + 34;
-  const rand = rng(1919);
-  for (let y = gt; y < gb; y++) {
-    const t = (y - gt) / (gb - gt);
-    const hw = 6 + ((gr - gl) / 2 - 6) * t;
-    for (let x = Math.round(cx - hw); x < cx + hw; x++) {
-      const row = Math.floor((y - gt) / 9);
-      const col = Math.floor((x - gl) / 10);
-      px(c, x, y, (row * 7 + col * 3) % 5 === 0 ? '#9fb4c4' : rand() > 0.98 ? '#dfe9ef' : '#7f97ab');
+  // the roof's edge along the top, catching the light
+  line(c, cx - gHalf - 4, shoulder + 2, cx, ridge - 1, '#f8f9f8', 2);
+  line(c, cx, ridge - 1, cx + gHalf + 4, shoulder + 2, '#f8f9f8', 2);
+  line(c, cx - gHalf - 4, shoulder + 4, cx, ridge + 1, '#9fa3a6', 1);
+  line(c, cx, ridge + 1, cx + gHalf + 4, shoulder + 4, '#9fa3a6', 1);
+  // the ventilator box on the ridge, with its own little roof
+  rect(c, cx - 9, ridge - 9, 18, 9, '#dfe1df');
+  for (let x = cx - 8; x < cx + 9; x += 2) rect(c, x, ridge - 7, 1, 6, '#b9bcbd');
+  poly(c, [[cx - 12, ridge - 9], [cx + 12, ridge - 9], [cx, ridge - 15]], '#f2f3f1');
+
+  // the big window: its bottom level above the lower roof, its top level, its ends following the roof slope
+  const wb = wallFoot - 8;
+  const wt = ridge + 18;
+  const wl = cx - gHalf * 0.66;
+  const wr = cx + gHalf * 0.66;
+  const inside = (x: number, y: number) => y < wb && y > wt && x > wl && x < wr && y > roofY(x) + 8;
+  // the arched bar: a circle centred low on the window
+  const ar = (wr - wl) * 0.42;
+  for (let y = Math.round(wt); y < wb; y++) {
+    for (let x = Math.round(wl); x < wr; x++) {
+      if (!inside(x, y)) continue;
+      const col = Math.floor((x - wl) / 9);
+      const louvre = col === 0 || col === 3 || col === 9 || col === 13;
+      let colour: string;
+      if (louvre) colour = (y - wt) % 2 ? '#c9cccd' : '#e4e6e6';
+      else {
+        const gx = (x - wl) % 9;
+        const gy = (y - wt) % 8;
+        colour = gx === 0 || gy === 0 ? '#eef1f2' : (y - wt) < 10 ? '#8fa6b8' : '#6f879a';
+      }
+      if (Math.abs(Math.hypot(x - cx, (y - wb) * 1.15) - ar) < 0.8) colour = '#eef1f2';
+      px(c, x, y, colour);
     }
   }
-  for (let y = gt + 9; y < gb; y += 9) {
-    const t = (y - gt) / (gb - gt);
-    const hw = 6 + ((gr - gl) / 2 - 6) * t;
-    rect(c, cx - hw, y, hw * 2, 1, '#eef1f2');
+  // its frame
+  rect(c, wl - 1, wb, wr - wl + 2, 2, '#eef1f2');
+
+  // the lower roof: its sheeting seen edge on along the front, and the gutter
+  rect(c, cx - half - 14, wallFoot, w + 28, gutter - wallFoot, '#c9ccc9');
+  for (let x = cx - half - 14; x < cx + half + 14; x += 3) rect(c, x, wallFoot, 1, gutter - wallFoot, '#b4b8b6');
+  rect(c, cx - half - 14, wallFoot, w + 28, 1, '#e9ebea');
+  rect(c, cx - half - 16, gutter - 3, w + 32, 3, '#e7e9ea');
+  rect(c, cx - half - 16, gutter, w + 32, 1, '#7d8186');
+  // a downpipe from the gutter
+  rect(c, cx - half * 0.2, gutter, 2, base - gutter, '#b9bcc1');
+
+  // the steel mesh fence along the front, a top rail, posts, and the low kerb wall it stands on
+  rect(c, cx - half - 14, base - 5, w + 28, 5, '#b9b6ae');
+  rect(c, cx - half - 14, base - 5, w + 28, 1, '#d6d3cb');
+  for (let x = cx - half - 12; x < cx + half + 12; x += 4) {
+    for (let y = base - 34; y < base - 5; y += 4) px(c, x + ((y >> 2) & 1) * 2, y, 'rgba(206,210,214,0.55)');
   }
-  for (let x = gl; x <= gr; x += 10) {
-    const top = gt + (Math.abs(x - cx) / ((gr - gl) / 2)) * (gb - gt);
-    if (top < gb) rect(c, x, Math.max(gt, top), 1, gb - Math.max(gt, top), '#eef1f2');
+  for (const y of [base - 35, base - 24, base - 6]) rect(c, cx - half - 14, y, w + 28, 1, '#d4d8dc');
+  for (let x = cx - half - 14; x <= cx + half + 14; x += 32) {
+    rect(c, x, base - 36, 2, 31, '#c9ced3');
+    rect(c, x, base - 36, 1, 31, '#eef0f2');
   }
-  rect(g, gl, gt, gr - gl, gb - gt, 'rgba(255,240,200,0.0)');
-  // the trim along the roof edges and the little vent box at the ridge
-  line(c, cx - inner - 2, shoulder - 24, cx, ridge - 1, '#f8f9f8', 2);
-  line(c, cx, ridge - 1, cx + inner + 2, shoulder - 24, '#f8f9f8', 2);
-  rect(c, cx - 8, ridge - 8, 16, 8, '#dfe1df');
-  poly(c, [[cx - 10, ridge - 8], [cx + 10, ridge - 8], [cx, ridge - 14]], '#f2f3f1');
-  rect(c, cx - inner, shoulder, inner * 2, 4, '#d9dbd8');
-  rect(c, cx - inner, shoulder + 4, inner * 2, 1, '#9fa3a6');
-  // the steel mesh fence along the front, on a low kerb
-  rect(c, cx - half - 14, base - 4, w + 28, 4, '#b9b6ae');
-  for (let x = cx - half - 12; x < cx + half + 12; x += 2) rect(c, x, base - 26, 1, 22, 'rgba(180,186,192,0.75)');
-  for (const y of [base - 27, base - 15, base - 5]) rect(c, cx - half - 14, y, w + 28, 1, '#d4d8dc');
-  for (let x = cx - half - 14; x < cx + half + 14; x += 30) rect(c, x, base - 28, 2, 28, '#c9ced3');
+  // the gate in it, swung open
+  rect(c, cx + half * 0.05, base - 36, 2, 31, '#9aa0a6');
 }
 
 // --- inside ------------------------------------------------------------------------------------------------
