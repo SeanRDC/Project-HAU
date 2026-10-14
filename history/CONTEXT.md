@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-14 (the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
+Last updated: 2026-10-14 (the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -26,7 +26,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Map teleport | Pick any place on the C map and jump there | Stand-in while the campus is only partly walkable. Switch off with `TELEPORT` in `src/game/ui/map.ts` once it is all joined up on foot |
 
 ## What Exists
-Twenty-two connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
+Twenty-four connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
 
 The first six, with people and story:
 
@@ -46,6 +46,8 @@ The seven campus streets, outsides only, no people yet:
 * **Chapel lawn** (`lawn.ts`) - not a lawn but a paved parking lot, cars nosed in (`carEnd` in `art/street.ts`), in front of the Chapel of the Holy Guardian Angel: four white rings drawn as discs round a drum so they wrap round the back, over a glass front. The shady corner with the picnic sheds and bamboo, and the formation center behind. The junction the campus turns on.
 * **St. Joseph Hall** (`sjh.ts`) - SJH, MGN and the corner of the gym. The School of Computing sign is here.
 * **Gym lane** (`gym.ts`) - Covered Court, then the front of the Immaculate Heart Gymnasium drawn from photos (`art/ihgym.ts`): HOLY ANGEL UNIVERSITY on the fascia, the left door up steps under a grey box canopy, the right door under the seal and GYM sign, cars, green tents and tyres along it, and the dark annex with the seal painted big on it. The lane between the covered court and the gym goes round to the side entrance.
+* **Covered Court** (`ccourt.ts`, art in `art/ccourt.ts`, story in `story/ccourt.ts`) - in from the gym lane (its front, the gable with the fan of glass, is drawn on the gym lane) or from the lane by the IH Gym's side entrance. You walk its length looking at the steel bleachers on the gym side, the IH Gym's gable end beyond: the maroon basketball court with the winged seal, the red volleyball court and the badminton court beyond it, and the yellow AERO LABORATORY gate at the far end. NPCs: Dennis, Joanna, Kiko.
+* **Aero Laboratory** (`aerolab.ts`) - through the small door in the gate: the hangar with ANGEL-1, an older trainer with a dark red wing, two jet engines in yellow frames. NPCs: Lance, Engr. Dizon.
 * **IH Gym** (six scenes, art in `art/ihgymin.ts`, story in `story/ihgym.ts`) - the side entrance on the gable end (`gymside.ts`); the lobby inside it, looking down the court through the gates (`gymlobby.ts`); the corridor in from the front's left door, with the equipment room and the stairs up (`gymcorridor.ts`); the court with the far bleachers, the striped wall and the sound panels (`gymhall.ts`); the stage with WELCOME ANGELITES (`gymstage.ts`, exports `STAGE` for events); the second-floor walkway in front of the bleachers (`gymupper.ts`). NPCs: Rica, Paolo, Migo, Jomar, Coach Gab, Bianca. See `sessions/2026-10-14-ih-gym.md` for how they join.
 
 Every building's door names it, gives its number on the 2022 campus map and the offices inside, and says it is not open yet.
@@ -77,6 +79,7 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * An area can have a `barrier`: an x the player can't cross leftwards until a flag is set.
 * Main Gate flags: `passed_bag_check`, `id_fumble`, `scanned_id`, `met_joy`, `met_ella`.
 * Entryway flags: `met_weng` (Ate Weng explained the stairs), `saw_flag` (looked at the flagpole). Neither is a checklist task yet.
+* Covered Court flags: `visited_ccourt`, `saw_ccourt`, `visited_aero`, `saw_angel1`, `met_lance`.
 * IH Gym flags: `entered_gym` (first time on the court), `saw_gym`, `saw_stage`, `saw_equipment`, `met_jomar`.
 * **Money:** a line with `pesos: -20, item: 'Taho'` spends ₱20 when it is shown (positive gives money). `g.pesos()` says how much is left, so a talk function can offer a cheaper line when the player is short. `buy()` in `story/streets.ts` makes a menu choice that does both. New games start with ₱150 (`BAON` in `game.ts`).
 * **Weather:** `g.raining()` is true while it rains, for lines like Manong Taho's and Mang Bong's. Rain is in `src/game/weather.ts`.
