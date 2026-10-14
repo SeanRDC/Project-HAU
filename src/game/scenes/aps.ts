@@ -1,76 +1,154 @@
-// The back road carrying on past the corner of GGN, still looking north-west.
+// The road from the chapel lawn along the front of APS to the gym lane,
+// looking north-west, laid out in the order of the photos in
+// `assets/APS WALK FROM CHAPEL LAWN/` (taken walking it from the lawn).
 // Almost the whole scene is one building, the hundred-metre Archbishop Pedro
-// Santos Building, with the Sacred Heart Building at the far end. The chapel
+// Santos Building. First its long four-floor wing (art/aps.ts): louvred bays
+// and a strip of garden at the lawn end, then the deep canopy over the main
+// entrance with its diamond-tiled paving. Where the canopy ends, the tall
+// block with the curved balconies, the bust and the campus map; then the
+// plain stair tower; then the canteen block, the wing that turns towards the
+// lawn, with the canteen open on its ground floor (art/canteen.ts). The brick
+// patio with its umbrellas runs along the front of those three. Past the
+// canteen the lane to the covered court and the gym turns off. Sacred Heart
+// is behind the canteen block, reached through the stair tower. The chapel
 // and its lawn are behind the camera.
 
 import { VIEW_H, makeCanvas } from '../../engine/display';
-import { facade, nameWall } from '../art/buildings';
-import { ggnCorner } from '../art/ggn';
+import { rect } from '../../engine/pix';
+import { hex } from '../../engine/math';
+import { bamboo, bottleCage, bust, cafeUmbrella, drawAPS, groundShadow, herringbone, pgnBack, pottedTree, siteFence, twinLantern } from '../art/aps';
+import { arecaPalm, balconyBlock, campusMapBoard, canteenBlock, canteenEnd, courtGable, pergola, stairTower } from '../art/canteen';
 import { P } from '../art/palette';
-import { bush, hedge, palm, signBoard, stoneBench, tree } from '../art/props';
+import { hedge, pot, signBoard, tree } from '../art/props';
 import { BUILDINGS, PLACES } from '../campus/plan';
 import { STREETS, frontage, streetWidth, xOf } from '../campus/streets';
 import { apsHotspots } from '../story/streets';
 import { AreaDef, AreaLight } from '../types';
-import { GROUND, WALK, ambience, doorLight, endWall, farCity, frontPlants, lamp, midCampus, road } from './kit';
+import { GROUND, WALK, ambience, doorLight, farCity, frontPlants, lamp, lawnStrip, midCampus, road } from './kit';
 
 const S = STREETS.aps;
 const WIDTH = streetWidth(S);
 const CORNER_X = xOf(S, PLACES.northJunction);
 const GYM_LANE_X = xOf(S, PLACES.northEastJunction);
-const [APS_L, APS_R] = frontage(S, BUILDINGS.aps.blocks[0]);
-const [SH_L] = frontage(S, BUILDINGS.sh.blocks[0]);
+const [APS_L] = frontage(S, BUILDINGS.aps.blocks[0]);
+/** the wing of APS that turns towards the lawn: the canteen block */
+const [WING_L, WING_R] = frontage(S, BUILDINGS.aps.blocks[1]);
 
-const APS_X = APS_L + 22;
-const APS_W = APS_R - APS_L - 30;
-/** a building this long has more than one way in */
-const APS_DOORS = [Math.round(APS_W * 0.2), Math.round(APS_W * 0.5), Math.round(APS_W * 0.8)];
-const SH_X = SH_L + 10;
-const SH_W = WIDTH - 22 - SH_X;
-const SH_DOOR = SH_X + 110;
+/**
+ * The long wing starts a little in from the plan's corner of APS, so the back
+ * of PGN shows at the lawn end with the bamboo and the netted structure in
+ * the gap, as in photo 06 of the walk.
+ */
+const PGN_R = APS_L + 82;
+const APS_X = PGN_R + 26;
+/** the canteen block takes the turned wing's frontage, up to the gym lane */
+const CANTEEN_X = WING_L;
+const CANTEEN_W = Math.min(WING_R, GYM_LANE_X - 20) - CANTEEN_X;
+/** the stair tower, and the tall block with the curved balconies before it */
+/** the canteen block's end wall, seen at an angle past its front, with the fire escape on it */
+const END_W = 22;
+const CANTEEN_END = CANTEEN_X + CANTEEN_W + END_W;
+/** the canteen block's height to its parapet, from art/canteen.ts */
+const CANTEEN_H = 60 + 4 * 22 + 6;
+const TOWER_W = 54;
+const TOWER_X = CANTEEN_X - TOWER_W;
+const TOWER_H = 178;
+const TALL_W = 232;
+const TALL_X = TOWER_X - TALL_W;
+/** the long wing runs from the lawn end up to the tall block */
+const APS_W = TALL_X - APS_X;
+/** the canopy over the main entrance, at the tall block end of the long wing */
+const CANOPY_HALF = 104;
+const MAIN_DOOR = APS_W - CANOPY_HALF - 10;
+const CANOPY_L = APS_X + MAIN_DOOR - CANOPY_HALF - 8;
+/** one plain way in at the lawn end, then the main one under the canopy */
+const APS_DOORS = [116, MAIN_DOOR];
+/** the bays with louvres on the middle floors, at the lawn end */
+const LOUVRE_BAYS = 6;
+/** the door at the foot of the stair tower; Sacred Heart, behind the canteen block, is reached through the back of the canteen */
+const SH_DOOR = TOWER_X + 7;
 
-function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement } {
+function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement; canteenDoor: number } {
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
   const [glow, g] = makeCanvas(WIDTH, VIEW_H);
 
-  tree(c, APS_R + 4, GROUND + 2, 100, 30, 2701);
+  // past the canteen (photos 21 to 23 of the walk): the covered court's white gable over big shade trees,
+  // and the vine-covered pergola along the lane
+  courtGable(c, CANTEEN_END + 6, WIDTH - CANTEEN_END, GROUND - 4);
+  tree(c, WIDTH - 22, GROUND + 2, 104, 26, 2701);
+  pergola(c, CANTEEN_END + 14, WIDTH + 10, GROUND + 2, 2703);
 
-  // the corner of GGN, cut off by the edge of the scene: the louvred tower at its far end
-  ggnCorner(c, -40, 40 + APS_X - 36, GROUND);
+  // the back of PGN, cut off by the edge of the scene
+  pgnBack(c, g, -40, PGN_R + 40, GROUND);
 
-  facade(c, g, APS_X, APS_W, GROUND, {
-    floors: 4, style: 'corridor', wall: '#e9e4d4', accent: P.maroon, doors: APS_DOORS, name: 'APS', seed: 61,
+  // the long wing: louvres at the lawn end, the canopy at the far end; the building's name on the canopy
+  drawAPS(c, g, APS_X, APS_W, GROUND, {
+    doors: APS_DOORS, main: 1, canopyHalf: CANOPY_HALF, louvreBays: LOUVRE_BAYS, name: 'ARCHBISHOP PEDRO SANTOS BUILDING', seed: 61,
   });
   for (const dx of APS_DOORS) doorLight(lights, APS_X + dx);
 
-  // Sacred Heart: engineering and architecture
-  facade(c, g, SH_X, SH_W, GROUND, {
-    floors: 5, style: 'ribbon', wall: '#eef0ee', glass: '#3f8f9c', accent: '#2f6b8a', doors: [SH_DOOR - SH_X], name: 'SH', seed: 62,
-  });
+  // the tall block, the stair tower and the canteen block
+  balconyBlock(c, g, TALL_X, TALL_W, GROUND);
+  stairTower(c, TOWER_X, TOWER_W, GROUND, TOWER_H);
   doorLight(lights, SH_DOOR);
-  endWall(c, WIDTH - 22, WIDTH);
+  const canteenDoor = canteenBlock(c, g, CANTEEN_X, CANTEEN_W, GROUND);
+  canteenEnd(c, g, CANTEEN_X + CANTEEN_W, END_W, GROUND, CANTEEN_H);
+  doorLight(lights, canteenDoor);
 
   road(c, 0, WIDTH, 'concrete', 2710);
 
-  hedge(c, APS_X, GROUND + 3, APS_DOORS[0] - 26, 9, 2720);
-  hedge(c, APS_X + APS_DOORS[0] + 26, GROUND + 3, APS_DOORS[1] - APS_DOORS[0] - 52, 9, 2721);
-  hedge(c, APS_X + APS_DOORS[1] + 26, GROUND + 3, APS_DOORS[2] - APS_DOORS[1] - 52, 9, 2722);
-  hedge(c, APS_X + APS_DOORS[2] + 26, GROUND + 3, APS_W - APS_DOORS[2] - 30, 9, 2723);
-  for (let x = APS_X + 60; x < APS_X + APS_W - 30; x += 130) {
-    bush(c, x, GROUND + 2, 24, 14, 2730 + x);
-    stoneBench(c, x + 30, GROUND + 13, 28);
+  // the garden along the front of the long wing, up to the canopy: grass and low hedges
+  lawnStrip(c, APS_X, CANOPY_L - 2, 2719, 10);
+  hedge(c, APS_X + APS_DOORS[0] + 26, GROUND + 3, CANOPY_L - APS_X - APS_DOORS[0] - 34, 9, 2722);
+  // right where you come in from the lawn (photo 06 of the walk): a structure wrapped in green net
+  // behind a mesh fence on yellow posts, with tall clumps of bamboo either side of it
+  siteFence(c, APS_X + 26, GROUND + 2, 64, 21);
+  bamboo(c, APS_X - 22, GROUND + 3, 54, 128, 2730);
+  bamboo(c, APS_X + 80, GROUND + 3, 30, 100, 2731);
+  for (const [i, dx] of [-8, 8].entries()) pot(c, CANOPY_L + dx, GROUND + 4, 2740 + i);
+
+  // under the canopy, the white tiles with the red diamonds, out to the kerb
+  // the canopy's shadow reaching out over the sidewalk
+  rect(c, CANOPY_L - 8, GROUND, TALL_X - CANOPY_L + 8, 5, 'rgba(40, 30, 44, 0.18)');
+  rect(c, CANOPY_L - 8, GROUND, TALL_X - CANOPY_L + 8, 2, 'rgba(40, 30, 44, 0.12)');
+  // where the canopy meets the tall block: the potted ficus, the bust, the campus map and the bottle cage
+  herringbone(c, TALL_X, CANTEEN_X + CANTEEN_W, GROUND, 14, 2750);
+  // the buildings' shade along their feet
+  rect(c, 0, GROUND, CANOPY_L - 8, 1, 'rgba(40, 30, 44, 0.16)');
+  rect(c, TALL_X, GROUND, CANTEEN_X + CANTEEN_W - TALL_X, 2, 'rgba(40, 30, 44, 0.16)');
+  groundShadow(c, TALL_X - 14, GROUND + 7, 11, 2);
+  pottedTree(c, TALL_X - 16, GROUND + 6, 2751);
+  groundShadow(c, TALL_X + 10, GROUND + 9, 8, 2);
+  bust(c, TALL_X + 8, GROUND + 8);
+  campusMapBoard(c, TALL_X + 22, GROUND + 8);
+  bottleCage(c, TALL_X + 86, GROUND + 6, 26);
+  // the patio: tables under the umbrellas in front of the tall block, a crimson one among the faded red
+  cafeUmbrella(c, TALL_X + 132, GROUND + 7);
+  cafeUmbrella(c, TALL_X + 174, GROUND + 7);
+  cafeUmbrella(c, TALL_X + 214, GROUND + 7, '#a8324a');
+  // and on the patio in front of the canteen, one each side of the steps
+  cafeUmbrella(c, canteenDoor - 46, GROUND + 7);
+  cafeUmbrella(c, canteenDoor + 46, GROUND + 7, '#a8324a');
+  // areca palms in front of the canteen, young trees along the kerb
+  arecaPalm(c, CANTEEN_X + 2, GROUND + 4, 58, 2760);
+  arecaPalm(c, CANTEEN_X + CANTEEN_W + 2, GROUND + 4, 52, 2761);
+  for (const [tx, h, spread, seed] of [[TALL_X + 110, 96, 22, 2762], [TOWER_X + 32, 104, 24, 2763]]) {
+    groundShadow(c, tx + 4, GROUND + 15, spread, 3);
+    tree(c, tx, GROUND + 14, h, spread, seed);
   }
-  palm(c, SH_X - 8, GROUND + 3, 62, 2731);
-  palm(c, SH_DOOR + 60, GROUND + 3, 56, 2732);
-  nameWall(c, APS_X + APS_DOORS[1] - 130, GROUND + 14, ['ARCHBISHOP PEDRO SANTOS', 'BUILDING']);
-  nameWall(c, SH_DOOR + 110, GROUND + 14, ['SACRED HEART', 'BUILDING']);
 
   signBoard(c, CORNER_X + 4, GROUND + 5, ['CHAPEL', 'PGN'], P.maroon, P.goldHi);
-  signBoard(c, GYM_LANE_X - 6, GROUND + 5, ['COVERED COURT', 'GYM']);
+  // the lane to the covered court and the gym turns off right after the canteen
+  signBoard(c, GYM_LANE_X + 34, GROUND + 5, ['COVERED COURT', 'GYM']);
 
-  for (let x = APS_X + 40; x < APS_X + APS_W; x += 180) lamp(c, g, lights, x);
-  lamp(c, g, lights, SH_X + 40);
-  return { canvas, glow };
+  // the old bronze twin-lantern posts along the kerb
+  for (const x of [APS_X + 170, TOWER_X + TOWER_W + 18]) {
+    for (const [lx, ly] of twinLantern(c, g, x, GROUND + 14)) {
+      lights.push({ x: lx, y: ly, r: 64, color: hex(P.lamp), strength: 0.8 });
+    }
+  }
+  lamp(c, g, lights, GYM_LANE_X + 76);
+  return { canvas, glow, canteenDoor };
 }
 
 export function buildAps(): AreaDef {
@@ -80,14 +158,15 @@ export function buildAps(): AreaDef {
   return {
     id: 'aps',
     title: 'Archbishop Pedro Santos Building',
-    subtitle: 'Hanggang Sacred Heart Building',
+    subtitle: 'Hanggang canteen at gym lane',
     width: WIDTH,
     walkY: WALK,
     bounds: [24, WIDTH - 40],
     outdoor: true,
     layers: [
       farCity(WIDTH, 271),
-      midCampus(WIDTH, 272, []),
+      // Sacred Heart, tall and white with blue glass, rising behind the canteen block
+      midCampus(WIDTH, 272, [{ x: CANTEEN_X + 110, w: 150, h: 176, wall: '#eef0ee', glass: '#4f7fc8' }]),
       { canvas: main.canvas, parallax: 1 },
       frontPlants(WIDTH, 273),
     ],
@@ -95,17 +174,21 @@ export function buildAps(): AreaDef {
     lights,
     hotspots: apsHotspots({
       halls: 30,
-      lawn: CORNER_X + 34,
-      aps: APS_X + APS_DOORS[1],
+      // just past the junction, clear of the back road sign and the main door under the canopy
+      lawn: CORNER_X + 10,
+      aps: APS_X + MAIN_DOOR,
+      canteen: main.canteenDoor,
       gym: GYM_LANE_X,
       sh: SH_DOOR,
     }),
     npcs: [],
     spawns: {
       halls: { x: 44, facing: 1 },
-      lawn: { x: CORNER_X + 40, facing: 1 },
+      lawn: { x: CORNER_X + 16, facing: 1 },
+      canteen: { x: main.canteenDoor, facing: 1 },
+      apslobby: { x: APS_X + MAIN_DOOR, facing: 1 },
       gym: { x: GYM_LANE_X + 6, facing: -1 },
     },
-    update: ambience(274, [APS_R + 4]),
+    update: ambience(274, [WIDTH - 22, TALL_X + 110, TOWER_X + 32]),
   };
 }

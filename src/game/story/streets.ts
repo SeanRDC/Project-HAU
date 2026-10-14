@@ -10,7 +10,7 @@ import { Choice, GameApi, Hotspot, Line } from '../types';
 import { closedDoor, deadEnd, wayTo } from './campus';
 
 /** A menu choice that costs `price` out of your baon, or tells you you are short. */
-function buy(g: GameApi, item: string, price: number, lines: Line[]): Choice {
+export function buy(g: GameApi, item: string, price: number, lines: Line[]): Choice {
   const text = `${item} (₱${price})`;
   if (g.pesos() < price) {
     return { text, then: [{ who: '', text: `Kinapa mo ang bulsa mo. ₱${g.pesos()} na lang ang natitira.` }] };
@@ -97,13 +97,15 @@ export function hallsHotspots(x: {
   ];
 }
 
-export function apsHotspots(x: { halls: number; lawn: number; aps: number; gym: number; sh: number }): Hotspot[] {
+export function apsHotspots(x: { halls: number; canteen: number; lawn: number; aps: number; gym: number; sh: number }): Hotspot[] {
   return [
     wayTo('halls', x.halls, 'Bumalik sa back road', 'halls', 'aps'),
+    wayTo('canteen', x.canteen, 'Pumasok sa canteen', 'canteen', 'front', 60),
     wayTo('lawn', x.lawn, 'Pumunta sa chapel lawn', 'lawn', 'aps', 30),
-    closedDoor('aps', x.aps, BUILDINGS.aps),
+    wayTo('aps', x.aps, 'Pumasok sa APS lobby', 'apslobby', 'front', 60),
     wayTo('gym', x.gym, 'Pumunta sa covered court at gym', 'gym', 'aps', 30),
-    closedDoor('sh', x.sh, BUILDINGS.sh),
+    // Sacred Heart is behind the canteen block, reached through the back of the canteen; this is just the stair tower's door
+    deadEnd('tower', x.sh, 'Tingnan ang pinto', 'Ang pinto sa paanan ng hagdan ng APS. Naka-lock. May papel: "Sa canteen po ang daan papuntang Sacred Heart."'),
   ];
 }
 

@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-14 (GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
+Last updated: 2026-10-14 (APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -25,7 +25,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Map teleport | Pick any place on the C map and jump there | Stand-in while the campus is only partly walkable. Switch off with `TELEPORT` in `src/game/ui/map.ts` once it is all joined up on foot |
 
 ## What Exists
-Twelve connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
+Fifteen connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
 
 The first six, with people and story:
 
@@ -41,8 +41,8 @@ The seven campus streets, outsides only, no people yet:
 * **Chapel Walkway** (`walkway.ts`) - brick sidewalk from the rotunda to the lawn, past STL and the PGN tower. Lamps and waving flags.
 * **Parking Lane** (`lane.ts`) - STL with the PGN tower over it; SFJ is behind the camera.
 * **Back Road** (`halls.ts`) - warehouse, Yellow Food Court, St. Gabriel, St. Raphael and St. Michael Halls, then GGN drawn from photos (`art/ggn.ts`): its whole front, 53 m wide and taller than the screen.
-* **APS** (`aps.ts`) - the Archbishop Pedro Santos Building and Sacred Heart.
-* **Chapel lawn** (`lawn.ts`) - the Chapel of the Holy Guardian Angel across its lawn, the formation center behind. The junction the campus turns on.
+* **APS** (`aps.ts`, art in `art/aps.ts` and `art/canteen.ts`) - drawn from the walk photos in the order you pass it: the back of PGN, the long louvred wing, the canopy, the curved-balcony block, the stair tower and the canteen block, with the umbrella patio in front. Three scenes lead off it: the lobby under the canopy (`apslobby.ts`), the canteen (`canteen.ts`) and its back hallway (`canteenback.ts`), which is the way through to Sacred Heart.
+* **Chapel lawn** (`lawn.ts`) - not a lawn but a paved parking lot, cars nosed in (`carEnd` in `art/street.ts`), in front of the Chapel of the Holy Guardian Angel: four white rings drawn as discs round a drum so they wrap round the back, over a glass front. The shady corner with the picnic sheds and bamboo, and the formation center behind. The junction the campus turns on.
 * **St. Joseph Hall** (`sjh.ts`) - SJH, MGN and the corner of the gym. The School of Computing sign is here.
 * **Gym lane** (`gym.ts`) - Covered Court, Immaculate Heart Gymnasium, the annex.
 
@@ -110,5 +110,6 @@ See `sessions/2026-10-12-minimap-teleport-and-plans.md` for the details.
 * No touch controls (it loads on a phone but you cannot move).
 * Real sprite art and recorded audio. `assets/drafts/girl-test/` is a test of sprite sheets made from one AI-generated girl image (idle, front walk, talking with expressions). The game does not use it.
 * The Godot 4 port.
+* The photos in `assets/APS WALK FROM CHAPEL LAWN/` are kept local, not committed: they show number plates and people. Ask Mikko for them.
 * The reference images in `assets/` are committed as of 2026-10-12, at Sean's decision, so the team shares them. They are Google Earth, university and found-online material, references only: the game does not load them.
 * The older `docs/`, `assets/` and `tools/` READMEs still describe the original top-down plan in places.

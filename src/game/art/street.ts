@@ -141,6 +141,40 @@ export function car(c: Ctx, x: number, base: number, body: string, facing: 1 | -
 }
 
 /**
+ * A car parked nose-in, seen end on: its back towards you, or its front if it
+ * was reversed in. `tall` makes it an SUV, higher and boxier.
+ */
+export function carEnd(c: Ctx, x: number, base: number, body: string, front = false, tall = false): void {
+  const lift = tall ? 3 : 0;
+  const top = base - 21 - lift * 2;
+  const belt = base - 13 - lift;
+  ellipse(c, x, base, 17, 1.5, 'rgba(20,14,34,0.35)');
+  // tyres peeking out under the body
+  for (const tx of [x - 14, x + 10]) rect(c, tx, base - 5, 4, 5, '#1c1b20');
+  // the cabin and its glass, the roof catching the light
+  poly(c, [[x - 13, belt], [x - 10, top], [x + 10, top], [x + 13, belt]], shade(body, 0.08));
+  rect(c, x - 9, top, 19, 1, shade(body, 0.35));
+  poly(c, [[x - 11, belt - 1], [x - 8, top + 2], [x + 8, top + 2], [x + 11, belt - 1]], '#3a4a60');
+  line(c, x - 6, belt - 2, x - 2, top + 3, '#6a7d98', 1);
+  line(c, x - 3, belt - 2, x + 1, top + 3, '#52647e', 1);
+  if (front) for (const s of [-1, 1]) rect(c, x + s * 15 - (s > 0 ? 1 : 0), belt - 3, 2, 2, body);
+  // the body below the glass, with a highlight along its shoulder and a dark bumper
+  rect(c, x - 15, belt, 31, base - 4 - belt, body);
+  rect(c, x - 15, belt, 31, 1, shade(body, 0.3));
+  rect(c, x - 15, base - 6, 31, 2, shade(body, -0.35));
+  if (front) {
+    rect(c, x - 6, belt + 3, 13, 3, '#26242a');
+    for (const s of [-1, 1]) rect(c, x + s * 11 - 2, belt + 2, 5, 2, '#fff0b8');
+  } else {
+    for (const s of [-1, 1]) rect(c, x + s * 11 - 2, belt + 2, 5, 2, '#b8322e');
+    rect(c, x - 3, belt + 2, 7, 1, shade(body, -0.2));
+  }
+  // the number plate
+  rect(c, x - 4, base - 9, 9, 3, '#f2f0e6');
+  rect(c, x - 3, base - 8, 7, 1, '#4a4a52');
+}
+
+/**
  * The statue in the rotunda fountain: the Holy Guardian Angel standing behind
  * two children reading a book, in reddish-brown stone, on an eight-sided
  * pedestal with a plaque and a ram's-head spout on each side.
