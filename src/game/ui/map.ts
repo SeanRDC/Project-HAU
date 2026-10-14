@@ -41,6 +41,8 @@ export const STOPS: [string, string][] = [
   ['gymhall', 'front'],
   ['gymstage', 'court'],
   ['gymupper', 'stairs'],
+  ['ccourt', 'front'],
+  ['aerolab', 'door'],
 ];
 
 export interface Stop {

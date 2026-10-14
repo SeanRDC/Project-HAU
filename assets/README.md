@@ -13,6 +13,7 @@ They are all in `images/`: one folder per building in `images/buildings/`, the s
 | `images/buildings/PANERGO AND GIL APS BUILDING/` | The Archbishop Pedro Santos (APS) Building | Not yet. The APS scene (`src/game/scenes/aps.ts`) still uses a generic facade |
 | `images/sidegate entryway/` | The side gate entryway: the walkway, the flag plaza close up (`closer view.jpg`), its floor pattern, the steps down toward SFJ, and pans left and right from SFJ | Yes, `src/game/art/entry.ts` (scene `src/game/scenes/entry.ts`) |
 | `images/buildings/ih_gym immaculate heart/` | The Immaculate Heart Gymnasium, outside and in: the front with its two entrances, the left side entrance by the covered court, the lobby, the corridor with the equipment room and stairs, the court, the stage and the second-floor bleachers | Yes, `src/game/art/ihgym.ts` (outside) and `src/game/art/ihgymin.ts` (inside) |
+| `images/buildings/covered court beside IH/` | The Covered Court beside the IH Gym: its front gable, the basketball court, the bleachers, the volleyball and badminton courts, the Aero Laboratory gate and the planes inside | Yes, `src/game/art/ccourt.ts` |
 | `images/other references/` | Aerial shots, the campus map, eye-level photos and a few odd references, listed below | Mostly |
 
 ### `images/other references/`

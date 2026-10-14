@@ -157,6 +157,9 @@ const FIXED: Record<string, { x0: number; a: Spot; x1: number; b: Spot }> = {
   gymcorridor: { x0: 0, a: { u: 66, v: 12 }, x1: 500, b: { u: 53, v: 12 } },
   gymhall: { x0: 0, a: { u: 66, v: 8 }, x1: 780, b: { u: 66, v: 70 } },
   gymstage: { x0: 0, a: { u: 82, v: 70 }, x1: 600, b: { u: 58, v: 70 } },
+  // the covered court along its length, from the aero lab at its far end to the gym lane; the aero lab at the far end
+  ccourt: { x0: 0, a: { u: 98, v: -22 }, x1: 1120, b: { u: 45, v: -22 } },
+  aerolab: { x0: 0, a: { u: 97, v: -32 }, x1: 720, b: { u: 97, v: -10 } },
   gymupper: { x0: 0, a: { u: 58, v: 8 }, x1: 780, b: { u: 58, v: 70 } },
   courtyard: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },
   // the canteen is in the east wing of APS, by the lane to the gym
