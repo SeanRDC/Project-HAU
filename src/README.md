@@ -32,7 +32,7 @@ Add these to the URL to jump straight somewhere while testing:
 
 `http://localhost:5173/?area=courtyard&x=500&hour=19&talk=bea`
 
-* `area` - `gate`, `park`, `plaza`, `lobby`, `courtyard`, `walkway`, `lane`, `halls`, `aps`, `lawn`, `sjh`, `gym`, `canteen` or `apslobby` (`?area=gate` with no flags plays the bag check cutscene; add `&flags=passed_bag_check` to skip it)
+* `area` - `gate`, `park`, `plaza`, `lobby`, `courtyard`, `walkway`, `lane`, `halls`, `aps`, `lawn`, `mgn`, `sjh`, `gym`, `canteen` or `apslobby` (`?area=gate` with no flags plays the bag check cutscene; add `&flags=passed_bag_check` to skip it)
 * `x` - where to stand
 * `hour` - time of day, 0 to 24
 * `talk` - start talking to an NPC by id

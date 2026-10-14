@@ -42,10 +42,11 @@ export const STREETS = {
     path: [PLACES.northJunction, PLACES.walkwayEnd, PLACES.southJunction],
     looks: 'NE',
     lead: 60,
-    tail: 60,
+    // it ends just past the last car in front of the chapel, at the way on to MGN
+    tail: 100,
   },
-  /** the road in front of St. Joseph Hall, from the gym back to the lawn */
-  sjh: { id: 'sjh', path: [PLACES.gymCorner, PLACES.southJunction], looks: 'SE', lead: 70, tail: 200 },
+  /** the road in front of St. Joseph Hall, from the gym; past its end the road bends round the statue of Mary to MGN (its own scene) */
+  sjh: { id: 'sjh', path: [PLACES.gymCorner, PLACES.southJunction], looks: 'SE', lead: 70, tail: 140 },
   /** the lane behind the chapel, past the covered court and the gym */
   gym: { id: 'gym', path: [PLACES.northEastJunction, PLACES.gymCorner], looks: 'NE', lead: 80, tail: 420 },
 } satisfies Record<string, Street>;
@@ -149,6 +150,8 @@ const FIXED: Record<string, { x0: number; a: Spot; x1: number; b: Spot }> = {
   // the canteen is in the east wing of APS, by the lane to the gym
   canteen: { x0: 0, a: BUILDINGS.aps.blocks[1].at, x1: 1, b: BUILDINGS.aps.blocks[1].at },
   canteenback: { x0: 0, a: BUILDINGS.aps.blocks[1].at, x1: 1, b: BUILDINGS.aps.blocks[1].at },
+  // the road along MGN, between SJH (left) and the chapel lawn (right)
+  mgn: { x0: 0, a: BUILDINGS.mgn.blocks[0].at, x1: 1, b: BUILDINGS.mgn.blocks[0].at },
   // the lobby under the canopy of APS's long wing
   apslobby: { x0: 0, a: BUILDINGS.aps.blocks[0].at, x1: 1, b: BUILDINGS.aps.blocks[0].at },
 };
