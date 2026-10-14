@@ -10,7 +10,7 @@ This directory holds Project HAU's media. Right now that is mostly **reference p
 | --- | --- | --- |
 | `GGN BUILDING/` | The long front of GGN: the lobby, the canopy, the floor slabs and the louvred towers | Yes, `src/game/art/ggn.ts` |
 | `PANERGO AND GIL APS BUILDING/` | The Archbishop Pedro Santos (APS) Building | Not yet. The APS scene (`src/game/scenes/aps.ts`) still uses a generic facade |
-| `sidegate entryway/` | The side gate entryway: the front, a close-up, the floor pattern, the view toward SFJ and pans left and right from SFJ | Not yet |
+| `sidegate entryway/` | The side gate entryway: the walkway, the flag plaza close up (`closer view.jpg`), its floor pattern, the steps down toward SFJ, and pans left and right from SFJ | Yes, `src/game/art/entry.ts` (scene `src/game/scenes/entry.ts`) |
 | `HAU_GYMNASIUM/` | Waiting for the gymnasium photos (only a placeholder file so far) | No |
 | `other references/` | Aerial shots, the campus map, eye-level photos and a few odd references, listed below | Mostly |
 
