@@ -6,8 +6,9 @@ import { Ctx, VIEW_H, VIEW_W } from '../engine/display';
 import { Input } from '../engine/input';
 import { clamp } from '../engine/math';
 import { Area } from './area';
-import { playerName } from './art/player';
+import { character, playerName } from './art/player';
 import { PORTRAIT_SIZE, portrait } from './art/portrait';
+import { drawPortrait, portraitReady, portraitSize } from './art/sprites';
 import { Line } from './types';
 import { GOLD, INK, MAROON, PAPER, SERIF, font, keyCap, roundRect, wrap } from './ui/draw';
 
@@ -101,10 +102,13 @@ export class Dialogue {
     const name = mine ? playerName() : area.nameOf(l.who);
     const choiceH = done && l.choices ? l.choices.length * 11 + 3 : 0;
     const face = area.portraitOf(l.who);
+    // the students' portraits are cut from their sprites and need a bigger card to show at full size
+    const painted = mine && area.playerSprite() && portraitReady(character());
+    const size = painted ? portraitSize(character()) : PORTRAIT_SIZE;
     // room on the left for the portrait
-    const pad = face ? PORTRAIT_SIZE + 5 : 0;
+    const pad = face ? size + 5 : 0;
     const w = Math.max(textW, l.choices ? 110 : 0) + 14 + pad;
-    const h = Math.max(lines.length * 9.5 + 9 + choiceH, face ? PORTRAIT_SIZE + 6 : 0);
+    const h = Math.max(lines.length * 9.5 + 9 + choiceH, face ? size + 6 : 0);
     const pop = Math.min(1, this.age * 9);
     const x = clamp(anchor.x - w / 2, 6, VIEW_W - w - 6);
     const y = Math.max(name ? 14 : 6, anchor.y - h - 7) + (1 - pop) * 4;
@@ -126,13 +130,14 @@ export class Dialogue {
       const hop = face.since < 0.25 ? Math.round(Math.sin((face.since / 0.25) * Math.PI) * 2) : 0;
       const open = this.shown < l.text.length && this.age % 0.22 < 0.12;
       const blink = (this.age * 0.37 + 0.3) % 1 > 0.96;
-      roundRect(ui, x + 3, y + 3, PORTRAIT_SIZE, PORTRAIT_SIZE, 3, mine ? 'rgba(255,255,255,0.1)' : 'rgba(124,31,44,0.1)');
+      roundRect(ui, x + 3, y + 3, size, size, 3, mine ? 'rgba(255,255,255,0.1)' : 'rgba(124,31,44,0.1)');
       ui.save();
       ui.imageSmoothingEnabled = false;
       ui.beginPath();
-      ui.rect(x + 3, y + 3, PORTRAIT_SIZE, PORTRAIT_SIZE);
+      ui.rect(x + 3, y + 3, size, size);
       ui.clip();
-      ui.drawImage(portrait(face.look, face.face, open, blink), x + 3, y + 3 - hop + 1);
+      if (painted) drawPortrait(ui, character(), x + 3, y + 3 - hop, size, face.face, this.shown < l.text.length, this.age);
+      else ui.drawImage(portrait(face.look, face.face, open, blink), x + 3, y + 3 - hop + 1);
       ui.restore();
     }
 
