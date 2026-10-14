@@ -155,7 +155,7 @@ export function sjhHotspots(x: { gym: number; education: number; sjh: number; co
   ];
 }
 
-export function gymHotspots(x: { aps: number; court: number; formation: number; gym: number; sjh: number; annex: number }): Hotspot[] {
+export function gymHotspots(x: { aps: number; court: number; formation: number; side: number; gymLeft: number; gymRight: number; sjh: number; annex: number }): Hotspot[] {
   return [
     wayTo('aps', x.aps, 'Pumunta sa APS', 'aps', 'gym'),
     {
@@ -171,7 +171,9 @@ export function gymHotspots(x: { aps: number; court: number; formation: number; 
         ]),
     },
     closedDoor('formation', x.formation, BUILDINGS.formation, true),
-    closedDoor('gym', x.gym, BUILDINGS.gym),
+    wayTo('side', x.side, 'Pumunta sa side entrance ng gym', 'gymside', 'lane', 30),
+    wayTo('gymLeft', x.gymLeft, 'Pumasok sa gym (kaliwang pinto)', 'gymcorridor', 'front', 50),
+    wayTo('gymRight', x.gymRight, 'Pumasok sa gym', 'gymhall', 'front', 50),
     wayTo('sjh', x.sjh, 'Pumunta sa St. Joseph Hall', 'sjh', 'gym', 30),
     closedDoor('annex', x.annex, BUILDINGS.annex),
   ];
