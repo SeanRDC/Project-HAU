@@ -90,13 +90,15 @@ export function buildGymSide(): AreaDef {
     ],
     glow: main.glow,
     lights,
-    hotspots: gymSideHotspots({ door: main.door, lane: LANE_X, annex: GYM_L - 30 }),
+    hotspots: gymSideHotspots({ door: main.door, lane: LANE_X, annex: GYM_L - 30, court: main.door + 90 }),
     npcs: gymSideNpcs({ door: main.door }),
     spawns: {
       // from the gym lane
       lane: { x: LANE_X - 8, facing: -1 },
       // out of the side entrance
       lobby: { x: main.door, facing: 1 },
+      // across the lane from the covered court, behind the camera
+      court: { x: main.door + 90, facing: -1 },
     },
     update: ambience(4143, [GYM_R + 70]),
   };

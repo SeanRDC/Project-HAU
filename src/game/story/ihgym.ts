@@ -13,8 +13,9 @@ import { COACH, JOMAR, PE_BOY, PE_GIRL } from './cast';
 
 // --- outside: the side entrance -----------------------------------------------------
 
-export function gymSideHotspots(x: { door: number; lane: number; annex: number }): Hotspot[] {
+export function gymSideHotspots(x: { door: number; lane: number; annex: number; court: number }): Hotspot[] {
   return [
+    wayTo('court', x.court, 'Pumasok sa Covered Court', 'ccourt', 'side', 30),
     closedDoor('annex', x.annex, BUILDINGS.annex),
     {
       id: 'canopy',
