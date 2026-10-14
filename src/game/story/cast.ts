@@ -58,6 +58,11 @@ export const JOY: Look = {
   skin: '#cf9a70', hair: '#231a1c', hairStyle: 'bun', top: '#dfe6f2', bottom: '#1e2a48', shoes: '#15141a',
 };
 
+/** the guard on the flag plaza inside the side gate: all-white uniform shirt, as in `assets/sidegate entryway/closer view.jpg` */
+export const WENG: Look = {
+  skin: '#c08a62', hair: '#1c1618', hairStyle: 'bun', top: '#f3f3f5', bottom: '#1c1e26', shoes: '#15141a', height: -1,
+};
+
 export const ELLA: Look = {
   skin: '#d9a87e', hair: '#3a2622', hairStyle: 'long', top: '#f3f0e8', bottom: '#7c1f2c', shoes: '#22202a', skirt: true,
   lace: '#7c1f2c', bag: '#4a6a8a', height: -1,

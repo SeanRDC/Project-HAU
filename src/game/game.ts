@@ -11,6 +11,7 @@ import { Cutscene, CutsceneHost } from './cutscene';
 import { Dialogue } from './dialogue';
 import { buildAps } from './scenes/aps';
 import { buildCourtyard } from './scenes/courtyard';
+import { buildEntry } from './scenes/entry';
 import { buildGate } from './scenes/gate';
 import { buildGym } from './scenes/gym';
 import { buildHalls } from './scenes/halls';
@@ -46,7 +47,7 @@ const NEW_GAME = { area: 'gate', spawn: 'street' };
 /** blip pitch per speaker so voices are told apart by ear */
 const VOICES: Record<string, number> = {
   you: 440, guard: 220, driver: 196, trisha: 587, jopet: 330, liza: 494, bea: 659, migs: 370, cat: 990, kath: 622, bong: 185, enzo: 392,
-  nonoy: 233, joy: 523, ella: 698, taho: 165, actdo: 208, mikko: 277,
+  nonoy: 233, joy: 523, ella: 698, taho: 165, actdo: 208, mikko: 277, weng: 554,
 };
 
 export class Game implements GameApi {
@@ -111,7 +112,7 @@ export class Game implements GameApi {
 
   constructor(private display: Display, private input: Input) {
     const defs: AreaDef[] = [
-      buildGate(), buildPark(), buildPlaza(), buildLobby(), buildCourtyard(),
+      buildGate(), buildEntry(), buildPark(), buildPlaza(), buildLobby(), buildCourtyard(),
       // the rest of the campus, outsides only for now
       buildWalkway(), buildLane(), buildHalls(), buildAps(), buildLawn(), buildSjh(), buildGym(),
     ];
