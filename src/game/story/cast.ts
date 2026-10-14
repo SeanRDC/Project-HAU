@@ -85,3 +85,23 @@ export const MIKKO: Look = {
 export const CAT: Look = {
   skin: '#d98b3a', hair: '#d98b3a', hairStyle: 'bald', top: '#d98b3a', bottom: '#d98b3a', shoes: '#d98b3a',
 };
+
+// the IH Gym: PE classes in the white P.E. shirt with the red shoulders and black shorts
+
+export const PE_GIRL: Look = {
+  skin: '#d9a87e', hair: '#2a1e20', hairStyle: 'long', top: '#f4f4f2', bottom: '#1c1c22', shoes: '#f2efe6', height: -1,
+};
+
+export const PE_BOY: Look = {
+  skin: '#b98457', hair: '#1c1618', hairStyle: 'short', top: '#f4f4f2', bottom: '#1c1c22', shoes: '#22202a',
+};
+
+/** the boy shooting free throws, in a maroon jersey */
+export const JOMAR: Look = {
+  skin: '#a87650', hair: '#17171c', hairStyle: 'short', top: '#7c1f2c', bottom: '#7c1f2c', shoes: '#e8e4da', height: -2,
+};
+
+/** the PE teacher: polo shirt, track pants, a whistle */
+export const COACH: Look = {
+  skin: '#b07a52', hair: '#1c1618', hairStyle: 'cap', top: '#2a3a6a', bottom: '#1c1c22', shoes: '#e8e4da', height: 1,
+};
