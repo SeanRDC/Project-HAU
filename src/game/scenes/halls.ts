@@ -1,11 +1,13 @@
 // The back road, looking north-west. From the campus wall on the left: the
 // warehouse and carpentry shop, the Yellow Food Court, then the ends of St.
 // Gabriel and St. Raphael Halls with their courtyard between them, St. Michael
-// Hall, and the tall Geromin G. Nepomuceno Building at the corner. STL and
-// PGN are behind the camera.
+// Hall, and then the Geromin G. Nepomuceno Building, far bigger than any of
+// them: its front runs on past the corner and its top is off the screen. STL
+// and PGN are behind the camera.
 
 import { VIEW_H, makeCanvas } from '../../engine/display';
-import { facade, foodCourt, nameWall, shed } from '../art/buildings';
+import { facade, foodCourt, shed } from '../art/buildings';
+import { Ggn, drawGGN } from '../art/ggn';
 import { P } from '../art/palette';
 import { bush, hedge, signBoard, stoneBench, tree } from '../art/props';
 import { BUILDINGS, PLACES } from '../campus/plan';
@@ -35,11 +37,13 @@ const SGH_DOOR = RING_L + Math.round(HALL_W / 2);
 const SRH_DOOR = SRH_L + Math.round(HALL_W / 2);
 const SMH_DOOR = Math.round((SMH_L + SMH_R) / 2);
 const FOOD_R = LANE_X - 6;
-const GGN_DOOR = GGN_L + 120;
+// GGN takes the rest of the road: about 53 m of front, as on the aerial photo
+const GGN_X = GGN_L + 4;
+const GGN_W = WIDTH - 30 - GGN_X;
 
 const HALL = { floors: 4, style: 'corridor', wall: '#ece3c4', roof: '#d9cf9f', accent: P.maroon } as const;
 
-function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement } {
+function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement; ggn: Ggn; lawnX: number } {
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
   const [glow, g] = makeCanvas(WIDTH, VIEW_H);
 
@@ -58,11 +62,14 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   facade(c, g, SMH_L + 6, SMH_R - SMH_L - 12, GROUND, { ...HALL, doors: [SMH_DOOR - SMH_L - 6], name: 'SMH', seed: 53 });
   for (const x of [SGH_DOOR, SRH_DOOR, SMH_DOOR]) doorLight(lights, x);
 
-  // the high school building: seven floors behind red and yellow fins
-  facade(c, g, GGN_L + 4, WIDTH - GGN_L - 4, GROUND, {
-    floors: 7, style: 'fins', wall: '#ece3c4', accent: '#b8322e', glass: '#3d4a63', doors: [GGN_DOOR - GGN_L - 4], name: 'GGN', seed: 54,
-  });
-  doorLight(lights, GGN_DOOR);
+  // the high school building, from the photos in assets/GGN BUILDING
+  const ggn = drawGGN(c, g, GGN_X, GGN_W, GROUND);
+  // the lobby is lit right across, and it is a big lobby
+  const [lobbyL, lobbyR] = ggn.lobby;
+  for (const x of [lobbyL + (lobbyR - lobbyL) * 0.27, lobbyL + (lobbyR - lobbyL) * 0.73]) {
+    doorLight(lights, x);
+    lights.push({ x, y: GROUND - 46, r: 96, color: [255, 214, 150], strength: 0.6 });
+  }
 
   road(c, 0, WIDTH, 'concrete', 2510);
 
@@ -71,13 +78,18 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   stoneBench(c, RING_L + HALL_W + 16, GROUND + 4, 30);
   hedge(c, SMH_R + 4, GROUND + 3, GGN_L - SMH_R - 6, 9, 2521);
   for (const x of [RING_L + 20, SRH_L + 24, SMH_L + 26]) bush(c, x, GROUND + 2, 22, 13, 2530 + x);
-  nameWall(c, GGN_L + 190, GROUND + 14, ['GEROMIN G. NEPOMUCENO', 'BUILDING']);
+  // the planting along the foot of GGN, either side of the campus map board
+  bush(c, ggn.board - 44, GROUND + 2, 26, 15, 2541);
+  bush(c, ggn.board + 38, GROUND + 2, 22, 12, 2542);
+  bush(c, lobbyR + 62, GROUND + 2, 24, 13, 2544);
 
   signBoard(c, LANE_X - 2, GROUND + 5, ['PARKING', 'ROTUNDA']);
-  signBoard(c, CORNER_X - 22, GROUND + 5, ['CHAPEL', 'PGN'], P.maroon, P.goldHi);
+  // the way to the chapel is at the corner, but its sign stands clear of GGN's steps
+  const lawnX = Math.min(CORNER_X - 22, lobbyL - 26);
+  signBoard(c, lawnX, GROUND + 5, ['CHAPEL', 'PGN'], P.maroon, P.goldHi);
 
-  for (const x of [SHED_R + 50, RING_L + HALL_W + 32, SMH_L - 22, GGN_L - 30, GGN_L + 170]) lamp(c, g, lights, x);
-  return { canvas, glow };
+  for (const x of [SHED_R + 50, RING_L + HALL_W + 32, SMH_L - 22, GGN_L - 30, lobbyR + 40]) lamp(c, g, lights, x);
+  return { canvas, glow, ggn, lawnX };
 }
 
 export function buildHalls(): AreaDef {
@@ -111,14 +123,14 @@ export function buildHalls(): AreaDef {
       sgh: SGH_DOOR,
       srh: SRH_DOOR,
       smh: SMH_DOOR,
-      ggn: GGN_DOOR,
-      lawn: CORNER_X - 22,
+      ggn: main.ggn.door,
+      lawn: main.lawnX,
       aps: WIDTH - 28,
     }),
     npcs: [],
     spawns: {
       lane: { x: LANE_X + 10, facing: 1 },
-      lawn: { x: CORNER_X - 30, facing: -1 },
+      lawn: { x: main.lawnX - 8, facing: -1 },
       aps: { x: WIDTH - 40, facing: -1 },
     },
     update: ambience(254, [SHED_R + 22, SMH_L - 6, SMH_R + 30]),

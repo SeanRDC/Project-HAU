@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-12 (the fountain plaza in front of SFJ redrawn from the aerial photo; before that, buildings from photos, the side gate and the opening screens)
+Last updated: 2026-10-14 (GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -21,6 +21,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Player | Choose Boy or Girl, then type a name, before a new game | Same rig for both (`Look`), so the girl is just a different look; the name only labels the player's speech bubbles |
 | Opening | New games start outside the Main Gate with a cutscene | Bag check and ID tap are the first thing every HAU student does each day |
 | Cutscenes | A list of steps in the story files, played by `src/game/cutscene.ts` | Writers can script scenes without touching the engine; no timeline editor to build |
+| Campus map | Follows the aerial photo where OSM disagrees with it; roofs in the photo's colours | Sean wants the C map to look like `Aerial shot of HAU enclosed in red line.png`. OSM is 7 to 14 m off the photo on the west side. Traced outlines are `TRACED` in `plan.ts`; only the map uses them, the scenes still use `blocks`. The map keeps its angle (walkway left to right), Sean's choice |
 | Map teleport | Pick any place on the C map and jump there | Stand-in while the campus is only partly walkable. Switch off with `TELEPORT` in `src/game/ui/map.ts` once it is all joined up on foot |
 
 ## What Exists
@@ -38,7 +39,7 @@ The seven campus streets, outsides only, no people yet:
 
 * **Chapel Walkway** (`walkway.ts`) - brick sidewalk from the rotunda to the lawn, past STL and the PGN tower. Lamps and waving flags.
 * **Parking Lane** (`lane.ts`) - STL with the PGN tower over it; SFJ is behind the camera.
-* **Back Road** (`halls.ts`) - warehouse, Yellow Food Court, St. Gabriel, St. Raphael and St. Michael Halls, GGN.
+* **Back Road** (`halls.ts`) - warehouse, Yellow Food Court, St. Gabriel, St. Raphael and St. Michael Halls, then GGN drawn from photos (`art/ggn.ts`): its whole front, 53 m wide and taller than the screen.
 * **APS** (`aps.ts`) - the Archbishop Pedro Santos Building and Sacred Heart.
 * **Chapel lawn** (`lawn.ts`) - the Chapel of the Holy Guardian Angel across its lawn, the formation center behind. The junction the campus turns on.
 * **St. Joseph Hall** (`sjh.ts`) - SJH, MGN and the corner of the gym. The School of Computing sign is here.
@@ -81,8 +82,8 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * **Dialogue:** written by a non-native speaker. Proofread all Taglish and especially the Kapampangan phrases ("Mayap a gatpanapun", "Dakal a salamat").
 * **History facts** in the lobby dialogue (built 1940, founded 1933 with 78 students, used as barracks in the war) came from Wikipedia, the HAU history page and the Angeles City tourism site. Verify before showing this officially.
 * **Interiors** are an interpretation from a few photos, not the real floor plan.
-* **The campus plan.** Buildings now come from OpenStreetMap and are good to a metre or two. Still guesses: GGN and the Formation Center (not in OSM; trace them there and re-run `npm run import:osm`), building 1 (unnamed in OSM), and which of halls 7 and 8 is St. Gabriel (OSM and the 2022 campus map disagree). `docs/campus-layout.md` lists the rest.
-* **What the buildings look like.** The DJN and its courtyard, the Epiphany, the rotunda statue and fountain, the walkway, St. Joseph Hall (`art/sjh.ts`), SFJ and its pool (`art/sfj.ts`) and the gatehouse were drawn from photos. Floor counts on SJH and SFJ were counted off one photo each and squeezed to fit the screen, so check them. Every other building uses a generic facade with guessed colours and floor counts.
+* **The campus plan.** Buildings come from OpenStreetMap, except where the aerial photo disagrees: on the map, buildings 1, 2, 5 to 10, 15 and 16 are traced off the photo (2026-10-14). The street scenes did not move with them, so the Back Road scene has the halls about 12 m from where the map shows them. Still a guess: which of halls 7 and 8 is St. Gabriel (OSM and the 2022 campus map disagree; the photo labels the whole courtyard building St. Gabriel). `docs/campus-layout.md` lists the rest.
+* **What the buildings look like.** The DJN and its courtyard, the Epiphany, the rotunda statue and fountain, the walkway, St. Joseph Hall (`art/sjh.ts`), SFJ and its pool (`art/sfj.ts`), GGN (`art/ggn.ts`) and the gatehouse were drawn from photos. GGN's floors were counted off its photos (three under the canopy, eight over it) and its front is shown on the Back Road although it really faces the street beside it: check both. Floor counts on SJH and SFJ were counted off one photo each and squeezed to fit the screen, so check them. Every other building uses a generic facade with guessed colours and floor counts.
 * **Door text** on every building lists offices from the 2022 campus map. Offices move; check them.
 * **The gate.** The gatehouse, fence and barricades are from the photo `HAU SIDE GATE DESIGN.jpg`; the tent, tables and turnstile are still guesses. The scene is still called "Main Gate" on Sto. Rosario St. and the photo's file name says "side gate": **confirm which gate this is and which street it is on**, and whether the Epiphany's gate is a different one. Until then the gate scene opens on to the Main Building and also keeps a path to the Epiphany. The guard house at the plaza end still says "GATE 1".
 * **Memorare text** in the park is a paraphrase of the marker. Check it against the real stone.
