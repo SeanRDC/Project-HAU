@@ -13,13 +13,15 @@ import { carEnd } from '../art/street';
 import { P } from '../art/palette';
 import { bush, pot, signBoard, tree } from '../art/props';
 import { BUILDINGS, PLACES } from '../campus/plan';
-import { STREETS, frontage, streetWidth, xOf } from '../campus/streets';
+import { STREETS, frontage, xOf } from '../campus/streets';
 import { gymHotspots } from '../story/streets';
 import { AreaDef, AreaLight } from '../types';
-import { GROUND, WALK, ambience, doorLight, endWall, farCity, frontPlants, lamp, midCampus, road } from './kit';
+import { GROUND, WALK, ambience, doorLight, farCity, frontPlants, lamp, midCampus, road } from './kit';
 
 const S = STREETS.gym;
-const WIDTH = streetWidth(S);
+/** the scene ends at the far corner of the dark annex with the seal */
+const DARK_R = xOf(S, { u: 40, v: 78 });
+const WIDTH = DARK_R;
 const APS_X = xOf(S, PLACES.northEastJunction);
 /** the road down to St. Joseph Hall leaves just short of the gym's right door; its sign stands clear of the door */
 const SJH_X = xOf(S, PLACES.gymCorner) - 30;
@@ -36,10 +38,6 @@ const FRONT_L = xOf(S, { u: 40, v: BUILDINGS.gym.blocks[0].at.v - BUILDINGS.gym.
 const FRONT_R = xOf(S, { u: 40, v: 61.5 });
 /** the lane round to the side entrance, between the covered court and the gym */
 const SIDE_X = Math.round((COURT_R + FRONT_L) / 2);
-/** the dark annex with the seal, then the rest of the annex along the far end */
-const DARK_R = xOf(S, { u: 40, v: 78 });
-const ANNEX_X = DARK_R + 6;
-const ANNEX_W = WIDTH - 16 - ANNEX_X;
 
 const FORMATION_X = Math.round((FORMATION_L + FORMATION_R) / 2) + 50;
 
@@ -71,10 +69,6 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   doorLight(lights, front.rightDoor);
   const annexDoor = darkAnnex(c, g, FRONT_R, DARK_R, GROUND);
 
-  facade(c, g, ANNEX_X, ANNEX_W, GROUND, {
-    floors: 2, style: 'grid', wall: '#d9d4c4', glass: '#4c5a72', accent: P.maroon, seed: 91,
-  });
-  endWall(c, WIDTH - 16, WIDTH);
 
   road(c, 0, WIDTH, 'concrete', 3310);
 
@@ -115,7 +109,7 @@ export function buildGym(): AreaDef {
     subtitle: 'Covered Court at Gym Annex',
     width: WIDTH,
     walkY: WALK,
-    bounds: [24, WIDTH - 34],
+    bounds: [24, WIDTH - 12],
     outdoor: true,
     layers: [
       farCity(WIDTH, 331),
