@@ -10,6 +10,9 @@ import { whereAmI } from './campus/streets';
 import { Cutscene, CutsceneHost } from './cutscene';
 import { Dialogue } from './dialogue';
 import { buildAps } from './scenes/aps';
+import { buildApsLobby } from './scenes/apslobby';
+import { buildCanteen } from './scenes/canteen';
+import { buildCanteenBack } from './scenes/canteenback';
 import { buildCourtyard } from './scenes/courtyard';
 import { buildGate } from './scenes/gate';
 import { buildGym } from './scenes/gym';
@@ -114,6 +117,8 @@ export class Game implements GameApi {
       buildGate(), buildPark(), buildPlaza(), buildLobby(), buildCourtyard(),
       // the rest of the campus, outsides only for now
       buildWalkway(), buildLane(), buildHalls(), buildAps(), buildLawn(), buildSjh(), buildGym(),
+      // insides drawn from photos
+      buildCanteen(), buildCanteenBack(), buildApsLobby(),
     ];
     for (const d of defs) {
       const area = new Area(d, this.sky);

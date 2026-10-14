@@ -5,7 +5,7 @@
 
 import { Ctx } from '../../engine/display';
 import { rng } from '../../engine/math';
-import { ellipse, line, poly, rect, sign, signCentered, signWidth } from '../../engine/pix';
+import { line, poly, rect, sign, signCentered, signWidth } from '../../engine/pix';
 import { P, shade } from './palette';
 
 /** the ground floor is taller so a door fits a student */
@@ -189,49 +189,145 @@ export function facade(c: Ctx, g: Ctx, x: number, w: number, base: number, f: Fa
 }
 
 /**
- * The Chapel of the Holy Guardian Angel: a round white building made of
- * stacked rings, each a little smaller than the one below, with dark glass
- * between them and a cross on top. `w` is its full width.
+ * The Chapel of the Holy Guardian Angel, from the photo of its front
+ * (`assets/APS WALK FROM CHAPEL LAWN/31_chapel-front...`): a low round
+ * building crowned by four thin white rings stacked like a disc, the top one
+ * widest, each curving away at its ends. Under them a plain white band, then
+ * a glass front the whole width between two white end pillars with moulded
+ * caps, up a flight of wide steps. A gold cross on top, and a yellow and
+ * white flag on a pole either side. `w` is the width of the top ring; `base`
+ * is the foot of the steps.
  */
 export function chapel(c: Ctx, g: Ctx, cx: number, base: number, w: number): void {
-  const white = '#f4f3ee';
-  const whiteLo = '#c9cbd0';
-  const glass = '#3d4a63';
-  const blue = '#2f4f9c';
-  const tiers = 5;
-  const tierH = Math.round(w * 0.085);
-  for (let i = 0; i < tiers; i++) {
-    const tw = w * (1 - i * 0.13);
-    const y = base - (i + 1) * tierH;
-    const x = cx - tw / 2;
-    // each ring is mostly white: a deep eave, then a band of glass behind white fins
-    const eave = Math.round(tierH * 0.55);
-    rect(c, x + 5, y + eave, tw - 10, tierH - eave, glass);
-    rect(c, x + tw * 0.7, y + eave, tw * 0.3 - 5, tierH - eave, shade(glass, -0.25));
-    rect(c, x + 5, y + tierH - 2, tw - 10, 1, blue);
-    if (i < 3) for (let wx = x + 12; wx < x + tw - 14; wx += 12) rect(g, wx, y + eave + 1, 8, tierH - eave - 2, '#ffe2a0');
-    for (let wx = x + 8; wx < x + tw - 8; wx += 6) rect(c, wx, y + eave, 2, tierH - eave, wx > x + tw * 0.7 ? whiteLo : white);
-    rect(c, x, y, tw, eave, white);
-    rect(c, x, y + eave - 1, tw, 1, whiteLo);
-    rect(c, x + tw * 0.7, y, tw * 0.3, eave, whiteLo);
-    rect(c, x, y + Math.round(eave / 2), tw * 0.7, 1, '#e2e3e6');
-    rect(c, x, y, tw, 1, '#ffffff');
+  const white = '#f2f3f1';
+  const whiteHi = '#ffffff';
+  const whiteLo = '#c4c9cf';
+  const core = '#8e959e';
+  const half = w / 2;
+  const floor = base - 8;
+  const glassH = Math.round(w * 0.16);
+  const glassTop = floor - glassH;
+  const bandH = Math.round(w * 0.07);
+  const rim = 6;
+  const step = 14;
+  const crownTop = glassTop - bandH - 4 * step - 4;
+  // the round drum the rings are threaded on
+  const rc = half * 0.8;
+  const ringY = (i: number): number => crownTop + 8 + i * step;
+  // the top of the top ring, where the cross stands
+  const roofTop = Math.round(ringY(0) - half * 0.07) - rim;
+
+  // the drum: a cylinder, lit from the upper left, rolling into shade at both edges. It starts
+  // under the top ring, so its top follows that ring's curve
+  for (let x = Math.round(cx - rc); x <= Math.round(cx + rc); x++) {
+    const v = (x - cx) / rc;
+    const top = Math.round(ringY(0) - half * 0.07 * Math.sqrt(Math.max(0, 1 - v * v)));
+    rect(c, x, top, 1, glassTop - top, shade(core, 0.14 - 0.12 * v - 0.3 * v ** 6));
   }
-  // roof cap and cross
-  const capW = w * (1 - tiers * 0.13);
-  const capY = base - tiers * tierH;
-  ellipse(c, cx, capY, capW / 2 - 6, tierH * 0.35, white);
-  rect(c, cx - capW / 2, capY, capW, 2, whiteLo);
-  rect(c, cx - 1, capY - tierH * 0.35 - 16, 2, 16, '#8a8d95');
-  rect(c, cx - 5, capY - tierH * 0.35 - 12, 10, 2, '#8a8d95');
-  // entrance: glass doors under a flat canopy
-  const dw = Math.round(w * 0.2);
-  rect(c, cx - dw / 2, base - tierH - 4, dw, tierH + 4, '#26303f');
-  for (let dx = cx - dw / 2 + 2; dx < cx + dw / 2 - 4; dx += 9) rect(c, dx, base - tierH - 2, 6, tierH + 2, '#52648a');
-  rect(g, cx - dw / 2, base - tierH - 4, dw, tierH + 4, '#ffd27a');
-  rect(c, cx - dw / 2 - 8, base - tierH - 9, dw + 16, 5, white);
-  rect(c, cx - dw / 2 - 8, base - tierH - 4, dw + 16, 1, whiteLo);
-  rect(c, cx - dw / 2 - 6, base - 2, dw + 12, 2, whiteLo);
+  // the plain white band over the glass
+  const fw = w * 0.84;
+  rect(c, cx - fw / 2, glassTop - bandH, fw, bandH, '#e4e7ea');
+  rect(c, cx - fw / 2, glassTop - bandH, fw, 2, '#b4bac2');
+  rect(c, cx - fw / 2, glassTop - 2, fw, 2, whiteLo);
+  rect(c, cx + fw / 2 - 14, glassTop - bandH + 2, 14, bandH - 4, '#d4d8dd');
+
+  // the four rings, top one widest: flat discs ringing the drum, all above eye level, so we see
+  // each from below. The front edge arches up in the middle and drops to the tips; the underside
+  // shows as a grey crescent, a sliver across the front but deep at the sides, where the back
+  // half of the ring comes round behind the drum. The higher the ring the more of its underside
+  // shows. Drawn top down, since each lower ring hides the underside of the one above it.
+  for (let i = 0; i < 4; i++) {
+    const a = half * (1 - i * 0.035);
+    const b = a * (0.07 - i * 0.011);
+    const yc = ringY(i);
+    for (let x = Math.round(cx - a); x <= Math.round(cx + a); x++) {
+      const u = (x - cx) / a;
+      const s = Math.sqrt(Math.max(0, 1 - u * u));
+      const near = Math.round(yc - b * s);
+      // past the drum the underside runs to the far rim; across the drum, to where it meets the drum
+      const inDrum = Math.abs(x - cx) < rc;
+      const v = (x - cx) / rc;
+      const under = inDrum ? Math.round(yc - b * (rc / a) * Math.sqrt(Math.max(0, 1 - v * v))) : Math.round(yc + b * s);
+      const lit = u < 0.5;
+      // the underside, pale by the rim where light bounces up off the paving, darker in by the
+      // drum, and darkest in the corner where the back of the ring tucks in behind it
+      const tuck = inDrum ? 0 : Math.max(0, 1 - (Math.abs(x - cx) - rc) / 10);
+      for (let y = near; y < under; y++) {
+        const d = (y - near) / Math.max(1, under - near);
+        rect(c, x, y, 1, 1, shade(lit ? '#c3c9d0' : '#b2b8c0', -0.22 * d - 0.16 * tuck));
+      }
+      // the back of the ring's rim, a thin bright line round the far side
+      if (!inDrum) rect(c, x, under, 1, 1, lit ? '#e4e7ea' : '#cfd3d8');
+      // the drum takes the ring's shadow just under it
+      else rect(c, x, under, 1, 3, shade(core, -0.18 - 0.08 * v));
+      // the front rim, white, with a highlight along its top edge and a soft fold under it
+      const t = Math.max(2, Math.round(rim * Math.min(1, s * 4)));
+      rect(c, x, near - t, 1, t, u > 0.55 ? '#e2e5e8' : white);
+      rect(c, x, near - t, 1, 1, u > 0.7 ? white : whiteHi);
+      rect(c, x, near - 1, 1, 1, '#d6dadf');
+    }
+  }
+  // the bottom ring's shadow along the top of the band
+  rect(c, cx - fw / 2, glassTop - bandH, fw, 1, '#9aa1aa');
+
+  // the glass front between its end pillars: tall panes, reflections of the sky and trees
+  const gx0 = cx - fw / 2 + 10;
+  const gx1 = cx + fw / 2 - 10;
+  rect(c, gx0, glassTop, gx1 - gx0, glassH, '#55667e');
+  for (let x = gx0; x < gx1; x += 3) {
+    const k = Math.sin(x * 0.07) + Math.sin(x * 0.023);
+    if (k > 0.8) rect(c, x, glassTop + 2, 2, glassH - 4, '#7f93ac');
+  }
+  rect(c, gx0, glassTop + Math.round(glassH * 0.62), gx1 - gx0, Math.round(glassH * 0.38), '#4a5a70');
+  for (let mx = gx0; mx <= gx1; mx += 24) rect(c, mx, glassTop, 1, glassH, '#dfe3e8');
+  rect(c, gx0, glassTop + Math.round(glassH * 0.3), gx1 - gx0, 1, '#c9ced5');
+  // at night the inside glows through the glass: pane by pane, so the mullions stay dark, dimmer up
+  // under the ceiling and warmest low down where the lamps light the floor. The glow is added over
+  // the scene, so these stay well short of white or the whole front burns out
+  for (let mx = gx0; mx < gx1; mx += 24) {
+    const pw = Math.min(24, gx1 - mx) - 1;
+    for (let y = glassTop + 2; y < glassTop + glassH; y++) {
+      const d = (y - glassTop) / glassH;
+      rect(g, mx + 1, y, pw, 1, d < 0.3 ? '#4a3418' : d < 0.62 ? '#6a4c24' : '#8a6630');
+    }
+  }
+  rect(g, gx0, glassTop + Math.round(glassH * 0.3), gx1 - gx0, 1, '#000000');
+  // the end pillars, with their caps
+  for (const px0 of [cx - fw / 2, cx + fw / 2 - 10]) {
+    rect(c, px0, glassTop, 10, glassH, white);
+    rect(c, px0 - 1, glassTop, 12, 3, whiteHi);
+    rect(c, px0 - 1, glassTop + 3, 12, 1, whiteLo);
+    rect(c, px0 + 8, glassTop + 4, 2, glassH - 4, whiteLo);
+  }
+  // the floor slab and the wide steps down to the paving
+  rect(c, cx - fw / 2 - 2, floor, fw + 4, 2, '#d6d2c8');
+  const sw0 = w * 0.42;
+  for (let k = 0; k < 3; k++) {
+    rect(c, cx - sw0 / 2 - k * 4, floor + 2 + k * 2, sw0 + k * 8, 2, k % 2 ? '#a88a6a' : '#b8987a');
+  }
+
+  // the gold cross on top
+  rect(c, cx - 1, roofTop - 13, 3, 14, '#d8a838');
+  rect(c, cx - 5, roofTop - 9, 11, 3, '#d8a838');
+  rect(c, cx - 1, roofTop - 13, 1, 14, '#f2d06a');
+  rect(c, cx - 5, roofTop - 9, 11, 1, '#f2d06a');
+
+  // the papal flags either side, yellow and white
+  for (const fx of [Math.round(cx - half * 0.98), Math.round(cx + half * 0.92)]) {
+    rect(c, fx, glassTop - 34, 1, base - glassTop + 34, '#8a8d95');
+    rect(c, fx + 1, glassTop - 33, 5, 18, '#e8c43a');
+    rect(c, fx + 6, glassTop - 33, 5, 18, '#f6f4ee');
+    rect(c, fx + 1, glassTop - 16, 10, 1, '#c8a42a');
+  }
+}
+
+/** An orange traffic cone with its white band. */
+export function trafficCone(c: Ctx, x: number, base: number): void {
+  rect(c, x - 3, base - 1, 7, 1, '#3a3a40');
+  for (let k = 0; k < 9; k++) {
+    const hw = Math.round(3 - k * 0.3);
+    rect(c, x - hw, base - 2 - k, hw * 2 + 1, 1, k === 4 || k === 5 ? '#f4f2ec' : k < 4 ? '#e86a2a' : '#f08a3a');
+  }
 }
 
 /** A big hall under one low roof: the gymnasium. */

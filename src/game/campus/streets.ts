@@ -28,8 +28,8 @@ export const STREETS = {
   lane: { id: 'lane', path: [PLACES.westJunction, PLACES.rotunda], looks: 'NE', lead: 60, tail: 70 },
   /** the back road past the food court and the three halls, up to the corner of GGN */
   halls: { id: 'halls', path: [PLACES.westJunction, PLACES.hallsCorner], looks: 'NW', lead: 300, tail: 60 },
-  /** the same road carrying on along APS to Sacred Heart */
-  aps: { id: 'aps', path: [PLACES.northJunction, PLACES.northEastJunction], looks: 'NW', lead: 60, tail: 260 },
+  /** the same road carrying on along APS and its canteen to the gym lane; Sacred Heart is behind the canteen, out through its back */
+  aps: { id: 'aps', path: [PLACES.northJunction, PLACES.northEastJunction], looks: 'NW', lead: 60, tail: 100 },
   /** the road along the chapel lawn, in front of PGN */
   lawn: {
     id: 'lawn',
@@ -140,6 +140,11 @@ const FIXED: Record<string, { x0: number; a: Spot; x1: number; b: Spot }> = {
   plaza: { x0: 190, a: PLACES.rotunda, x1: 1250, b: PLACES.barachielGate },
   lobby: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },
   courtyard: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },
+  // the canteen is in the east wing of APS, by the lane to the gym
+  canteen: { x0: 0, a: BUILDINGS.aps.blocks[1].at, x1: 1, b: BUILDINGS.aps.blocks[1].at },
+  canteenback: { x0: 0, a: BUILDINGS.aps.blocks[1].at, x1: 1, b: BUILDINGS.aps.blocks[1].at },
+  // the lobby under the canopy of APS's long wing
+  apslobby: { x0: 0, a: BUILDINGS.aps.blocks[0].at, x1: 1, b: BUILDINGS.aps.blocks[0].at },
 };
 
 /** Where on the plan the player is, given the scene they are in and their x. Null if the scene is not on the plan. */
