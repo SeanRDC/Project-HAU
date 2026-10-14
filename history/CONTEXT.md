@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-14 (APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
+Last updated: 2026-10-14 (characters restyled with outlines and three-tone shading, draft v1; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -18,6 +18,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Camera per street | Each street picks the side with the most to see | A side view only shows one side of a road. Buildings behind the camera get a sign and a "look back" hotspot |
 | Saving | Autosave to the browser | No menus to build; Enter continues, N starts over |
 | Art | Drawn by code, no image files yet | Lets the time-of-day lighting recolour everything; replace with real sprites later |
+| Character style | Outlined, three tones, rounder heads, same 33 px rig | Matches the reference image picked in October; the outline is stamped from the drawn body so every look gets it |
 | Player | Choose Boy or Girl, then type a name, before a new game | Same rig for both (`Look`), so the girl is just a different look; the name only labels the player's speech bubbles |
 | Opening | New games start outside the Main Gate with a cutscene | Bag check and ID tap are the first thing every HAU student does each day |
 | Cutscenes | A list of steps in the story files, played by `src/game/cutscene.ts` | Writers can script scenes without touching the engine; no timeline editor to build |
