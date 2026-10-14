@@ -447,6 +447,18 @@ export const PLACES = {
   fountainPlaza: spot([463, 555]),
   /** St. Barachiel Gate, the vehicle entrance on Holy Angel Avenue */
   barachielGate: spot([575, 612]),
+  /**
+   * The side gate students come in by, on Holy Angel Avenue facing Holy Rosary
+   * Parish: the white gatehouse that reads LAUS DEO SEMPER 1933 on its inner
+   * face. The light strip of the walkway runs from it up to the flag plaza.
+   */
+  sideGate: spot([507, 604]),
+  /** the round plaza with the Philippine flag at the end of the side gate walkway, under the "Courtyard" pin on the aerial photo */
+  flagCircle: spot([504, 535]),
+  /** the foot of the plaza's east steps, on the drive in front of the Main Building */
+  flagEast: spot([525.6, 531]),
+  /** the foot of its west steps, on the way down to the SFJ fountain and the Epiphany */
+  flagWest: spot([482.4, 539]),
   /** the side of the Main Building that faces the walkway; where its gate is has not been checked */
   courtyardGate: spot([640, 445]),
   /** behind SFJ and STL, where the parking lane meets the back road */

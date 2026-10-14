@@ -13,13 +13,19 @@ export interface Street {
   /** points the street runs through, in the order you pass them walking left to right on screen */
   path: Spot[];
   /** the compass direction the camera looks: what you see is on that side of the street */
-  looks: 'NE' | 'NW' | 'SE' | 'SW';
+  looks: 'NE' | 'NW' | 'SE' | 'SW' | 'S';
   /** extra scenery before the first point and after the last, in game pixels */
   lead: number;
   tail: number;
 }
 
 export const STREETS = {
+  /**
+   * The side gate entryway, across the flag plaza from its east steps to its
+   * west steps, looking south down the walkway to the gate. Off the campus
+   * grid: the walkway is square to Holy Angel Avenue, not to the chapel.
+   */
+  entry: { id: 'entry', path: [PLACES.flagEast, PLACES.flagWest], looks: 'S', lead: 210, tail: 210 },
   /** Epiphany of Angels: from the main gate to the fountain plaza */
   park: { id: 'park', path: [PLACES.mainGate, PLACES.fountainPlaza], looks: 'NW', lead: 60, tail: 190 },
   /** the walkway from the rotunda to the chapel lawn, along STL and PGN */
@@ -134,8 +140,8 @@ export function setback(street: Street, b: Block): number {
 // where you are: a scene x at one end, a spot on the plan, and the same for
 // the other end.
 const FIXED: Record<string, { x0: number; a: Spot; x1: number; b: Spot }> = {
-  // the side gate by the Main Building: it all happens at the gate, at the end of the drive the plaza scene shows
-  gate: { x0: 0, a: PLACES.barachielGate, x1: 1200, b: PLACES.barachielGate },
+  // the side gate on Holy Angel Avenue: it all happens at the gate, at the end of the entryway walk
+  gate: { x0: 0, a: PLACES.sideGate, x1: 1200, b: PLACES.sideGate },
   // the front of the Main Building: rotunda on the left, St. Barachiel Gate on the right
   plaza: { x0: 190, a: PLACES.rotunda, x1: 1250, b: PLACES.barachielGate },
   lobby: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },

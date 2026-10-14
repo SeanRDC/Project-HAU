@@ -27,6 +27,8 @@ const [TOWER_L, TOWER_R] = frontage(S, BUILDINGS.pgn.blocks[0]);
 const STL_DOOR = Math.round((PAV_L + PAV_R) / 2);
 /** SFJ is across the lane from STL; its sign stands a little up the lane from the STL door */
 const SFJ_X = Math.round((SFJ_L + SFJ_R) / 2) - 70;
+/** the middle steps up to the flag plaza and the side gate, on the camera's side by the rotunda */
+const FLAG_X = ROTUNDA_X - 34;
 
 function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement } {
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
@@ -68,6 +70,7 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   signBoard(c, ROTUNDA_X + 26, GROUND + 5, ['ROTUNDA', 'MAIN BLDG'], P.maroon, P.goldHi);
   // SFJ is on the camera's side: a sign at the kerb points back at it
   signBoard(c, SFJ_X, GROUND + 5, ['SFJ BLDG', 'LIBRARY']);
+  signBoard(c, FLAG_X, GROUND + 5, ['FLAGPOLE', 'SIDE GATE'], P.maroon, P.goldHi);
 
   for (const x of [JUNCTION_X + 40, STL_L + 84, PAV_L - 30, ROTUNDA_X - 60]) lamp(c, g, lights, x);
   return { canvas, glow };
@@ -98,11 +101,13 @@ export function buildLane(): AreaDef {
     ],
     glow: main.glow,
     lights,
-    hotspots: laneHotspots({ halls: JUNCTION_X - 20, stl: STL_DOOR, sfj: SFJ_X, plaza: ROTUNDA_X + 30 }),
+    hotspots: laneHotspots({ halls: JUNCTION_X - 20, stl: STL_DOOR, sfj: SFJ_X, entry: FLAG_X, plaza: ROTUNDA_X + 30 }),
     npcs: [],
     spawns: {
       halls: { x: JUNCTION_X - 8, facing: 1 },
       plaza: { x: ROTUNDA_X + 20, facing: -1 },
+      // down the middle steps from the flag plaza
+      entry: { x: FLAG_X, facing: -1 },
     },
     update: ambience(234, [24, PAV_R + 46, ROTUNDA_X - 8]),
   };

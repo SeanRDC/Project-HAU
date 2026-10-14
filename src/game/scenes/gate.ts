@@ -3,7 +3,8 @@
 // the camera, pass a pickup parked where it shouldn't be and the enforcer
 // ticketing it, and walk in under the gatehouse: the bag tables and the two
 // ID turnstiles stand under its roof. Tap your ID and you walk in through
-// the gate, away from the camera, and come out in front of the Main Building.
+// the gate, away from the camera, and come out up the walkway onto the flag
+// plaza inside (scenes/entry.ts).
 
 import { Ctx, VIEW_H, VIEW_W, makeCanvas } from '../../engine/display';
 import { css, damp, hex, rng } from '../../engine/math';
@@ -387,8 +388,8 @@ export function buildGate(): AreaDef {
     }),
     spawns: {
       street: { x: TRUCK_X + 150, facing: -1 },
-      // coming back out from the Main Building: just this side of the turnstiles
-      plaza: { x: OUT_X, facing: 1 },
+      // coming back out down the entryway walk: just this side of the turnstiles
+      entry: { x: OUT_X, facing: 1 },
     },
     barrier: { x: TURNSTILE_X + 12, until: 'scanned_id' },
 

@@ -22,6 +22,7 @@ export const TELEPORT = true;
 /** The places the map can send you, in the order you would walk past them. [area, spawn] */
 export const STOPS: [string, string][] = [
   ['gate', 'street'],
+  ['entry', 'gate'],
   ['park', 'gate'],
   ['plaza', 'start'],
   ['lobby', 'front'],

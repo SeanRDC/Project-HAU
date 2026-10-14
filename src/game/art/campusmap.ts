@@ -324,6 +324,8 @@ function roads(ctx: Ctx, at: At, pt: (p: Pt) => [number, number], m: (x: number)
     ...Object.values(STREETS).map((s) => s.path),
     [PLACES.rotunda, PLACES.barachielGate],
     [PLACES.mainGate, PLACES.fountainPlaza, PLACES.rotunda],
+    // the side gate walkway, and the middle steps of the flag plaza down towards the rotunda
+    [PLACES.sideGate, PLACES.flagCircle, PLACES.rotunda],
   ].map((path) => path.map(at));
   // town streets: asphalt with a pale centre line
   for (const s of streets) draw(s, shade(ASPHALT, -0.15), m(9) + 2);
@@ -334,15 +336,26 @@ function roads(ctx: Ctx, at: At, pt: (p: Pt) => [number, number], m: (x: number)
   for (const s of [...paths, ...game]) draw(s, '#b3a98f', pw + 2);
   for (const s of [...paths, ...game]) draw(s, PAVING, pw);
   // the gates: two maroon posts each
-  for (const g of [PLACES.mainGate, PLACES.barachielGate]) {
+  for (const g of [PLACES.mainGate, PLACES.barachielGate, PLACES.sideGate]) {
     const [x, y] = at(g);
     rect(ctx, x - m(5), y - 1, 2, 3, P.maroon);
     rect(ctx, x + m(5) - 1, y - 1, 2, 3, P.maroon);
   }
 }
 
-/** The two fountains and the seal in the pavers. */
+/** The two fountains, the seal in the pavers, and the flag plaza inside the side gate. */
 function water(ctx: Ctx, at: At, m: (x: number) => number): void {
+  // the flag plaza: a ring of cobbles round a green star, the pole in the middle
+  const [fx, fy] = at(PLACES.flagCircle);
+  disc(ctx, fx, fy, m(8) + 1, '#b3a98f');
+  disc(ctx, fx, fy, m(8), '#c9c3b4');
+  const r = m(6);
+  for (let k = 0; k < 8; k++) {
+    const a = (k * Math.PI) / 4;
+    line(ctx, fx, fy, fx + Math.cos(a) * r, fy + Math.sin(a) * r, P.grass);
+  }
+  rect(ctx, fx, fy - 1, 1, 2, '#9a979c');
+  rect(ctx, fx + 1, fy - 1, 1, 1, '#cc2131');
   for (const p of [PLACES.fountainPlaza, PLACES.rotunda]) {
     const [x, y] = at(p);
     disc(ctx, x, y, m(6) + 1, P.stone);

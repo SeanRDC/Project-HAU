@@ -46,6 +46,13 @@ const PERGOLA_BAYS = Math.floor((END_X - GATE_X - 50) / PERGOLA_BAY);
 const PERGOLA_X = GATE_X + 36;
 const MEMORARE_X = END_X + 30;
 const SFJ_X = SFJ_L - 6;
+/**
+ * Off the right end, straight on past the fountain, are the steps up to the
+ * flag plaza and the side gate; the way to the rotunda and the Main Building
+ * bears off up and away from the camera just before them.
+ */
+const FLAG_X = WIDTH - 26;
+const ROTUNDA_X = WIDTH - 74;
 /** wide enough to put its doors straight behind the fountain, as they are */
 const SFJ_W = Math.round((FOUNTAIN_X - SFJ_X) / 0.46);
 
@@ -241,7 +248,8 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   rect(c, boxX - 13, GROUND + 10, 26, 1, '#523a28');
   bush(c, boxX, GROUND + 5, 24, 9, 1712);
   palm(c, boxX, GROUND + 4, 66, 1711);
-  signBoard(c, WIDTH - 36, GROUND + 6, ['MAIN BLDG', 'ROTUNDA'], P.maroon, P.goldHi);
+  signBoard(c, ROTUNDA_X, GROUND + 4, ['MAIN BLDG', 'ROTUNDA'], P.maroon, P.goldHi);
+  signBoard(c, FLAG_X + 4, GROUND + 8, ['FLAGPOLE', 'SIDE GATE'], P.maroon, P.goldHi);
   return { canvas, glow, sfjDoor };
 }
 
@@ -325,7 +333,8 @@ export function buildPark(): AreaDef {
       memorare: MEMORARE_X,
       sfj: main.sfjDoor - 34,
       fountain: FOUNTAIN_X,
-      exit: WIDTH - 36,
+      exit: ROTUNDA_X,
+      flag: FLAG_X,
     }),
     npcs: parkNpcs({
       kath: ANGELS_X + Math.round(ANGEL_GAP / 2),
@@ -335,7 +344,9 @@ export function buildPark(): AreaDef {
     fountainX: FOUNTAIN_X,
     spawns: {
       gate: { x: GATE_X + 14, facing: 1 },
-      plaza: { x: WIDTH - 44, facing: -1 },
+      plaza: { x: ROTUNDA_X - 6, facing: -1 },
+      // down the west steps of the flag plaza
+      entry: { x: FLAG_X - 4, facing: -1 },
     },
 
     update(dt, area, view) {

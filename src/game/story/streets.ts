@@ -29,11 +29,12 @@ export function walkwayHotspots(x: { rotunda: number; stl: number; courtyard: nu
   ];
 }
 
-export function laneHotspots(x: { halls: number; stl: number; sfj: number; plaza: number }): Hotspot[] {
+export function laneHotspots(x: { halls: number; stl: number; sfj: number; entry: number; plaza: number }): Hotspot[] {
   return [
     wayTo('halls', x.halls, 'Pumunta sa back road', 'halls', 'lane'),
     closedDoor('sfj', x.sfj, BUILDINGS.sfj, true),
     closedDoor('stl', x.stl, BUILDINGS.stl),
+    wayTo('entry', x.entry, 'Umakyat sa flagpole (side gate)', 'entry', 'stl', 30),
     wayTo('plaza', x.plaza, 'Pumunta sa rotunda', 'plaza', 'lane'),
   ];
 }

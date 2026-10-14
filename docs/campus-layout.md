@@ -28,6 +28,7 @@ The other sources, all in `assets/` (see "Reference images" below):
 | `SFJ AND FOUNTAIN SIDE VIEW.jpg` | The brick basin of the rotunda statue fountain (`brickBasin` in `src/game/art/street.ts`). |
 | `INSIDE DJN BUILDING.jpg`, `CLOSER VIEW INSIDE DJN.jpg` | The Main Building's courtyard: theatre front, stage, stairs, glass roof and vines (`src/game/scenes/courtyard.ts`). |
 | `HAU SIDE GATE DESIGN.jpg` | The gatehouse, the fence and the barricades (`src/game/art/gate.ts`). |
+| `sidegate entryway/` (six photos) | The walk in from the side gate and the flag plaza at its end: the diamond-tiled walkway, the eight-point star, the pedestal and chained posts, the back of the gate (LAUS DEO SEMPER 1933), and where its three flights of steps go: left to the Main Building, middle to the parking lane and STL, right to the SFJ fountain and the Epiphany (`src/game/art/entry.ts`, `src/game/scenes/entry.ts`). The side gate and the plaza are `sideGate` and `flagCircle` in `plan.ts`, read off the aerial photo under its "Courtyard" pin. |
 
 Plus one measurement taken in Google Earth on 2026-10-11: **140.36 m from the rotunda statue to the nose of the chapel.** That single distance sets the scale for everything.
 
