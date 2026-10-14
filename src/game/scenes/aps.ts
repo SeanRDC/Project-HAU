@@ -129,13 +129,9 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   // and on the patio in front of the canteen, one each side of the steps
   cafeUmbrella(c, canteenDoor - 46, GROUND + 7);
   cafeUmbrella(c, canteenDoor + 46, GROUND + 7, '#a8324a');
-  // areca palms in front of the canteen, young trees along the kerb
+  // areca palms in front of the canteen
   arecaPalm(c, CANTEEN_X + 2, GROUND + 4, 58, 2760);
   arecaPalm(c, CANTEEN_X + CANTEEN_W + 2, GROUND + 4, 52, 2761);
-  for (const [tx, h, spread, seed] of [[TALL_X + 110, 96, 22, 2762], [TOWER_X + 32, 104, 24, 2763]]) {
-    groundShadow(c, tx + 4, GROUND + 15, spread, 3);
-    tree(c, tx, GROUND + 14, h, spread, seed);
-  }
 
   signBoard(c, CORNER_X + 4, GROUND + 5, ['CHAPEL', 'PGN'], P.maroon, P.goldHi);
   // the lane to the covered court and the gym turns off right after the canteen

@@ -29,6 +29,7 @@ import { buildHalls } from './scenes/halls';
 import { buildLane } from './scenes/lane';
 import { buildLawn } from './scenes/lawn';
 import { buildLobby } from './scenes/lobby';
+import { buildMgn } from './scenes/mgn';
 import { buildPark } from './scenes/park';
 import { buildPlaza } from './scenes/plaza';
 import { buildSjh } from './scenes/sjh';
@@ -125,7 +126,7 @@ export class Game implements GameApi {
     const defs: AreaDef[] = [
       buildGate(), buildEntry(), buildPark(), buildPlaza(), buildLobby(), buildCourtyard(),
       // the rest of the campus, outsides only for now
-      buildWalkway(), buildLane(), buildHalls(), buildAps(), buildLawn(), buildSjh(), buildGym(),
+      buildWalkway(), buildLane(), buildHalls(), buildAps(), buildLawn(), buildMgn(), buildSjh(), buildGym(),
       buildGymSide(), buildGymLobby(), buildGymCorridor(), buildGymHall(), buildGymStage(), buildGymUpper(),
       buildCCourt(), buildAeroLab(),
       // insides drawn from photos

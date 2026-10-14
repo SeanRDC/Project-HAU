@@ -128,11 +128,12 @@ export function lawnHotspots(x: { halls: number; aps: number; walkway: number; c
           { who: 'you', text: 'Babalik ako \'pag bukas na.' },
         ]),
     },
-    wayTo('sjh', x.sjh, 'Pumunta sa St. Joseph Hall', 'sjh', 'lawn'),
+    // going round from the chapel it is MGN first, then SJH
+    wayTo('mgn', x.sjh, 'Pumunta sa MGN', 'mgn', 'lawn'),
   ];
 }
 
-export function sjhHotspots(x: { gym: number; education: number; sjh: number; computing: number; lawn: number; mgn: number }): Hotspot[] {
+export function sjhHotspots(x: { gym: number; education: number; sjh: number; computing: number; mgn: number }): Hotspot[] {
   return [
     wayTo('gym', x.gym, 'Pumunta sa gym', 'gym', 'sjh', 30),
     deadEnd('education', x.education, 'Tingnan ang pinto', '"SCHOOL OF EDUCATION" at "SCHOOL OF ARTS AND SCIENCES." Sarado pa ang pinto.'),
@@ -150,8 +151,16 @@ export function sjhHotspots(x: { gym: number; education: number; sjh: number; co
           { who: 'you', text: 'Malapit na. Konting hintay na lang.' },
         ]),
     },
-    wayTo('lawn', x.lawn, 'Pumunta sa chapel lawn', 'lawn', 'sjh', 30),
+    wayTo('mgn', x.mgn, 'Pumunta sa MGN', 'mgn', 'sjh', 30),
+  ];
+}
+
+/** The road along MGN, between SJH and the chapel lawn. */
+export function mgnHotspots(x: { sjh: number; mgn: number; lawn: number }): Hotspot[] {
+  return [
+    wayTo('sjh', x.sjh, 'Pumunta sa St. Joseph Hall', 'sjh', 'mgn', 30),
     closedDoor('mgn', x.mgn, BUILDINGS.mgn),
+    wayTo('lawn', x.lawn, 'Pumunta sa chapel lawn', 'lawn', 'mgn', 30),
   ];
 }
 

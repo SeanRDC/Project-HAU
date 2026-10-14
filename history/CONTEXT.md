@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-14 (the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
+Last updated: 2026-10-15 (St. Joseph Hall redrawn from photos with the statue of Mary, MGN as its own stop between the chapel and SJH, the chapel with depth and the oval parking; the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -26,7 +26,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Map teleport | Pick any place on the C map and jump there | Stand-in while the campus is only partly walkable. Switch off with `TELEPORT` in `src/game/ui/map.ts` once it is all joined up on foot |
 
 ## What Exists
-Twenty-four connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
+Twenty-five connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
 
 The first six, with people and story:
 
@@ -43,8 +43,9 @@ The seven campus streets, outsides only, no people yet:
 * **Parking Lane** (`lane.ts`) - STL with the PGN tower over it; SFJ is behind the camera.
 * **Back Road** (`halls.ts`) - warehouse, Yellow Food Court, St. Gabriel, St. Raphael and St. Michael Halls, then GGN drawn from photos (`art/ggn.ts`): its whole front, 53 m wide and taller than the screen.
 * **APS** (`aps.ts`, art in `art/aps.ts` and `art/canteen.ts`) - drawn from the walk photos in the order you pass it: the back of PGN, the long louvred wing, the canopy, the curved-balcony block, the stair tower and the canteen block, with the umbrella patio in front. Three scenes lead off it: the lobby under the canopy (`apslobby.ts`), the canteen (`canteen.ts`) and its back hallway (`canteenback.ts`), which is the way through to Sacred Heart.
-* **Chapel lawn** (`lawn.ts`) - not a lawn but a paved parking lot, cars nosed in (`carEnd` in `art/street.ts`), in front of the Chapel of the Holy Guardian Angel: four white rings drawn as discs round a drum so they wrap round the back, over a glass front. The shady corner with the picnic sheds and bamboo, and the formation center behind. The junction the campus turns on.
-* **St. Joseph Hall** (`sjh.ts`) - SJH, MGN and the corner of the gym. The School of Computing sign is here.
+* **Chapel lawn** (`lawn.ts`) - the Chapel of the Holy Guardian Angel behind an oval parking island (cars nosed in, `carEnd` in `art/street.ts`) with the stamped-concrete road looping round it. Its four white rings are discs round a drum so they wrap round the back; through the flat glass front you see the pews and the altar, and a lower white body with tall windows carries on behind it (`chapelRear`). Layered trees (`layeredTree` in `art/props.ts`) and bamboo close in on both sides in grass, a dark treeline behind. The shady corner with the picnic sheds, and the formation center behind. The junction the campus turns on; its right-hand end leads to MGN.
+* **MGN** (`mgn.ts`, art `drawMGN` in `art/sjh.ts`) - the Mamerto G. Nepomuceno Building, its own stop between the chapel lawn and SJH: going round from the chapel it is the chapel, MGN, then SJH. White open corridors over an open ground floor, the service block with its roof tank at one end, the box-window wing and open stair at the other.
+* **St. Joseph Hall** (`sjh.ts`) - SJH drawn from photos (`art/sjh.ts`): the silver and cream tower over the entrance, the teal-paneled wings, terracotta ends; the statue of Mary on her grass island at the right-hand end; past it a side road to a high wall, and the narrow end of MGN. Its far end leads to MGN. The corner of the gym on the left; the School of Computing sign is here.
 * **Gym lane** (`gym.ts`) - Covered Court, then the front of the Immaculate Heart Gymnasium drawn from photos (`art/ihgym.ts`): HOLY ANGEL UNIVERSITY on the fascia, the left door up steps under a grey box canopy, the right door under the seal and GYM sign, cars, green tents and tyres along it, and the dark annex with the seal painted big on it. The lane between the covered court and the gym goes round to the side entrance.
 * **Covered Court** (`ccourt.ts`, art in `art/ccourt.ts`, story in `story/ccourt.ts`) - in from the gym lane (its front, the gable with the fan of glass, is drawn on the gym lane) or from the lane by the IH Gym's side entrance. You walk its length looking at the steel bleachers on the gym side, the IH Gym's gable end beyond: the maroon basketball court with the winged seal, the red volleyball court and the badminton court beyond it, and the yellow AERO LABORATORY gate at the far end. NPCs: Dennis, Joanna, Kiko.
 * **Aero Laboratory** (`aerolab.ts`) - through the small door in the gate: the hangar with ANGEL-1, an older trainer with a dark red wing, two jet engines in yellow frames. NPCs: Lance, Engr. Dizon.
@@ -116,6 +117,6 @@ See `sessions/2026-10-12-minimap-teleport-and-plans.md` for the details.
 * No touch controls (it loads on a phone but you cannot move).
 * Real sprite art and recorded audio. `assets/drafts/girl-test/` is a test of sprite sheets made from one AI-generated girl image (idle, front walk, talking with expressions). The game does not use it.
 * The Godot 4 port.
-* The photos in `assets/APS WALK FROM CHAPEL LAWN/` are kept local, not committed: they show number plates and people. Ask Mikko for them.
+* The photos in `assets/APS WALK FROM CHAPEL LAWN/`, `assets/SJH BUILDING/`, `assets/MGN BUILDING/` and `assets/CHAPEL/` are kept local, not committed: they show number plates and people. Ask Mikko for them.
 * The reference images in `assets/images/` are committed as of 2026-10-12, at Sean's decision, so the team shares them. They are Google Earth, university and found-online material, references only: the game does not load them.
 * The older `docs/`, `assets/` and `tools/` READMEs still describe the original top-down plan in places.

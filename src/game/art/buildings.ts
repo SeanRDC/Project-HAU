@@ -273,12 +273,33 @@ export function chapel(c: Ctx, g: Ctx, cx: number, base: number, w: number): voi
   // the glass front between its end pillars: tall panes, reflections of the sky and trees
   const gx0 = cx - fw / 2 + 10;
   const gx1 = cx + fw / 2 - 10;
-  rect(c, gx0, glassTop, gx1 - gx0, glassH, '#55667e');
+  // the inside, seen through the glass, so the front reads as a room and not a sheet: the ceiling
+  // in shade, the far wall, rows of pews going back, the altar and its cross in the middle
+  const ceil = glassTop + Math.round(glassH * 0.28);
+  const floorY = glassTop + Math.round(glassH * 0.7);
+  rect(c, gx0, glassTop, gx1 - gx0, ceil - glassTop, '#465468');
+  for (let lx = gx0 + 8; lx < gx1 - 4; lx += 16) rect(c, lx, ceil - 3, 6, 1, '#7b8798');
+  rect(c, gx0, ceil, gx1 - gx0, floorY - ceil, '#62708a');
+  rect(c, gx0, ceil, gx1 - gx0, 1, '#56637a');
+  rect(c, gx0, floorY, gx1 - gx0, glassTop + glassH - floorY, '#4e5b72');
+  for (let k = 0; k < 4; k++) {
+    const py = floorY + 2 + k * 3;
+    for (const sd of [-1, 1]) {
+      const p0 = sd < 0 ? gx0 + 6 : cx + 10;
+      const p1 = sd < 0 ? cx - 10 : gx1 - 6;
+      rect(c, p0 + (sd < 0 ? k * 2 : 0), py, p1 - p0 - k * 2, 2, '#3a4458');
+    }
+  }
+  rect(c, cx - 10, floorY - 6, 21, 6, '#7c86a0');
+  rect(c, cx - 10, floorY - 6, 21, 1, '#98a2ba');
+  rect(c, cx - 1, ceil + 3, 3, floorY - ceil - 10, '#a8925a');
+  rect(c, cx - 5, ceil + 7, 11, 2, '#a8925a');
+  rect(g, cx - 6, ceil + 2, 13, floorY - ceil - 2, '#7a5a28');
+  // the glass over it all: a cool tint, and streaks of sky reflected in it
   for (let x = gx0; x < gx1; x += 3) {
     const k = Math.sin(x * 0.07) + Math.sin(x * 0.023);
-    if (k > 0.8) rect(c, x, glassTop + 2, 2, glassH - 4, '#7f93ac');
+    if (k > 1.1) rect(c, x, glassTop + 2, 2, Math.round(glassH * 0.55), '#7f93ac');
   }
-  rect(c, gx0, glassTop + Math.round(glassH * 0.62), gx1 - gx0, Math.round(glassH * 0.38), '#4a5a70');
   for (let mx = gx0; mx <= gx1; mx += 24) rect(c, mx, glassTop, 1, glassH, '#dfe3e8');
   rect(c, gx0, glassTop + Math.round(glassH * 0.3), gx1 - gx0, 1, '#c9ced5');
   // at night the inside glows through the glass: pane by pane, so the mullions stay dark, dimmer up
@@ -318,6 +339,53 @@ export function chapel(c: Ctx, g: Ctx, cx: number, base: number, w: number): voi
     rect(c, fx + 1, glassTop - 33, 5, 18, '#e8c43a');
     rect(c, fx + 6, glassTop - 33, 5, 18, '#f6f4ee');
     rect(c, fx + 1, glassTop - 16, 10, 1, '#c8a42a');
+  }
+}
+
+/**
+ * What carries on behind the chapel, so it reads as a whole building and not
+ * a front: a lower white body reaching back past the ends of the rings, its
+ * roof edge dropping away as it goes, a row of tall narrow windows along it
+ * (the side wall in `assets/CHAPEL/01_right-side-walk`), lit at night. Same
+ * `cx`, `base` and `w` as `chapel()`; draw it first.
+ */
+export function chapelRear(c: Ctx, g: Ctx, cx: number, base: number, w: number): void {
+  const glassTop = base - 8 - Math.round(w * 0.16);
+  const bandTop = glassTop - Math.round(w * 0.07);
+  for (const [x0, x1, s] of [[cx + w * 0.36, cx + w * 0.9, 1], [cx - w * 0.6, cx - w * 0.36, -1]] as const) {
+    const near = s > 0 ? x0 : x1;
+    const far = s > 0 ? x1 : x0;
+    const span = Math.abs(far - near);
+    for (let x = Math.round(Math.min(x0, x1)); x < Math.round(Math.max(x0, x1)); x++) {
+      const t = Math.abs(x - near) / span;
+      // the roof edge drops and the wall darkens as it goes back
+      const top = Math.round(bandTop - 10 + t * 16);
+      rect(c, x, top, 1, base - 4 - top, shade('#e9eaea', -0.06 - t * 0.14));
+      rect(c, x, top, 1, 2, shade('#f6f6f4', -t * 0.12));
+      rect(c, x, top + 2, 1, 1, shade('#b9bec6', -t * 0.1));
+      rect(c, x, base - 6, 1, 2, '#b4b8bd');
+    }
+    // the tall windows in pairs, framed in cream, narrower and closer together as they go back;
+    // dark glass catching a little sky by day, only some of them lit at night, and those dimly
+    let wx = near + s * 12;
+    let gap = 22;
+    let k = 0;
+    while (s > 0 ? wx < far - 6 : wx > far + 6) {
+      const t = Math.abs(wx - near) / span;
+      const top = Math.round(bandTop - 10 + t * 16) + 10;
+      const bottom = base - 24;
+      const ww = t > 0.55 ? 2 : 3;
+      for (const dx of [0, ww + 2]) {
+        const x = wx + s * dx;
+        rect(c, x - 1, top - 1, ww + 2, bottom - top + 3, shade('#efe6cf', -t * 0.15));
+        rect(c, x, top, ww, bottom - top, '#3e4450');
+        rect(c, x, top + 2, 1, Math.round((bottom - top) * 0.4), '#6a7890');
+        if (k % 3 !== 1) rect(g, x, top + Math.round((bottom - top) * 0.45), ww, Math.round((bottom - top) * 0.55), '#5a4226');
+      }
+      wx += s * gap;
+      gap = Math.max(12, gap - 3);
+      k++;
+    }
   }
 }
 
