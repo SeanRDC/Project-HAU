@@ -1,5 +1,5 @@
 // The inside of the Immaculate Heart Gymnasium, drawn from the photos in
-// `assets/ih_gym immaculate heart/`: a big steel-roofed hall with a court of
+// `assets/images/buildings/ih_gym immaculate heart/`: a big steel-roofed hall with a court of
 // grey-blue and red, the university seal at centre court, steel bleachers
 // along both long sides on the second floor, the walls under them painted in
 // broad diagonal stripes of yellow, red and grey, rows of red, yellow, tan and

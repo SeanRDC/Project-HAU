@@ -1,5 +1,5 @@
 // The Immaculate Heart Gymnasium from outside, drawn from the photos in
-// `assets/ih_gym immaculate heart/`.
+// `assets/images/buildings/ih_gym immaculate heart/`.
 //
 // The front is its long south-west side, on the parking lot: a two-storey
 // cream block with rows of white awning windows over a slatted band, a deep

@@ -3,7 +3,7 @@
 // gable of the hall in white panels, three tall louvred windows, and the big
 // grey box canopy over the wide side entrance, where PE classes sit out of
 // the sun. The covered court is behind the camera; its roof edge hangs in at
-// the top. From `assets/ih_gym immaculate heart/`: `left side entrance beside
+// the top. From `assets/images/buildings/ih_gym immaculate heart/`: `left side entrance beside
 // the other court`, `left side entrance other angle` and `corner view`.
 
 import { VIEW_H, makeCanvas } from '../../engine/display';

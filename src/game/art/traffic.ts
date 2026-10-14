@@ -112,7 +112,7 @@ function suv(c: Ctx, base: number, body: string): void {
 }
 
 /**
- * A red double-cab Chevrolet pickup, from the photo in `assets/`: black
+ * A red double-cab Chevrolet pickup, from the photo in `assets/images/other references/`: black
  * bonnet stripe, black roof rails and wheels, a dark splash of decal down the
  * rear door, the gold bowtie on the nose and the sports bar behind the cab.
  */

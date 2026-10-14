@@ -1,5 +1,5 @@
 // The Archbishop Pedro Santos Building, drawn from the photos in
-// `assets/PANERGO AND GIL APS BUILDING/` and `assets/APS WALK FROM CHAPEL LAWN/`
+// `assets/images/buildings/PANERGO AND GIL APS BUILDING/` and `assets/APS WALK FROM CHAPEL LAWN/`
 // (the second set taken walking from the chapel lawn to the canteen, in order).
 // The long wing is four white floors of open corridors. At the lawn end the
 // bays of the two middle floors are closed off with tall white louvres; the

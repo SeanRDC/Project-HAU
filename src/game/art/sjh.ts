@@ -1,5 +1,5 @@
 // St. Joseph Hall, drawn from the photos `SJH BUILDING.jpg` and
-// `SJH BUILDING BESIDE CHAPEL.jpg` in `assets/`: two long wings of open
+// `SJH BUILDING BESIDE CHAPEL.jpg` in `assets/images/other references/`: two long wings of open
 // corridors behind white balcony walls, with teal panels stepping down
 // towards the middle, a grey-blue tower over the entrance, a strip of blue
 // glass under the roof and a tan stair tower closing each end. The right

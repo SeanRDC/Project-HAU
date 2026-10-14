@@ -1,5 +1,5 @@
 // The inner courtyard of the Main Building, pieced together from
-// `INSIDE DJN BUILDING.jpg` and `CLOSER VIEW INSIDE DJN.jpg` in `assets/`:
+// `INSIDE DJN BUILDING.jpg` and `CLOSER VIEW INSIDE DJN.jpg` in `assets/images/other references/`:
 // the old theatre front with LAUS DEO SEMPER between 1933 and 1953 under its
 // garlands, three dark glass bays between mosaic columns, the stage in front
 // of it with its curved terrazzo steps, a staircase up to the second-floor
