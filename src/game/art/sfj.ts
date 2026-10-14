@@ -1,6 +1,6 @@
 // The San Francisco de Javier Building and the fountain in front of it,
 // drawn from `SFJ BUILDING AND FOUNTAIN.jpg` and `SFJ BUILDING CORNER
-// VIEW.jpg` in `assets/`: a tall bay of green glass over the entrance, a tan
+// VIEW.jpg` in `assets/images/other references/`: a tall bay of green glass over the entrance, a tan
 // pylon beside it that rises past the roof, cream wings with long strips of
 // the same glass, a two-storey glass podium carrying the building's name,
 // and a flat canopy on columns across the whole front. The round plaza the

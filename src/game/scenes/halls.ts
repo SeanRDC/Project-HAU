@@ -62,7 +62,7 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   facade(c, g, SMH_L + 6, SMH_R - SMH_L - 12, GROUND, { ...HALL, doors: [SMH_DOOR - SMH_L - 6], name: 'SMH', seed: 53 });
   for (const x of [SGH_DOOR, SRH_DOOR, SMH_DOOR]) doorLight(lights, x);
 
-  // the high school building, from the photos in assets/GGN BUILDING
+  // the high school building, from the photos in assets/images/buildings/GGN BUILDING
   const ggn = drawGGN(c, g, GGN_X, GGN_W, GROUND);
   // the lobby is lit right across, and it is a big lobby
   const [lobbyL, lobbyR] = ggn.lobby;

@@ -1,6 +1,6 @@
 // Things that stand along the campus roads: the walkway lamps and flagpoles,
 // the rotunda statue, gates, fences and parked cars. Drawn from the reference
-// photos in `assets/`.
+// photos in `assets/images/other references/`.
 
 import { Ctx } from '../../engine/display';
 import { rng } from '../../engine/math';

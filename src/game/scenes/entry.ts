@@ -1,6 +1,6 @@
 // The side gate entryway: the round flag plaza at the end of the walk in from
 // the side gate, looking south, back down the walkway to the gate, as in
-// `assets/sidegate entryway/closer view.jpg`. The art is in art/entry.ts.
+// `assets/images/sidegate entryway/closer view.jpg`. The art is in art/entry.ts.
 //
 // You come out of the gate at the far end of the walkway and up it towards
 // the camera. The plaza is a step up from everything round it, and three
