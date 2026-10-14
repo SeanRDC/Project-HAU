@@ -50,7 +50,8 @@ export const STREETS = {
     id: 'lawn',
     path: [PLACES.northJunction, PLACES.walkwayEnd, PLACES.southJunction],
     looks: 'NE',
-    lead: 60,
+    // it starts at the first tree of the shady corner, the end of APS just out of sight
+    lead: 10,
     // it ends just past the last car in front of the chapel, at the way on to MGN
     tail: 100,
   },
