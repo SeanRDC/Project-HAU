@@ -14,6 +14,7 @@ They are all in `images/`: one folder per building in `images/buildings/`, the s
 | `images/sidegate entryway/` | The side gate entryway: the walkway, the flag plaza close up (`closer view.jpg`), its floor pattern, the steps down toward SFJ, and pans left and right from SFJ | Yes, `src/game/art/entry.ts` (scene `src/game/scenes/entry.ts`) |
 | `images/buildings/ih_gym immaculate heart/` | The Immaculate Heart Gymnasium, outside and in: the front with its two entrances, the left side entrance by the covered court, the lobby, the corridor with the equipment room and stairs, the court, the stage and the second-floor bleachers | Yes, `src/game/art/ihgym.ts` (outside) and `src/game/art/ihgymin.ts` (inside) |
 | `images/buildings/covered court beside IH/` | The Covered Court beside the IH Gym: its front gable, the basketball court, the bleachers, the volleyball and badminton courts, the Aero Laboratory gate and the planes inside | Yes, `src/game/art/ccourt.ts` |
+| `images/buildings/beside the main building + the main walkways/` | The student center and Cafe Juan, both covered sidewalks 1, both sidewalks 2, the road between them, MGN, the PGN side | Yes, `src/game/art/walks.ts` |
 | `images/other references/` | Aerial shots, the campus map, eye-level photos and a few odd references, listed below | Mostly |
 
 ### `images/other references/`
