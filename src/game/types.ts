@@ -141,6 +141,19 @@ export interface AreaDef {
   layers: Layer[];
   /** lit windows etc, added on top once it gets dark */
   glow?: HTMLCanvasElement;
+  /**
+   * Lamp-lit street atmosphere: in the rain the road darkens and shows the lit
+   * windows and the lamps reflected in it, with a few puddles and the rain
+   * catching the light round each lamp; on dry nights a few motes drift round
+   * the lamps. Outdoor scenes only.
+   */
+  atmosphere?: boolean;
+  /**
+   * Night light worked out once at load, in scene coordinates: the spill round
+   * lit windows and doors onto the walls and pavement. Added to the light map
+   * as it gets dark.
+   */
+  lightBake?: HTMLCanvasElement;
   lights: AreaLight[];
   hotspots: Hotspot[];
   npcs: NpcDef[];
