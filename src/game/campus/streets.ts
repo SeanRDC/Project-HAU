@@ -46,6 +46,12 @@ export const STREETS = {
   },
   /** the road in front of St. Joseph Hall, from the gym back to the lawn */
   sjh: { id: 'sjh', path: [PLACES.gymCorner, PLACES.southJunction], looks: 'SE', lead: 70, tail: 200 },
+  /**
+   * The lane between the covered court and the gym, looking south-east at
+   * the gym's left side (its north-west end, with the side entrance). From
+   * the annex at the far end on the left to the gym lane on the right.
+   */
+  gymside: { id: 'gymside', path: [{ u: 100, v: 0.5 }, { u: 40, v: 0.5 }], looks: 'SE', lead: 40, tail: 60 },
   /** the lane behind the chapel, past the covered court and the gym */
   gym: { id: 'gym', path: [PLACES.northEastJunction, PLACES.gymCorner], looks: 'NE', lead: 80, tail: 420 },
 } satisfies Record<string, Street>;
@@ -145,6 +151,13 @@ const FIXED: Record<string, { x0: number; a: Spot; x1: number; b: Spot }> = {
   // the front of the Main Building: rotunda on the left, St. Barachiel Gate on the right
   plaza: { x0: 190, a: PLACES.rotunda, x1: 1250, b: PLACES.barachielGate },
   lobby: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },
+  // inside the IH Gym: the lobby across its north-west end, the corridor in from the front's left door,
+  // and the court, stage and bleachers along its length, north-west to south-east
+  gymlobby: { x0: 0, a: { u: 92, v: 12 }, x1: 540, b: { u: 56, v: 12 } },
+  gymcorridor: { x0: 0, a: { u: 66, v: 12 }, x1: 500, b: { u: 53, v: 12 } },
+  gymhall: { x0: 0, a: { u: 66, v: 8 }, x1: 780, b: { u: 66, v: 70 } },
+  gymstage: { x0: 0, a: { u: 82, v: 70 }, x1: 600, b: { u: 58, v: 70 } },
+  gymupper: { x0: 0, a: { u: 58, v: 8 }, x1: 780, b: { u: 58, v: 70 } },
   courtyard: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },
   // the canteen is in the east wing of APS, by the lane to the gym
   canteen: { x0: 0, a: BUILDINGS.aps.blocks[1].at, x1: 1, b: BUILDINGS.aps.blocks[1].at },
