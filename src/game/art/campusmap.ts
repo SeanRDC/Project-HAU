@@ -8,7 +8,7 @@
 // shows them. Buildings are painted pixel by pixel from their real outlines.
 //
 // The roofs are the colours of the aerial photo
-// (assets/other references/Aerial shot of HAU enclosed in red line.png), with
+// (assets/images/other references/Aerial shot of HAU enclosed in red line.png), with
 // its solar panels and tiles, so the map can be checked against it.
 //
 // Map data (c) OpenStreetMap contributors, ODbL 1.0.

@@ -1,5 +1,5 @@
 // St. Joseph Hall, drawn from the photos `SJH BUILDING.jpg` and
-// `SJH BUILDING BESIDE CHAPEL.jpg` in `assets/other references/`, and the
+// `SJH BUILDING BESIDE CHAPEL.jpg` in `assets/images/other references/`, and the
 // straight-on front in `assets/SJH BUILDING/01_front...`: two long wings of
 // open corridors behind white balcony walls, brown piers along the classroom
 // walls behind, teal panels stepping across the middle floors, a first floor

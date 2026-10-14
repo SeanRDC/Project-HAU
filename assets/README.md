@@ -5,16 +5,18 @@ This directory holds Project HAU's media. Right now that is mostly **reference p
 **Nothing in the game loads these pictures.** All the art you see in the game is drawn by code in `src/game/art/`. The photos are what we draw from.
 
 ## Reference Photos
+They are all in `images/`: one folder per building in `images/buildings/`, the side gate entryway in `images/sidegate entryway/`, and everything else in `images/other references/`.
 
 | Folder / file | What it shows | Drawn in the game? |
 | --- | --- | --- |
-| `GGN BUILDING/` | The long front of GGN: the lobby, the canopy, the floor slabs and the louvred towers | Yes, `src/game/art/ggn.ts` |
-| `PANERGO AND GIL APS BUILDING/` | The Archbishop Pedro Santos (APS) Building | Not yet. The APS scene (`src/game/scenes/aps.ts`) still uses a generic facade |
-| `sidegate entryway/` | The side gate entryway: the walkway, the flag plaza close up (`closer view.jpg`), its floor pattern, the steps down toward SFJ, and pans left and right from SFJ | Yes, `src/game/art/entry.ts` (scene `src/game/scenes/entry.ts`) |
-| `HAU_GYMNASIUM/` | Waiting for the gymnasium photos (only a placeholder file so far) | No |
-| `other references/` | Aerial shots, the campus map, eye-level photos and a few odd references, listed below | Mostly |
+| `images/buildings/GGN BUILDING/` | The long front of GGN: the lobby, the canopy, the floor slabs and the louvred towers | Yes, `src/game/art/ggn.ts` |
+| `images/buildings/PANERGO AND GIL APS BUILDING/` | The Archbishop Pedro Santos (APS) Building | Not yet. The APS scene (`src/game/scenes/aps.ts`) still uses a generic facade |
+| `images/sidegate entryway/` | The side gate entryway: the walkway, the flag plaza close up (`closer view.jpg`), its floor pattern, the steps down toward SFJ, and pans left and right from SFJ | Yes, `src/game/art/entry.ts` (scene `src/game/scenes/entry.ts`) |
+| `images/buildings/ih_gym immaculate heart/` | The Immaculate Heart Gymnasium, outside and in: the front with its two entrances, the left side entrance by the covered court, the lobby, the corridor with the equipment room and stairs, the court, the stage and the second-floor bleachers | Yes, `src/game/art/ihgym.ts` (outside) and `src/game/art/ihgymin.ts` (inside) |
+| `images/buildings/covered court beside IH/` | The Covered Court beside the IH Gym: its front gable, the basketball court, the bleachers, the volleyball and badminton courts, the Aero Laboratory gate and the planes inside | Yes, `src/game/art/ccourt.ts` |
+| `images/other references/` | Aerial shots, the campus map, eye-level photos and a few odd references, listed below | Mostly |
 
-### `other references/`
+### `images/other references/`
 
 | File | What we use it for |
 | --- | --- |
@@ -33,7 +35,7 @@ This directory holds Project HAU's media. Right now that is mostly **reference p
 | `HAU-GYMNASIUM` | An empty placeholder |
 
 ### Adding photos
-* **One folder per building or place**, named after it (`GGN BUILDING/`, `sidegate entryway/`). Use the building code from the campus map where there is one.
+* **One folder per building or place** in `images/buildings/`, named after it (`GGN BUILDING/`, `ih_gym immaculate heart/`). Use the building code from the campus map where there is one.
 * **Name the shot by what it shows** (`facing sfj`, `floor pattern`, `closer view`) if you can. Camera names like `20261013_150813.jpg` work too, but descriptive names help whoever draws from them.
 * **Get the whole building in at least one shot**, taken straight on from the road. Add close-ups of doors, windows, signs and the ground.
 * **Don't rename photos once they're in.** The notes in `plan.ts`, the art files and `docs/campus-layout.md` point to them by file name.

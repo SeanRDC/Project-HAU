@@ -1,5 +1,5 @@
 // The east end of APS and the canteen in it, drawn from the photos in
-// `assets/PANERGO AND GIL APS BUILDING/` and `assets/APS WALK FROM CHAPEL LAWN/`.
+// `assets/images/buildings/PANERGO AND GIL APS BUILDING/` and `assets/APS WALK FROM CHAPEL LAWN/`.
 // Outside, walking towards the gym lane: the tall block where the long wing
 // ends, its floors wrapped in deep balcony slabs with rounded edges over
 // arched openings; a plain white stair tower; then the canteen block, cream,

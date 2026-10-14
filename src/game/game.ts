@@ -16,7 +16,15 @@ import { buildCanteenBack } from './scenes/canteenback';
 import { buildCourtyard } from './scenes/courtyard';
 import { buildEntry } from './scenes/entry';
 import { buildGate } from './scenes/gate';
+import { buildAeroLab } from './scenes/aerolab';
+import { buildCCourt } from './scenes/ccourt';
 import { buildGym } from './scenes/gym';
+import { buildGymCorridor } from './scenes/gymcorridor';
+import { buildGymHall } from './scenes/gymhall';
+import { buildGymLobby } from './scenes/gymlobby';
+import { buildGymSide } from './scenes/gymside';
+import { buildGymStage } from './scenes/gymstage';
+import { buildGymUpper } from './scenes/gymupper';
 import { buildHalls } from './scenes/halls';
 import { buildLane } from './scenes/lane';
 import { buildLawn } from './scenes/lawn';
@@ -51,7 +59,7 @@ const NEW_GAME = { area: 'gate', spawn: 'street' };
 /** blip pitch per speaker so voices are told apart by ear */
 const VOICES: Record<string, number> = {
   you: 440, guard: 220, driver: 196, trisha: 587, jopet: 330, liza: 494, bea: 659, migs: 370, cat: 990, kath: 622, bong: 185, enzo: 392,
-  nonoy: 233, joy: 523, ella: 698, taho: 165, actdo: 208, mikko: 277, weng: 554,
+  nonoy: 233, joy: 523, ella: 698, taho: 165, actdo: 208, mikko: 277, weng: 554, pe1: 600, pe2: 350, migo: 410, jomar: 380, coach: 210, pe3: 640, cc1: 330, cc2: 620, cc3: 300, aero1: 360, aero2: 200,
 };
 
 export class Game implements GameApi {
@@ -119,6 +127,8 @@ export class Game implements GameApi {
       buildGate(), buildEntry(), buildPark(), buildPlaza(), buildLobby(), buildCourtyard(),
       // the rest of the campus, outsides only for now
       buildWalkway(), buildLane(), buildHalls(), buildAps(), buildLawn(), buildMgn(), buildSjh(), buildGym(),
+      buildGymSide(), buildGymLobby(), buildGymCorridor(), buildGymHall(), buildGymStage(), buildGymUpper(),
+      buildCCourt(), buildAeroLab(),
       // insides drawn from photos
       buildCanteen(), buildCanteenBack(), buildApsLobby(),
     ];

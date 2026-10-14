@@ -1,5 +1,5 @@
 // The side gate entryway, drawn from the six photos in
-// `assets/sidegate entryway/`, mostly from `closer view.jpg`: the round flag
+// `assets/images/sidegate entryway/`, mostly from `closer view.jpg`: the round flag
 // plaza at the end of the walk in from the side gate, looking back down the
 // walkway to the gatehouse.
 //

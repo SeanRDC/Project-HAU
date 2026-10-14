@@ -164,23 +164,14 @@ export function mgnHotspots(x: { sjh: number; mgn: number; lawn: number }): Hots
   ];
 }
 
-export function gymHotspots(x: { aps: number; court: number; formation: number; gym: number; sjh: number; annex: number }): Hotspot[] {
+export function gymHotspots(x: { aps: number; court: number; formation: number; side: number; gymLeft: number; gymRight: number; sjh: number; annex: number }): Hotspot[] {
   return [
     wayTo('aps', x.aps, 'Pumunta sa APS', 'aps', 'gym'),
-    {
-      id: 'court',
-      x: x.court,
-      range: 40,
-      label: 'Tingnan ang Covered Court',
-      height: 70,
-      use: (g) =>
-        g.say([
-          { who: '', text: '"COVERED COURT." Building 19 sa campus map. Bukas sa lahat ng gilid, bubong lang at mga poste.' },
-          { who: '', text: 'Walang naglalaro ngayon. Rinig mo pa rin ang talbog ng bola sa isip mo.' },
-        ]),
-    },
+    wayTo('court', x.court, 'Pumasok sa Covered Court', 'ccourt', 'front', 40),
     closedDoor('formation', x.formation, BUILDINGS.formation, true),
-    closedDoor('gym', x.gym, BUILDINGS.gym),
+    wayTo('side', x.side, 'Pumunta sa side entrance ng gym', 'gymside', 'lane', 30),
+    wayTo('gymLeft', x.gymLeft, 'Pumasok sa gym (kaliwang pinto)', 'gymcorridor', 'front', 50),
+    wayTo('gymRight', x.gymRight, 'Pumasok sa gym', 'gymhall', 'front', 50),
     wayTo('sjh', x.sjh, 'Pumunta sa St. Joseph Hall', 'sjh', 'gym', 30),
     closedDoor('annex', x.annex, BUILDINGS.annex),
   ];

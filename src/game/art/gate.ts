@@ -1,7 +1,7 @@
 // The gate students come in by: the gatehouse itself, the fence either side
 // of it, the barricades at the kerb, and the bag tables and ID turnstile that
 // stand under its roof. The gatehouse, fence and barricades are drawn from
-// `HAU SIDE GATE DESIGN.jpg` in `assets/`; the checkpoint furniture is still
+// `HAU SIDE GATE DESIGN.jpg` in `assets/images/other references/`; the checkpoint furniture is still
 // from memory of how campus gates here usually look.
 
 import { Ctx } from '../../engine/display';

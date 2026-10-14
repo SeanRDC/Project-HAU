@@ -1,5 +1,5 @@
 // The Geromin G. Nepomuceno Building, the high school, drawn from the four
-// photos in `assets/GGN BUILDING/`: a wide cream frame of red floor slabs
+// photos in `assets/images/buildings/GGN BUILDING/`: a wide cream frame of red floor slabs
 // with tan louvre panels and air-con units between them, over a lobby three
 // storeys high behind square columns and a deep canopy; a patchwork of white
 // panels, dark windows and red, orange and yellow fins either side of it; and
