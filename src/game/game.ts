@@ -327,7 +327,10 @@ export class Game implements GameApi {
     this.time += dt;
     this.clock = (this.clock + dt * TIME_RATE) % 24;
     this.weather.update(dt, dt * TIME_RATE);
-    for (const a of this.areas.values()) a.rain = this.weather.rain;
+    for (const a of this.areas.values()) {
+      a.rain = this.weather.rain;
+      a.inCutscene = !!this.cutscene;
+    }
     if (this.change) this.change.age += dt;
     if (input.pressed('mute')) this.audio.toggleMute();
     const mood = this.weather.mood(moodAt(this.clock));
@@ -551,9 +554,10 @@ export class Game implements GameApi {
   render(): void {
     const area = this.area;
     const mood = this.weather.mood(moodAt(this.clock));
-    area.render(this.display.ctx, mood);
+    const ctx = this.display.frame();
+    area.render(ctx, mood);
     if (area.def.outdoor) {
-      this.weather.render(this.display.ctx, Math.round(area.camera.x), area.def.walkY, area.def.width, this.time, mood.night);
+      this.weather.render(ctx, Math.round(area.camera.x), area.def.walkY, area.def.width, this.time, mood.night);
     }
     this.display.present();
 
