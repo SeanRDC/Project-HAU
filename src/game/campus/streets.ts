@@ -28,8 +28,17 @@ export const STREETS = {
   entry: { id: 'entry', path: [PLACES.flagEast, PLACES.flagWest], looks: 'S', lead: 210, tail: 210 },
   /** Epiphany of Angels: from the main gate to the fountain plaza */
   park: { id: 'park', path: [PLACES.mainGate, PLACES.fountainPlaza], looks: 'NW', lead: 60, tail: 190 },
-  /** the walkway from the rotunda to the chapel lawn, along STL and PGN */
-  walkway: { id: 'walkway', path: [PLACES.rotunda, PLACES.walkwayEnd], looks: 'NW', lead: 70, tail: 70 },
+  // The chapel walkway, rotunda to chapel lawn, as five lanes side by side
+  // (photos in assets/images/buildings/beside the main building + the main walkways/).
+  // The Main Building side, looking south-east at the student center and the DJN, from MGN on the left to the
+  // rotunda on the right: the student center arcade along the DJN, then the covered sidewalk 1, then sidewalk 2.
+  stuc: { id: 'stuc', path: [{ u: -84, v: 17 }, { u: -164, v: 17 }], looks: 'SE', lead: 40, tail: 40 },
+  djnsw1: { id: 'djnsw1', path: [{ u: -84, v: 13 }, { u: -164, v: 13 }], looks: 'SE', lead: 40, tail: 40 },
+  djnsw2: { id: 'djnsw2', path: [{ u: -84, v: 9.5 }, { u: -164, v: 9.5 }], looks: 'SE', lead: 40, tail: 40 },
+  // The PGN side, looking north-west at STL and PGN, rotunda on the left: sidewalk 2 by the road (the scene
+  // keeps its old id, walkway), then the covered sidewalk 1 along the PGN podium.
+  walkway: { id: 'walkway', path: [{ u: -164, v: -3 }, { u: -66, v: -3 }], looks: 'NW', lead: 40, tail: 40 },
+  pgnsw1: { id: 'pgnsw1', path: [{ u: -164, v: -6 }, { u: -66, v: -6 }], looks: 'NW', lead: 40, tail: 40 },
   /** the parking lane from the back road down to the rotunda, STL on the far side */
   lane: { id: 'lane', path: [PLACES.westJunction, PLACES.rotunda], looks: 'NE', lead: 60, tail: 70 },
   /** the back road past the food court and the three halls, then the whole front of GGN, which runs on past the corner */

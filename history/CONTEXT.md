@@ -1,6 +1,6 @@
 # Project Context
 
-Last updated: 2026-10-15 (St. Joseph Hall redrawn from photos with the statue of Mary, MGN as its own stop between the chapel and SJH, the chapel with depth and the oval parking; the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
+Last updated: 2026-10-15 (the chapel walkway as five lanes, with the student center and Cafe Juan, from 31 photos; St. Joseph Hall redrawn from photos with the statue of Mary, MGN as its own stop between the chapel and SJH, the chapel with depth and the oval parking; the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -26,7 +26,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Map teleport | Pick any place on the C map and jump there | Stand-in while the campus is only partly walkable. Switch off with `TELEPORT` in `src/game/ui/map.ts` once it is all joined up on foot |
 
 ## What Exists
-Twenty-five connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
+Twenty-nine connected areas. See `docs/campus-layout.md` for the plan they are built from and a diagram of how they join.
 
 The first six, with people and story:
 
@@ -35,11 +35,11 @@ The first six, with people and story:
 * **Epiphany of Angels** (`src/game/scenes/park.ts`) - the road in from the main gate: four stone angels on each side, the covered shed, the seal in the pavers, the Memorare stone, the road stops at a stand of trees, and past them is the round patterned plaza with the pool of jets in the middle, in front of the steps of the San Francisco de Javier Building, all drawn from photos (`src/game/art/sfj.ts`). NPCs: Kath, Mang Bong, Enzo. Leads on to the front of the Main Building, and up the steps to the flag plaza.
 * **Plaza** (`src/game/scenes/plaza.ts`) - the front of the Main Building: the rotunda with the Holy Guardian Angel statue in its brick fountain basin (from a photo), the DJN Building, the bronze guardian angel on its lawn beside the building, and St. Barachiel Gate at the right-hand end, which is for cars only. The steps up to the flag plaza and the side gate are in front of the DJN's west wing. NPCs: Kuya Ramil (guard), Mang Dado (tricycle), Trisha, Jopet. The parking lane, the chapel walkway and the Epiphany all leave from the rotunda.
 * **Lobby** (`src/game/scenes/lobby.ts`) - bust of Juan D. Nepomuceno, bulletin board, Center for Kapampangan Studies door. NPC: Ate Liza.
-* **Courtyard** (`src/game/scenes/courtyard.ts`) - drawn from two photos: the old theatre front with LAUS DEO SEMPER between 1933 and 1953 under its garlands, the stage with curved terrazzo steps, a staircase each side up to the second-floor corridor, the steel and glass roof and the hanging vines. NPCs: Bea, Migs, Mingming the cat. Its gate comes out on the chapel walkway.
+* **Courtyard** (`src/game/scenes/courtyard.ts`) - drawn from two photos: the old theatre front with LAUS DEO SEMPER between 1933 and 1953 under its garlands, the stage with curved terrazzo steps, a staircase each side up to the second-floor corridor, the steel and glass roof and the hanging vines. NPCs: Bea, Migs, Mingming the cat. Its gate comes out in the student center.
 
 The seven campus streets, outsides only, no people yet:
 
-* **Chapel Walkway** (`walkway.ts`) - brick sidewalk from the rotunda to the lawn, past STL and the PGN tower. Lamps and waving flags.
+* **Chapel walkway, five lanes** (`walklanes.ts` and `walkway.ts`, art in `art/walks.ts`, story in `story/walks.ts`). From the DJN outwards: the **student center** (`stuc`: Cafe Juan, the BDO ATM, tables, the courtyard gate), **sidewalk 1** (`djnsw1`, covered walk of terracotta pillars), **sidewalk 2** (`djnsw2`, hex pavers, banner lamps), the road, then on the PGN side **sidewalk 2** (`walkway`, the old id) and **sidewalk 1** (`pgnsw1`). The Main Building side looks south-east and ends at MGN; the PGN side looks north-west and ends at the PGN tower. You change lanes only at real openings: gaps in the student center planter, breaks in the hedges, two road crossings. The near pillars of the covered walk pass in front of you. See `sessions/2026-10-15-walkway-lanes.md`.
 * **Parking Lane** (`lane.ts`) - STL with the PGN tower over it; SFJ is behind the camera.
 * **Back Road** (`halls.ts`) - warehouse, Yellow Food Court, St. Gabriel, St. Raphael and St. Michael Halls, then GGN drawn from photos (`art/ggn.ts`): its whole front, 53 m wide and taller than the screen.
 * **APS** (`aps.ts`, art in `art/aps.ts` and `art/canteen.ts`) - drawn from the walk photos in the order you pass it: the back of PGN, the long louvred wing, the canopy, the curved-balcony block, the stair tower and the canteen block, with the umbrella patio in front. Three scenes lead off it: the lobby under the canopy (`apslobby.ts`), the canteen (`canteen.ts`) and its back hallway (`canteenback.ts`), which is the way through to Sacred Heart.
@@ -80,6 +80,7 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * An area can have a `barrier`: an x the player can't cross leftwards until a flag is set.
 * Main Gate flags: `passed_bag_check`, `id_fumble`, `scanned_id`, `met_joy`, `met_ella`.
 * Entryway flags: `met_weng` (Ate Weng explained the stairs), `saw_flag` (looked at the flagpole). Neither is a checklist task yet.
+* Walkway flags: `visited_stuc`, `saw_cafe_juan`.
 * Covered Court flags: `visited_ccourt`, `saw_ccourt`, `visited_aero`, `saw_angel1`, `met_lance`.
 * IH Gym flags: `entered_gym` (first time on the court), `saw_gym`, `saw_stage`, `saw_equipment`, `met_jomar`.
 * **Money:** a line with `pesos: -20, item: 'Taho'` spends ₱20 when it is shown (positive gives money). `g.pesos()` says how much is left, so a talk function can offer a cheaper line when the player is short. `buy()` in `story/streets.ts` makes a menu choice that does both. New games start with ₱150 (`BAON` in `game.ts`).

@@ -19,16 +19,6 @@ export function buy(g: GameApi, item: string, price: number, lines: Line[]): Cho
   return { text, then: [{ ...first, pesos: -price, item }, ...rest] };
 }
 
-export function walkwayHotspots(x: { rotunda: number; stl: number; courtyard: number; pgn: number; lawn: number }): Hotspot[] {
-  return [
-    wayTo('rotunda', x.rotunda, 'Bumalik sa rotunda', 'plaza', 'walkway'),
-    closedDoor('stl', x.stl, BUILDINGS.stl),
-    wayTo('courtyard', x.courtyard, 'Tumawid papunta sa courtyard ng Main Bldg.', 'courtyard', 'gate', 30),
-    closedDoor('pgn', x.pgn, BUILDINGS.pgn),
-    wayTo('lawn', x.lawn, 'Pumunta sa chapel', 'lawn', 'walkway'),
-  ];
-}
-
 export function laneHotspots(x: { halls: number; stl: number; sfj: number; entry: number; plaza: number }): Hotspot[] {
   return [
     wayTo('halls', x.halls, 'Pumunta sa back road', 'halls', 'lane'),
