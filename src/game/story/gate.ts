@@ -1,6 +1,6 @@
 // The side gate by the Main Building. Everyone gets their bag checked and
-// taps their ID at a turnstile, then walks in through the gate and comes out
-// in front of the Main Building. Edit freely.
+// taps their ID at a turnstile, then walks in through the gate and up the
+// walkway to the flag plaza (story/entry.ts). Edit freely.
 
 import { Hotspot, Line, NpcDef, Step } from '../types';
 import { ACTDO, ELLA, JOY, MIKKO, NONOY, TAHO } from './cast';
@@ -194,7 +194,7 @@ function goIn(cp: Checkpoint, who = 'you'): Step[] {
   ];
 }
 
-/** Back out from the Main Building: out between the gate leaves, facing the street. */
+/** Back out from the entryway: out between the gate leaves, facing the street. */
 export function comeOut(cp: Checkpoint): Step[] {
   return [{ walkOut: 'you', from: cp.door, rise: cp.doorRise, time: 2 }];
 }
@@ -237,8 +237,8 @@ function tapId(cp: Checkpoint, g: { has(flag: string): boolean; hour(): number }
     ];
   }
   const tap: Step[] = [{ walk: cp.scanner }, { face: 'you', dir: -1 }, { run: () => cp.card(true) }, { pause: 0.5 }];
-  // through the gate and out in front of the Main Building
-  const enter: Step[] = [...goIn(cp), { run: (game) => game.travel('plaza', 'start') }];
+  // through the gate and up the walkway onto the flag plaza
+  const enter: Step[] = [...goIn(cp), { run: (game) => game.travel('entry', 'gate') }];
   if (g.has('scanned_id')) {
     return [...tap, { sound: 'beep' }, { run: () => cp.reader('ok') }, { pause: 0.3 }, { run: () => cp.card(false) }, ...enter];
   }

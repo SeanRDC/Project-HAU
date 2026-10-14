@@ -38,6 +38,8 @@ const LANE_X = 44;
 const WALKWAY_X = 100;
 /** the path down to the fountain plaza and the Epiphany of Angels, towards the camera */
 const EPIPHANY_X = 344;
+/** the east steps up to the flag plaza and the side gate, towards the camera */
+const FLAG_X = 556;
 
 export const PLAZA_DOOR_X = DJN_X + DJN_DOOR_X;
 
@@ -222,6 +224,7 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   signBoard(c, WALKWAY_X, GROUND + 3, ['CHAPEL', 'WALKWAY'], P.maroon, P.goldHi);
   stoneBench(c, EPIPHANY_X - 64, GROUND + 13);
   signBoard(c, EPIPHANY_X, GROUND + 3, ['EPIPHANY', 'OF ANGELS'], P.maroon, P.goldHi);
+  signBoard(c, FLAG_X, GROUND + 3, ['FLAGPOLE', 'SIDE GATE'], P.maroon, P.goldHi);
 
   // guardian angel on its little lawn
   ellipse(c, STATUE_X, GROUND + 22, 58, 7, P.pave);
@@ -297,7 +300,7 @@ export function buildPlaza(): AreaDef {
     glow: main.glow,
     lights,
     hotspots: plazaHotspots({
-      lane: LANE_X, walkway: WALKWAY_X, fountain: FOUNTAIN_X, epiphany: EPIPHANY_X, door: PLAZA_DOOR_X, statue: STATUE_X, gate: 1262,
+      lane: LANE_X, walkway: WALKWAY_X, fountain: FOUNTAIN_X, epiphany: EPIPHANY_X, entry: FLAG_X, door: PLAZA_DOOR_X, statue: STATUE_X, gate: 1262,
     }),
     npcs: plazaNpcs(),
     fountainX: FOUNTAIN_X,
@@ -307,6 +310,8 @@ export function buildPlaza(): AreaDef {
       epiphany: { x: EPIPHANY_X, facing: 1 },
       walkway: { x: WALKWAY_X + 4, facing: 1 },
       lane: { x: LANE_X, facing: 1 },
+      // down the east steps from the flag plaza
+      entry: { x: FLAG_X, facing: 1 },
     },
 
     update(dt, area, view) {

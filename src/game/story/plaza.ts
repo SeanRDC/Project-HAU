@@ -2,14 +2,11 @@
 // Dialogue is Taglish with a bit of Kapampangan. Edit freely.
 
 import { Hotspot, NpcDef } from '../types';
-import { wayTo } from './campus';
+import { deadEnd, wayTo } from './campus';
 import { DRIVER, GUARD, JOPET, TRISHA } from './cast';
-import { ella } from './gate';
 
 export function plazaNpcs(): NpcDef[] {
   return [
-    // she came in through the gate just ahead of you
-    ella(1010, [980, 1060]),
     {
       id: 'guard',
       name: 'Kuya Ramil',
@@ -142,7 +139,7 @@ export function plazaNpcs(): NpcDef[] {
 }
 
 export function plazaHotspots(x: {
-  lane: number; walkway: number; fountain: number; epiphany: number; door: number; statue: number; gate: number;
+  lane: number; walkway: number; fountain: number; epiphany: number; entry: number; door: number; statue: number; gate: number;
 }): Hotspot[] {
   return [
     wayTo('lane', x.lane, 'Pumunta sa parking lane', 'lane', 'plaza', 66),
@@ -162,6 +159,7 @@ export function plazaHotspots(x: {
         ]),
     },
     wayTo('epiphany', x.epiphany, 'Bumaba sa Epiphany of Angels', 'park', 'plaza', 30),
+    wayTo('entry', x.entry, 'Umakyat sa flagpole (side gate)', 'entry', 'djn', 30),
     {
       id: 'door',
       x: x.door,
@@ -182,7 +180,12 @@ export function plazaHotspots(x: {
           { who: '', text: 'Parang sinasabing: doon ang tingin, hindi sa cellphone.', set: 'saw_angel' },
         ]),
     },
-    // the way students come in and go out: the gate scene sets you down here
-    wayTo('gate', x.gate, 'Lumabas sa side gate', 'gate', 'plaza', 60),
+    // St. Barachiel Gate is for cars; students come in and go out by the side gate past the flagpole
+    deadEnd(
+      'gate',
+      x.gate,
+      'Tingnan ang St. Barachiel Gate',
+      'Pang-sasakyan lang ang St. Barachiel Gate. Sa side gate dumadaan ang mga estudyante, sa may flagpole.',
+    ),
   ];
 }

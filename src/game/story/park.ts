@@ -122,7 +122,7 @@ export function parkNpcs(x: { kath: number; bong: [number, number]; enzo: [numbe
 }
 
 export function parkHotspots(x: {
-  gate: number; memorare: number; guardian: number; archangels: number; seal: number; sfj: number; fountain: number; exit: number;
+  gate: number; memorare: number; guardian: number; archangels: number; seal: number; sfj: number; fountain: number; exit: number; flag: number;
 }): Hotspot[] {
   return [
     deadEnd(
@@ -197,5 +197,6 @@ export function parkHotspots(x: {
         ]),
     },
     wayTo('exit', x.exit, 'Pumunta sa harap ng Main Bldg.', 'plaza', 'epiphany'),
+    wayTo('flag', x.flag, 'Umakyat sa flagpole (side gate)', 'entry', 'sfj'),
   ];
 }
