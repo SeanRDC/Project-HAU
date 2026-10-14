@@ -41,9 +41,11 @@ const LIT = '#ffd98a';
  * windows in thin dark frames, a door now and then, and the track lights
  * along the corridor ceiling.
  */
-function corridorBack(c: Ctx, g: Ctx, x: number, y: number, w: number, h: number, rand: () => number): void {
+function corridorBack(c: Ctx, g: Ctx, x: number, y: number, w: number, h: number, rand: () => number): boolean {
   rect(c, x, y, w, h, SHADE);
-  rect(c, x, y, w, 2, shade(SHADE, -0.25));
+  // the slab above throws its shade a little way down the back wall
+  rect(c, x, y, w, 2, shade(SHADE, -0.32));
+  rect(c, x, y + 2, w, 2, shade(SHADE, -0.16));
   for (let lx = x + 4; lx < x + w - 2; lx += 8) rect(c, lx, y + 2, 2, 1, '#2a2730');
   const door = rand() < 0.3;
   const wx = door ? x + 10 : x + 2;
@@ -51,7 +53,16 @@ function corridorBack(c: Ctx, g: Ctx, x: number, y: number, w: number, h: number
   rect(c, wx, y + 5, x + w - 2 - wx, 6, GLASS);
   for (let mx = wx; mx < x + w - 2; mx += 4) rect(c, mx, y + 5, 1, 6, '#2a2730');
   rect(c, wx, y + 5, x + w - 2 - wx, 1, '#2a2730');
-  if (rand() > 0.55) rect(g, wx, y + 5, x + w - 2 - wx, 6, LIT);
+  // the window sits back in the wall: a shaded reveal on the left, a pale sill under it
+  rect(c, wx, y + 5, 1, 6, '#2a2730');
+  rect(c, wx, y + 11, x + w - 2 - wx, 1, shade(SHADE, 0.22));
+  // rooms in use at night, each lit a little differently
+  if (rand() > 0.55) {
+    const warm = [LIT, '#f0c878', '#d8b070', '#ffe4a8'][Math.floor(rand() * 4)];
+    rect(g, wx, y + 5, x + w - 2 - wx, 6, warm);
+    return true;
+  }
+  return false;
 }
 
 /** The balcony wall at the front of a corridor, with its thin rail above. */
@@ -93,6 +104,9 @@ function canopy(c: Ctx, g: Ctx, cx: number, half: number, base: number, name?: s
   for (let lx = x0 + 20; lx < x0 + w - 10; lx += 40) {
     rect(c, lx, gy + 7, 6, 1, '#f6f1e0');
     rect(g, lx - 1, gy + 7, 8, 2, '#fff0c8');
+    // the light they throw down the back wall and onto the lobby floor, fading as it spreads
+    rect(g, lx - 2, gy + 9, 10, 6, '#2a2014');
+    rect(g, lx - 6, base - 4, 18, 4, '#3a2c18');
   }
   rect(c, x0 + 24, base - 24, 9, 20, '#4a3e3a');
   rect(c, cx - 50, base - 22, 18, 10, '#4c4c56');
@@ -261,13 +275,16 @@ export function drawAPS(c: Ctx, g: Ctx, x: number, w: number, base: number, o: A
       if (i < 2 && louvred(k)) {
         louvres(c, bx + 3, y + 3, bw - 3, FLOOR_H - 3);
       } else {
-        corridorBack(c, g, bx + 3, y + 3, bw - 3, FLOOR_H - 3, rand);
+        const lit = corridorBack(c, g, bx + 3, y + 3, bw - 3, FLOOR_H - 3, rand);
         balcony(c, bx + 3, y + FLOOR_H - 9, bw - 3);
+        // a lit room spills a little warm light onto the top of the balcony wall in front of it
+        if (lit) rect(g, bx + 3, y + FLOOR_H - 9, bw - 3, 2, '#3c2c18');
       }
     }
-    // the slab edge under each floor
+    // the slab edge under each floor, catching a cool edge of moonlight at night
     rect(c, x, y + FLOOR_H - 1, w, 3, WHITE);
     rect(c, x, y + FLOOR_H + 1, w, 1, WHITE_LO);
+    rect(g, x, y + FLOOR_H - 1, w, 1, '#1a2034');
   }
 
   // columns running up between the bays, with a downpipe on some of them
@@ -275,6 +292,9 @@ export function drawAPS(c: Ctx, g: Ctx, x: number, w: number, base: number, o: A
     const cx = Math.min(x + k * BAY, x + w - 3);
     rect(c, cx, top + FASCIA_H, 3, gy - top - FASCIA_H, WHITE);
     rect(c, cx + 2, top + FASCIA_H, 1, gy - top - FASCIA_H, WHITE_LO);
+    // each column shades the strip of corridor just to its right
+    rect(c, cx + 3, top + FASCIA_H, 2, gy - top - FASCIA_H, 'rgba(30, 26, 40, 0.18)');
+    rect(g, cx, top + FASCIA_H, 1, gy - top - FASCIA_H, '#10162a');
     if (k % 5 === 2) rect(c, cx + 3, top + FASCIA_H, 1, gy - top - FASCIA_H + 2, '#a9a9ae');
   }
 
@@ -284,6 +304,10 @@ export function drawAPS(c: Ctx, g: Ctx, x: number, w: number, base: number, o: A
   rect(c, x - 2, top + 6, w + 4, 1, PANEL_LO);
   rect(c, x - 2, top + FASCIA_H - 1, w + 4, 1, shade(PANEL_LO, -0.2));
   for (let px0 = x + 10; px0 < x + w; px0 += 15) rect(c, px0, top + 1, 1, FASCIA_H - 2, PANEL_LO);
+  // rain streaks down the panels, and the deep shadow the fascia throws on the floor below
+  for (let i = 0; i < w / 6; i++) rect(c, x + Math.floor(rand() * w), top + 2, 1, 2 + Math.floor(rand() * 7), shade(PANEL, -0.07));
+  rect(c, x, top + FASCIA_H, w, 2, 'rgba(30, 26, 40, 0.3)');
+  rect(g, x - 2, top, w + 4, 1, '#2a3452');
 
   // ground floor: set back in shade behind the columns and a low planter wall
   rect(c, x, gy + 2, w, GROUND_H - 2, BACK);
@@ -306,8 +330,12 @@ export function drawAPS(c: Ctx, g: Ctx, x: number, w: number, base: number, o: A
   rect(c, x, base - 15, w, 1, '#b4b4b9');
   for (let rx = x + 6; rx < x + w; rx += 15) rect(c, rx, base - 17, 1, 5, '#9a9aa0');
 
+  // where the building meets the pavement, a soft contact shadow
+  rect(c, x, base, w, 1, 'rgba(25, 22, 35, 0.35)');
+  rect(c, x, base + 1, w, 2, 'rgba(25, 22, 35, 0.15)');
   // shaded return on the right so the block reads as solid
   rect(c, x + w - 4, top, 4, base - top, WHITE_LO);
+  rect(c, x + w - 4, top, 1, base - top, shade(WHITE_LO, -0.12));
 
   const doors = o.doors ?? [];
   doors.forEach((dx, i) => {
