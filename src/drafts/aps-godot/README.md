@@ -42,6 +42,7 @@ the ignored `builds/godot-tools/4.7.2/`. Other machines can
 | Q/E | Camera angle |
 | T | Morning, noon, afternoon, night |
 | C | Boy / girl |
+| E, Space or Enter | Talk to someone in reach (E turns the camera when nobody is near) |
 | M | Mute |
 | P | Pixels: Auto, Crisp, Chunky |
 | R | Reset |
@@ -103,6 +104,8 @@ because their kernel grows with zoom.
 | `areas/plots.gd` | Reserved plots for the buildings teammates are making |
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both entrances, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
+| `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking |
+| `npcs.gd` | The cast, their lines, the talk hint and speech bubble |
 | `audio.gd` | Synthesised music, wind, footsteps, blips and crickets (no audio files) |
 | `shaders/` | Edges, leaves, sky, display grade |
 
