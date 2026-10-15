@@ -23,7 +23,7 @@ frozen references.
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--zoom=`, `--angle=`, `--view=canteen`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
 | Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
@@ -36,6 +36,7 @@ Files:
 | `roads.gd` | The campus loop road (centre line as straights and turns) and `across()`, the distance across the road at any point |
 | `areas/chapel.gd` | The chapel, its plaza, oval parking, banners, lawn paths, trees and palms |
 | `areas/plots.gd` | Reserved plots for every building not built yet |
+| `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -192,6 +193,10 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | grass | 3.0 | `#7c8a5f` | 9/255 grain, 900 vertical blade flecks; mown bands tint `#f3f5ec` |
 | dirt | 2.5 | `#9a8566` | pebbles in four browns and darker trodden patches (the picnic strip, the corner garden; reserved plots tinted `#e8e1cb`) |
 | pavers | 2.4 | `#a69b8d` | stamped concrete: 16 px slabs of slightly different tone with dark joints (the chapel plaza and parking) |
+| concrete | 4.0 | `#a3a49c` | faint stains, a saw-cut joint at each tile edge (the gym's apron, lane and walk) |
+| slate | 2.4 | `#605e5c` | grey stone tiles in staggered 16 px courses (the gym's lower walls) |
+| solar | 1.0 | `#26364f` | 16 px cells with lighter lines and a faint sheen (the gym's roof panels) |
+| ribbed | 1.6 | `#a9aeae` | roof sheeting, a lit and a dark line every 8 px |
 
 To add a kind: add it to `TILE_METRES`, `PALETTE` and a `match` branch in
 `_texture()`. Keep grain low (2–9/255). Keep colours slightly desaturated and
@@ -218,7 +223,8 @@ Helpers in `world.gd`:
 
 | Helper | Use |
 | --- | --- |
-| `box(size, at, material, turn := 0.0)` | Every wall, slab, pier, rail and prop. Boxes with equal size and material become **one MultiMesh** at `_flush()`; keep using it, it is why ~1,500 boxes run fast. `turn` rotates about Y |
+| `box(size, at, material, turn := 0.0, tilt := 0.0)` | Every wall, slab, pier, rail and prop. Boxes with equal size and material become **one MultiMesh** at `_flush()`; keep using it, it is why thousands of boxes run fast. `turn` rotates about Y; `tilt` then leans the box about its own X (roof slopes, solar panels, open awning panes) |
+| `room_glass(lit)` | Window glass; `true` is the shared warm glass that glows at night |
 | `window(x, y, z, w, h)` | A full window: dark frame, glass (sometimes lit at night), mullions, sill |
 | `panel(text, at, width, height, ink, board)` | A sign: a board and a shaded `Label3D`, readable at every zoom |
 | `rod(from, to, radius, color)` | Poles, branches, trusses, rails at angles |
@@ -308,6 +314,9 @@ Night lights (in `world.lamps`, visible only at night):
 - LED street lights: `SpotLight3D` from the lamp head, `#fff0d9`, energy 5.0,
   range 12, angle 68°, shadows on; the head glows `#fff3dc` (day 0.2, night 3.5).
 - Stall lights: omni `#ffd79d`, 1.6, reach 7.5.
+- Gym entrance lights: omni `#ffd79d`, 1.2, reach 6.0 (front doors); 1.0,
+  reach 6.5 (two under the side canopy). Gym wall lamps are emissive only
+  (`glow(#f6f1e1, 0, 1.6)`), no light.
 - Canopy strips: omni `#ffcf92`, 0.55, reach 4.6, plus emissive strips.
 - Omni attenuation is 1.4 everywhere.
 
@@ -390,6 +399,8 @@ before using them.
 | 4 | Canteen (moves the student to the patio) | 28 |
 | 5 | Close-up | 10 |
 | 6 | Chapel (moves the student to the plaza) | 32 |
+| 7 | IH Gym (moves the student to the apron in front) | 84 |
+| 8 | Gym side (moves the student to the lane by the side entrance) | 44 |
 
 - Three blends drive the camera from the width: `close` (22 → 8 m drops the
   target to the student's chest height), `wide` (22 → 56 m) and `campus`
@@ -405,11 +416,17 @@ before using them.
   - **Chapel** (`chapel_for`): turned −90°, looking east at the glass front
     (x = −26), sliding in Z, on the lawn path past z 24, the plaza, the parking
     and the west road.
+  - **Gym** (`gym_for`): turned −90°, looking east at the gym's front (x = 58),
+    sliding in Z, on the east road past z 38 and the apron. Close up it frames
+    the student's own depth so they stay in shot on the road.
+  - **Gym gable** (`gable_for`): a further −90° (−180° in all), looking south
+    at the north gable (z 66.8) from the lane, sliding in X.
   A new building gets its own zone the same way: a `*_for(x, z)` weight, a
   facing, and the plane it frames. Make sure the camera's standing spot (focus
   minus 23 m close up, up to 90 m wide) is not inside another building.
-- The east and south roads are drawn but not walkable yet: their views need the
-  Covered Court, the gym and SJH, which are still plots.
+- The east road is walkable down past the gym, with the gym's apron and the
+  lane to its side entrance. The south road is drawn but not walkable yet: its
+  view needs SJH, which is still a plot.
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
   away/towards, rotated by the zone's turn, so holding D walks you round the corner.
 - **Q/E** orbit ±0.25 rad. Default orbit 0.12. Smooth zoom (rate 10). **R** resets.

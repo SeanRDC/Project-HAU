@@ -38,6 +38,7 @@ the ignored `builds/godot-tools/4.7.2/`. Other machines can
 | Shift | Run |
 | Mouse wheel, +/- | Zoom (smooth), in to about the student's own height |
 | 1-6 | APS + canteen, Whole building, Corridor, Canteen (patio), Close-up, Chapel (plaza) |
+| 7-8 | IH Gym (front), Gym side (the side entrance from the lane) |
 | Q/E | Camera angle |
 | T | Morning, noon, afternoon, night |
 | C | Boy / girl |
@@ -100,6 +101,7 @@ because their kernel grows with zoom.
 | `roads.gd` | The campus loop road round the chapel lawn, and the distance across it |
 | `areas/chapel.gd` | The Chapel of the Holy Guardian Angel, its plaza, oval parking, paths and planting |
 | `areas/plots.gd` | Reserved plots for the buildings teammates are making |
+| `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both entrances, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
 | `audio.gd` | Synthesised music, wind, footsteps, blips and crickets (no audio files) |
 | `shaders/` | Edges, leaves, sky, display grade |
@@ -116,10 +118,10 @@ Checks the canteen and signs, that the wing faces the patio, the road bend, lawn
 rail gap, walking up the canteen steps, floor heights, lights per time, sheet
 switching, sprite shadows, and that the wide/whole-building framings contain
 the frontage. Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
-writes 14 review shots into the ignored `builds/aps-godot-review/port/`.
+writes 18 review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
-`--zoom=`, `--angle=`, `--view=canteen`, `--pixel=auto|crisp|pixel`,
+`--zoom=`, `--angle=`, `--view=canteen|gym|gym-side`, `--pixel=auto|crisp|pixel`,
 `--walk=<seconds>`, `--hide-help`, `--capture=<absolute PNG path>`.
 
 Geometry is approximate, from the walk photos, not a survey. The far sidewalk,
