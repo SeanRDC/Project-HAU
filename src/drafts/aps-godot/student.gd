@@ -5,7 +5,9 @@ extends Node3D
 const World := preload("res://world.gd")
 const HEIGHT := 1.83
 const STRIDE := 1.15 # metres per walk cycle, so feet do not slide
-const FRAMES := {"boy": {"idle": 12, "walk": 9}, "girl": {"idle": 12, "walk": 6}}
+const FRAMES := {"boy": {"idle": 24, "walk": 12}, "girl": {"idle": 12, "walk": 6}}
+## Where in the walk cycle (0-1) a foot first lands, so footsteps match the sheet.
+const CONTACT := {"boy": 0.25, "girl": 0.0}
 
 ## A foot landed: two steps per walk cycle.
 signal stepped
@@ -73,9 +75,9 @@ func move(direction: Vector2, running: bool, delta: float, screen_x := NAN) -> v
 	place(position.x + step.x, position.z)
 	place(position.x, position.z + step.y)
 	var travelled := before.distance_to(Vector2(position.x, position.z))
-	var steps_before := floori(_distance / STRIDE * 2.0)
+	var steps_before := floori((_distance / STRIDE - CONTACT[who]) * 2.0)
 	_distance += travelled
-	if floori(_distance / STRIDE * 2.0) != steps_before:
+	if floori((_distance / STRIDE - CONTACT[who]) * 2.0) != steps_before:
 		stepped.emit()
 	var sideways := direction.x if is_nan(screen_x) else screen_x
 	if sideways != 0.0:
