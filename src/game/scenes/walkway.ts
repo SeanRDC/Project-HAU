@@ -102,6 +102,7 @@ export function buildWalkway(): AreaDef {
     id: 'walkway',
     title: 'Sidewalk 2',
     subtitle: 'Sa gilid ng PGN, papunta sa chapel',
+    subtitleEn: 'Along PGN, toward the chapel',
     width: WIDTH,
     walkY: WALK,
     bounds: [16, WIDTH - 16],

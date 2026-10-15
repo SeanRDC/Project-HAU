@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "check:links": "node tools/check-links.mjs",
+    "check:translations": "node tools/check-translations.mjs",
     "import:osm": "node tools/import-osm.mjs"
   },
   "devDependencies": {

@@ -115,6 +115,7 @@ export function buildCanteen(): AreaDef {
     id: 'canteen',
     title: 'APS Canteen',
     subtitle: 'Kain muna bago klase',
+    subtitleEn: 'A bite before class',
     width: WIDTH,
     walkY: WALK,
     bounds: [24, WIDTH - 24],

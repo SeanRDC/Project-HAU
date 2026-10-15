@@ -42,8 +42,11 @@ Add these to the URL to jump straight somewhere while testing:
 * `rain` - start raining, 0 to 1 (`rain=1` is a downpour)
 * `pesos` - how much baon to start with (default 150)
 * `warm` - simulate this many seconds before the first frame
+* `lang` - `en` plays in English, `tl` in Tagalog (doesn't change the language saved on this browser)
 
 Any of these also turns the save game off for that run, so testing never touches your real progress.
+
+**L** switches between Tagalog and English, on the title screen or in the game. See `game/lang.ts`; `npm run check:translations` checks the English (see `docs/translation-review.md`).
 
 In the game, **C** opens the campus map. W/S picks a place and E jumps there (a stand-in until the whole campus is joined up on foot; switch it off with `TELEPORT` in `game/ui/map.ts`). The minimap in the top right is the same map, zoomed in.
 

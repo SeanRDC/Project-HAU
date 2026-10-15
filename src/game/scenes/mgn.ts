@@ -69,6 +69,7 @@ export function buildMgn(): AreaDef {
     id: 'mgn',
     title: 'Mamerto G. Nepomuceno Building',
     subtitle: 'Sa pagitan ng chapel at SJH',
+    subtitleEn: 'Between the chapel and SJH',
     width: WIDTH,
     walkY: WALK,
     bounds: [16, WIDTH - 16],

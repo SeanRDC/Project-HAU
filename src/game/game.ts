@@ -9,6 +9,7 @@ import { Sky } from './art/sky';
 import { whereAmI } from './campus/streets';
 import { Cutscene, CutsceneHost } from './cutscene';
 import { Dialogue } from './dialogue';
+import { lang, loadLang, setLang, toggleLang, tr } from './lang';
 import { buildAps } from './scenes/aps';
 import { buildApsLobby } from './scenes/apslobby';
 import { buildCanteen } from './scenes/canteen';
@@ -106,7 +107,8 @@ export class Game implements GameApi {
   private pending: { area: string; spawn: string } | null = null;
   private areaAge = 99;
   private playAge = 0;
-  private toast: { text: string; age: number } | null = null;
+  /** a banner at the top (a ticked to-do, the language just picked), in both languages so it follows a switch */
+  private toast: { text: string; en?: string; age: number } | null = null;
   private target: Target | null = null;
   /** where to put the player when continuing a saved game */
   private resume: { area: string; x: number } | null = null;
@@ -124,6 +126,7 @@ export class Game implements GameApi {
   };
 
   constructor(private display: Display, private input: Input) {
+    loadLang();
     const defs: AreaDef[] = [
       buildGate(), buildEntry(), buildPark(), buildPlaza(), buildLobby(), buildCourtyard(),
       // the rest of the campus, outsides only for now
@@ -177,6 +180,9 @@ export class Game implements GameApi {
     // ?pesos=20 starts with that much baon; ?rain=1 starts a downpour (0.5 for steady rain)
     if (q.has('pesos')) this.wallet = Number(q.get('pesos'));
     this.weather.force(Number(q.get('rain') ?? 0));
+    // ?lang=en plays in English, without changing the language picked on this browser
+    const l = q.get('lang');
+    if (l === 'en' || l === 'tl') setLang(l, false);
     // ?char=girl plays as the girl
     this.applyCharacter(q.get('char') === 'girl' ? 'girl' : 'boy');
     setPlayerName(q.get('name') ?? '');
@@ -296,7 +302,7 @@ export class Game implements GameApi {
     this.flags.add(flag);
     const task = TASKS.find((t) => t.flag === flag);
     if (task) {
-      this.toast = { text: task.text, age: 0 };
+      this.toast = { text: task.text, en: task.en, age: 0 };
       this.audio.chime();
     }
     this.save();
@@ -342,6 +348,7 @@ export class Game implements GameApi {
     for (const a of this.areas.values()) a.rain = this.weather.rain;
     if (this.change) this.change.age += dt;
     if (input.pressed('mute')) this.audio.toggleMute();
+    if (input.pressed('lang')) this.switchLang();
     const mood = this.weather.mood(moodAt(this.clock));
     this.sky.update(dt);
 
@@ -487,6 +494,16 @@ export class Game implements GameApi {
     this.updateAudio(mood.night);
   }
 
+  /** L: Tagalog to English and back. Whatever is on screen follows straight away, a line mid-typing included. */
+  private switchLang(): void {
+    const before = this.dialogue.text;
+    // dev runs (URL shortcuts) never touch what this browser has stored
+    toggleLang(this.persist);
+    this.dialogue.relang(before);
+    if (this.mode === 'play') this.toast = { text: 'Tagalog', en: 'English', age: 0 };
+    this.audio.select();
+  }
+
   private openSelect(fresh: boolean): void {
     this.selecting = true;
     this.startFresh = fresh;
@@ -580,15 +597,15 @@ export class Game implements GameApi {
       if (!this.dialogue.active) {
         if (!this.cutscene) drawClock(ui, this.clock, this.wallet, this.raining(), this.change);
         if (!this.cutscene && !this.phone.open) this.map.renderMini(ui, here, ahead, this.time, mood.night);
-        drawAreaTitle(ui, area.def.title, area.def.subtitle, this.areaAge);
+        drawAreaTitle(ui, area.def.title, tr(area.def.subtitle, area.def.subtitleEn), this.areaAge);
         if (!this.cutscene) drawControlsHint(ui, clamp(14 - this.playAge, 0, 1));
       }
-      if (this.toast) drawToast(ui, this.toast.text, this.toast.age);
+      if (this.toast) drawToast(ui, tr(this.toast.text, this.toast.en), this.toast.age);
       this.phone.render(ui, this.clock, (f) => this.has(f), { pesos: this.wallet, last: this.lastBuy });
       this.map.render(ui, here, ahead, this.time);
     }
     const showing = (s: Game['screen']) => (this.screen === s ? this.screenFade * (1 - this.titleOut) : 0);
-    drawTitle(ui, this.time, 1 - showing('title'), this.hasSave);
+    drawTitle(ui, this.time, 1 - showing('title'), this.hasSave, lang());
     drawMenuBackdrop(ui, this.selectFade * (1 - this.titleOut));
     drawSelect(ui, this.time, showing('select'), this.choiceAnim);
     drawName(ui, this.time, showing('name'), this.choice, this.nameDraft, NAME_MAX);

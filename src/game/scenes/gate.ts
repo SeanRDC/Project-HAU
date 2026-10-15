@@ -368,6 +368,7 @@ export function buildGate(): AreaDef {
     id: 'gate',
     title: 'Side Gate',
     subtitle: 'Sa tabi ng Main Building',
+    subtitleEn: 'Beside the Main Building',
     width: WIDTH,
     walkY: WALK,
     // the turnstiles are as far in as you can walk: from there you go in through the gate

@@ -126,6 +126,7 @@ export function buildCanteenBack(): AreaDef {
     id: 'canteenback',
     title: 'APS Canteen',
     subtitle: 'Sa likod, tanaw ang Sacred Heart',
+    subtitleEn: 'Out back, looking over to Sacred Heart',
     width: WIDTH,
     walkY: WALK,
     bounds: [20, WIDTH - 20],

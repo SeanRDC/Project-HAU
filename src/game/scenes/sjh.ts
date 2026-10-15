@@ -216,6 +216,7 @@ export function buildSjh(): AreaDef {
     id: 'sjh',
     title: 'St. Joseph Hall',
     subtitle: 'Education, Arts and Sciences, at Computing',
+    subtitleEn: 'Education, Arts and Sciences, and Computing',
     width: WIDTH,
     walkY: WALK,
     bounds: [GYM_X - 30, WIDTH - 24],
