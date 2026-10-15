@@ -164,6 +164,7 @@ func build(world_builder: RefCounted) -> void:
 	_centre()
 	_walkway()
 	_inner_wall()
+	_details()
 	w._flush()
 	w.root = saved
 	_parking()
@@ -192,7 +193,7 @@ func _floors() -> void:
 	var rail: Material = w.material("plain", Color("dcdcd5"))
 	var dark: Material = w.material("glass", Color("5f6b70"))
 	# About one classroom in five is lit at night, chosen by position so it never changes.
-	var lit: Material = w.glow(Color("ffc281"), 0.0, 1.35)
+	var lit := _night_glass(Color("5f6b70"), Color("ffc281"), 1.35)
 	var bays := int(HALF / 4.2)
 	for k in range(1, FLOORS + 1):
 		var y := GROUND + (k - 1) * STOREY
@@ -246,7 +247,7 @@ func _end_towers() -> void:
 ## The centre tower: silver-clad frame, dark glass bands, the brown entrance block with
 ## the sign, the louvred entrance, the canopy and the steps.
 func _centre() -> void:
-	var silver: Material = w.material("metal", Color("c3c8ca"))
+	var silver: Material = w.material("metal", Color("e6eaea"))
 	var cream: Material = w.material("stucco", Color("efe4c6"))
 	var glass: Material = w.material("glass", Color("2c3439"))
 	var brown: Material = w.material("stone", Color("a58d7a"))
@@ -278,7 +279,7 @@ func _centre() -> void:
 	while slat < lower - 0.1:
 		w.box(Vector3(6.4, 0.05, 0.1), Vector3(0, slat, 1.06), w.material("wood", Color("9a7a5c")))
 		slat += 0.18
-	w.box(Vector3(5.6, 2.6, 0.06), Vector3(0, WALK_Y + 1.3, 1.08), w.glow(Color("c9b48a"), 0.0, 1.0))
+	w.box(Vector3(5.6, 2.6, 0.06), Vector3(0, WALK_Y + 1.3, 1.08), _night_glass(Color("75858c"), Color("ffe2b0"), 1.0))
 	for x in [-2.8, -1.0, 1.0, 2.8]:
 		w.box(Vector3(0.08, 2.6, 0.1), Vector3(x, WALK_Y + 1.3, 1.1), w.material("plain", Color("3b3f42")))
 	# The canopy: a dark steel slab with a rounded fascia. It stops short of the road:
@@ -290,6 +291,143 @@ func _centre() -> void:
 		w.box(Vector3(9.0, height + 0.15, 0.4), Vector3(0, height / 2.0, 1.3 + k * 0.4), w.material("stone", Color("bdb3a6")))
 	for x in [-4.8, 4.8]:
 		w.rod(Vector3(x, 0.0, 2.4), Vector3(x, 1.0, 1.2), 0.03, Color("b9bcbc"))
+
+# --- Facade details (the polish pass) --------------------------------------------------
+
+## Glass that looks like ordinary dark glass by day and glows at night (a plain glow
+## material would show its warm colour in daylight too).
+func _night_glass(day: Color, night: Color, energy: float) -> StandardMaterial3D:
+	var made := (w.material("glass", day) as StandardMaterial3D).duplicate() as StandardMaterial3D
+	made.emission_enabled = true
+	made.emission = night
+	made.emission_energy_multiplier = 0.0
+	w.glows.append([made, 0.0, energy])
+	return made
+
+## The things that make the slab read like the photos up close: framed classroom
+## windows with sills, tube lights under every balcony (lit at night), joints on the
+## teal glass and the silver cladding, stone joints on the brown entrance block, a lit
+## sign, downlights under the canopy, AC units on the top floor, the roof's overhang and
+## fascia, and the telecom tower behind the west wing.
+func _details() -> void:
+	var frame: Material = w.material("plain", Color("e9e9e3"))
+	var sill: Material = w.material("stucco", Color("f1f1ec"))
+	var tube: Material = w.glow(Color("f4f1e6"), 0.5, 2.0)
+	var fixture: Material = w.material("plain", Color("d4d4cd"))
+	var joint: Material = w.material("plain", Color("6f9894"))
+	var bays := int(HALF / 4.2)
+	for k in range(1, FLOORS):
+		var y := GROUND + (k - 1) * STOREY
+		for bay in range(-bays, bays):
+			var x := (bay + 0.5) * 4.2
+			if absf(x) < TOWER + 1.0 or absf(x) > WALK_END:
+				continue
+			# The window: a white frame, a mullion and a transom, and a sill.
+			for dx in [-1.22, 0.0, 1.22]:
+				w.box(Vector3(0.06, 1.18, 0.05), Vector3(x + dx, y + 1.55, WALL_Z + 0.16), frame)
+			for dy in [-0.57, 0.18, 0.57]:
+				w.box(Vector3(2.5, 0.05, 0.05), Vector3(x, y + 1.55 + dy, WALL_Z + 0.16), frame)
+			w.box(Vector3(2.6, 0.06, 0.18), Vector3(x, y + 0.94, WALL_Z + 0.2), sill)
+			# A tube light on the balcony ceiling in front of each classroom.
+			w.box(Vector3(1.2, 0.07, 0.16), Vector3(x, y + STOREY - 0.42, -2.1), fixture)
+			w.box(Vector3(1.1, 0.03, 0.08), Vector3(x, y + STOREY - 0.47, -2.1), tube)
+			# Joints on the teal glass panels, as on the tiled panels in the photos.
+			var side: int = bay if bay >= 0 else -bay - 1
+			var panel := (k in [3, 4] and side >= 2 and side <= 4) or (k in [1, 2] and side >= 5 and side <= 8)
+			if panel or (k == 6 and side >= 7):
+				for dx in [-1.4, 0.0, 1.4]:
+					w.box(Vector3(0.03, 2.1, 0.02), Vector3(x + dx, y + 1.2, -0.4), joint)
+				w.box(Vector3(4.2, 0.03, 0.02), Vector3(x, y + 1.2, -0.4), joint)
+	# A few rooms' worth of light on the balcony ceilings at night.
+	for x in [-36.0, -20.0, 20.0, 36.0]:
+		w._omni(Vector3(x, GROUND + 3.0 * STOREY - 0.8, -2.0), Color("f3f1ea"), 1.2, 9.0)
+	_cladding()
+	_entrance_details()
+	_roofline()
+
+## Panel joints on the centre tower's silver cladding (behind the cream frames).
+func _cladding() -> void:
+	var seam: Material = w.material("plain", Color("aab1b3"))
+	var top := ROOF + 2.6
+	var y := GROUND + 3.0 * STOREY + 0.6
+	while y < top:
+		w.box(Vector3(2.0 * TOWER, 0.04, 0.02), Vector3(0, y, 1.01), seam)
+		y += 1.1
+	var x := -TOWER + 1.2
+	while x < TOWER:
+		w.box(Vector3(0.04, top - GROUND - 3.0 * STOREY, 0.02), Vector3(x, (top + GROUND + 3.0 * STOREY) / 2.0, 1.01), seam)
+		x += 1.2
+
+## Stone joints on the brown entrance block, the sign lit from below at night, and
+## downlights under the canopy.
+func _entrance_details() -> void:
+	var joint: Material = w.material("plain", Color("7d6656"))
+	var band := GROUND + 3.0 * STOREY
+	var lower := GROUND + 1.6
+	var y := lower + 0.6
+	while y < band - 2.2:
+		w.box(Vector3(2.0 * TOWER - 0.6, 0.03, 0.01), Vector3(0, y, 1.115), joint)
+		y += 0.6
+	for side in [-1.0, 1.0]:
+		var z := 0.6
+		while z < lower:
+			w.box(Vector3(4.4, 0.03, 0.01), Vector3(side * 7.0, z, 1.115), joint)
+			z += 0.6
+		var x := 5.0
+		while x < 9.2:
+			w.box(Vector3(0.03, lower, 0.01), Vector3(side * x, lower / 2.0, 1.115), joint)
+			x += 1.2
+	var x := -TOWER + 1.5
+	while x < TOWER - 0.4:
+		w.box(Vector3(0.03, band - 2.2 - lower, 0.01), Vector3(x, (band - 2.2 + lower) / 2.0, 1.115), joint)
+		x += 1.2
+	# The sign's backlight: a warm strip under the letters, glowing at night.
+	w.box(Vector3(7.6, 0.05, 0.06), Vector3(0, GROUND + 2.72, 1.2), w.glow(Color("ffe2b0"), 0.0, 2.6))
+	w._omni(Vector3(0, GROUND + 2.6, 1.8), Color("ffe2b0"), 1.0, 4.0)
+	for spot in [-4.5, -1.5, 1.5, 4.5]:
+		w.box(Vector3(0.22, 0.03, 0.22), Vector3(spot, GROUND - 0.4, 2.4), w.glow(Color("fff1d6"), 0.2, 2.4))
+	for spot in [-3.0, 3.0]:
+		w._omni(Vector3(spot, GROUND - 0.8, 2.4), Color("ffd9a0"), 1.4, 6.0)
+
+## The roof's overhang and fascia, AC units along the top floor, and the telecom tower
+## that stands behind the west wing (it shows over the roof in the front photo).
+func _roofline() -> void:
+	var fascia: Material = w.material("stucco", Color("ecebe5"))
+	var soffit: Material = w.material("stucco", Color("bdbdb6"))
+	w.box(Vector3(2.0 * HALF - 9.0, 0.2, 1.6), Vector3(0, ROOF + 0.35, 0.3), soffit)
+	w.box(Vector3(2.0 * HALF - 9.0, 0.5, 0.16), Vector3(0, ROOF + 0.45, 1.1), fascia)
+	var unit: Material = w.material("plain", Color("e8e8e2"))
+	var grille: Material = w.material("plain", Color("3f4446"))
+	var y := GROUND + (FLOORS - 1) * STOREY
+	var x := -WALK_END + 2.0
+	while x < WALK_END:
+		if absf(x) > TOWER + 1.5:
+			w.box(Vector3(0.8, 0.5, 0.36), Vector3(x, y + 0.3, -0.62), unit)
+			w.box(Vector3(0.6, 0.32, 0.02), Vector3(x, y + 0.3, -0.43), grille)
+		x += 6.3
+	# The telecom tower: four tapering legs, cross braces, red and white bands, a mast.
+	var foot := Vector3(-(HALF - 12.0), ROOF + 0.4, -12.0) # the east end: left of the front photo
+	var height := 16.0
+	var red := Color("c4402e")
+	var white := Color("eeeeea")
+	var legs: Array[Vector3] = []
+	for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+		legs.append(Vector3(corner.x, 0, corner.y))
+	for i in 4:
+		w.rod(foot + legs[i] * 1.2, foot + legs[i] * 0.35 + Vector3(0, height, 0), 0.06, Color("b9bdbd"))
+	for level in 8:
+		var t0 := float(level) / 8.0
+		var t1 := float(level + 1) / 8.0
+		var colour := red if level % 2 == 0 else white
+		for i in 4:
+			var a := legs[i]
+			var b := legs[(i + 1) % 4]
+			var p0 := foot + a * lerpf(1.2, 0.35, t0) + Vector3(0, height * t0, 0)
+			var p1 := foot + b * lerpf(1.2, 0.35, t1) + Vector3(0, height * t1, 0)
+			w.rod(p0, p1, 0.025, colour)
+	w.rod(foot + Vector3(0, height, 0), foot + Vector3(0, height + 3.0, 0), 0.05, red)
+	for i in 3:
+		w.box(Vector3(0.25, 0.9, 0.12), foot + Vector3(0.3 - i * 0.3, height - 1.0, 0.4), w.material("plain", Color("dfe1df")))
 
 # --- The covered walkway -------------------------------------------------------------
 
@@ -423,47 +561,159 @@ func _garden() -> void:
 		var turn := atan2(-(b - a).y, (b - a).x)
 		w.box(Vector3(a.distance_to(b) + 0.05, 0.3, 0.32), Vector3(mid.x, -0.05, mid.y), w.material("stucco", Color("cfc9b8")), turn)
 		w.box(Vector3(a.distance_to(b) + 0.05, 0.08, 0.33), Vector3(mid.x, 0.12, mid.y), w.material("plain", Color("d4b33a")), turn)
-	# The statue: a white robe, a pale-blue mantle, arms open, on an octagonal plinth with flowers.
-	var stone: Material = w.material("stucco", Color("f1f1ec"))
-	var blue: Material = w.material("plain", Color("a9c3dc"))
-	var plinth := CylinderMesh.new()
-	plinth.top_radius = 0.75
-	plinth.bottom_radius = 0.8
-	plinth.height = 1.2
-	plinth.radial_segments = 8
-	w._mesh(plinth, Vector3(MARY.x, 0.68, MARY.y), stone)
-	w.box(Vector3(0.6, 0.7, 0.02), Vector3(MARY.x, 0.75, MARY.y - 0.78), w.material("plain", Color("26282a")))
-	var flowers: Array[Color] = [Color("f2e45a"), Color("ffffff"), Color("f0b02a")]
-	for i in 14:
-		var a := TAU * i / 14.0
-		w.box(Vector3(0.16, 0.14, 0.16), Vector3(MARY.x + cos(a) * 0.62, 1.34, MARY.y + sin(a) * 0.62), w.material("plain", flowers[i % 3]))
-	var robe := CylinderMesh.new()
-	robe.top_radius = 0.2
-	robe.bottom_radius = 0.42
-	robe.height = 1.75
-	robe.radial_segments = 10
-	w._mesh(robe, Vector3(MARY.x, 2.16, MARY.y), stone)
-	var mantle := CylinderMesh.new()
-	mantle.top_radius = 0.24
-	mantle.bottom_radius = 0.48
-	mantle.height = 1.4
-	mantle.radial_segments = 10
-	mantle.cap_top = false
-	w._mesh(mantle, Vector3(MARY.x, 2.3, MARY.y + 0.04), blue)
-	var head := SphereMesh.new()
-	head.radius = 0.17
-	head.height = 0.36
-	w._mesh(head, Vector3(MARY.x, 3.2, MARY.y), w.material("plain", Color("dcd8d0")))
-	var veil: MeshInstance3D = w._mesh(head, Vector3(MARY.x, 3.24, MARY.y + 0.05), blue)
-	veil.scale = Vector3(1.15, 1.1, 1.15)
-	for side in [-1.0, 1.0]:
-		w.rod(Vector3(MARY.x + side * 0.25, 2.75, MARY.y - 0.05), Vector3(MARY.x + side * 0.85, 2.45, MARY.y - 0.35), 0.07, Color("ecece6"))
-	w.box(Vector3(0.18, 0.18, 0.08), Vector3(MARY.x, 2.75, MARY.y - 0.22), w.material("plain", Color("d9a0a8")))
+	_mary()
 	var corner := ISLAND.position
-	w._shrub(Vector3(corner.x + 4.9, 0.08, corner.y + 5.9), 1.5, 760)
+	# Behind her: a trimmed green hedge and red-tipped shrubs, as in the photo.
+	w._shrub(Vector3(corner.x + 4.9, 0.08, corner.y + 5.9), 1.7, 760, w.HEDGE_COLORS)
 	w._shrub(Vector3(corner.x + 1.1, 0.08, corner.y + 5.6), 1.4, 761)
-	w._shrub(Vector3(corner.x + 4.9, 0.08, corner.y + 1.2), 1.2, 762)
+	w._shrub(Vector3(corner.x + 5.1, 0.08, corner.y + 3.4), 1.2, 764)
+	w._shrub(Vector3(corner.x + 0.9, 0.08, corner.y + 3.0), 1.0, 765, w.HEDGE_COLORS)
+	w._shrub(Vector3(corner.x + 4.9, 0.08, corner.y + 1.2), 1.1, 762, w.HEDGE_COLORS)
 	w._bamboo(Vector3(corner.x + 3.0, 0.08, corner.y + 6.3), 0.5, 9, 763) # behind her, as seen from the road
+
+## A surface of revolution: `profile` is (radius, height) from the bottom up, swept from
+## `from` to `to` degrees round the vertical (0 = the front, facing the road). Both sides
+## are emitted, so partial sweeps (the mantle, the veil) read from inside too.
+func _lathe(profile: PackedVector2Array, from: float, to: float, steps := 20) -> ArrayMesh:
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var normals := PackedVector2Array()
+	for i in profile.size():
+		var t := profile[mini(i + 1, profile.size() - 1)] - profile[maxi(i - 1, 0)]
+		normals.append(Vector2(t.y, -t.x).normalized())
+	for k in steps:
+		var a0 := deg_to_rad(lerpf(from, to, float(k) / steps))
+		var a1 := deg_to_rad(lerpf(from, to, float(k + 1) / steps))
+		for i in profile.size() - 1:
+			var quad := []
+			for corner in [[a0, i], [a1, i], [a1, i + 1], [a0, i + 1]]:
+				var radial := Vector3(sin(corner[0]), 0, -cos(corner[0]))
+				var p: Vector2 = profile[corner[1]]
+				var n: Vector2 = normals[corner[1]]
+				quad.append([radial * p.x + Vector3.UP * p.y, (radial * n.x + Vector3.UP * n.y).normalized()])
+			for order in [[0, 1, 2, 0, 2, 3], [0, 2, 1, 0, 3, 2]]:
+				var flip := 1.0 if order[1] == 1 else -1.0
+				for j in order:
+					tool.set_normal(quad[j][1] * flip)
+					tool.add_vertex(quad[j][0])
+	return tool.commit()
+
+func _profile(points: Array) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p in points:
+		out.append(Vector2(p[0], p[1]))
+	return out
+
+## The Mary statue, from the "CLOSE UP RIGHT SIDE" photo: Our Lady with her unborn child
+## on an octagonal white pedestal with a black plaque ("A Mother's Prayer for Her Unborn
+## Child") and a ring of yellow and white flowers. A white robe with a gentle belly; a
+## pale-blue mantle over her head, open at the front and falling down her back; arms held
+## out and down with wide bell sleeves and open palms; a pink heart on her chest. A ground
+## lamp in the lawn lights her at night.
+func _mary() -> void:
+	var white: Material = w.material("stucco", Color("f3f3ef"))
+	var stone: Material = w.material("stucco", Color("eceae3"))
+	var blue := (w.material("plain", Color("b3c9de")) as StandardMaterial3D).duplicate() as StandardMaterial3D
+	blue.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var face: Material = w.material("plain", Color("ebe5dc"))
+	var at := Vector3(MARY.x, 0.0, MARY.y)
+	# The pedestal: a wide base, the octagonal shaft (a flat face to the road), a capping slab.
+	for part in [[0.64, 0.66, 0.14, 0.15, stone], [0.55, 0.55, 1.0, 0.72, white], [0.68, 0.66, 0.1, 1.27, stone]]:
+		var octagon := CylinderMesh.new()
+		octagon.top_radius = part[0]
+		octagon.bottom_radius = part[1]
+		octagon.height = part[2]
+		octagon.radial_segments = 8
+		var block: MeshInstance3D = w._mesh(octagon, at + Vector3(0, part[3], 0), part[4])
+		block.rotation.y = PI / 8.0
+	# The plaque on the front face, its title and lines of the prayer.
+	var front := at + Vector3(0, 0, -0.505)
+	w.box(Vector3(0.44, 0.56, 0.02), front + Vector3(0, 0.74, 0), w.material("plain", Color("1d2022")))
+	w.box(Vector3(0.32, 0.03, 0.01), front + Vector3(0, 0.95, -0.012), w.material("plain", Color("d9d4c6")))
+	for line in 7:
+		var length := 0.34 - (line % 3) * 0.04
+		w.box(Vector3(length, 0.012, 0.01), front + Vector3(0, 0.88 - line * 0.055, -0.012), w.material("plain", Color("8d8a84")))
+	# The flowers round her feet: yellow, white and orange blooms over green leaves.
+	var random := RandomNumberGenerator.new()
+	random.seed = 7711
+	var blooms: Array[Color] = [Color("f2d43a"), Color("f6f6f0"), Color("f0a030"), Color("f2d43a"), Color("fbfbf6")]
+	for i in 34:
+		var a := TAU * i / 34.0 + random.randf_range(-0.05, 0.05)
+		var r := random.randf_range(0.46, 0.6)
+		var spot := at + Vector3(cos(a) * r, 1.36 + random.randf_range(0.0, 0.08), sin(a) * r)
+		if i % 3 == 0:
+			w.box(Vector3(0.14, 0.08, 0.1), spot - Vector3(0, 0.04, 0), w.material("plain", Color("4f7a3a")), a)
+		w.box(Vector3(0.09, 0.08, 0.09), spot, w.material("plain", blooms[i % blooms.size()]), a)
+	# The figure stands on a low round base on the cap.
+	var base := 1.32
+	var disc := CylinderMesh.new()
+	disc.top_radius = 0.4
+	disc.bottom_radius = 0.42
+	disc.height = 0.06
+	disc.radial_segments = 16
+	w._mesh(disc, at + Vector3(0, base + 0.03, 0), white)
+	var figure := at + Vector3(0, base + 0.06, 0)
+	# The robe: falling straight to the feet, the shoulders broader than deep.
+	var robe: MeshInstance3D = w._mesh(_lathe(_profile([[0.36, 0.0], [0.35, 0.18], [0.31, 0.6], [0.29, 0.95], [0.26, 1.25],
+		[0.25, 1.42], [0.27, 1.58], [0.28, 1.66], [0.2, 1.73], [0.075, 1.78], [0.07, 1.84], [0.0, 1.85]]), 0.0, 360.0, 24), figure, white)
+	robe.scale = Vector3(1.0, 1.0, 0.72)
+	# Her unborn child: a gentle swell at the front of the robe.
+	var belly := SphereMesh.new()
+	belly.radius = 0.17
+	belly.height = 0.4
+	var swell: MeshInstance3D = w._mesh(belly, figure + Vector3(0, 1.0, -0.09), white)
+	swell.scale = Vector3(1.0, 1.0, 0.62)
+	# The mantle: over the shoulders and down her back and sides, open at the front.
+	var mantle: MeshInstance3D = w._mesh(_lathe(_profile([[0.42, 0.02], [0.4, 0.4], [0.36, 0.9], [0.32, 1.3],
+		[0.31, 1.52], [0.32, 1.64], [0.25, 1.74], [0.18, 1.8]]), 42.0, 318.0, 22), figure, blue)
+	mantle.scale = Vector3(1.0, 1.0, 0.76)
+	# The head, the face turned a little down, and the veil round it.
+	var head := SphereMesh.new()
+	head.radius = 0.12
+	head.height = 0.29
+	var skull: MeshInstance3D = w._mesh(head, figure + Vector3(0, 1.98, -0.015), face)
+	skull.rotation.x = 0.12
+	var veil: MeshInstance3D = w._mesh(_lathe(_profile([[0.17, 1.76], [0.165, 1.88], [0.155, 1.99], [0.13, 2.08],
+		[0.085, 2.14], [0.0, 2.16]]), 48.0, 312.0, 18), figure + Vector3(0, 0, 0.01), blue)
+	veil.scale = Vector3(1.0, 1.0, 0.95)
+	w.box(Vector3(0.012, 0.03, 0.012), figure + Vector3(-0.04, 2.0, -0.12), w.material("plain", Color("8d847a")))
+	w.box(Vector3(0.012, 0.03, 0.012), figure + Vector3(0.04, 2.0, -0.12), w.material("plain", Color("8d847a")))
+	# Arms held out and down: the forearm in a wide bell sleeve, the hand open.
+	for side in [-1.0, 1.0]:
+		var elbow: Vector3 = figure + Vector3(side * 0.27, 1.38, -0.04)
+		var wrist: Vector3 = figure + Vector3(side * 0.58, 1.24, -0.26)
+		w.rod(elbow, wrist, 0.06, Color("f3f3ef"))
+		w.rod(wrist + Vector3(0, -0.02, 0), elbow.lerp(wrist, 0.35), 0.12, Color("f3f3ef")) # the sleeve flaring open
+		w.rod(wrist + Vector3(-side * 0.06, -0.24, 0.05), wrist, 0.05, Color("eeeee8")) # the sleeve's hanging fold
+		var hand := SphereMesh.new()
+		hand.radius = 0.05
+		hand.height = 0.1
+		var palm: MeshInstance3D = w._mesh(hand, wrist + Vector3(side * 0.08, -0.03, -0.05), face)
+		palm.scale = Vector3(1.0, 1.4, 0.55)
+		palm.rotation = Vector3(0.3, 0, side * 0.5)
+	# The Immaculate Heart on her chest: a pink heart with a small gold flame.
+	var chest := figure + Vector3(0, 1.5, -0.205)
+	var heart := BoxMesh.new()
+	heart.size = Vector3(0.1, 0.1, 0.03)
+	var shape: MeshInstance3D = w._mesh(heart, chest, w.material("plain", Color("d77f8f")))
+	shape.rotation.z = PI / 4.0
+	for side in [-1.0, 1.0]:
+		w.box(Vector3(0.05, 0.05, 0.03), chest + Vector3(side * 0.03, 0.035, -0.002), w.material("plain", Color("d77f8f")))
+	w.box(Vector3(0.03, 0.06, 0.02), chest + Vector3(0, 0.1, -0.01), w.material("plain", Color("e3b54a")))
+	# The ground lamp in the lawn in front, lighting her at night.
+	var lamp_at := at + Vector3(0.3, 0.12, -1.85)
+	w.box(Vector3(0.2, 0.16, 0.2), lamp_at, w.material("plain", Color("26282a")))
+	w.box(Vector3(0.14, 0.02, 0.14), lamp_at + Vector3(0, 0.09, 0), w.glow(Color("fff1d6"), 0.1, 2.5))
+	var light := SpotLight3D.new()
+	light.light_color = Color("fff0d8")
+	light.light_energy = 3.5
+	light.spot_range = 6.0
+	light.spot_angle = 24.0
+	light.spot_angle_attenuation = 0.9
+	# No shadow: from this low the flowers would cast jagged stripes up her robe.
+	light.shadow_enabled = false
+	light.basis = Basis.looking_at(figure + Vector3(0, 1.2, 0) - lamp_at, Vector3.UP)
+	w._lamp(light, lamp_at + Vector3(0, 0.12, 0))
 
 ## Palms, bamboo and red-tipped shrubs along the front, as in the photos.
 func _planting() -> void:

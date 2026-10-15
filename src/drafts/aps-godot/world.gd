@@ -404,6 +404,8 @@ static func _rect(image: Image, x: int, y: int, w: int, h: int, color: Color) ->
 
 ## Shade-tree greens (the default), bamboo's yellow-greens and the red-tipped shrubs.
 const LEAF_COLORS: Array[Color] = [Color("3a5650"), Color("48664f"), Color("61815a"), Color("89965b"), Color("a8ab70")]
+## Trimmed hedges: denser, fresher greens than the shade trees.
+const HEDGE_COLORS: Array[Color] = [Color("2f5a2c"), Color("3f7034"), Color("53863d"), Color("6f9c48"), Color("8fb257")]
 const BAMBOO_COLORS: Array[Color] = [Color("5d7a35"), Color("6f8f3a"), Color("8fae45"), Color("b2c95a"), Color("d0dc78")]
 const SHRUB_COLORS: Array[Color] = [Color("3f5f35"), Color("5a7a3c"), Color("7f8f45"), Color("b0573a"), Color("c9743f")]
 
@@ -1013,11 +1015,11 @@ func _bamboo(at: Vector3, radius: float, culms: int, seed_value: int) -> void:
 	root.add_child(clump)
 
 ## A rounded red-tipped shrub ("Philippine red tip"): six leaf clusters in a low dome.
-func _shrub(at: Vector3, size: float, seed_value: int) -> void:
+func _shrub(at: Vector3, size: float, seed_value: int, colors: Array[Color] = SHRUB_COLORS) -> void:
 	var random := RandomNumberGenerator.new()
 	random.seed = seed_value
 	var middle := at + Vector3(0, size * 0.5, 0)
-	var leaves := _leaf_material(seed_value, middle, SHRUB_COLORS)
+	var leaves := _leaf_material(seed_value, middle, colors)
 	var cluster := _cards(size, size, -size / 2.0, 3, true)
 	for i in 6:
 		var spot := Vector3(random.randf_range(-1, 1), random.randf_range(-0.6, 0.8), random.randf_range(-1, 1)).limit_length(1.0)
@@ -1076,6 +1078,9 @@ func _grasses() -> void:
 	# The strip by the Covered Court: grass along its edges and round the posts.
 	scatter.call(STRIP.position, STRIP.end, 70, -0.05, 0.8,
 		func(x: float, _z: float) -> bool: return x < 43.8 or x > 47.1 or random.randf() < 0.2)
+	# Lush grass on the Mary statue's island, clear of her pedestal.
+	scatter.call(Sjh.ISLAND.position + Vector2(0.35, 0.35), Sjh.ISLAND.end - Vector2(0.35, 0.35), 140, 0.08, 0.95,
+		func(x: float, z: float) -> bool: return Vector2(x, z).distance_to(Sjh.MARY) > 0.8)
 	# Moss and short grass where the patio meets the walls, the rail and the sidewalk.
 	scatter.call(Vector2(18.3, 0.35), Vector2(30.9, 0.75), 40, -0.05, 0.5, anywhere)
 	scatter.call(Vector2(32.45, 0.8), Vector2(32.7, 24.5), 50, -0.05, 0.5,
