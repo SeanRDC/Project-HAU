@@ -23,7 +23,7 @@ frozen references.
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
 | Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
@@ -36,7 +36,8 @@ Files:
 | `roads.gd` | The campus loop road (centre line as straights and turns) and `across()`, the distance across the road at any point |
 | `areas/chapel.gd` | The chapel, its plaza, oval parking, banners, lawn paths, trees and palms |
 | `areas/plots.gd` | Reserved plots for every building not built yet |
-| `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane |
+| `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane; its doorways are open |
+| `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -91,7 +92,8 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
 - **The chapel** is at (4.7, 58.8); its round front faces west at x −25.7.
 - **Ground levels:** lawn −0.2 (the base under everything), road −0.19, kerb
   top 0.0, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03, patio
-  −0.05, canteen hall floor 0.45, chapel floor 0.9.
+  −0.05, canteen hall floor 0.45, chapel floor 0.9, gym hall floor 0.75 (the
+  stands' deck and the balcony 4.95, bleacher rows +0.4 each, the stage 1.95).
 - **Storeys:** APS wing 3.05 m, tall block 3.0 m, canteen 3.05 m over a
   ~5.3 m open hall.
 - **Plan:** APS is an L. The canteen wing stands forward from the stair tower,
@@ -133,7 +135,8 @@ Everyone builds on the same grid, so buildings line up when they are merged.
   3. Add `<id>` to `BUILT` in `tools/export-godot-plan.mjs` and run
      `npm run export:godot-plan`. The plot disappears.
   4. Give it static `blocked(x, z)` / `walkable(x, z)` / `floor_height(x, z)`
-     functions and call them from `world.gd`, like the chapel's.
+     functions and call them from `world.gd`, like the chapel's (with a `level`
+     if it has storeys you can walk under, like the gym's; see Collision).
   5. If the student walks round it, give it a **camera zone** (see Camera), and
      check that the camera never stands inside or behind another building there.
   6. Add headless checks and captures, as below.
@@ -401,6 +404,7 @@ before using them.
 | 6 | Chapel (moves the student to the plaza) | 32 |
 | 7 | IH Gym (moves the student to the apron in front) | 84 |
 | 8 | Gym side (moves the student to the lane by the side entrance) | 44 |
+| 9 | Gym inside (moves the student onto the court) | 40 |
 
 - Three blends drive the camera from the width: `close` (22 → 8 m drops the
   target to the student's chest height), `wide` (22 → 56 m) and `campus`
@@ -421,6 +425,20 @@ before using them.
     the student's own depth so they stay in shot on the road.
   - **Gym gable** (`gable_for`): a further −90° (−180° in all), looking south
     at the north gable (z 66.8) from the lane, sliding in X.
+  - **Gym hall** (`hall_for`): inside the gym, −180° (looking south down the
+    hall at the stage), pitched down **35°** from 60 m (`HALL_PITCH`,
+    `HALL_DISTANCE`), following the student in X and Z; wide framings centre on
+    the hall's middle. Its weight rises across each front doorway (x 57.2 → 59)
+    and the side entrance (z 66.2 → 68.2, where it takes over from the gable),
+    so walking in **glides** the camera round and down. Walking in from a
+    framing wider than 48 m also glides the zoom to 40 (`HALL_WIDTH`), and back
+    on the way out if it was not changed inside.
+  - **Gym side view** (`perch_for`, `GymInterior.perched`): up on the stage
+    (from 1.65 m), the stands or the balcony (from 4.5 m) the hall view closes in
+    to a low side view, still looking south: pitched **10°** from 60 m
+    (`PERCH_PITCH`, `PERCH_DISTANCE`), centred on the student, the zoom gliding
+    to 16 m (`PERCH_WIDTH`) and back down after. While perched the zoom goes out
+    to 40 m at most, so the frame's lower edge never starts under the floor.
   A new building gets its own zone the same way: a `*_for(x, z)` weight, a
   facing, and the plane it frames. Make sure the camera's standing spot (focus
   minus 23 m close up, up to 90 m wide) is not inside another building.
@@ -452,6 +470,17 @@ The student moves on X then Z separately and refuses blocked spots, so it slides
 along walls. Any new walkable area must extend these three functions **and**
 add a headless check.
 
+**Storeys.** `blocked()` and `floor_height()` take an optional `level`: the
+height the walker stands at now (the student passes its own; without one, as
+for a framing's jump, it lands on the ground storey). Where floors overlap (the
+gym's lobby under its stands), each point has a list of floors and the walker
+takes the highest it can step onto, at most **0.5 m** up. Stepping down more
+than **0.6 m** is refused, so deck edges, bleacher rows and the stage stop the
+student without rails in the collision. A solid floor (a stair, the stage)
+blocks anyone below its top. See `floors()`, `floor_at()` and `blocked()` in
+`areas/gym_interior.gd`; walls there carry the range of floor heights they
+block (`LOW` under the deck, or up to the roof).
+
 ---
 
 ## Adding a new building or area
@@ -477,6 +506,30 @@ For anything else (props, gardens, a wing of APS):
 
 New areas go in `areas/`, sharing `world.gd`'s helpers and materials; keep every
 rule in this document.
+
+### Interiors and the cutaway
+
+The IH Gym is the first building you can walk into (`areas/gym_interior.gd`).
+Build an interior the same way:
+
+- **Open the doorways** in the outer walls (a sill up to the inside floor, a
+  lintel over) and let `inside(x, z)` make the inside walkable ground.
+- **One camera view inside**, its own zone (`hall_for`), blended across the
+  doorways so walking in is a glide, not a cut.
+- **Cutaway groups.** Everything that can stand between that camera and the
+  student goes in a named group under the building's pivot (the roof, the
+  wall nearest the camera, a deck over the rooms below, each bay of the roof
+  structure). A static `hidden(group, local x, local z, level)` says when each
+  is in the way; `aps.gd` fades it out over 0.4 s and leaves it casting
+  shadows only (`SHADOWS_ONLY`), so the inside stays shaded by its roof. A wall
+  that is cut away keeps a **1.2 m stub** (`STUB`), so rooms still read as a plan.
+- **Lights inside** are plain `OmniLight3D`s in their own group, on at every
+  hour but only while the student is in (not in `world.lamps`, which are night
+  lamps). Windows inside glow by day through `glow()`.
+- **Painted floors** (the court, the practice floor) are one textured quad
+  each, painted pixel by pixel at 16 px per metre with nearest filtering.
+- New material kind: `stripes` (6 m tile), the gym's red, yellow, grey and
+  beige diagonal mural.
 
 ---
 
