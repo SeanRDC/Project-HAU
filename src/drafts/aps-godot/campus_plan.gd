@@ -50,7 +50,7 @@ const PLOTS := {
 	"aps": {"name": "Archbishop Pedro Santos Building", "short": "APS", "no": 13, "built": true,
 		"label": Vector2(-0.1, -4.7),
 		"outline": [Vector2(46.7, 0.4), Vector2(43.3, 0.4), Vector2(43.3, 24.9), Vector2(39.4, 24.8), Vector2(32.8, 24.8), Vector2(29, 24.7), Vector2(29.1, 0.3), Vector2(25.7, 0.3), Vector2(25.7, 5.4), Vector2(16.6, 5.4), Vector2(16.6, 0.2), Vector2(-62.2, -0.6), Vector2(-62.1, -17.1), Vector2(46.7, -16), Vector2(46.7, -13.7), Vector2(46.7, -9.6)]},
-	"mgn": {"name": "Mamerto G. Nepomuceno Building", "short": "MGN", "no": 14, "built": false,
+	"mgn": {"name": "Mamerto G. Nepomuceno Building", "short": "MGN", "no": 14, "built": true,
 		"label": Vector2(-76.1, 112.2),
 		"outline": [Vector2(-91.4, 129), Vector2(-83.6, 129.2), Vector2(-82.8, 97.7), Vector2(-84.9, 97.7), Vector2(-84.3, 75.1), Vector2(-69.5, 75.5), Vector2(-69.7, 85.1), Vector2(-63.2, 85.3), Vector2(-63.5, 97.2), Vector2(-67.6, 97.1), Vector2(-68.5, 133), Vector2(-62.8, 133.1), Vector2(-63, 142.1), Vector2(-63, 144.1), Vector2(-91.8, 143.2), Vector2(-91.7, 141.3)]},
 	"chapel": {"name": "Chapel of the Holy Guardian Angel", "short": "Chapel", "no": 15, "built": true,

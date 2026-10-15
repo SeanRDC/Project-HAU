@@ -47,6 +47,7 @@ const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
 const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
+const Mgn := preload("res://areas/mgn.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
@@ -98,7 +99,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
-	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z):
+	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z)
 
@@ -120,7 +121,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 			return true # rear wall, end walls, and the part inside the tower
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
-	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z):
+	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -155,6 +156,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return -0.19 # carriageway
 	if (across >= 3.85 and across <= 4.135) or (across >= 10.865 and across <= 11.135):
 		return 0.0 # kerb
+	var entry := Mgn.floor_height(x, z)
+	if not is_nan(entry):
+		return entry
 	var walkway := Sjh.floor_height(x, z)
 	if not is_nan(walkway):
 		return walkway
@@ -170,7 +174,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 
 ## The outer bounds; blocked() shapes the walkable campus inside them.
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -63.0, 101.0), clampf(z, Hallway.BACK, 140.0))
+	return Vector2(clampf(x, -68.0, 101.0), clampf(z, Hallway.BACK, 140.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -184,6 +188,7 @@ func build(parent: Node3D) -> void:
 	Chapel.new().build(self)
 	Hallway.new().build(self)
 	Sjh.new().build(self)
+	Mgn.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
