@@ -5,7 +5,9 @@ extends Node3D
 const World := preload("res://world.gd")
 const HEIGHT := 1.83
 const STRIDE := 1.15 # metres per walk cycle, so feet do not slide
-const FRAMES := {"boy": {"idle": 12, "walk": 9}, "girl": {"idle": 12, "walk": 6}}
+const FRAMES := {"boy": {"idle": 24, "walk": 12}, "girl": {"idle": 12, "walk": 6}}
+## Where in the walk cycle (0-1) a foot first lands, so footsteps match the sheet.
+const CONTACT := {"boy": 0.25, "girl": 0.0}
 
 ## A foot landed: two steps per walk cycle.
 signal stepped
@@ -58,24 +60,30 @@ func set_character(character: String) -> void:
 	animation = ""
 	_animate(false, 0.0)
 
-func place(x: float, z: float) -> bool:
+## Without a level the student lands on the ground (a framing's jump); walking passes
+## its own height, so inside the gym it keeps to the storey it is on.
+func place(x: float, z: float, level := NAN) -> bool:
 	var at := World.clamp_position(x, z)
-	if World.blocked(at.x, at.y):
+	if World.blocked(at.x, at.y, level):
 		return false
-	position = Vector3(at.x, World.floor_height(at.x, at.y) + 0.015, at.y)
+	position = Vector3(at.x, World.floor_height(at.x, at.y, level) + 0.015, at.y)
 	return true
+
+## The height the student stands at (the floor under its feet).
+func level() -> float:
+	return position.y - 0.015
 
 ## direction is in world x/z; screen_x (the A/D input) picks which way the sprite faces.
 func move(direction: Vector2, running: bool, delta: float, screen_x := NAN) -> void:
 	var speed := 4.2 if running else 2.4
 	var step := direction.normalized() * speed * delta
 	var before := Vector2(position.x, position.z)
-	place(position.x + step.x, position.z)
-	place(position.x, position.z + step.y)
+	place(position.x + step.x, position.z, level())
+	place(position.x, position.z + step.y, level())
 	var travelled := before.distance_to(Vector2(position.x, position.z))
-	var steps_before := floori(_distance / STRIDE * 2.0)
+	var steps_before := floori((_distance / STRIDE - CONTACT[who]) * 2.0)
 	_distance += travelled
-	if floori(_distance / STRIDE * 2.0) != steps_before:
+	if floori((_distance / STRIDE - CONTACT[who]) * 2.0) != steps_before:
 		stepped.emit()
 	var sideways := direction.x if is_nan(screen_x) else screen_x
 	if sideways != 0.0:

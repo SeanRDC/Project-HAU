@@ -20,6 +20,14 @@ and sidewalk on the patio side and lawn inside the bend. Walking past the tall
 block turns the camera to face the stalls, and A/D/W/S stay relative to the
 camera, so holding D walks you round the corner.
 
+The IH Gym down the east road can be walked into, through either front doorway
+or the side entrance. The camera glides round and down to look along the hall
+at the stage, and the roof, the north wall and whatever stands between it and
+the student fade away (they still cast their shadows). Inside: the court, the
+bleachers upstairs on both sides (climb the rows), the balcony over the side
+entrance, the lobby and equipment room, the corridors under the stands, the
+stage with its steps and the backstage rooms. Key 0 jumps onto the court.
+
 ## Run
 
 ```powershell
@@ -38,10 +46,11 @@ the ignored `builds/godot-tools/4.7.2/`. Other machines can
 | Shift | Run |
 | Mouse wheel, +/- | Zoom (smooth), in to about the student's own height |
 | 1-6 | APS + canteen, Whole building, Corridor, Canteen (patio), Close-up, Chapel (plaza) |
-| 7-8 | IH Gym (front), Gym side (the side entrance from the lane) |
+| 7-9, 0 | IH Gym (front), Gym side (the side entrance from the lane), SJH, Gym inside (the court) |
 | Q/E | Camera angle |
 | T | Morning, noon, afternoon, night |
 | C | Boy / girl |
+| E, Space or Enter | Talk to someone in reach (E turns the camera when nobody is near) |
 | M | Mute |
 | P | Pixels: Auto, Crisp, Chunky |
 | R | Reset |
@@ -101,9 +110,13 @@ because their kernel grows with zoom.
 | `roads.gd` | The campus loop road round the chapel lawn, and the distance across it |
 | `areas/chapel.gd` | The Chapel of the Holy Guardian Angel, its plaza, oval parking, paths and planting |
 | `areas/plots.gd` | Reserved plots for the buildings teammates are making |
-| `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both entrances, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
+| `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both open doorways, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
+| `areas/gym_interior.gd` | Inside the gym, walkable everywhere a student could go: the court with the seal, the bleachers upstairs on both sides, the balcony, the lobby, equipment room and corridors, the stage and backstage, the roof structure; its storeys, collision and cutaway groups |
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
+| `areas/sjh.gd` | St. Joseph Hall: the slab, its covered walkway (walk in through a railing gap), the Mary statue garden, the parking and cars |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
+| `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking |
+| `npcs.gd` | The cast, their lines, the talk hint and speech bubble |
 | `audio.gd` | Synthesised music, wind, footsteps, blips and crickets (no audio files) |
 | `shaders/` | Edges, leaves, sky, display grade |
 
@@ -118,11 +131,11 @@ Boxes that share a size and material are batched into MultiMeshes (about 1,470 b
 Checks the canteen and signs, that the wing faces the patio, the road bend, lawn and patio, walking round the corner, the canteen view facing the stalls, the closest zoom, column/pier/stall/tower/table collisions, the
 rail gap, walking up the canteen steps, floor heights, lights per time, sheet
 switching, sprite shadows, and that the wide/whole-building framings contain
-the frontage. Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
-writes 18 review shots into the ignored `builds/aps-godot-review/port/`.
+the frontage, and the gym inside (walking in through a doorway and the side entrance, its two storeys, the stairs and bleacher rows, the stage and backstage, the cutaway and the hall view). Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
+writes 26 review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
-`--zoom=`, `--angle=`, `--view=canteen|gym|gym-side`, `--pixel=auto|crisp|pixel`,
+`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in`, `--pixel=auto|crisp|pixel`,
 `--walk=<seconds>`, `--hide-help`, `--capture=<absolute PNG path>`.
 
 Geometry is approximate, from the walk photos, not a survey. The far sidewalk,
