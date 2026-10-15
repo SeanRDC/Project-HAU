@@ -16,6 +16,7 @@ const Npcs := preload("res://npcs.gd")
 const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
+const DevTravel := preload("res://dev_travel.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
 const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
@@ -69,6 +70,8 @@ var npcs: Npcs
 ## E was just used to talk, so holding it does not also turn the camera.
 var _e_talk := false
 var help: Control
+## The F1 fast-travel panel (a dev tool).
+var travel: DevTravel
 var time_label: Label
 var view_label: Label
 
@@ -126,6 +129,15 @@ func _ready() -> void:
 	add_child(sound)
 	student.stepped.connect(_on_step)
 	_build_interface()
+	travel = DevTravel.new()
+	add_child(travel)
+	var names: Array = []
+	for place in travel_places():
+		names.append(place[0])
+	travel.setup(names)
+	travel.chosen.connect(_travel_to)
+	if _args.has("travel"):
+		travel.toggle.call_deferred() # --travel opens the panel, for captures
 	npcs = Npcs.new()
 	npcs.camera = camera
 	npcs.student = student
@@ -558,7 +570,7 @@ func _build_interface() -> void:
 	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    C  Character    M  Mute\n" + \
 		"E/Space  Talk (near someone)\n" + \
 		"Wheel or +/-  Zoom    1-9, 0  Framings    Q/E  Angle    P  Pixels\n" + \
-		"R  Reset    F11  Fullscreen    Tab  Hide controls    Esc  Close"
+		"R  Reset    F11  Fullscreen    F1  Fast travel (dev)    Tab  Hide controls    Esc  Close"
 	controls.add_theme_font_size_override("font_size", 14)
 	controls.add_theme_color_override("font_color", Color("e7e2d6"))
 	stack.add_child(controls)
@@ -625,7 +637,53 @@ func _reset() -> void:
 	_set_hour(16.5)
 	_set_zoom(112.0)
 
+## Fast-travel places (dev, F1): name, where the student stands, the framing width.
+## Each spot is walkable ground (a check makes sure); add new buildings here.
+static func travel_places() -> Array:
+	return [
+		["APS entrance", Vector2(0.7, 5.3), 22.0],
+		["APS hallway", Vector2(-6.0, -2.0), 22.0],
+		["Corner garden", Vector2(-52.0, 10.0), 30.0],
+		["Canteen patio", CANTEEN_SPOT, 28.0],
+		["Canteen hall", World.canteen_world(51.0, 0.0), 22.0],
+		["Picnic strip", Vector2(45.5, 10.0), 26.0],
+		["Chapel plaza", CHAPEL_SPOT, 32.0],
+		["IH Gym front", GYM_SPOT, 84.0],
+		["IH Gym side", GYM_SIDE_SPOT, 44.0],
+		["IH Gym inside", GYM_IN_SPOT, ARENA_WIDTH],
+		["St. Joseph Hall", SJH_SPOT, 64.0],
+		["SJH walkway", Sjh.world(25.0, -1.8), 22.0],
+		["Mary statue", Vector2(-48.5, 113.6), 26.0],
+		["MGN", MGN_SPOT, 56.0],
+		["MGN entrance", Mgn.world(21.0, 2.5), 18.0],
+	]
+
+## Jumps the student to a fast-travel place, with every camera zone, the gym's
+## cutaways and the zoom snapped there at once (the panel fades it in from black).
+func _travel_to(index: int) -> void:
+	var place: Array = travel_places()[index]
+	var spot: Vector2 = place[1]
+	if not student.place(spot.x, spot.y):
+		push_warning("Fast travel: %s is not walkable" % place[0])
+		return
+	_snap_follow()
+	_set_zoom(place[2], true)
+	_was_inside = arena_for(student.position.x, student.position.z) > 0.5
+	_zoom_before = -1.0
+	_was_perched = false
+	_zoom_before_perch = -1.0
+	_update_cutaways(0.0, true)
+	_update_camera(1.0)
+	sound.select()
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F1:
+		travel.toggle()
+		return
+	if travel and travel.is_open():
+		if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
+			travel.close()
+		return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_set_zoom(target_width / 1.12)
@@ -697,6 +755,8 @@ func _process(delta: float) -> void:
 	delta = minf(delta, 0.05)
 	var direction := Vector2(float(_held([KEY_D, KEY_RIGHT])) - float(_held([KEY_A, KEY_LEFT])),
 		float(_held([KEY_S, KEY_DOWN])) - float(_held([KEY_W, KEY_UP])))
+	if travel.is_open():
+		direction = Vector2.ZERO # the arrows pick a place instead
 	# Keys are relative to the camera, so D keeps walking screen-right round the corner.
 	var turn := -PI / 2.0 * _turns()
 	var right := Vector2(cos(turn), -sin(turn))
@@ -1161,6 +1221,15 @@ func _verify_and_capture() -> void:
 		student.place(guard.position.x + 6.0, guard.position.z + 1.5)
 		npcs.update(1.0 / 30.0)
 		checks.npc_talks = talked and not npcs.bubble.visible and not guard.talking
+		# Fast travel (dev): every place is walkable and the jump lands there, framed.
+		var travelled := travel.panel.get_child(0).get_child(1).get_child_count() == travel_places().size()
+		for i in travel_places().size():
+			var place: Array = travel_places()[i]
+			_travel_to(i)
+			var spot: Vector2 = place[1]
+			travelled = travelled and Vector2(student.position.x, student.position.z).distance_to(spot) < 0.01 \
+				and is_equal_approx(target_width, place[2])
+		checks.fast_travel = travelled
 		student.position = saved
 		_snap_follow()
 		_set_zoom(float(_args.get("zoom", "112")), true)

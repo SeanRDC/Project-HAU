@@ -9,6 +9,8 @@ west road the camera turns right round to face it (`--view=mgn`), the chapel law
 away behind. Geometry not in the photos is listed as guesses in
 `sessions/2026-10-16-mgn-godot.md`.
 
+Dev fast travel in Godot, 2026-10-16: F1 opens a panel of 15 places (APS, hallway, canteen, chapel, gym, SJH, Mary, MGN...) and jumps there with a short fade. Add new buildings' spots to `travel_places()` in `aps.gd`. See `sessions/2026-10-16-godot-dev-fast-travel.md`.
+
 **Inside the IH Gym, 2026-10-16.** The gym can be walked into through either
 front doorway (the right one is now open, like the left) or the side entrance.
 The camera glides round to look south down the hall at the stage from 35° up,
