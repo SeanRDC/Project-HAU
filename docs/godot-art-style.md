@@ -37,6 +37,7 @@ Files:
 | `areas/chapel.gd` | The chapel, its plaza, oval parking, banners, lawn paths, trees and palms |
 | `areas/plots.gd` | Reserved plots for every building not built yet |
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane |
+| `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -192,6 +193,8 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | metal | 2.0 | `#8c9b9e` | grain only |
 | grass | 3.0 | `#7c8a5f` | 9/255 grain, 900 vertical blade flecks; mown bands tint `#f3f5ec` |
 | dirt | 2.5 | `#9a8566` | pebbles in four browns and darker trodden patches (the picnic strip, the corner garden; reserved plots tinted `#e8e1cb`) |
+| floor | 2.4 | `#d9bfa9` | peach 30 cm ceramic tiles, light grout, the odd paler tile (the APS hallway, stair treads tinted `#eee9e2`) |
+| ledge | 1.2 | `#8a7d6a` | ledgestone: thin stacked slates in browns and greys with dark gaps (the hallway's front piers) |
 | pavers | 2.4 | `#a69b8d` | stamped concrete: 16 px slabs of slightly different tone with dark joints (the chapel plaza and parking) |
 | concrete | 4.0 | `#a3a49c` | faint stains, a saw-cut joint at each tile edge (the gym's apron, lane and walk) |
 | slate | 2.4 | `#605e5c` | grey stone tiles in staggered 16 px courses (the gym's lower walls) |
@@ -427,6 +430,18 @@ before using them.
 - The east road is walkable down past the gym, with the gym's apron and the
   lane to its side entrance. The south road is drawn but not walkable yet: its
   view needs SJH, which is still a plot.
+- **Interiors (cutaway):** walking into a covered space like the APS hallway
+  blends in a weight (`hall`, from `Hallway.hall_for`, eased at rate 3.5) that:
+  1. closes the view in to `HALL_WIDTH` (8.5 m) and glides the camera to the
+     corridor (focus y 1.35, z −1.9, distance 20, lift 5, about 14° down);
+  2. sweeps the camera's **near plane** from the camera up to `CUT_Z` (−0.95,
+     just behind the front piers), so the road, lawn and piers fall away in
+     front of the student;
+  3. closes dark bands (`display.gdshader` `cut`, colour `#13110f`) over
+     everything above the ceiling (y 3.22) and below the floor's cut edge, so
+     only the corridor is seen.
+  Walking out reverses all three. The sound treats it as indoors. Reuse this
+  for any building's interior: a `*_for(x, z)` weight, a cut plane, a ceiling.
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
   away/towards, rotated by the zone's turn, so holding D walks you round the corner.
 - **Q/E** orbit ±0.25 rad. Default orbit 0.12. Smooth zoom (rate 10). **R** resets.
