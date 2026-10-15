@@ -31,6 +31,7 @@ Files:
 | File | Owns |
 | --- | --- |
 | `aps.gd` | The pixel buffer, camera, time of day, environment, UI, input, the headless checks and captures |
+| `dev_travel.gd` | **Dev tool:** the F1 fast-travel panel. Places live in `travel_places()` in `aps.gd`; when you merge a building, add its spots there (the `fast_travel` check makes sure each is walkable). `--travel` opens it for captures |
 | `world.gd` | APS, the canteen and patio, the street, the helpers, materials, procedural textures, and the collision rules and floor heights that tie every area together |
 | `campus_plan.gd` | **Generated, do not edit.** Every building's real outline and the named places from the team's plan, in Godot metres |
 | `roads.gd` | The campus loop road (centre line as straights and turns) and `across()`, the distance across the road at any point |
