@@ -25,12 +25,22 @@ E, Space or Enter talks to whoever is in reach. The playable boy is now a rig
 built from his reference (`assets/drafts/characters/boy/three-quarter/rig/`), not
 PixelLab frames. See `sessions/2026-10-16-godot-npcs-and-boy-rig.md`.
 
+**English language setting, merged with main 2026-10-16.** Every line of the browser
+game has English beside the Tagalog; L switches, Tagalog stays the default.
+`npm run check:translations` lists any line without English. See
+`sessions/2026-10-16-english-localization-merge.md`.
+
 **The IH Gym in Godot, 2026-10-16.** `areas/gym.gd` builds the Immaculate Heart
 Gymnasium from outside on its plan plot at its real size (41 x 69.5 m, about 12 m
 to the fascia, 16.6 m to the ridge, solar panels on the roof). The east road is
 now walkable down past it, with the apron in front and the lane to the side
 entrance; keys 7 and 8 frame its front and side. The annex is still a reserved
 plot. See `sessions/2026-10-16-ih-gym-godot.md`.
+APS hallway in Godot, 2026-10-16: the APS ground floor is an open corridor behind
+ledgestone piers (doors, grilles, comlabs, boards, bell, printing shop, both stair
+halls), seen from outside. Walking in cuts away the outside and glides the camera
+in; walking out reverses it (`areas/hallway.gd`, "Interiors (cutaway)" in
+`docs/godot-art-style.md`). See `sessions/2026-10-16-aps-godot-hallway.md`.
 
 **Godot is the direction, 2026-10-15.** Campus work moves to Godot 4.7.2 in the
 style of `src/drafts/aps-godot/`. Every style rule and value is in
@@ -104,6 +114,7 @@ foreground branches, and restrained bloom; the game remains on Canvas.
 
 Last updated: 2026-10-15 (the boy and girl are PixelLab sprite sheets with idle, walk, talk and a cutscene-only tired stance, talking portraits and the girl's emotions, drawn on a double-detail buffer; draft. Before that: characters restyled with outlines and three-tone shading, draft v1; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 Last updated: 2026-10-15 (APS lit at night: window light spilling onto the walls and trees, softer lanterns, shading, wet-road reflections in the rain; the chapel lawn's ends: no way to the back road, only APS at its left end; the chapel walkway as five lanes, with the student center and Cafe Juan, from 31 photos; St. Joseph Hall redrawn from photos with the statue of Mary, MGN as its own stop between the chapel and SJH, the chapel with depth and the oval parking; the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
+Last updated: 2026-10-15 (an English language setting, L to switch, with the whole game translated; the chapel lawn's ends: no way to the back road, only APS at its left end; the chapel walkway as five lanes, with the student center and Cafe Juan, from 31 photos; St. Joseph Hall redrawn from photos with the statue of Mary, MGN as its own stop between the chapel and SJH, the chapel with depth and the oval parking; the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
 A free-roam, side-view pixel art game set on the Holy Angel University campus in Angeles City. It is inspired by the feel of *Until Then* (everyday Filipino student life, soft lighting, speech bubbles, a phone) without copying it. It is a student project, not an official university product, and every character is fictional.
@@ -115,6 +126,7 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Engine | Our own, TypeScript on the browser canvas | Wanted everything written from scratch; easy to run and share |
 | Later | Port to Godot 4 | Decided up front; do it once the prototype's look and feel are settled |
 | Language | Taglish with a little Kapampangan | Sounds like actual students here |
+| English | An English line (`en`) beside each Tagalog one, picked with L; Tagalog stays the default | So non-Tagalog speakers can follow the story. The Tagalog is never changed; a line with no English shows its Tagalog. Kuya/Ate/Manong, food words and baon stay as they are, Kapampangan stays with its meaning after it. The choice is kept in `project-hau-lang`, apart from the save |
 | Scope | The whole campus outdoors first, interiors after | Done: all 21 buildings from the outside, on ten connected outdoor scenes. Interiors (other than the DJN lobby and courtyard) wait for reference photos of each one |
 | Layout | One-to-one with the real campus, anchored on the chapel | Buildings come from OpenStreetMap (`npm run import:osm` writes `src/game/campus/osm.ts`); gates, junctions, GGN and the Formation Center from an aerial photo. All of it goes into `src/game/campus/plan.ts` and the scenes are placed from it. Scale set by one Google Earth measurement (140.36 m, rotunda statue to the chapel), which OSM confirmed to 0.6% |
 | Scale | 9 game pixels per metre | The DJN Building and the angel pedestals were already drawn at about this |
@@ -178,6 +190,7 @@ See `src/README.md` for the URL shortcuts that jump to any scene, position and t
 * Progress autosaves to `localStorage` (`project-hau-save-v1`). If you rename or remove flags, bump that key so old saves are ignored. The save also holds `character` (`boy` or `girl`), `name`, `pesos`, the last purchase and the weather; saves without them load as the boy with no name, ₱150 and dry weather, so the key was not bumped.
 * The player's look: `src/game/art/player.ts` holds both looks and the chosen one (`baseLook()`). Areas and cutscenes reset to it, so never use a fixed look for the player. Dev shortcuts: `?char=girl&name=Mikko`.
 * Title flow: Enter continues a save, or opens the picker (A/D, Enter), then the name box (type, Enter). N with a save opens the picker too and only wipes the save once you confirm; Esc backs out.
+* **English:** add `en: '...'` next to `text: '...'` on a line or a choice (`labelEn` for a hotspot label, `subtitleEn` for an area). Never change the Tagalog to make room. `npm run check:translations` confirms the Tagalog is untouched and lists the lines with no English yet; lines that need a person to decide are in `docs/translation-review.md`. All of it is translated: every line of dialogue, every prompt, area subtitle, menu, the phone, the map and the checklist.
 * An NPC's `talk(game)` returns the lines to say, so it can branch on `game.has('flag')`.
 * **Faces:** a line can say how the speaker looks, `face: 'happy'` (neutral, happy, sad, angry, surprised, worried, shy, smug). It shows on the sprite, in the arms when standing still, and in the bubble's portrait (`art/portrait.ts`), and pops an emote unless the line picks its own with `emote` ('!', '?', '...', 'note', 'anger', 'sweat', 'heart', 'none'). Only the side gate lines are tagged so far.
 * A cutscene is `game.play(steps)` from a hotspot, or an area's `intro(game, x)` that returns steps when you walk in. Steps: `walk`, `place`, `face`, `say`, `pause`, `sound`, `look` (swap what the player wears), `walkIn` / `walkOut` (into or out of a doorway, seen from behind or the front) and `run` (anything else). The game never saves in the middle of one.

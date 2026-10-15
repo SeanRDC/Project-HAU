@@ -38,6 +38,7 @@ Files:
 | `areas/plots.gd` | Reserved plots for every building not built yet |
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane; its doorways are open |
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
+| `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -195,6 +196,8 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | metal | 2.0 | `#8c9b9e` | grain only |
 | grass | 3.0 | `#7c8a5f` | 9/255 grain, 900 vertical blade flecks; mown bands tint `#f3f5ec` |
 | dirt | 2.5 | `#9a8566` | pebbles in four browns and darker trodden patches (the picnic strip, the corner garden; reserved plots tinted `#e8e1cb`) |
+| floor | 2.4 | `#d9bfa9` | peach 30 cm ceramic tiles, light grout, the odd paler tile (the APS hallway, stair treads tinted `#eee9e2`) |
+| ledge | 1.2 | `#8a7d6a` | ledgestone: thin stacked slates in browns and greys with dark gaps (the hallway's front piers) |
 | pavers | 2.4 | `#a69b8d` | stamped concrete: 16 px slabs of slightly different tone with dark joints (the chapel plaza and parking) |
 | concrete | 4.0 | `#a3a49c` | faint stains, a saw-cut joint at each tile edge (the gym's apron, lane and walk) |
 | slate | 2.4 | `#605e5c` | grey stone tiles in staggered 16 px courses (the gym's lower walls) |
@@ -443,13 +446,13 @@ before using them.
     the student's own depth so they stay in shot on the road.
   - **Gym gable** (`gable_for`): a further −90° (−180° in all), looking south
     at the north gable (z 66.8) from the lane, sliding in X.
-  - **Gym hall** (`hall_for`): inside the gym, −180° (looking south down the
-    hall at the stage), pitched down **35°** from 60 m (`HALL_PITCH`,
-    `HALL_DISTANCE`), following the student in X and Z; wide framings centre on
+  - **Gym hall** (`arena_for`): inside the gym, −180° (looking south down the
+    hall at the stage), pitched down **35°** from 60 m (`ARENA_PITCH`,
+    `ARENA_DISTANCE`), following the student in X and Z; wide framings centre on
     the hall's middle. Its weight rises across each front doorway (x 57.2 → 59)
     and the side entrance (z 66.2 → 68.2, where it takes over from the gable),
     so walking in **glides** the camera round and down. Walking in from a
-    framing wider than 48 m also glides the zoom to 40 (`HALL_WIDTH`), and back
+    framing wider than 48 m also glides the zoom to 40 (`ARENA_WIDTH`), and back
     on the way out if it was not changed inside.
   - **Gym side view** (`perch_for`, `GymInterior.perched`): up on the stage
     (from 1.65 m), the stands or the balcony (from 4.5 m) the hall view closes in
@@ -463,6 +466,18 @@ before using them.
 - The east road is walkable down past the gym, with the gym's apron and the
   lane to its side entrance. The south road is drawn but not walkable yet: its
   view needs SJH, which is still a plot.
+- **Interiors (cutaway):** walking into a covered space like the APS hallway
+  blends in a weight (`hall`, from `Hallway.hall_for`, eased at rate 3.5) that:
+  1. closes the view in to `HALL_WIDTH` (8.5 m) and glides the camera to the
+     corridor (focus y 1.35, z −1.9, distance 20, lift 5, about 14° down);
+  2. sweeps the camera's **near plane** from the camera up to `CUT_Z` (−0.95,
+     just behind the front piers), so the road, lawn and piers fall away in
+     front of the student;
+  3. closes dark bands (`display.gdshader` `cut`, colour `#13110f`) over
+     everything above the ceiling (y 3.22) and below the floor's cut edge, so
+     only the corridor is seen.
+  Walking out reverses all three. The sound treats it as indoors. Reuse this
+  for any building's interior: a `*_for(x, z)` weight, a cut plane, a ceiling.
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
   away/towards, rotated by the zone's turn, so holding D walks you round the corner.
 - **Q/E** orbit ±0.25 rad. Default orbit 0.12. Smooth zoom (rate 10). **R** resets.
@@ -532,7 +547,7 @@ Build an interior the same way:
 
 - **Open the doorways** in the outer walls (a sill up to the inside floor, a
   lintel over) and let `inside(x, z)` make the inside walkable ground.
-- **One camera view inside**, its own zone (`hall_for`), blended across the
+- **One camera view inside**, its own zone (`arena_for`), blended across the
   doorways so walking in is a glide, not a cut.
 - **Cutaway groups.** Everything that can stand between that camera and the
   student goes in a named group under the building's pivot (the roof, the

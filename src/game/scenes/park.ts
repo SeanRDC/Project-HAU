@@ -306,6 +306,7 @@ export function buildPark(): AreaDef {
     id: 'park',
     title: 'Epiphany of Angels',
     subtitle: 'Ang Banal na Anghel de la Guardia at ang pitong arkanghel',
+    subtitleEn: 'The Holy Guardian Angel and the seven archangels',
     width: WIDTH,
     walkY: WALK,
     bounds: [GATE_X - 4, WIDTH - 24],

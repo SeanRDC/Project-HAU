@@ -103,6 +103,7 @@ export function buildGymUpper(): AreaDef {
     id: 'gymupper',
     title: 'IH Gym, Second Floor',
     subtitle: 'Sa bleachers',
+    subtitleEn: 'On the bleachers',
     width: WIDTH,
     walkY: WALK,
     bounds: [24, WIDTH - 22],

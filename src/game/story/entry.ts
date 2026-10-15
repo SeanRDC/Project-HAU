@@ -40,32 +40,34 @@ function leave(w: Walk): Step[] {
 
 export function entryHotspots(x: { djn: number; flag: number; stl: number; sfj: number }, w: Walk): Hotspot[] {
   return [
-    wayTo('djn', x.djn, 'Bumaba papunta sa Main Bldg.', 'plaza', 'entry'),
+    wayTo('djn', x.djn, 'Bumaba papunta sa Main Bldg.', 'plaza', 'entry', 50, 'Go down to the Main Bldg.'),
     {
       id: 'flag',
       x: x.flag,
       range: 24,
       label: 'Tingnan ang flagpole',
+      labelEn: 'Look at the flagpole',
       height: 70,
       use: (g) =>
         g.say([
-          { who: '', text: 'Ang watawat ng Pilipinas, sa ibabaw ng granite na pedestal sa gitna ng bilog na plaza.' },
-          { who: '', text: 'Sa sahig, isang malaking bituin: walong tulis ng damo at walong itim na tatsulok. May kadena sa paligid ng pedestal para walang umupo.' },
-          { who: '', text: 'May dilaw na karatula sa tabi ng poste: "EVACUATION SITE 5." Dito pala pupunta kapag may lindol.' },
-          { who: '', text: 'Sa dulo ng walkway, sa likod ng gate na dinaanan mo: LAUS DEO SEMPER 1933. "Purihin ang Diyos lagi." Ang taon nang itatag ang HAU.' },
-          { who: 'you', text: 'Kaya pala pareho sa nakasulat sa seal.', set: 'saw_flag' },
+          { who: '', text: 'Ang watawat ng Pilipinas, sa ibabaw ng granite na pedestal sa gitna ng bilog na plaza.', en: 'The Philippine flag, on a granite pedestal in the middle of the round plaza.' },
+          { who: '', text: 'Sa sahig, isang malaking bituin: walong tulis ng damo at walong itim na tatsulok. May kadena sa paligid ng pedestal para walang umupo.', en: 'In the paving, a big star: eight points of grass and eight black triangles. A chain runs around the pedestal so no one sits on it.' },
+          { who: '', text: 'May dilaw na karatula sa tabi ng poste: "EVACUATION SITE 5." Dito pala pupunta kapag may lindol.', en: 'A yellow sign by the pole: "EVACUATION SITE 5." So this is where you go in an earthquake.' },
+          { who: '', text: 'Sa dulo ng walkway, sa likod ng gate na dinaanan mo: LAUS DEO SEMPER 1933. "Purihin ang Diyos lagi." Ang taon nang itatag ang HAU.', en: 'At the end of the walkway, on the back of the gate you came through: LAUS DEO SEMPER 1933. "Praise God always." The year HAU was founded.' },
+          { who: 'you', text: 'Kaya pala pareho sa nakasulat sa seal.', en: 'So that\'s why it matches what\'s on the seal.', set: 'saw_flag' },
         ]),
     },
-    wayTo('stl', x.stl, 'Bumaba papunta sa parking (STL)', 'lane', 'entry', 30),
+    wayTo('stl', x.stl, 'Bumaba papunta sa parking (STL)', 'lane', 'entry', 30, 'Go down to the parking (STL)'),
     {
       id: 'gate',
       x: w.stand,
       range: 22,
       label: 'Lumabas sa side gate',
+      labelEn: 'Go out the side gate',
       height: 50,
       use: (g) => g.play(leave(w)),
     },
-    wayTo('sfj', x.sfj, 'Bumaba papunta sa SFJ at Epiphany', 'park', 'entry'),
+    wayTo('sfj', x.sfj, 'Bumaba papunta sa SFJ at Epiphany', 'park', 'entry', 50, 'Go down to SFJ and the Epiphany'),
   ];
 }
 
@@ -82,16 +84,18 @@ export function entryNpcs(x: { weng: number; ella: number; wander: [number, numb
       facing: 1,
       talk: (g) => {
         if (g.has('met_weng')) {
-          return [{ who: 'weng', text: 'Kaliwa, Main Building. Gitna, parking. Kanan, SFJ. \'Wag kang maliligaw, ha.' }];
+          return [{ who: 'weng', text: 'Kaliwa, Main Building. Gitna, parking. Kanan, SFJ. \'Wag kang maliligaw, ha.', en: 'Left, Main Building. Middle, parking. Right, SFJ. Don\'t get lost, okay?' }];
         }
         const h = g.hour();
         const hello = h < 12 ? 'Mayap a abak!' : h < 18 ? 'Mayap a gatpanapun!' : 'Mayap a bengi!';
+        // in English the Kapampangan stays, with what it means
+        const helloEn = h < 12 ? 'Mayap a abak! Good morning!' : h < 18 ? 'Mayap a gatpanapun! Good afternoon!' : 'Mayap a bengi! Good evening!';
         return [
-          { who: 'weng', face: 'happy', text: `${hello} First day mo, \'no? Halata sa mukha mo, naliligaw ka na agad.` },
-          { who: 'you', face: 'shy', text: 'Halata po ba?' },
-          { who: 'weng', text: 'Tandaan mo lang \'tong tatlong hagdan.' },
-          { who: 'weng', text: 'Sa kaliwa, papunta sa harap ng Main Building. Sa gitna, sa parking at sa St. Therese. Sa kanan, sa SFJ at sa Epiphany of Angels.', set: 'met_weng' },
-          { who: 'you', face: 'happy', text: 'Kaliwa, Main. Gitna, parking. Kanan, SFJ. Dakal a salamat, Ate!' },
+          { who: 'weng', face: 'happy', text: `${hello} First day mo, \'no? Halata sa mukha mo, naliligaw ka na agad.`, en: `${helloEn} First day, right? It's all over your face. You're lost already.` },
+          { who: 'you', face: 'shy', text: 'Halata po ba?', en: 'Is it that obvious, ma\'am?' },
+          { who: 'weng', text: 'Tandaan mo lang \'tong tatlong hagdan.', en: 'Just remember these three stairways.' },
+          { who: 'weng', text: 'Sa kaliwa, papunta sa harap ng Main Building. Sa gitna, sa parking at sa St. Therese. Sa kanan, sa SFJ at sa Epiphany of Angels.', en: 'Left takes you to the front of the Main Building. Middle, to the parking and St. Therese. Right, to SFJ and the Epiphany of Angels.', set: 'met_weng' },
+          { who: 'you', face: 'happy', text: 'Kaliwa, Main. Gitna, parking. Kanan, SFJ. Dakal a salamat, Ate!', en: 'Left, Main. Middle, parking. Right, SFJ. Dakal a salamat. Thanks so much, Ate!' },
         ];
       },
     },

@@ -65,7 +65,7 @@ Read from the 16 interior photos in `assets/images/buildings/ih_gym immaculate h
   deck (4.95) can overlap. A walker takes the highest floor it can step onto
   (0.5 m), never steps down more than 0.6 m (so no rails are needed in the
   collision) and is stopped by the sides of stairs and the stage.
-- **Camera:** a new zone, `hall_for`, looks south down the hall at the stage
+- **Camera:** a new zone, `arena_for` (named `hall_for` until it met the APS hallway's own `hall`), looks south down the hall at the stage
   from 35° up. It rises across each doorway and takes over from the gable view
   in the side entrance, so walking in glides the camera round and down; from a
   wide framing the zoom glides to 40 and back on the way out. Key 9 jumps onto

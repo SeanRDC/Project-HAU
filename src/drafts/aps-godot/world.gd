@@ -45,15 +45,16 @@ const Roads := preload("res://roads.gd")
 const Chapel := preload("res://areas/chapel.gd")
 const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
+const Hallway := preload("res://areas/hallway.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
-	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "stripes": 6.0}
+	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0}
 const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile": "d6d1c3",
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
-	"dirt": "9a8566", "pavers": "a69b8d",
+	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
 	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc"}
 
 var root: Node3D
@@ -96,7 +97,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
-	if STRIP.has_point(Vector2(x, z)):
+	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z):
 		return true
 	return Chapel.walkable(x, z)
 
@@ -116,7 +117,9 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 	if in_canteen(x, z):
 		if local.y < -6.4 or local.x < 41.5 or local.x > 65.3:
 			return true # rear wall, end walls, and the part inside the tower
-	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z) or Chapel.blocked(x, z) 			or Gym.blocked(x, z, level):
+	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
+		return true
+	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -151,6 +154,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return -0.19 # carriageway
 	if (across >= 3.85 and across <= 4.135) or (across >= 10.865 and across <= 11.135):
 		return 0.0 # kerb
+	var hall := Hallway.floor_height(x, z)
+	if not is_nan(hall):
+		return hall
 	var plaza := Chapel.floor_height(x, z)
 	if not is_nan(plaza):
 		return plaza
@@ -160,7 +166,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 
 ## The outer bounds; blocked() shapes the walkable campus inside them.
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -63.0, 101.0), clampf(z, -1.0, 137.0))
+	return Vector2(clampf(x, -63.0, 101.0), clampf(z, Hallway.BACK, 137.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -172,6 +178,7 @@ func build(parent: Node3D) -> void:
 	_yard()
 	_left_garden()
 	Chapel.new().build(self)
+	Hallway.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -281,6 +288,29 @@ func _texture(kind: String) -> Texture2D:
 			for y in range(0, 128, 13):
 				_rect(image, 0, y, 128, 1, Color("5f5144"))
 				_rect(image, 0, y + 1, 128, 1, Color("b29164"))
+		"floor":
+			# Peach ceramic tiles, 30 cm square, with light grout and the odd paler tile.
+			for ty in 8:
+				for tx in 8:
+					if random.randf() < 0.18:
+						_rect(image, tx * 16, ty * 16, 16, 16, Color(1, 0.97, 0.93, 0.18))
+			for line in range(0, 128, 16):
+				_rect(image, line, 0, 1, 128, Color("b9a28f"))
+				_rect(image, 0, line, 128, 1, Color("b9a28f"))
+		"ledge":
+			# Ledgestone: thin stacked slates in browns and greys, staggered, with dark gaps.
+			var tones: Array[Color] = [Color("6f6252"), Color("8a7b66"), Color("9d8f7a"), Color("5e554a"), Color("a69a86")]
+			var y := 0
+			while y < 128:
+				var rows := random.randi_range(3, 5)
+				var x := -random.randi_range(0, 20)
+				while x < 128:
+					var length := random.randi_range(12, 30)
+					_rect(image, x, y, length - 1, rows - 1, tones[random.randi_range(0, 4)])
+					_rect(image, x, y, length - 1, 1, Color(1, 1, 1, 0.12))
+					x += length
+				_rect(image, 0, y + rows - 1, 128, 1, Color("3c352e"))
+				y += rows
 		"pavers":
 			# Stamped concrete: a square grid of slightly different slabs with dark joints.
 			for ty in 8:
@@ -630,7 +660,7 @@ func _entrance() -> void:
 	for x in range(west, 19, 3):
 		box(Vector3(0.23, 12.8, 0.38), Vector3(x, 6.4, -0.2), slab)
 		for level in 4:
-			if x < 18 and (level > 0 or absi(x) > 2):
+			if x < 18 and level > 0: # the ground floor is the hallway (areas/hallway.gd)
 				window(x + 1.4, 1.9 + level * 3.05, -2.94)
 		if x % 9 == 0:
 			box(Vector3(0.065, 12.7, 0.09), Vector3(x + 0.21, 6.35, -0.02), material("metal"))
@@ -652,8 +682,6 @@ func _entrance() -> void:
 		box(Vector3(1.12, 2.47, 0.08), Vector3(x, 1.35, -2.78), material("glass", Color("aab9ba")))
 		box(Vector3(0.035, 0.43, 0.08), Vector3(x * 0.18, 1.2, -2.7), metal)
 	box(Vector3(0.055, 2.6, 0.08), Vector3(0, 1.35, -2.71), metal)
-	window(-5.3, 1.65, -2.94, 2.2, 0.75)
-	box(Vector3(2.5, 0.14, 0.38), Vector3(-5.3, 1.1, -2.7), material("stone"))
 	panel("ARCHBISHOP PEDRO SANTOS BUILDING", Vector3(0, 3.45, 3.665), 9.73, 0.61, Color("7a303c"))
 	var strip := glow(Color("ffe8bc"), 0.35, 2.4)
 	for x in [-6.0, -2.0, 2.0, 6.0]:
@@ -687,7 +715,7 @@ func _street() -> void:
 	box(Vector3(62.5, 0.18, 5), Vector3(-13.25, -0.13, 1.35), walk)
 	for x in range(-44, 18, 2):
 		box(Vector3(0.014, 0.008, 4.9), Vector3(x, -0.034, 1.35), material("plain", Color("999f99")))
-	for x in [-12.8, -10.3, 10.3, 13.0]:
+	for x in [-12.8, -10.3]: # east of the canopy: the bust and the campus map
 		pot(x, 2.65)
 	_tree(Vector3(-13.5, 0, 2), 7.1, 610)
 	_tree(Vector3(12.7, 0, 3), 6.5, 611)
@@ -697,7 +725,7 @@ func _street() -> void:
 	_tree(Vector3(7.0, -0.2, 31.0), 8.4, 615)
 	for x in [-11.5, 11.4]:
 		_lantern(x)
-	for x in [-10.2, 11.0]:
+	for x in [-10.2]:
 		for dx in [-1.0, 1.0]:
 			box(Vector3(0.09, 0.45, 0.45), Vector3(x + dx, 0.225, 1), material("plain", Color("3d4c4c")))
 		for dz in [-0.17, 0.0, 0.17]:

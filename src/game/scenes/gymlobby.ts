@@ -158,6 +158,7 @@ export function buildGymLobby(): AreaDef {
     id: 'gymlobby',
     title: 'IH Gym Lobby',
     subtitle: 'Sa loob ng side entrance',
+    subtitleEn: 'Inside the side entrance',
     width: WIDTH,
     walkY: WALK,
     bounds: [16, WIDTH - 16],
