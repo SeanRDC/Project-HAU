@@ -148,6 +148,7 @@ export function buildCCourt(): AreaDef {
     id: 'ccourt',
     title: 'Covered Court',
     subtitle: 'Sa tabi ng IH Gym',
+    subtitleEn: 'Beside the IH Gym',
     width: WIDTH,
     walkY: WALK,
     bounds: [20, WIDTH - 16],

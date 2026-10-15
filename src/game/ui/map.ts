@@ -10,6 +10,7 @@ import { Input } from '../../engine/input';
 import { damp } from '../../engine/math';
 import { BOUNDS, CampusPicture, paintCampus } from '../art/campusmap';
 import { P } from '../art/palette';
+import { tr } from '../lang';
 import { BUILDINGS, Building, Spot, metres, spot } from '../campus/plan';
 import { GOLD, INK, MAROON, PAPER, SERIF, font, keyCap } from './draw';
 
@@ -142,7 +143,7 @@ export class CampusMap {
 
     // the C key under the corner, so people know there is more
     font(ui, 5, 600);
-    const label = 'Mapa';
+    const label = tr('Mapa', 'Map');
     const lw = ui.measureText(label).width;
     const kx = MINI.x + MINI.w - lw - 14;
     const ky = MINI.y + MINI.h + 4;
@@ -172,7 +173,7 @@ export class CampusMap {
 
     font(ui, 11, 400, SERIF, true);
     ui.fillStyle = MAROON;
-    ui.fillText('Mapa ng Campus', PANEL.x + 10, PANEL.y + 8);
+    ui.fillText(tr('Mapa ng Campus', 'Campus Map'), PANEL.x + 10, PANEL.y + 8);
     font(ui, 5, 500);
     ui.fillStyle = 'rgba(42,32,48,0.7)';
     ui.fillText('Holy Angel University, Angeles City', PANEL.x + 108, PANEL.y + 13);
@@ -216,7 +217,7 @@ export class CampusMap {
     let y = PANEL.y + 30;
     font(ui, 6.5, 700);
     ui.fillStyle = MAROON;
-    ui.fillText(TELEPORT ? 'Puntahan' : 'Mga lugar', LIST_X, y - 12);
+    ui.fillText(TELEPORT ? tr('Puntahan', 'Go to') : tr('Mga lugar', 'Places'), LIST_X, y - 12);
 
     this.stops.forEach((s, i) => {
       const picked = TELEPORT && i === this.pick;
@@ -242,7 +243,7 @@ export class CampusMap {
       y += 3;
       font(ui, 5, 700);
       ui.fillStyle = MAROON;
-      ui.fillText('Malapit dito', LIST_X, y);
+      ui.fillText(tr('Malapit dito', 'Nearby'), LIST_X, y);
       y += 8;
       font(ui, 4.8, 500);
       ui.fillStyle = INK;
@@ -255,7 +256,9 @@ export class CampusMap {
     // keys
     const ky = PANEL.y + PANEL.h - 16;
     let kx = LIST_X;
-    const keys: [string, string][] = TELEPORT ? [['W S', 'pili'], ['E', 'punta'], ['C', 'isara']] : [['C', 'isara']];
+    const keys: [string, string][] = TELEPORT
+      ? [['W S', tr('pili', 'pick')], ['E', tr('punta', 'go')], ['C', tr('isara', 'close')]]
+      : [['C', tr('isara', 'close')]];
     for (const [key, label] of keys) {
       kx += keyCap(ui, key, kx, ky) + 2;
       font(ui, 5, 500);
@@ -265,9 +268,9 @@ export class CampusMap {
     }
     font(ui, 4.4, 500);
     ui.fillStyle = 'rgba(42,32,48,0.65)';
-    if (ALL.some((b) => !b.sure)) ui.fillText('Tuldok-tuldok: hula pa ang pwesto.', LIST_X, ky - 16);
+    if (ALL.some((b) => !b.sure)) ui.fillText(tr('Tuldok-tuldok: hula pa ang pwesto.', 'Dotted: location not confirmed yet.'), LIST_X, ky - 16);
     // the building outlines and streets come from OSM, whose licence asks for this credit
-    ui.fillText('Mapa: © OpenStreetMap contributors', LIST_X, ky - 9);
+    ui.fillText(tr('Mapa: © OpenStreetMap contributors', 'Map: © OpenStreetMap contributors'), LIST_X, ky - 9);
   }
 }
 

@@ -97,6 +97,7 @@ export function buildHalls(): AreaDef {
     id: 'halls',
     title: 'Back Road',
     subtitle: 'St. Gabriel, St. Raphael, St. Michael at GGN',
+    subtitleEn: 'St. Gabriel, St. Raphael, St. Michael and GGN',
     width: WIDTH,
     walkY: WALK,
     bounds: [SHED_L + 30, WIDTH - 24],
