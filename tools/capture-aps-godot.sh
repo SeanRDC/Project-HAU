@@ -33,3 +33,11 @@ shot gym-afternoon --view=gym
 shot gym-night --view=gym --hour=21
 shot gym-front-close --view=gym --zoom=40
 shot gym-side --view=gym-side
+shot gym-in-court --view=gym-in
+shot gym-in-night --view=gym-in --hour=21
+shot gym-in-plan --view=gym-in --zoom=84
+shot gym-in-lobby --x=64 --z=83.8 --zoom=28
+shot gym-in-stand --x=63 --z=97 --level=6.95 --zoom=36
+shot gym-in-stage --x=78.5 --z=129 --level=1.95 --zoom=32
+shot gym-in-east --x=91 --z=95.8 --zoom=28
+shot gym-walk-in --x=55.5 --z=75.5 --zoom=36 --walk=3.5

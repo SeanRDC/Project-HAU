@@ -1,9 +1,19 @@
 # Project Context
 
-**English language setting, merged with main 2026-10-16.** Every line of the browser
-game has English beside the Tagalog; L switches, Tagalog stays the default.
-`npm run check:translations` lists any line without English. See
-`sessions/2026-10-16-english-localization-merge.md`.
+**Inside the IH Gym, 2026-10-16.** The gym can be walked into through either
+front doorway (the right one is now open, like the left) or the side entrance.
+The camera glides round to look south down the hall at the stage from 35° up,
+and the roof, the north wall, the balcony, a stand over the student or nearer
+roof bays fade away but keep their shadows. Inside: the court, bleacher rows on
+both sides, the balcony, the lobby, equipment room and corridors, closed rooms,
+the stage and backstage. Floors are now levels: `blocked()` / `floor_height()`
+take the walker's height (see "Storeys" and "Interiors and the cutaway" in
+`docs/godot-art-style.md`). Key 0 jumps onto the court. After Sean's marked-up
+screenshot: the red court runs on to a landscape practice court in front of a
+curved stage with flush corner steps, the stands' rows are one run with their
+stairs at the north ends, and on the stage or the stands the camera closes in to
+a low side view. Room layouts not in the photos are still first guesses. See
+`sessions/2026-10-16-ih-gym-interior.md`.
 
 **NPCs and the boy rig in Godot, 2026-10-16.** Eight campus NPCs in the style
 reference's look, animated by the boy's rig made general
@@ -14,6 +24,17 @@ their posts. New NPCs are PixelLab edits of the style sheet (25 generations each
 E, Space or Enter talks to whoever is in reach. The playable boy is now a rig
 built from his reference (`assets/drafts/characters/boy/three-quarter/rig/`), not
 PixelLab frames. See `sessions/2026-10-16-godot-npcs-and-boy-rig.md`.
+
+St. Joseph Hall in Godot, 2026-10-16: `areas/sjh.gd` builds SJH on its plan plot
+(nine storeys, 96 x 19 m, facing north, set back 10 m from its OSM outline per Mikko's map), with its covered walkway (the same
+cutaway as the APS hallway), the Mary statue garden and the parking with cars.
+The south road is walkable and the whole road loop with it; key 9 frames SJH.
+See `sessions/2026-10-16-sjh-godot.md`.
+
+**English language setting, merged with main 2026-10-16.** Every line of the browser
+game has English beside the Tagalog; L switches, Tagalog stays the default.
+`npm run check:translations` lists any line without English. See
+`sessions/2026-10-16-english-localization-merge.md`.
 
 **The IH Gym in Godot, 2026-10-16.** `areas/gym.gd` builds the Immaculate Heart
 Gymnasium from outside on its plan plot at its real size (41 x 69.5 m, about 12 m
