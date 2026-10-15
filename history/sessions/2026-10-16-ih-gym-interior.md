@@ -184,3 +184,15 @@ and the camera faces the student's own side.
   beyond it; it shows only past the student and is left out at wide framings.
 - The exterior's back wall has no windows, but louvres were added inside it
   under the eave, where the photos show daylight behind the east stand.
+
+## Merges at the end of the session
+
+- Merged Mclaren's NPCs (#24), Mikko's APS hallway and St. Joseph Hall (#25), the
+  English localization, the fast travel (#26) and TachiBae's MGN (#27) into `main`
+  with this work. Clashes resolved keeping both sides: the hallway already used
+  `hall` / `HALL_WIDTH`, so the gym's camera names became `arena` / `ARENA_*`; SJH
+  took key 9, so the gym inside moved to key 0; every camera turn (gym, SJH, MGN)
+  now goes through `_turns()`. The inside-the-gym zoom cap is decided from where
+  the student stands, not a leftover flag (it had clipped MGN's framing in the checks).
+- All 87 checks pass. Pull requests were merged by pushing `main` (no `gh` on this
+  PC, so no formal "Approve" reviews).
