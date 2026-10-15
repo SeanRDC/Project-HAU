@@ -668,11 +668,13 @@ func _travel_to(index: int) -> void:
 		push_warning("Fast travel: %s is not walkable" % place[0])
 		return
 	_snap_follow()
-	_set_zoom(place[2], true)
+	# Where the student lands decides the zoom's cap (inside the gym, ARENA_CAP), so
+	# set it first.
 	_was_inside = arena_for(student.position.x, student.position.z) > 0.5
 	_zoom_before = -1.0
 	_was_perched = false
 	_zoom_before_perch = -1.0
+	_set_zoom(place[2], true)
 	_update_cutaways(0.0, true)
 	_update_camera(1.0)
 	sound.select()
