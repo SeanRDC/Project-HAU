@@ -8,7 +8,7 @@ roof bays fade away but keep their shadows. Inside: the court, bleacher rows on
 both sides, the balcony, the lobby, equipment room and corridors, closed rooms,
 the stage and backstage. Floors are now levels: `blocked()` / `floor_height()`
 take the walker's height (see "Storeys" and "Interiors and the cutaway" in
-`docs/godot-art-style.md`). Key 9 jumps onto the court. After Sean's marked-up
+`docs/godot-art-style.md`). Key 0 jumps onto the court. After Sean's marked-up
 screenshot: the red court runs on to a landscape practice court in front of a
 curved stage with flush corner steps, the stands' rows are one run with their
 stairs at the north ends, and on the stage or the stands the camera closes in to
@@ -24,6 +24,12 @@ their posts. New NPCs are PixelLab edits of the style sheet (25 generations each
 E, Space or Enter talks to whoever is in reach. The playable boy is now a rig
 built from his reference (`assets/drafts/characters/boy/three-quarter/rig/`), not
 PixelLab frames. See `sessions/2026-10-16-godot-npcs-and-boy-rig.md`.
+
+St. Joseph Hall in Godot, 2026-10-16: `areas/sjh.gd` builds SJH on its plan plot
+(nine storeys, 96 x 19 m, facing north, set back 10 m from its OSM outline per Mikko's map), with its covered walkway (the same
+cutaway as the APS hallway), the Mary statue garden and the parking with cars.
+The south road is walkable and the whole road loop with it; key 9 frames SJH.
+See `sessions/2026-10-16-sjh-godot.md`.
 
 **English language setting, merged with main 2026-10-16.** Every line of the browser
 game has English beside the Tagalog; L switches, Tagalog stays the default.

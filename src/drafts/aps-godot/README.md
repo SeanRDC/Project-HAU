@@ -26,7 +26,7 @@ at the stage, and the roof, the north wall and whatever stands between it and
 the student fade away (they still cast their shadows). Inside: the court, the
 bleachers upstairs on both sides (climb the rows), the balcony over the side
 entrance, the lobby and equipment room, the corridors under the stands, the
-stage with its steps and the backstage rooms. Key 9 jumps onto the court.
+stage with its steps and the backstage rooms. Key 0 jumps onto the court.
 
 ## Run
 
@@ -46,7 +46,7 @@ the ignored `builds/godot-tools/4.7.2/`. Other machines can
 | Shift | Run |
 | Mouse wheel, +/- | Zoom (smooth), in to about the student's own height |
 | 1-6 | APS + canteen, Whole building, Corridor, Canteen (patio), Close-up, Chapel (plaza) |
-| 7-9 | IH Gym (front), Gym side (the side entrance from the lane), Gym inside (the court) |
+| 7-9, 0 | IH Gym (front), Gym side (the side entrance from the lane), SJH, Gym inside (the court) |
 | Q/E | Camera angle |
 | T | Morning, noon, afternoon, night |
 | C | Boy / girl |
@@ -113,6 +113,7 @@ because their kernel grows with zoom.
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both open doorways, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
 | `areas/gym_interior.gd` | Inside the gym, walkable everywhere a student could go: the court with the seal, the bleachers upstairs on both sides, the balcony, the lobby, equipment room and corridors, the stage and backstage, the roof structure; its storeys, collision and cutaway groups |
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
+| `areas/sjh.gd` | St. Joseph Hall: the slab, its covered walkway (walk in through a railing gap), the Mary statue garden, the parking and cars |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
 | `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking |
 | `npcs.gd` | The cast, their lines, the talk hint and speech bubble |

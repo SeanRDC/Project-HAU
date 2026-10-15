@@ -68,7 +68,7 @@ Read from the 16 interior photos in `assets/images/buildings/ih_gym immaculate h
 - **Camera:** a new zone, `arena_for` (named `hall_for` until it met the APS hallway's own `hall`), looks south down the hall at the stage
   from 35° up. It rises across each doorway and takes over from the gable view
   in the side entrance, so walking in glides the camera round and down; from a
-  wide framing the zoom glides to 40 and back on the way out. Key 9 jumps onto
+  wide framing the zoom glides to 40 and back on the way out. Key 0 (first 9; 9 went to SJH in the merge) jumps onto
   the court; `--view=gym-in` and `--level=` help captures.
 - **Cutaway:** the roof, the north wall, the balcony, each stand (with the rooms
   under it) and each bay of the roof structure are groups that fade out when

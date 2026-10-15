@@ -59,7 +59,7 @@ const PLOTS := {
 	"formation": {"name": "Sister Josefina Nepomuceno Formation Center", "short": "Formation Center", "no": 16, "built": false,
 		"label": Vector2(22.5, 62.4),
 		"outline": [Vector2(9.9, 44.8), Vector2(3.7, 69), Vector2(8.2, 70.9), Vector2(11.5, 77.4), Vector2(15.9, 81.4), Vector2(28, 82), Vector2(32, 76.3), Vector2(35.6, 67.2), Vector2(36.1, 56.6), Vector2(35.5, 47.5), Vector2(34.3, 38.6), Vector2(30.9, 34.7), Vector2(20.8, 35.1), Vector2(16.9, 38.6), Vector2(13.2, 40.5)]},
-	"sjh": {"name": "St. Joseph Hall Building", "short": "SJH", "no": 17, "built": false,
+	"sjh": {"name": "St. Joseph Hall Building", "short": "SJH", "no": 17, "built": true,
 		"label": Vector2(-11.7, 126.4),
 		"outline": [Vector2(35.9, 137.7), Vector2(36.5, 118.3), Vector2(-59.3, 115.1), Vector2(-59.8, 134.5)]},
 	"sh": {"name": "Sacred Heart Building", "short": "SH", "no": 18, "built": false,

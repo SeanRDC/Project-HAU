@@ -295,7 +295,7 @@ func _planting() -> void:
 	var dirt: Material = w.material("dirt")
 	var trees: Array[Vector3] = [Vector3(-28.0, 30.0, 8.2), Vector3(-19.0, 37.2, 7.4), Vector3(-6.0, 29.8, 8.8),
 		Vector3(-12.0, 38.2, 7.0), Vector3(6.0, 38.5, 7.8), Vector3(-30.5, 86.5, 8.4), Vector3(-14.0, 89.0, 8.0),
-		Vector3(2.0, 92.0, 8.6), Vector3(18.0, 90.0, 7.6), Vector3(-22.0, 98.0, 7.2), Vector3(10.0, 100.0, 8.0)]
+		Vector3(2.0, 92.0, 8.6), Vector3(18.0, 90.0, 7.6), Vector3(-22.0, 93.0, 7.2), Vector3(10.0, 94.5, 8.0)]
 	for i in trees.size():
 		var tree := trees[i]
 		w.box(Vector3(3.4, 0.05, 3.0), Vector3(tree.x, -0.18, tree.y), dirt)

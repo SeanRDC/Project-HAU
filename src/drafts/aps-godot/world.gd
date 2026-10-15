@@ -46,6 +46,7 @@ const Chapel := preload("res://areas/chapel.gd")
 const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
 const Hallway := preload("res://areas/hallway.gd")
+const Sjh := preload("res://areas/sjh.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
@@ -91,13 +92,13 @@ static func in_garden(x: float, z: float) -> bool:
 ## SJH (its view needs that building).
 static func walkable_ground(x: float, z: float) -> bool:
 	var across := across_road(x, z)
-	if across >= 2.2 and across <= 10.6 and (z < 38.0 or x < -45.0 or (x > 36.0 and z < 104.0)):
+	if across >= 2.2 and across <= 10.6:
 		return true # carriageway and sidewalks
 	if Gym.on_apron(x, z) or Gym.inside(x, z):
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
-	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z):
+	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z)
 
@@ -119,7 +120,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 			return true # rear wall, end walls, and the part inside the tower
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
-	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z):
+	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -154,6 +155,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return -0.19 # carriageway
 	if (across >= 3.85 and across <= 4.135) or (across >= 10.865 and across <= 11.135):
 		return 0.0 # kerb
+	var walkway := Sjh.floor_height(x, z)
+	if not is_nan(walkway):
+		return walkway
 	var hall := Hallway.floor_height(x, z)
 	if not is_nan(hall):
 		return hall
@@ -166,7 +170,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 
 ## The outer bounds; blocked() shapes the walkable campus inside them.
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -63.0, 101.0), clampf(z, Hallway.BACK, 137.0))
+	return Vector2(clampf(x, -63.0, 101.0), clampf(z, Hallway.BACK, 140.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -179,6 +183,7 @@ func build(parent: Node3D) -> void:
 	_left_garden()
 	Chapel.new().build(self)
 	Hallway.new().build(self)
+	Sjh.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -1042,7 +1047,7 @@ func _grasses() -> void:
 		if absf(z - 33.6) < 1.3 and x > -34.8 and x < 13.8:
 			return false # the jogging path
 		var at := Vector2(x, z)
-		if not Geometry2D.is_point_in_polygon(at, inner) or Chapel.walkable(x, z):
+		if not Geometry2D.is_point_in_polygon(at, inner) or Chapel.walkable(x, z) or Sjh.on_parking(x, z):
 			return false
 		return not Geometry2D.is_point_in_polygon(at, Chapel.outline()) and not Plots.occupied(x, z)
 	var scatter := func(from: Vector2, to: Vector2, count: int, y: float, scale: float, test: Callable) -> void:
