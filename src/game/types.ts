@@ -133,6 +133,17 @@ export interface AreaView {
   time: number;
   camX: number;
   mood: Mood;
+  rain: number;
+}
+
+/** Optional directional lighting; scenes opt in without changing the other areas. */
+export interface AreaSunlight {
+  /** Ground projection per pixel of object height, and shadow opacity. */
+  projection(view: AreaView): { x: number; y: number; strength: number };
+  /** Amount of cool shade at someone's feet (0..1). */
+  shadeAt(x: number, y: number, view: AreaView): number;
+  bloom: number;
+  glare: number;
 }
 
 export interface AreaDef {
@@ -149,6 +160,20 @@ export interface AreaDef {
   layers: Layer[];
   /** lit windows etc, added on top once it gets dark */
   glow?: HTMLCanvasElement;
+  /**
+   * Lamp-lit street atmosphere: in the rain the road darkens and shows the lit
+   * windows and the lamps reflected in it, with a few puddles and the rain
+   * catching the light round each lamp; on dry nights a few motes drift round
+   * the lamps. Outdoor scenes only.
+   */
+  atmosphere?: boolean;
+  /**
+   * Night light worked out once at load, in scene coordinates: the spill round
+   * lit windows and doors onto the walls and pavement. Added to the light map
+   * as it gets dark.
+   */
+  lightBake?: HTMLCanvasElement;
+  sunlight?: AreaSunlight;
   lights: AreaLight[];
   hotspots: Hotspot[];
   npcs: NpcDef[];

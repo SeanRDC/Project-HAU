@@ -1,5 +1,89 @@
 # Project Context
 
+**English language setting, merged with main 2026-10-16.** Every line of the browser
+game has English beside the Tagalog; L switches, Tagalog stays the default.
+`npm run check:translations` lists any line without English. See
+`sessions/2026-10-16-english-localization-merge.md`.
+
+**The IH Gym in Godot, 2026-10-16.** `areas/gym.gd` builds the Immaculate Heart
+Gymnasium from outside on its plan plot at its real size (41 x 69.5 m, about 12 m
+to the fascia, 16.6 m to the ridge, solar panels on the roof). The east road is
+now walkable down past it, with the apron in front and the lane to the side
+entrance; keys 7 and 8 frame its front and side. The annex is still a reserved
+plot. See `sessions/2026-10-16-ih-gym-godot.md`.
+
+**Godot is the direction, 2026-10-15.** Campus work moves to Godot 4.7.2 in the
+style of `src/drafts/aps-godot/`. Every style rule and value is in
+`docs/godot-art-style.md`; read it before any Godot work and update it when a
+value changes. The repo-level `CLAUDE.md` points AI assistants there. The browser
+game and `aps-3d.html` are frozen references. APS is now an L: the canteen wing
+stands forward from the stair tower, its stalls facing the brick patio in the
+corner, and the road bends round it with lawn inside the bend. The camera turns to
+face the stalls on the patio, controls follow the camera, and the zoom goes in to
+5 m. See `sessions/2026-10-15-aps-godot-l-layout-and-style-guide.md`.
+Then: trees are 2.5D (round crowns of crossed leaf clusters), there is grass
+everywhere, patio armchairs, LED street lights, and a pergola and green picnic
+sheds past the canteen. See `sessions/2026-10-15-aps-godot-patio-polish.md`.
+**Since then, the Godot world is the team's campus plan** (`campus_plan.gd`,
+generated from `plan.ts` by `npm run export:godot-plan`; x = u + 4.7,
+z = v + 58.8). APS is full length, a road loop circles the chapel lawn, the chapel
+stands with its plaza and oval parking, and every other building is a reserved
+plot. Merge a building as `areas/<id>.gd` on its plot (see "Campus plan and
+merging buildings" in `docs/godot-art-style.md`). See
+`sessions/2026-10-15-godot-chapel-and-campus-plan.md`.
+
+APS Godot sound, 2026-10-15: `src/drafts/aps-godot/audio.gd` ports the browser
+game's synthesised audio (wind, the pentatonic melody with its echo, footsteps,
+the menu blip, night crickets). There are still no audio files. M mutes. See
+`sessions/2026-10-15-aps-godot-sound.md`.
+
+APS Godot port, 2026-10-15: we are moving APS to Godot while polishing the
+art style and graphics. `src/drafts/aps-godot/` now holds the full browser
+frontage (wing, canopy, tall block, stair tower, canteen) with sun shadows,
+lit sprite silhouettes, edge/foliage/sky/grade shaders and night lighting. An
+adaptive pixel buffer keeps both the wide and close framings clear. Run
+`tools/run-aps-godot.cmd`; captures via `tools/capture-aps-godot.sh`. See
+`sessions/2026-10-15-aps-godot-port.md`.
+
+APS moving-shadow/canteen pass, 2026-10-15: Mikko requested shadow/lighting
+polish while moving and the missing canteen. The browser trial now includes the
+stair tower and five-floor canteen wing with an open stall hall, awning, steps,
+brick patio and umbrellas. Default framing is APS + canteen; Canteen view or
+`?view=canteen` opens the patio. The road continues right and the student can
+enter through the railing gap. Stable world-anchored shadow filtering, a 4096px
+sun map, orthographic sprite alignment, pixel-step camera follow, and foot
+contact address motion shimmer. See `sessions/2026-10-15-aps-browser-canteen.md`.
+
+APS browser reference correction, 2026-10-15: Mikko supplied screenshots 1075
+(browser) and 1074 (native Godot) and asked for the latter's graphics. Browser
+materials now use diffuse shading, cream sunlight with readable gray shade,
+muted window reflections, quieter grain, and a lower entrance camera. The
+preview fills the available window; whole-building framing remains the default,
+with Entrance view for the supplied close composition. Custom wheel zoom no
+longer falsely displays the Whole building label.
+
+APS browser 2.5D trial, 2026-10-15: Mikko approved trying spatial graphics while
+staying in the browser, then requested a wider view of the entire building so
+it feels large. Open `/aps-3d.html` on the Vite server. The isolated Three.js
+scene starts at Whole building framing, with existing student sprites, real
+shadows, day/night controls, and touch movement. Godot is optional; the original
+Canvas game is still `/`. See `sessions/2026-10-15-aps-browser-3d.md`.
+
+APS Godot trial, 2026-10-15: a standalone 2.5D entrance prototype now lives in
+`src/drafts/aps-godot/`. Run `tools/run-aps-godot.cmd` on this Windows setup or
+open its `project.godot` in Godot 4. The local portable 4.7.2 editor is under
+ignored `builds/godot-tools/`; no engine binary is committed. This is a spatial
+graphics trial, not a migration of the browser game. See
+`sessions/2026-10-15-aps-godot-trial.md`.
+
+APS visual benchmark, 2026-10-15: Mikko approved an Until Then-inspired exterior
+pass on APS first. See `sessions/2026-10-15-aps-visual-benchmark.md` and
+`docs/aps-visual-benchmark.md` for preview links, scope, and limitations. APS alone
+uses the new directional sprite shadows, canopy shade, architectural depth,
+foreground branches, and restrained bloom; the game remains on Canvas.
+
+Last updated: 2026-10-15 (the boy and girl are PixelLab sprite sheets with idle, walk, talk and a cutscene-only tired stance, talking portraits and the girl's emotions, drawn on a double-detail buffer; draft. Before that: characters restyled with outlines and three-tone shading, draft v1; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
+Last updated: 2026-10-15 (APS lit at night: window light spilling onto the walls and trees, softer lanterns, shading, wet-road reflections in the rain; the chapel lawn's ends: no way to the back road, only APS at its left end; the chapel walkway as five lanes, with the student center and Cafe Juan, from 31 photos; St. Joseph Hall redrawn from photos with the statue of Mary, MGN as its own stop between the chapel and SJH, the chapel with depth and the oval parking; the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 Last updated: 2026-10-15 (an English language setting, L to switch, with the whole game translated; the chapel lawn's ends: no way to the back road, only APS at its left end; the chapel walkway as five lanes, with the student center and Cafe Juan, from 31 photos; St. Joseph Hall redrawn from photos with the statue of Mary, MGN as its own stop between the chapel and SJH, the chapel with depth and the oval parking; the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
@@ -18,7 +102,8 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Scale | 9 game pixels per metre | The DJN Building and the angel pedestals were already drawn at about this |
 | Camera per street | Each street picks the side with the most to see | A side view only shows one side of a road. Buildings behind the camera get a sign and a "look back" hotspot |
 | Saving | Autosave to the browser | No menus to build; Enter continues, N starts over |
-| Art | Drawn by code, no image files yet | Lets the time-of-day lighting recolour everything; replace with real sprites later |
+| Art | Drawn by code, except the two playable students | Lets the time-of-day lighting recolour everything. The boy and girl are PixelLab sprite sheets (`src/game/sprites/`), still lit by the light map |
+| Render detail | The scene buffer is 2x the 480x270 view (`DETAIL` in `engine/display.ts`) | Drawing code keeps 480x270 coordinates; the students' sheets are drawn at half a game pixel per pixel so none of their pixels are lost |
 | Character style | Outlined, three tones, rounder heads, same 33 px rig | Matches the reference image picked in October; the outline is stamped from the drawn body so every look gets it |
 | Player | Choose Boy or Girl, then type a name, before a new game | Same rig for both (`Look`), so the girl is just a different look; the name only labels the player's speech bubbles |
 | Opening | New games start outside the Main Gate with a cutscene | Bag check and ID tap are the first thing every HAU student does each day |
@@ -54,7 +139,7 @@ The seven campus streets, outsides only, no people yet:
 
 Every building's door names it, gives its number on the 2022 campus map and the offices inside, and says it is not open yet.
 
-Systems: time-of-day cycle, light map with lamps and window glow, particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices and a portrait of the speaker, faces and emotes, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key (pixel art, painted from the plan, with teleport) and a minimap in the top right, baon (allowance) money, rain that comes and goes with umbrellas, title screen, character picker and name entry, synthesised audio, autosave.
+Systems: time-of-day cycle, light map with lamps and window glow (plus, opt-in per scene, light baked at load with `lightBake` and wet-street reflections and lamp motes with `atmosphere`; only APS uses them so far), particles (fountain, leaves, fireflies, dust), speech-bubble dialogue with choices and a portrait of the speaker, faces and emotes, cutscenes with letterbox bars, phone with a nine-item checklist, campus map on the C key (pixel art, painted from the plan, with teleport) and a minimap in the top right, baon (allowance) money, rain that comes and goes with umbrellas, title screen, character picker and name entry, synthesised audio, autosave.
 
 ## Where Things Live
 * `src/engine/` - generic engine parts. Knows nothing about HAU.

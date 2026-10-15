@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#151e28" />
+    <link rel="icon" href="data:," />
+    <title>APS — Project HAU</title>
+  </head>
+  <body>
+    <main id="aps-frame" aria-label="Explore the APS entrance">
+      <canvas id="aps-world" aria-label="APS campus scene. Use A and D to walk, W and S to move in depth." tabindex="0"></canvas>
+      <header class="scene-heading" id="instructions">
+        <h1>Archbishop Pedro Santos Building</h1>
+        <p>Walk into the shade. Watch the light change.</p>
+        <p class="keys"><kbd>A</kbd><kbd>D</kbd> Walk <span>·</span> <kbd>W</kbd><kbd>S</kbd> Depth <span>·</span> <kbd>Shift</kbd> Run<br /><kbd>Q</kbd><kbd>E</kbd> Camera <span>·</span> Scroll to zoom <span>·</span> <kbd>T</kbd> Time <span>·</span> <kbd>C</kbd> Character <span>·</span> <kbd>H</kbd> Hide help</p>
+      </header>
+      <div class="scene-tools" aria-label="Scene controls">
+        <label class="time-control"><span class="sr-only">Time of day</span><select id="time" disabled>
+          <option value="8">Morning · 8:00 AM</option>
+          <option value="12">Noon · 12:00 PM</option>
+          <option value="16.5" selected>Afternoon · 4:30 PM</option>
+          <option value="21">Night · 9:00 PM</option>
+        </select></label>
+        <button id="character" type="button" disabled>Character: Boy</button>
+        <label><span class="sr-only">Camera framing</span><select id="framing" disabled><option value="98">APS + canteen</option><option value="56">Whole building</option><option value="36">Courtyard view</option><option value="22">Entrance view</option><option value="28">Canteen view</option><option value="custom" hidden disabled>Custom zoom</option></select></label>
+        <button id="angle" type="button" disabled>Camera</button>
+        <button id="reset" type="button" disabled>Reset</button>
+        <a href="./?area=aps&amp;spawn=apslobby&amp;hour=16.5">Original game</a>
+      </div>
+      <div class="touch-pad" aria-label="Movement controls">
+        <button type="button" data-key="KeyW" aria-label="Walk towards the building"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6" /></svg></button>
+        <button type="button" data-key="KeyA" aria-label="Walk left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg></button>
+        <button type="button" data-key="KeyS" aria-label="Walk towards the road"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></button>
+        <button type="button" data-key="KeyD" aria-label="Walk right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>
+      </div>
+      <div id="scene-status" role="status" aria-live="polite"><p>Loading APS…</p></div>
+    </main>
+    <script type="module" src="/src/drafts/aps-browser/main.ts"></script>
+  </body>
+</html>

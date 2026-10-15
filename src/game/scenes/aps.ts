@@ -13,9 +13,8 @@
 // is behind the canteen block, reached through the stair tower. The chapel
 // and its lawn are behind the camera.
 
-import { VIEW_H, makeCanvas } from '../../engine/display';
+import { Ctx, VIEW_H, makeCanvas } from '../../engine/display';
 import { rect } from '../../engine/pix';
-import { hex } from '../../engine/math';
 import { bamboo, bottleCage, bust, cafeUmbrella, drawAPS, groundShadow, herringbone, pgnBack, pottedTree, siteFence, twinLantern } from '../art/aps';
 import { arecaPalm, balconyBlock, campusMapBoard, canteenBlock, canteenEnd, courtGable, pergola, stairTower } from '../art/canteen';
 import { P } from '../art/palette';
@@ -24,7 +23,8 @@ import { BUILDINGS, PLACES } from '../campus/plan';
 import { STREETS, frontage, streetWidth, xOf } from '../campus/streets';
 import { apsHotspots } from '../story/streets';
 import { AreaDef, AreaLight } from '../types';
-import { GROUND, WALK, ambience, doorLight, farCity, frontPlants, lamp, lawnStrip, midCampus, road } from './kit';
+import { GROUND, WALK, ambience, farCity, lamp, lawnStrip, midCampus, road } from './kit';
+import { ApsLayout, apsForeground, apsLighting, apsPavement, deepenAps } from '../art/aps-lighting';
 
 const S = STREETS.aps;
 const WIDTH = streetWidth(S);
@@ -33,6 +33,8 @@ const GYM_LANE_X = xOf(S, PLACES.northEastJunction);
 const [APS_L] = frontage(S, BUILDINGS.aps.blocks[0]);
 /** the wing of APS that turns towards the lawn: the canteen block */
 const [WING_L, WING_R] = frontage(S, BUILDINGS.aps.blocks[1]);
+/** the lanterns' warm, slightly orange light */
+const LANTERN: [number, number, number] = [255, 196, 132];
 
 /**
  * The long wing starts a little in from the plan's corner of APS, so the back
@@ -68,7 +70,54 @@ const LOUVRE_BAYS = 6;
 /** the door at the foot of the stair tower; Sacred Heart, behind the canteen block, is reached through the back of the canteen */
 const SH_DOOR = TOWER_X + 7;
 
-function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement; canteenDoor: number } {
+const LIGHTING_LAYOUT: ApsLayout = {
+  width: WIDTH, ground: GROUND, wing: APS_X, tall: TALL_X,
+  tower: TOWER_X, canteen: CANTEEN_X, canteenEnd: CANTEEN_END,
+  canopyLeft: CANOPY_L, canopyRight: APS_X + MAIN_DOOR + CANOPY_HALF + 8,
+  lamps: [APS_X + 170, TOWER_X + TOWER_W + 18],
+  umbrellas: [],
+};
+
+/** A doorway's light at night: soft and close, so it warms the step and the pillars without washing out the white walls. */
+function doorLight(lights: AreaLight[], x: number): void {
+  lights.push({ x, y: GROUND - 14, r: 46, color: [255, 204, 146], strength: 0.42 });
+}
+
+/**
+ * The light the lit windows and doors throw on the walls, columns and pavement
+ * round them, worked out once from the glow itself so it always lines up with
+ * them: copies of the glow pushed out in steps, each fainter, reaching further
+ * down than up, as light falls. With a cool wash of moonlight over the front,
+ * so it reads at midnight. It goes into the light map, scaled by how dark it is.
+ */
+function bakeSpill(glow: HTMLCanvasElement): HTMLCanvasElement {
+  const [bake, b] = makeCanvas(glow.width, glow.height);
+  b.fillStyle = 'rgba(66, 74, 116, 0.5)';
+  b.fillRect(0, 0, bake.width, GROUND + 16);
+  b.globalCompositeOperation = 'lighter';
+  for (const [rad, a] of [[2, 0.09], [5, 0.06], [9, 0.04], [14, 0.025]] as const) {
+    b.globalAlpha = a;
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -0.5], [0, 1.2], [-0.7, 0.8], [0.7, 0.8], [-0.7, -0.4], [0.7, -0.4]]) {
+      b.drawImage(glow, Math.round(dx * rad), Math.round(dy * rad));
+    }
+  }
+  b.globalAlpha = 1;
+  b.globalCompositeOperation = 'source-over';
+  return bake;
+}
+
+/** Clear the glow wherever the scene `c` has changed since `bare` was taken, i.e. wherever something now covers it. */
+function hideBehind(g: Ctx, bare: ImageData, c: Ctx): void {
+  const now = c.getImageData(0, 0, bare.width, bare.height).data;
+  const was = bare.data;
+  const lit = g.getImageData(0, 0, bare.width, bare.height);
+  for (let i = 0; i < was.length; i += 4) {
+    if (now[i] !== was[i] || now[i + 1] !== was[i + 1] || now[i + 2] !== was[i + 2]) lit.data[i + 3] = 0;
+  }
+  g.putImageData(lit, 0, 0);
+}
+
+function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTMLCanvasElement; spill: HTMLCanvasElement; architecture: HTMLCanvasElement; canteenDoor: number } {
   const [canvas, c] = makeCanvas(WIDTH, VIEW_H);
   const [glow, g] = makeCanvas(WIDTH, VIEW_H);
 
@@ -94,8 +143,14 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   const canteenDoor = canteenBlock(c, g, CANTEEN_X, CANTEEN_W, GROUND);
   canteenEnd(c, g, CANTEEN_X + CANTEEN_W, END_W, GROUND, CANTEEN_H);
   doorLight(lights, canteenDoor);
+  deepenAps(c, g, LIGHTING_LAYOUT);
+  const [architecture, a] = makeCanvas(WIDTH, VIEW_H);
+  a.drawImage(canvas, 0, 0);
+  // the buildings as they are before anything stands in front of them, to tell later what hides their windows
+  const bare = c.getImageData(0, 0, WIDTH, GROUND);
 
   road(c, 0, WIDTH, 'concrete', 2710);
+  apsPavement(c, LIGHTING_LAYOUT);
 
   // the garden along the front of the long wing, up to the canopy: grass and low hedges
   lawnStrip(c, APS_X, CANOPY_L - 2, 2719, 10);
@@ -137,19 +192,37 @@ function mainLayer(lights: AreaLight[]): { canvas: HTMLCanvasElement; glow: HTML
   // the lane to the covered court and the gym turns off right after the canteen
   signBoard(c, GYM_LANE_X + 34, GROUND + 5, ['COVERED COURT', 'GYM']);
 
+  // the light of the lit windows falls on the bamboo, trees and signs in front of them (the spill, worked
+  // out from every window), but a window's own glow must not shine through the leaves: hide it wherever
+  // something now stands in front of the building
+  const spill = bakeSpill(glow);
+  hideBehind(g, bare, c);
+
   // the old bronze twin-lantern posts along the kerb
+  // each lantern a small warm glow round its head and a soft pool on the pavement under the post,
+  // not one big white circle washing out the wall behind it
   for (const x of [APS_X + 170, TOWER_X + TOWER_W + 18]) {
     for (const [lx, ly] of twinLantern(c, g, x, GROUND + 14)) {
-      lights.push({ x: lx, y: ly, r: 64, color: hex(P.lamp), strength: 0.8 });
+      lights.push({ x: lx, y: ly, r: 30, color: LANTERN, strength: 0.55 });
     }
+    lights.push({ x, y: GROUND + 20, r: 48, color: LANTERN, strength: 0.35 });
   }
   lamp(c, g, lights, GYM_LANE_X + 76);
-  return { canvas, glow, canteenDoor };
+  // the windows themselves a little less fierce, now that their light reaches the walls round them
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  g.fillRect(0, 0, WIDTH, VIEW_H);
+  g.globalCompositeOperation = 'source-over';
+  return { canvas, glow, spill, architecture, canteenDoor };
 }
 
 export function buildAps(): AreaDef {
   const lights: AreaLight[] = [];
   const main = mainLayer(lights);
+  const lighting = apsLighting({
+    ...LIGHTING_LAYOUT,
+    umbrellas: [TALL_X + 132, TALL_X + 174, TALL_X + 214, main.canteenDoor - 46, main.canteenDoor + 46],
+  }, main.architecture);
 
   return {
     id: 'aps',
@@ -160,14 +233,19 @@ export function buildAps(): AreaDef {
     walkY: WALK,
     bounds: [24, WIDTH - 40],
     outdoor: true,
+    atmosphere: true,
     layers: [
       farCity(WIDTH, 271),
       // Sacred Heart, tall and white with blue glass, rising behind the canteen block
       midCampus(WIDTH, 272, [{ x: CANTEEN_X + 110, w: 150, h: 176, wall: '#eef0ee', glass: '#4f7fc8' }]),
       { canvas: main.canvas, parallax: 1 },
-      frontPlants(WIDTH, 273),
+      apsForeground(WIDTH),
     ],
     glow: main.glow,
+    lightBake: main.spill,
+    sunlight: lighting.sunlight,
+    drawBack: lighting.drawBack,
+    drawOver: lighting.drawOver,
     lights,
     hotspots: apsHotspots({
       halls: 30,

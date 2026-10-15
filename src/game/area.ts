@@ -2,14 +2,15 @@
 // render with lighting on top.
 
 import { Camera } from '../engine/camera';
-import { Ctx, VIEW_H, VIEW_W, makeCanvas } from '../engine/display';
+import { Ctx, DETAIL, VIEW_H, VIEW_W, makeCanvas } from '../engine/display';
 import { Input } from '../engine/input';
 import { LightMap, drawVignette } from '../engine/lighting';
 import { RGB, clamp, css, damp, mix, smooth } from '../engine/math';
 import { Particle, Particles } from '../engine/particles';
 import { Mood } from '../engine/tod';
 import { CHAR_HEIGHT, Face, Look, drawCat, drawCharacter, drawCharacterFacing, drawShadow } from './art/character';
-import { baseLook } from './art/player';
+import { baseLook, character } from './art/player';
+import { drawSprite, drawSpriteFacing, spriteHeight, spritesReady } from './art/sprites';
 import { tr } from './lang';
 import { P } from './art/palette';
 import { Sky } from './art/sky';
@@ -93,6 +94,8 @@ export class Area implements AreaRuntime {
   playerLook: Look = baseLook();
   /** how hard it is raining, 0..1, set by the game every frame */
   rain = 0;
+  /** true while a cutscene plays, set by the game every frame; the player stands tired then */
+  inCutscene = false;
   /** set by a cutscene: the player walks here on their own, then stops */
   walkTo: number | null = null;
   private particles = new Particles();
@@ -100,6 +103,8 @@ export class Area implements AreaRuntime {
   private time = 0;
   private hazeBuf: HTMLCanvasElement;
   private hazeCtx: Ctx;
+  private actorBuffer?: [HTMLCanvasElement, Ctx];
+  private shadowBuffer?: [HTMLCanvasElement, Ctx];
   /** called every time a foot lands, for the footstep sound */
   onStep: (() => void) | null = null;
   /** who is speaking right now, mouth moving while the words come out */
@@ -124,6 +129,10 @@ export class Area implements AreaRuntime {
       goal: null,
     }));
     [this.hazeBuf, this.hazeCtx] = makeCanvas(VIEW_W, VIEW_H);
+    if (def.sunlight) {
+      this.actorBuffer = makeCanvas(80 * DETAIL, 112 * DETAIL);
+      this.shadowBuffer = makeCanvas(80 * DETAIL, 112 * DETAIL);
+    }
   }
 
   enter(spawn: string): void {
@@ -255,9 +264,19 @@ export class Area implements AreaRuntime {
     return this.player.x;
   }
 
+  /** True when the player is drawn from sprite sheets rather than the rig. */
+  playerSprite(): boolean {
+    return spritesReady(character());
+  }
+
+  /** How tall the player stands, for bubbles and emotes over their head. */
+  playerHeight(): number {
+    return this.playerSprite() ? spriteHeight(character()) : CHAR_HEIGHT;
+  }
+
   /** Screen position just above a speaker's head, for dialogue bubbles. */
   anchor(who: string): { x: number; y: number } | null {
-    if (who === 'you') return { x: this.player.x - this.camera.x, y: this.player.y - CHAR_HEIGHT - 4 };
+    if (who === 'you') return { x: this.player.x - this.camera.x, y: this.player.y - this.playerHeight() - 4 };
     const n = this.npcs.find((n) => n.def.id === who);
     if (!n || n.gone) return null;
     return { x: n.x - this.camera.x, y: n.y - (n.def.cat ? 16 : CHAR_HEIGHT + 4 + (n.def.look.height ?? 0)) };
@@ -398,7 +417,46 @@ export class Area implements AreaRuntime {
   }
 
   private view(mood: Mood): AreaView {
-    return { time: this.time, camX: this.camera.x, mood };
+    return { time: this.time, camX: this.camera.x, mood, rain: this.rain };
+  }
+
+  /** Light a complete sprite once, preserving both its alpha and half-pixel detail. */
+  private litActor(ctx: Ctx, x: number, y: number, view: AreaView, travelling: boolean, draw: (c: Ctx) => void): void {
+    const sunlight = this.def.sunlight;
+    if (!sunlight || !this.actorBuffer || !this.shadowBuffer) { draw(ctx); return; }
+    const [image, c] = this.actorBuffer;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, image.width, image.height);
+    c.setTransform(DETAIL, 0, 0, DETAIL, (40 - x) * DETAIL, (88 - y) * DETAIL);
+    draw(c);
+
+    const shade = clamp(sunlight.shadeAt(x + Math.round(view.camX), y, view), 0, 1);
+    const sun = sunlight.projection(view);
+    if (!travelling && sun.strength > 0.005) {
+      const [mask, s] = this.shadowBuffer;
+      s.setTransform(1, 0, 0, 1, 0, 0);
+      s.clearRect(0, 0, mask.width, mask.height);
+      s.drawImage(image, 0, 0);
+      s.globalCompositeOperation = 'source-in';
+      s.fillStyle = '#303449';
+      s.fillRect(0, 0, mask.width, mask.height);
+      s.globalCompositeOperation = 'source-over';
+      ctx.save();
+      ctx.globalAlpha = sun.strength * (1 - shade * 0.85);
+      ctx.translate(Math.round(x), Math.round(y));
+      ctx.transform(1, 0, -sun.x, -sun.y, 0, 0);
+      ctx.drawImage(mask, -40, -88, 80, 112);
+      ctx.restore();
+    }
+
+    c.globalCompositeOperation = 'source-atop';
+    // The cool fill belongs to the sprite only, never a rectangle over the scenery.
+    if (shade > 0.005) {
+      c.fillStyle = css([42, 53, 83], shade * 0.38);
+      c.fillRect(x - 40, y - 88, 80, 112);
+    }
+    c.globalCompositeOperation = 'source-over';
+    ctx.drawImage(image, Math.round(x) - 40, Math.round(y) - 88, 80, 112);
   }
 
   private drawLayer(ctx: Ctx, layer: Layer, mood: Mood): void {
@@ -433,6 +491,111 @@ export class Area implements AreaRuntime {
       ctx.globalAlpha = Math.min(1, (EMOTE_TIME - t) * 4);
       emoteIcon(ctx, x, y, e.kind, t);
       ctx.restore();
+    }
+  }
+
+  /**
+   * The lamp-lit street (see `AreaDef.atmosphere`). Everything here scales with
+   * how hard it is raining and how dark it is, so it comes and goes smoothly
+   * with the weather and the time of day, and a wet road dries as the rain eases.
+   */
+  private drawAtmosphere(ctx: Ctx, cam: number, night: number): void {
+    const def = this.def;
+    const wet = clamp(this.rain, 0, 1);
+    const t = this.time;
+    // the road surface starts a little above the walk line; reflections mirror about the foot of the buildings
+    const roadTop = def.walkY - 18;
+    const mirror = def.walkY - 36;
+
+    if (wet > 0.02) {
+      // rain-darkened ground
+      ctx.fillStyle = `rgba(14, 18, 34, ${0.2 * wet})`;
+      ctx.fillRect(0, roadTop, VIEW_W, VIEW_H - roadTop);
+
+      // the lit windows, upside down and squashed in the wet road, wavering a little row by row
+      if (def.glow && night > 0.02) {
+        ctx.globalCompositeOperation = 'lighter';
+        for (let y = roadTop; y < VIEW_H; y++) {
+          const src = mirror - (y - mirror) / 0.42;
+          if (src < 0) break;
+          // fainter the further it is from the foot of the buildings
+          ctx.globalAlpha = 0.26 * wet * night * (1 - (y - roadTop) / (VIEW_H - roadTop) * 0.6);
+          // the ripple moves in bands of three rows, so each reflection stays one shape
+          const wobble = Math.round(Math.sin(t * 1.6 + Math.floor(y / 3) * 1.3));
+          ctx.drawImage(def.glow, cam + wobble, src, VIEW_W, 2.4, 0, y, VIEW_W, 1);
+        }
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+      }
+
+      // puddles along the road, catching whichever lamp is near
+      for (let k = Math.floor(cam / 70) - 1; k < (cam + VIEW_W) / 70 + 1; k++) {
+        if (hash(k) < 0.45) continue;
+        const px0 = Math.round(k * 70 + hash(k + 7) * 50 - cam);
+        const py = Math.round(def.walkY + 6 + hash(k + 3) * 14);
+        const pw = 10 + Math.round(hash(k + 5) * 14);
+        ctx.fillStyle = `rgba(10, 14, 28, ${0.28 * wet})`;
+        ctx.fillRect(px0 - pw / 2 + 2, py - 1, pw - 4, 1);
+        ctx.fillRect(px0 - pw / 2, py, pw, 2);
+        ctx.fillRect(px0 - pw / 2 + 2, py + 2, pw - 4, 1);
+        for (const l of def.lights) {
+          if (l.daylight) continue;
+          const d = Math.abs(l.x - cam - px0);
+          if (d > l.r * 1.4) continue;
+          const a = (1 - d / (l.r * 1.4)) * l.strength * night * wet * 0.7;
+          ctx.fillStyle = css(l.color, a);
+          ctx.fillRect(px0 - pw / 2 + 2, py, pw - 4, 1);
+        }
+        // a ring now and then where a drop lands in it
+        const ring = (t * 1.3 + hash(k + 9)) % 1;
+        if (ring < 0.25) {
+          const rw = 2 + Math.round(ring * 16);
+          ctx.fillStyle = `rgba(200, 215, 240, ${0.35 * wet * (1 - ring * 4)})`;
+          ctx.fillRect(px0 - rw / 2, py + 1, rw, 1);
+        }
+      }
+    }
+
+    for (const l of def.lights) {
+      if (l.daylight) continue;
+      const lx = l.x - cam;
+      if (lx < -l.r || lx > VIEW_W + l.r) continue;
+      const a = l.strength * (l.always ? 1 : night);
+      if (a < 0.02) continue;
+      const col = l.color;
+      if (wet > 0.02) {
+        // a long broken column of reflected light running down the road under it, rippling
+        const span = VIEW_H - roadTop;
+        // one unbroken column straight under the light, widening and fading as it comes forward,
+        // rippling side to side in bands rather than breaking up into loose pixels
+        for (let y = roadTop + 1; y < VIEW_H; y++) {
+          const f = (y - roadTop) / span;
+          const w = 2 + Math.round(f * 4);
+          const x = Math.round(lx - w / 2 + Math.sin(t * 2 + Math.floor(y / 3) * 1.1) * (0.5 + f));
+          const band = Math.floor(y / 2) % 2 ? 0.8 : 1;
+          ctx.fillStyle = css(col, Math.min(0.6, a * wet * 0.7 * (1 - f * 0.7) * band));
+          ctx.fillRect(x, y, w, 1);
+        }
+        // the rain shows up in the lamplight as bright streaks
+        if (l.y < roadTop - 20) {
+          ctx.fillStyle = css(mix(col, [255, 255, 255], 0.4), Math.min(0.5, a * wet * 0.55));
+          for (let i = 0; i < 6; i++) {
+            const span2 = l.r * 1.6;
+            const fall = (t * (240 + hash(i) * 80) + hash(i + 3) * span2) % span2;
+            const x = Math.round(lx + (hash(i + 11) - 0.5) * l.r * 1.1 + fall * 0.22);
+            const y = Math.round(l.y - l.r * 0.5 + fall);
+            ctx.fillRect(x, y, 1, 3);
+          }
+        }
+      } else if (night > 0.5 && l.y < roadTop - 20) {
+        // dry nights: a few motes drifting round the lamp
+        ctx.fillStyle = css(mix(col, [255, 255, 255], 0.4), 0.55 * (night - 0.5) * 2 * Math.min(1, a * 1.5));
+        for (let i = 0; i < 4; i++) {
+          const x = Math.round(lx + Math.sin(t * (0.5 + hash(i) * 0.5) + i * 2.1) * l.r * 0.45);
+          const y = Math.round(l.y + 3 + Math.cos(t * (0.6 + hash(i + 4) * 0.5) + i * 1.3) * l.r * 0.35);
+          ctx.fillRect(x, y, 1, 1);
+        }
+      }
     }
   }
 
@@ -481,21 +644,28 @@ export class Area implements AreaRuntime {
         react: felt ? this.time - felt.since : undefined,
         talk: this.talker === id && this.time % 0.22 < 0.12,
       };
-      if (tr) {
-        // further from the camera with every step: higher up and smaller, seen from behind going in
-        // and from the front coming out, and lost in the shade once deep enough in the doorway
-        const size = 1 - AWAY_SHRINK * k;
-        const y = w.y - tr.rise * k;
-        ctx.save();
-        ctx.globalAlpha = clamp((1 - k) / (1 - AWAY_FADE), 0, 1);
-        ctx.translate(Math.round(sx), Math.round(y));
-        ctx.scale(size, size);
-        drawShadow(ctx, 0, 0);
-        drawCharacterFacing(ctx, 0, 0, look, pose, tr.out ? 'front' : 'back');
-        ctx.restore();
-        continue;
-      }
-      drawCharacter(ctx, sx, w.y, look, pose);
+      // the two students have their own sprite sheets; everyone else is drawn from the rig
+      const sprite = !npc && this.playerSprite();
+      this.litActor(ctx, sx, w.y, view, !!tr, (body) => {
+        if (tr) {
+          // Further into the door: higher, smaller, and lost in the entrance shade.
+          const size = 1 - AWAY_SHRINK * k;
+          const y = w.y - tr.rise * k;
+          body.save();
+          body.globalAlpha = clamp((1 - k) / (1 - AWAY_FADE), 0, 1);
+          body.translate(Math.round(sx), Math.round(y));
+          body.scale(size, size);
+          drawShadow(body, 0, 0);
+          if (sprite) drawSpriteFacing(body, character(), 0, 0, tr.out ? 'front' : 'back');
+          else drawCharacterFacing(body, 0, 0, look, pose, tr.out ? 'front' : 'back');
+          body.restore();
+          return;
+        }
+        if (sprite) {
+          const anim = w.stride > 0.3 ? 'walk' : this.talker === id ? 'talk' : this.inCutscene ? 'tired' : 'idle';
+          drawSprite(body, character(), sx, w.y, w.facing, anim, this.time, w.phase);
+        } else drawCharacter(body, sx, w.y, look, pose);
+      });
     }
 
     def.drawFront?.(ctx, view);
@@ -511,7 +681,8 @@ export class Area implements AreaRuntime {
       else if (!l.always) a *= night;
       this.light.add(l.x - cam, l.y, l.r, l.daylight ? mood.sun : l.color, a);
     }
-    this.light.apply(ctx, 0.2);
+    if (def.lightBake) this.light.addBaked(def.lightBake, -cam, night);
+    this.light.apply(ctx, def.sunlight?.bloom ?? 0.2);
 
     if (def.glow && night > 0.02) {
       ctx.globalCompositeOperation = 'lighter';
@@ -520,6 +691,7 @@ export class Area implements AreaRuntime {
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     }
+    if (def.atmosphere && def.outdoor) this.drawAtmosphere(ctx, cam, night);
     def.drawOver?.(ctx, view);
     this.particles.render(ctx, cam, true);
 
@@ -527,8 +699,9 @@ export class Area implements AreaRuntime {
       // low sun flooding the whole frame
       const sun = this.sky.sunPosition(mood);
       const g = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, 330);
-      g.addColorStop(0, css(mood.sun, 0.3 * mood.glow));
-      g.addColorStop(0.5, css(mood.sun, 0.1 * mood.glow));
+      const glare = def.sunlight?.glare ?? 1;
+      g.addColorStop(0, css(mood.sun, 0.3 * mood.glow * glare));
+      g.addColorStop(0.5, css(mood.sun, 0.1 * mood.glow * glare));
       g.addColorStop(1, css(mood.sun, 0));
       ctx.globalCompositeOperation = 'lighter';
       ctx.fillStyle = g;
@@ -537,6 +710,12 @@ export class Area implements AreaRuntime {
     }
     drawVignette(ctx, 0.75 + night * 0.25);
   }
+}
+
+/** A steady pseudo-random 0..1 for an integer, so things that come back each frame stay put. */
+function hash(n: number): number {
+  const v = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return v - Math.floor(v);
 }
 
 /** One emote, its bottom-left corner at x, y: most in a little white bubble, sweat as a bare drop. */
