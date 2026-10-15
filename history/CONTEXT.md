@@ -1,5 +1,11 @@
 # Project Context
 
+St. Joseph Hall in Godot, 2026-10-16: `areas/sjh.gd` builds SJH on its plan plot
+(nine storeys, 96 x 19 m, facing north, set back 10 m from its OSM outline per Mikko's map), with its covered walkway (the same
+cutaway as the APS hallway), the Mary statue garden and the parking with cars.
+The south road is walkable and the whole road loop with it; key 9 frames SJH.
+See `sessions/2026-10-16-sjh-godot.md`.
+
 **The IH Gym in Godot, 2026-10-16.** `areas/gym.gd` builds the Immaculate Heart
 Gymnasium from outside on its plan plot at its real size (41 x 69.5 m, about 12 m
 to the fascia, 16.6 m to the ridge, solar panels on the roof). The east road is
