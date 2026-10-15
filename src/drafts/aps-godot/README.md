@@ -34,6 +34,8 @@ stage with its steps and the backstage rooms. Key 0 jumps onto the court.
 .\tools\run-aps-godot.cmd
 ```
 
+On macOS: `"$GODOT" --path src/drafts/aps-godot` with `GODOT` set to `Godot.app/Contents/MacOS/Godot`.
+
 Or open `project.godot` in Godot 4.7 and press F5. The portable editor lives in
 the ignored `builds/godot-tools/4.7.2/`. Other machines can
 [download Godot](https://godotengine.org/download/windows/) or set `GODOT`.
@@ -114,6 +116,7 @@ because their kernel grows with zoom.
 | `areas/gym_interior.gd` | Inside the gym, walkable everywhere a student could go: the court with the seal, the bleachers upstairs on both sides, the balcony, the lobby, equipment room and corridors, the stage and backstage, the roof structure; its storeys, collision and cutaway groups |
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
 | `areas/sjh.gd` | St. Joseph Hall: the slab, its covered walkway (walk in through a railing gap), the Mary statue garden, the parking and cars |
+| `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside: the open-corridor block, the box-window wing over the entrance (walk in up to the turnstile), the open stair, the north block, the south wing with its roof tank, the raised garden. The camera turns to face it on the west road |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
 | `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking |
 | `npcs.gd` | The cast, their lines, the talk hint and speech bubble |
@@ -135,7 +138,7 @@ the frontage, and the gym inside (walking in through a doorway and the side entr
 writes 26 review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
-`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in`, `--pixel=auto|crisp|pixel`,
+`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn`, `--pixel=auto|crisp|pixel`,
 `--walk=<seconds>`, `--hide-help`, `--capture=<absolute PNG path>`.
 
 Geometry is approximate, from the walk photos, not a survey. The far sidewalk,

@@ -18,12 +18,12 @@ frozen references.
 
 | What | How |
 | --- | --- |
-| Engine | **Godot 4.7.2 stable**, Forward+ renderer. Put the portable editor at `builds/godot-tools/4.7.2/Godot_v4.7.2-stable_win64.exe` (ignored by git), set `GODOT` to your executable, or have `godot` in PATH. Download: <https://godotengine.org/download/> |
+| Engine | **Godot 4.7.2 stable**, Forward+ renderer. Put the portable editor at `builds/godot-tools/4.7.2/Godot_v4.7.2-stable_win64.exe` (ignored by git), set `GODOT` to your executable, or have `godot` in PATH. On macOS set `GODOT` to the app's binary (`Godot.app/Contents/MacOS/Godot`) and run the same commands with it, e.g. `"$GODOT" --path src/drafts/aps-godot --headless -- --test`; macOS has no `timeout`, so run captures one at a time. Download: <https://godotengine.org/download/> |
 | Play | `tools\run-aps-godot.cmd` (Windows), or open `src/drafts/aps-godot/project.godot` in Godot and press F5 |
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
 | Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
@@ -40,6 +40,7 @@ Files:
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
 | `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map, its covered walkway, the Mary statue garden at its west end, and two rows of parked cars (by the chapel, and in front of SJH) |
+| `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -321,7 +322,7 @@ Night lights (in `world.lamps`, visible only at night):
 - LED street lights: `SpotLight3D` from the lamp head, `#fff0d9`, energy 5.0,
   range 12, angle 68°, shadows on; the head glows `#fff3dc` (day 0.2, night 3.5).
 - Stall lights: omni `#ffd79d`, 1.6, reach 7.5.
-- Gym entrance lights: omni `#ffd79d`, 1.2, reach 6.0 (front doors); 1.0,
+- Gym entrance lights: omni `#ffd79d`, 1.2, reach 6.0 (front doors, and MGN's porch); 1.0,
   reach 6.5 (two under the side canopy). Gym wall lamps are emissive only
   (`glow(#f6f1e1, 0, 1.6)`), no light.
 - Canopy strips: omni `#ffcf92`, 0.55, reach 4.6, plus emissive strips.
@@ -474,6 +475,14 @@ before using them.
   `1 − view_for`). Because the camera then stands north of the chapel, the near plane
   also cuts everything north of the parking (z < 97), so the chapel and its trees
   never stand in front of SJH.
+- **MGN zone** (`Mgn.view_for`): on the west road from z 66..74 down to the corner, the
+  camera turns right round (−270°, three quarter turns, through south) to look west at
+  MGN's corridor front, which faces east; the chapel zone yields to it
+  (`1 − Mgn.reach`), and at the corner it hands a quarter turn on to the SJH zone. The
+  camera then stands over the chapel lawn, so the near plane cuts everything east of
+  `Mgn.CUT_X` (x −51.8, just past the road and east of SJH's terracotta end block).
+  `--view=mgn` starts on the road at the entrance. Like the SJH view, wide framings show
+  an empty band at the bottom where the cut removes the near lawn.
 - **Interiors (cutaway):** walking into a covered space like the APS hallway
   blends in a weight (`hall`, from `Hallway.hall_for`, eased at rate 3.5) that:
   1. closes the view in to `HALL_WIDTH` (8.5 m) and glides the camera to the
