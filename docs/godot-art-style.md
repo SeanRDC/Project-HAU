@@ -372,9 +372,27 @@ before using them.
 
 ## Characters
 
-- Sprites are the **PixelLab** sheets in `sprites/<boy|girl>/<idle|walk>.png`
-  (one row, frames side by side). The boy is 85 px tall, the girl 82 px.
-  Frames: boy idle 12, walk 9; girl idle 12, walk 6.
+- Sprites are sheets in `sprites/<boy|girl>/<idle|walk>.png` (one row, frames
+  side by side). The boy is 85 px tall, the girl 82 px. Frames: boy idle 24,
+  walk 12; girl idle 12, walk 6.
+- **The boy is a rig, not PixelLab frames.** `assets/drafts/characters/boy/three-quarter/rig/`
+  cuts his reference into head, crown of hair, torso, backpack and arms, turns the
+  arms with RotSprite (Scale2x three times, then rotate) so they keep their width,
+  and draws the legs and shoes at fixed widths. Rebuild with its `build.ps1`; it
+  also fills any missing pixels. His feet land at 0.25 and 0.75 of the cycle
+  (`CONTACT` in `student.gd`), which is when footsteps play.
+- **NPCs** (`npc.gd`, cast in `npcs.gd`) are in the **style reference's look**, the same
+  as the boy: characters from `assets/drafts/characters/style-reference.png`, or edits of
+  them made at 512 px with PixelLab `edit-images-v2` and shrunk the boy's way (sample the
+  centre of each 655/85 block). Never generate small: PixelLab's native pixel art is crisp
+  and black-outlined and does not match. Edges are a darker tone of their own colour, no
+  black outline and no orange sunset rim (lighting comes from Godot). Girls wear the grey
+  HAU plaid (`assets/drafts/characters/npcs/Plaid.cs`). They move exactly like the boy:
+  `assets/drafts/characters/npcs/rig/` is his rig made general, with each NPC's head,
+  arms, backpack, hips, eyes and mouth set up in `NpcCast.cs`; girls get skin legs and
+  socks under the skirt. Sheets per NPC: `walk` 12, `idle` 24, `talk` 4 (mouth and hand).
+  Rebuild with that folder's `build.ps1`. Students stroll within `roam` metres of home
+  along clear straight lines (no kerbs or steps); posts (`roam` 0) stay put.
 - `Sprite3D`: `pixel_size = 1.83 / texture height` (1.83 m tall), **shaded**,
   `ALPHA_CUT_DISCARD` with scissor 0.35, `TEXTURE_FILTER_NEAREST_WITH_MIPMAPS`,
   double-sided, casts a double-sided shadow. Mipmaps are generated at load.

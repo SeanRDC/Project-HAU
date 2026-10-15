@@ -12,6 +12,7 @@ const CampusPlan := preload("res://campus_plan.gd")
 const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
 const GymInterior := preload("res://areas/gym_interior.gd")
+const Npcs := preload("res://npcs.gd")
 const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
 const FRAMINGS := [[112.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"], [32.0, "Chapel"],
 	[84.0, "IH Gym"], [44.0, "Gym side"], [40.0, "Gym inside"]]
@@ -55,6 +56,9 @@ var sky_material := ShaderMaterial.new()
 var edges := ShaderMaterial.new()
 var student: Student
 var sound: Sound
+var npcs: Npcs
+## E was just used to talk, so holding it does not also turn the camera.
+var _e_talk := false
 var help: Control
 var time_label: Label
 var view_label: Label
@@ -103,6 +107,12 @@ func _ready() -> void:
 	add_child(sound)
 	student.stepped.connect(_on_step)
 	_build_interface()
+	npcs = Npcs.new()
+	npcs.camera = camera
+	npcs.student = student
+	npcs.to_screen = _to_screen
+	scene.add_child(npcs)
+	npcs.build_ui(self)
 
 	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0],
 		"gym-in": [GYM_IN_SPOT, HALL_WIDTH]}
@@ -459,6 +469,7 @@ func _build_interface() -> void:
 	stack.add_child(title)
 	var controls := Label.new()
 	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    C  Character    M  Mute\n" + \
+		"E/Space  Talk (near someone)\n" + \
 		"Wheel or +/-  Zoom    1-9  Framings    Q/E  Angle    P  Pixels\n" + \
 		"R  Reset    F11  Fullscreen    Tab  Hide controls    Esc  Close"
 	controls.add_theme_font_size_override("font_size", 14)
@@ -544,6 +555,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			sound.select()
 		KEY_M:
 			sound.toggle_mute()
+		KEY_E:
+			if npcs.interact():
+				_e_talk = true
+				sound.select()
+		KEY_SPACE, KEY_ENTER, KEY_KP_ENTER:
+			if npcs.interact():
+				sound.select()
 		KEY_P:
 			pixel_mode = PIXEL_MODES[(PIXEL_MODES.find(pixel_mode) + 1) % PIXEL_MODES.size()]
 			pixel_scale = 0
@@ -567,6 +585,15 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_step() -> void:
 	sound.footstep(World.floor_height(student.position.x, student.position.z, student.level()) > 0.0)
 
+## A world point on the UI layer: through the camera into the pixel viewport,
+## then out through the display, which covers the window keeping its aspect.
+func _to_screen(point: Vector3) -> Vector2:
+	var p := camera.unproject_position(point)
+	var ui := get_viewport().get_visible_rect().size
+	var pixels := Vector2(viewport.size)
+	var scale := maxf(ui.x / pixels.x, ui.y / pixels.y)
+	return p * scale + (ui - pixels * scale) * 0.5
+
 func _held(keys: Array) -> bool:
 	for key in keys:
 		if Input.is_physical_key_pressed(key):
@@ -583,10 +610,13 @@ func _process(delta: float) -> void:
 	var away := Vector2(-sin(turn), -cos(turn))
 	student.move(right * direction.x - away * direction.y, _held([KEY_SHIFT]), delta, direction.x)
 	sound.indoor = World.floor_height(student.position.x, student.position.z, student.level()) >= 0.45
-	orbit = clampf(orbit + (float(_held([KEY_E])) - float(_held([KEY_Q]))) * delta * 0.25, -0.25, 0.25)
+	if not _held([KEY_E]):
+		_e_talk = false
+	orbit = clampf(orbit + (float(_held([KEY_E]) and not _e_talk) - float(_held([KEY_Q]))) * delta * 0.25, -0.25, 0.25)
 	_glide_zoom()
 	_update_camera(delta)
 	_update_cutaways(delta)
+	npcs.update(delta)
 
 ## Walking into the gym from a wide framing glides the zoom in to the hall's; walking
 ## out again glides back, unless the zoom was changed inside.
@@ -920,6 +950,24 @@ func _verify_and_capture() -> void:
 		_set_zoom(MIN_WIDTH, true)
 		_update_camera(1.0)
 		checks.close_zoom_shows_student = _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
+		# NPCs: all spawned on walkable ground, the strollers stroll without walking
+		# into anything, and talking opens the bubble and walking away closes it.
+		checks.npcs_spawned = npcs.cast.size() == Npcs.CAST.size()
+		checks.npcs_on_walkable_ground = npcs.cast.all(func(n: Node3D) -> bool: return not World.blocked(n.position.x, n.position.z))
+		for i in 900:
+			npcs.update(1.0 / 30.0)
+		checks.npcs_wander = npcs.cast.filter(func(n: Node3D) -> bool: return n.roam > 0.0).all(func(n: Node3D) -> bool: return n.walked > 0.5) \
+			and npcs.cast.all(func(n: Node3D) -> bool: return not World.blocked(n.position.x, n.position.z) and n.ground().distance_to(n.home) <= n.roam + 0.6)
+		var guard: Node3D = npcs.cast.filter(func(n: Node3D) -> bool: return n.id == "kuya-ben")[0]
+		student.place(guard.position.x + 0.9, guard.position.z)
+		var talked: bool = npcs.interact() and npcs.bubble.visible and npcs.bubble_text.text == guard.lines[0] and guard.talking
+		npcs.update(1.0 / 30.0)
+		talked = talked and guard.animation == "talk"
+		npcs.interact()
+		talked = talked and npcs.bubble_text.text == guard.lines[1]
+		student.place(guard.position.x + 6.0, guard.position.z + 1.5)
+		npcs.update(1.0 / 30.0)
+		checks.npc_talks = talked and not npcs.bubble.visible and not guard.talking
 		student.position = saved
 		_snap_follow()
 		_set_zoom(float(_args.get("zoom", "112")), true)
@@ -930,6 +978,11 @@ func _verify_and_capture() -> void:
 		"nodes": scene.get_child_count(), "viewport": [viewport.size.x, viewport.size.y], "pixel_scale": pixel_scale,
 		"renderer": RenderingServer.get_current_rendering_method()}))
 	if _args.has("capture"):
+		# --talk: open a conversation with whoever is in reach, to review the bubble
+		if _args.has("talk") and npcs.interact():
+			npcs.update(1.0 / 60.0)
+			await get_tree().process_frame
+			npcs.update(1.0 / 60.0)
 		await RenderingServer.frame_post_draw
 		var path: String = _args["capture"]
 		var image := viewport.get_texture().get_image() if _args.has("raw") else get_viewport().get_texture().get_image()

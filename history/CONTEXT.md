@@ -15,6 +15,16 @@ stairs at the north ends, and on the stage or the stands the camera closes in to
 a low side view. Room layouts not in the photos are still first guesses. See
 `sessions/2026-10-16-ih-gym-interior.md`.
 
+**NPCs and the boy rig in Godot, 2026-10-16.** Four campus NPCs in the style
+reference's look, animated by the boy's rig made general
+(`assets/drafts/characters/npcs/rig/`), eight in all: Migo and Bea stroll near APS,
+Rica and Paolo on the canteen patio, Bianca at the chapel; Kuya Ben (traffic marshal)
+at the APS entrance, Ate Lorna at her canteen stall and Coach Gab at the gym stay at
+their posts. New NPCs are PixelLab edits of the style sheet (25 generations each).
+E, Space or Enter talks to whoever is in reach. The playable boy is now a rig
+built from his reference (`assets/drafts/characters/boy/three-quarter/rig/`), not
+PixelLab frames. See `sessions/2026-10-16-godot-npcs-and-boy-rig.md`.
+
 **The IH Gym in Godot, 2026-10-16.** `areas/gym.gd` builds the Immaculate Heart
 Gymnasium from outside on its plan plot at its real size (41 x 69.5 m, about 12 m
 to the fascia, 16.6 m to the ridge, solar panels on the roof). The east road is
