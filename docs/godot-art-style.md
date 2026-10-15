@@ -427,7 +427,7 @@ before using them.
 | 7 | IH Gym (moves the student to the apron in front) | 84 |
 | 8 | Gym side (moves the student to the lane by the side entrance) | 44 |
 | 9 | SJH (moves the student to the south road by the parking) | 64 |
-| 0 | Gym inside (moves the student onto the court) | 40 |
+| 0 | Gym inside (moves the student to centre court, facing the stage) | 30 |
 
 - Three blends drive the camera from the width: `close` (22 → 8 m drops the
   target to the student's chest height), `wide` (22 → 56 m) and `campus`
@@ -448,20 +448,25 @@ before using them.
     the student's own depth so they stay in shot on the road.
   - **Gym gable** (`gable_for`): a further −90° (−180° in all), looking south
     at the north gable (z 66.8) from the lane, sliding in X.
-  - **Gym hall** (`arena_for`): inside the gym, −180° (looking south down the
-    hall at the stage), pitched down **35°** from 60 m (`ARENA_PITCH`,
-    `ARENA_DISTANCE`), following the student in X and Z; wide framings centre on
-    the hall's middle. Its weight rises across each front doorway (x 57.2 → 59)
-    and the side entrance (z 66.2 → 68.2, where it takes over from the gable),
-    so walking in **glides** the camera round and down. Walking in from a
-    framing wider than 48 m also glides the zoom to 40 (`ARENA_WIDTH`), and back
-    on the way out if it was not changed inside.
+  - **Gym inside** (`arena_for`, `face_for`): a low **2.5D** view, pitched
+    **12°** from 60 m (`ARENA_PITCH`, `ARENA_DISTANCE`), centred on the student,
+    in three zones (Sean's L / F / R sketch). In the **west half** of the hall
+    (R) it faces west, at the west stand across the court; in the **east half**
+    (L) east, at the east stand; on the **stage** and behind it (F, from x 128.5
+    in the gym's frame) south, at the stage. `face` is the quarter turns past
+    the gym's front view (0 east, 1 south, 2 west), eased at rate 3, so crossing
+    the middle line glides round through the stage's view. `arena` is 1 inside
+    the walls and rises across the last 0.8 m in front of a front doorway or the
+    side entrance (where it takes over from the gable), so walking in **glides**
+    the camera round. Walking in from a framing wider than 38 m glides the zoom
+    to 30 (`ARENA_WIDTH`, key 0) and back on the way out; inside the zoom goes
+    out to 40 m at most (`ARENA_CAP`), so the low frame's lower edge never starts
+    under the floor.
   - **Gym side view** (`perch_for`, `GymInterior.perched`): up on the stage
-    (from 1.65 m), the stands or the balcony (from 4.5 m) the hall view closes in
-    to a low side view, still looking south: pitched **10°** from 60 m
-    (`PERCH_PITCH`, `PERCH_DISTANCE`), centred on the student, the zoom gliding
-    to 16 m (`PERCH_WIDTH`) and back down after. While perched the zoom goes out
-    to 40 m at most, so the frame's lower edge never starts under the floor.
+    (from 1.65 m), the stands or the balcony (from 4.5 m) it closes in: pitched
+    **10°** (`PERCH_PITCH`), the zoom gliding to 16 m (`PERCH_WIDTH`) and back
+    down after, facing the way its zone does (on a stand, that stand, as in the
+    "middle view" photo).
   A new building gets its own zone the same way: a `*_for(x, z)` weight, a
   facing, and the plane it frames. Make sure the camera's standing spot (focus
   minus 23 m close up, up to 90 m wide) is not inside another building.
@@ -558,15 +563,19 @@ Build an interior the same way:
 
 - **Open the doorways** in the outer walls (a sill up to the inside floor, a
   lintel over) and let `inside(x, z)` make the inside walkable ground.
-- **One camera view inside**, its own zone (`arena_for`), blended across the
-  doorways so walking in is a glide, not a cut.
-- **Cutaway groups.** Everything that can stand between that camera and the
-  student goes in a named group under the building's pivot (the roof, the
-  wall nearest the camera, a deck over the rooms below, each bay of the roof
-  structure). A static `hidden(group, local x, local z, level)` says when each
-  is in the way; `aps.gd` fades it out over 0.4 s and leaves it casting
-  shadows only (`SHADOWS_ONLY`), so the inside stays shaded by its roof. A wall
-  that is cut away keeps a **1.2 m stub** (`STUB`), so rooms still read as a plan.
+- **A camera zone inside** (`arena_for`, and `face_for` for which way it
+  looks), blended across the doorways so walking in is a glide, not a cut.
+- **Cutaway groups.** Everything that can stand between the camera and the
+  student goes in a named group under the building's pivot: the roof, the
+  north wall, the front and back walls (with the props on the front walk), each
+  stand's deck and rows, the walls under each stand, each side's stairs, each
+  half of each bay of the roof structure. A static
+  `hidden(group, local x, local z, level, side)` says when each is in the way,
+  side being the zone the camera is looking at ("L", "F", "R"); `aps.gd` fades it
+  out over 0.4 s and leaves it casting shadows only (`SHADOWS_ONLY`), so the
+  inside stays shaded by its roof. A wall that is cut away keeps a **1.2 m
+  stub** (`STUB`), so rooms still read as a plan. Floating plot labels hide
+  while the student is inside.
 - **Lights inside** are plain `OmniLight3D`s in their own group, on at every
   hour but only while the student is in (not in `world.lamps`, which are night
   lamps). Windows inside glow by day through `glow()`.
