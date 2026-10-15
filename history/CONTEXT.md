@@ -6,6 +6,11 @@ to the fascia, 16.6 m to the ridge, solar panels on the roof). The east road is
 now walkable down past it, with the apron in front and the lane to the side
 entrance; keys 7 and 8 frame its front and side. The annex is still a reserved
 plot. See `sessions/2026-10-16-ih-gym-godot.md`.
+APS hallway in Godot, 2026-10-16: the APS ground floor is an open corridor behind
+ledgestone piers (doors, grilles, comlabs, boards, bell, printing shop, both stair
+halls), seen from outside. Walking in cuts away the outside and glides the camera
+in; walking out reverses it (`areas/hallway.gd`, "Interiors (cutaway)" in
+`docs/godot-art-style.md`). See `sessions/2026-10-16-aps-godot-hallway.md`.
 
 **Godot is the direction, 2026-10-15.** Campus work moves to Godot 4.7.2 in the
 style of `src/drafts/aps-godot/`. Every style rule and value is in

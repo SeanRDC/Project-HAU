@@ -102,6 +102,7 @@ because their kernel grows with zoom.
 | `areas/chapel.gd` | The Chapel of the Holy Guardian Angel, its plaza, oval parking, paths and planting |
 | `areas/plots.gd` | Reserved plots for the buildings teammates are making |
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both entrances, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
+| `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
 | `audio.gd` | Synthesised music, wind, footsteps, blips and crickets (no audio files) |
 | `shaders/` | Edges, leaves, sky, display grade |

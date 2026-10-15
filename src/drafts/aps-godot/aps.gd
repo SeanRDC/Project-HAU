@@ -11,6 +11,9 @@ const Roads := preload("res://roads.gd")
 const CampusPlan := preload("res://campus_plan.gd")
 const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
+const Hallway := preload("res://areas/hallway.gd")
+## Inside the hallway the view closes in to this width, framed on the corridor.
+const HALL_WIDTH := 8.5
 const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
 const FRAMINGS := [[112.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"], [32.0, "Chapel"],
 	[84.0, "IH Gym"], [44.0, "Gym side"]]
@@ -60,6 +63,10 @@ var chapel := 0.0
 ## further quarter turn to face its north gable from the lane.
 var gym := 0.0
 var gable := 0.0
+## 0..1: how far the student is inside the APS hallway (the cutaway and glide).
+var hall := 0.0
+## The width actually shown: the chosen zoom, closed in to HALL_WIDTH inside.
+var shown_width := 112.0
 var pixel_mode := "auto"
 var pixel_scale := 0
 var view_metres := Vector2(98, 55.125)
@@ -204,17 +211,18 @@ func _choose_scale() -> int:
 	return clampi(roundi(ideal), 1, 8)
 
 func _resize() -> void:
+	shown_width = lerpf(width, minf(width, HALL_WIDTH), smoothstep(0.0, 1.0, hall))
 	var window := Vector2(get_window().size)
 	var aspect := window.x / maxf(window.y, 1.0)
 	# The framing width is for a 16:9 frame: keep that whole frame on any window shape.
 	if aspect >= 16.0 / 9.0:
 		camera.keep_aspect = Camera3D.KEEP_HEIGHT
-		camera.size = width * 9.0 / 16.0
+		camera.size = shown_width * 9.0 / 16.0
 		view_metres = Vector2(camera.size * aspect, camera.size)
 	else:
 		camera.keep_aspect = Camera3D.KEEP_WIDTH
-		camera.size = width
-		view_metres = Vector2(width, width / aspect)
+		camera.size = shown_width
+		view_metres = Vector2(shown_width, shown_width / aspect)
 	pixel_scale = _choose_scale()
 	var size := Vector2i(ceili(window.x / pixel_scale), ceili(window.y / pixel_scale))
 	if viewport.size != size:
@@ -237,6 +245,7 @@ func _set_zoom(value: float, immediate := false) -> void:
 ## Past the canteen's tip, and on the strip beside it, it looks north again.
 static func leg_for(x: float, z: float) -> float:
 	var turn := clampf(smoothstep(16.0, 26.0, x) + smoothstep(4.0, 12.0, z) * smoothstep(12.0, 18.0, x), 0.0, 1.0)
+	turn *= 1.0 - Hallway.hall_for(x, z)
 	return turn * (1.0 - smoothstep(30.0, 34.0, z)) * (1.0 - smoothstep(42.6, 43.8, x))
 
 ## How far the camera should turn to face the chapel: on the lawn path past halfway,
@@ -259,6 +268,7 @@ func _snap_follow() -> void:
 	chapel = chapel_for(student.position.x, student.position.z)
 	gym = gym_for(student.position.x, student.position.z)
 	gable = gable_for(student.position.x, student.position.z)
+	hall = Hallway.hall_for(student.position.x, student.position.z)
 
 ## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
 ## canteen or the chapel (their views never overlap: one is east of x 12, one west of -18).
@@ -266,10 +276,13 @@ func _yaw() -> float:
 	return orbit - PI / 2.0 * (leg + chapel + gym + gable)
 
 func _update_camera(delta: float) -> void:
-	if absf(width - target_width) > 0.001:
-		width = lerpf(width, target_width, 1.0 - exp(-delta * 10.0))
-		if absf(width - target_width) < 0.02:
-			width = target_width
+	var was_hall := hall
+	hall = lerpf(hall, Hallway.hall_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
+	if absf(hall - was_hall) > 0.0005 or absf(width - target_width) > 0.001:
+		if absf(width - target_width) > 0.001:
+			width = lerpf(width, target_width, 1.0 - exp(-delta * 10.0))
+			if absf(width - target_width) < 0.02:
+				width = target_width
 		_resize()
 	follow = follow.lerp(Vector2(student.position.x - 0.15, student.position.z), 1.0 - exp(-delta * 4.0))
 	leg = lerpf(leg, leg_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
@@ -305,9 +318,26 @@ func _update_camera(delta: float) -> void:
 	var gym_focus := Vector3(gym_face, target_y, gym_side).lerp(Vector3(gable_x, target_y, gable_z), gable)
 	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
+	# Inside the hallway: glide in close and look a little down along the corridor.
+	var inside := smoothstep(0.0, 1.0, hall)
+	var corridor := Vector3(roundf(follow.x / pixel) * pixel, 1.35, -1.9)
+	focus = focus.lerp(corridor, inside)
+	distance = lerpf(distance, 20.0, inside)
+	lift = lerpf(lift, 5.0, inside)
 	var yaw := _yaw()
 	camera.position = focus + Vector3(sin(yaw) * distance, lift, cos(yaw) * distance)
 	camera.look_at(focus)
+	# The cutaway: the near plane sweeps in from the camera to just behind the front
+	# piers, so the road, the lawn and the piers fall away and the corridor stays.
+	var forward := -camera.global_basis.z
+	var cut_depth := (Vector3(focus.x, focus.y, Hallway.CUT_Z) - camera.position).dot(forward)
+	camera.near = maxf(0.1, cut_depth * inside)
+	var grade := display.material as ShaderMaterial
+	grade.set_shader_parameter("cut", inside)
+	if inside > 0.0:
+		var size := Vector2(viewport.size)
+		grade.set_shader_parameter("cut_top", camera.unproject_position(Vector3(focus.x, Hallway.CEILING, -1.5)).y / size.y)
+		grade.set_shader_parameter("cut_bottom", camera.unproject_position(Vector3(focus.x, 0.0, Hallway.CUT_Z)).y / size.y)
 	# Shadow and fog ranges follow the camera so the wide views stay sharp and unhazed.
 	sun.directional_shadow_max_distance = distance + 45.0
 	environment.fog_depth_begin = distance + 14.0
@@ -509,7 +539,7 @@ func _process(delta: float) -> void:
 	var right := Vector2(cos(turn), -sin(turn))
 	var away := Vector2(-sin(turn), -cos(turn))
 	student.move(right * direction.x - away * direction.y, _held([KEY_SHIFT]), delta, direction.x)
-	sound.indoor = World.floor_height(student.position.x, student.position.z) >= 0.45
+	sound.indoor = World.floor_height(student.position.x, student.position.z) >= 0.45 or hall > 0.5
 	orbit = clampf(orbit + (float(_held([KEY_E])) - float(_held([KEY_Q]))) * delta * 0.25, -0.25, 0.25)
 	_update_camera(delta)
 
@@ -552,8 +582,8 @@ func _verify_and_capture() -> void:
 		var rail := World.canteen_world(45, 2.68)
 		checks.rail_gap_open = not World.blocked(gap.x, gap.y) and World.blocked(rail.x, rail.y)
 		checks.stair_tower_solid = World.blocked(33.9, -1.0)
-		var hall := World.canteen_world(51, 0)
-		checks.canteen_floor = is_equal_approx(World.floor_height(hall.x, hall.y), 0.45)
+		var canteen_hall := World.canteen_world(51, 0)
+		checks.canteen_floor = is_equal_approx(World.floor_height(canteen_hall.x, canteen_hall.y), 0.45)
 		# Road in the bend, lawn inside it, patio outside it.
 		checks.bend_is_road = is_equal_approx(World.floor_height(17.7, 11.3), -0.19) and not World.blocked(17.7, 11.3)
 		checks.lawn_blocks = World.blocked(12.5, 18.0) and World.blocked(5.0, 14.0)
@@ -664,6 +694,24 @@ func _verify_and_capture() -> void:
 		_update_camera(1.0)
 		checks.gym_side_faces_gable = gable > 0.99 and (-camera.global_basis.z).dot(Vector3.BACK) > 0.95 \
 			and _all_visible([Gym.FRONT_X, 99.0], [0.0, 12.0], [Gym.NORTH + Gym.SHIFT])
+		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
+		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)
+		checks.hallway_props_block = World.blocked(-60.0, -2.4) and World.blocked(-24.0, -0.2) \
+			and World.blocked(Hallway.BUST.x, Hallway.BUST.y) and World.blocked(Hallway.MAP.x, Hallway.MAP.y)
+		# Walking in from the sidewalk: the camera glides in and cuts away the outside.
+		student.place(-21.0, 1.6)
+		_set_zoom(36.0, true)
+		_snap_follow()
+		for i in 120:
+			student.move(Vector2(0, -1), false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		var cut_plane := (Vector3(follow.x, 1.35, Hallway.CUT_Z) - camera.position).dot(-camera.global_basis.z)
+		checks.walk_into_hallway = student.position.z < -1.5 and hall > 0.95 and shown_width < HALL_WIDTH + 0.2 \
+			and camera.near > cut_plane - 0.5 and _all_visible([student.position.x], [0.2, 1.8], [student.position.z])
+		for i in 120:
+			student.move(Vector2(0, 1), false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		checks.walk_out_of_hallway = hall < 0.05 and camera.near < 0.2 and absf(shown_width - 36.0) < 0.2
 		student.place(CANTEEN_SPOT.x, CANTEEN_SPOT.y)
 		_snap_follow()
 		_set_zoom(MIN_WIDTH, true)
