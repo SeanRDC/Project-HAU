@@ -29,7 +29,7 @@ export class Dialogue {
   private age = 0;
   onBlip: ((who: string) => void) | null = null;
   onFlag: ((flag: string) => void) | null = null;
-  onPesos: ((amount: number, item: string) => void) | null = null;
+  onPesos: ((amount: number, item: string, itemEn?: string) => void) | null = null;
   onSpeaker: ((who: string) => void) | null = null;
   /** every line as it comes up, for the speaker's face and emote */
   onLine: ((line: Line) => void) | null = null;
@@ -46,7 +46,7 @@ export class Dialogue {
 
   private next(): void {
     if (this.line?.set) this.onFlag?.(this.line.set);
-    if (this.line?.pesos) this.onPesos?.(this.line.pesos, this.line.item ?? '');
+    if (this.line?.pesos) this.onPesos?.(this.line.pesos, this.line.item ?? '', this.line.itemEn);
     this.line = this.queue.shift() ?? null;
     this.shown = 0;
     this.choice = 0;

@@ -24,7 +24,7 @@ export function buy(g: GameApi, item: string, price: number, lines: Line[], item
     };
   }
   const [first, ...rest] = lines;
-  return { text, en, then: [{ ...first, pesos: -price, item }, ...rest] };
+  return { text, en, then: [{ ...first, pesos: -price, item, itemEn }, ...rest] };
 }
 
 export function laneHotspots(x: { halls: number; stl: number; sfj: number; entry: number; plaza: number }): Hotspot[] {

@@ -22,7 +22,7 @@ export class Phone {
   }
 
   /** `baon` is the pesos left and the last thing bought, if anything. */
-  render(ui: Ctx, hour: number, has: (flag: string) => boolean, baon: { pesos: number; last: string | null }): void {
+  render(ui: Ctx, hour: number, has: (flag: string) => boolean, baon: { pesos: number; last: string | null; lastEn: string | null }): void {
     if (this.slide < 0.01) return;
     const x = VIEW_W - (W + 22) * this.slide;
     const y = (VIEW_H - H) / 2 + (1 - this.slide) * 10;
@@ -72,7 +72,7 @@ export class Phone {
       font(ui, 5, 500);
       ui.fillStyle = '#7a7080';
       ui.textAlign = 'right';
-      ui.fillText(baon.last, W - 10, 65);
+      ui.fillText(tr(baon.last, baon.lastEn ?? undefined), W - 10, 65);
       ui.textAlign = 'left';
     }
 

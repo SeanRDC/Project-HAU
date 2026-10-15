@@ -80,6 +80,8 @@ export class Game implements GameApi {
   private wallet = BAON;
   /** the last thing bought, for the phone, e.g. "Taho −₱20" */
   private lastBuy: string | null = null;
+  /** the same in English, or null when it reads the same */
+  private lastBuyEn: string | null = null;
   /** the last money change and how long ago, for the HUD */
   private change: { amount: number; age: number } | null = null;
 
@@ -152,7 +154,7 @@ export class Game implements GameApi {
     input.onFirstGesture = () => this.audio.start();
     this.dialogue.onBlip = (who) => this.audio.blip(VOICES[who] ?? 300);
     this.dialogue.onFlag = (flag) => this.set(flag);
-    this.dialogue.onPesos = (amount, item) => this.pay(amount, item);
+    this.dialogue.onPesos = (amount, item, itemEn) => this.pay(amount, item, itemEn);
     this.dialogue.onLine = (l) => this.area.express(l.who, l.face, l.emote);
     this.dialogue.onSpeaker = (who) => {
       if (who && who !== 'you') this.area.face(who);
@@ -177,6 +179,7 @@ export class Game implements GameApi {
     this.hasSave = false;
     this.wallet = BAON;
     this.lastBuy = null;
+    this.lastBuyEn = null;
     // ?pesos=20 starts with that much baon; ?rain=1 starts a downpour (0.5 for steady rain)
     if (q.has('pesos')) this.wallet = Number(q.get('pesos'));
     this.weather.force(Number(q.get('rain') ?? 0));
@@ -234,6 +237,7 @@ export class Game implements GameApi {
         name?: unknown;
         pesos?: number;
         last?: string | null;
+        lastEn?: string | null;
         weather?: WeatherSave;
       };
       if (!this.areas.has(data.area)) return;
@@ -242,6 +246,8 @@ export class Game implements GameApi {
       // saves from before baon existed start with a full day's worth
       this.wallet = typeof data.pesos === 'number' ? data.pesos : BAON;
       this.lastBuy = data.last ?? null;
+      // saves from before English have no field: the phone shows the Tagalog until the next buy
+      this.lastBuyEn = data.lastEn ?? null;
       this.weather.load(data.weather);
       this.resume = { area: data.area, x: data.x };
       this.hasSave = true;
@@ -268,6 +274,7 @@ export class Game implements GameApi {
         name: playerName(),
         pesos: this.wallet,
         last: this.lastBuy,
+        lastEn: this.lastBuyEn,
         weather: this.weather.save(),
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
@@ -289,9 +296,12 @@ export class Game implements GameApi {
   }
 
   /** Money in (positive) or out (negative), from a dialogue line. Never goes below zero. */
-  private pay(amount: number, item: string): void {
+  private pay(amount: number, item: string, itemEn?: string): void {
     this.wallet = Math.max(0, this.wallet + amount);
-    if (amount < 0) this.lastBuy = `${item} −₱${-amount}`;
+    if (amount < 0) {
+      this.lastBuy = `${item} −₱${-amount}`;
+      this.lastBuyEn = itemEn ? `${itemEn} −₱${-amount}` : null;
+    }
     this.change = { amount, age: 0 };
     this.audio.coin();
     this.save();
@@ -558,6 +568,7 @@ export class Game implements GameApi {
       this.resume = null;
       this.wallet = BAON;
       this.lastBuy = null;
+    this.lastBuyEn = null;
       if (this.startFresh && this.persist) {
         try {
           localStorage.removeItem(SAVE_KEY);
@@ -605,7 +616,7 @@ export class Game implements GameApi {
         if (!this.cutscene) drawControlsHint(ui, clamp(14 - this.playAge, 0, 1));
       }
       if (this.toast) drawToast(ui, tr(this.toast.text, this.toast.en), this.toast.age);
-      this.phone.render(ui, this.clock, (f) => this.has(f), { pesos: this.wallet, last: this.lastBuy });
+      this.phone.render(ui, this.clock, (f) => this.has(f), { pesos: this.wallet, last: this.lastBuy, lastEn: this.lastBuyEn });
       this.map.render(ui, here, ahead, this.time);
     }
     const showing = (s: Game['screen']) => (this.screen === s ? this.screenFade * (1 - this.titleOut) : 0);

@@ -34,6 +34,8 @@ export interface Line {
   pesos?: number;
   /** what the money was for, shown on the phone, e.g. 'Taho' */
   item?: string;
+  /** the same in English, when it isn't the same (lang.ts) */
+  itemEn?: string;
 }
 
 /** Short synthesised sound effects a cutscene can ask for. */

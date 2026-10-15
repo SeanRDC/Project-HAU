@@ -27,3 +27,10 @@ was added. Bring `feature/english-localization` up to date.
   on `src/drafts/aps-browser/` without it.
 * Not yet played through by hand with L on the character select and in a
   dialogue with the new student portraits.
+
+**Follow-up: the phone's "last bought" line in English.** A double check found it
+was the one place English players still saw Tagalog (`Pandesal at kape`,
+`Chips at softdrinks`, `Piso kay Jopet`). A line can now carry `itemEn` beside
+`item`; `buy()` passes its English name along, the save keeps it as `lastEn`, and
+the phone picks it with `tr()`. Older saves show the Tagalog until the next buy.
+Checked in the game: the phone reads "Pandesal and coffee −₱25" in English.

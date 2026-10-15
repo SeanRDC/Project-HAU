@@ -118,7 +118,7 @@ export function plazaNpcs(): NpcDef[] {
                     then:
                       g.pesos() >= 1
                         ? [
-                            { who: '', text: 'Inabot mo ang piso. Hinalikan niya ito bago ihulog sa fountain.', en: 'You hand over the peso. He kisses it before dropping it into the fountain.', pesos: -1, item: 'Piso kay Jopet', set: 'gave_piso' },
+                            { who: '', text: 'Inabot mo ang piso. Hinalikan niya ito bago ihulog sa fountain.', en: 'You hand over the peso. He kisses it before dropping it into the fountain.', pesos: -1, item: 'Piso kay Jopet', itemEn: 'A peso for Jopet', set: 'gave_piso' },
                             { who: 'jopet', text: 'Salamat, freshie. Pag pumasa ako, libre kita.', en: 'Thanks, freshie. If I pass, it\'s my treat.' },
                           ]
                         : [{ who: 'you', text: 'Ay, ubos na pala ang barya ko.', en: 'Oh, I\'m actually out of coins.' }, { who: 'jopet', text: 'Pareho tayo, pare. Pareho tayo.', en: 'Same here, man. Same here.' }],
