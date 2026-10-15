@@ -51,7 +51,7 @@ static func walkable(x: float, z: float) -> bool:
 static func blocked(x: float, z: float) -> bool:
 	if Geometry2D.is_point_in_polygon(Vector2(x, z), outline()):
 		return true
-	if x > NOSE.x - 1.9 and absf(z - NOSE.y) < 6.2:
+	if x > NOSE.x - 1.9 and x < NOSE.x + 2.0 and absf(z - NOSE.y) < 6.2:
 		return true # the steps up to the glass front
 	for banner in BANNERS:
 		if Vector2(x, z).distance_to(banner) < 0.25:

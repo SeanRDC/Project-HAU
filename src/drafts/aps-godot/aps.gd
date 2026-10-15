@@ -10,8 +10,10 @@ const Chapel := preload("res://areas/chapel.gd")
 const Roads := preload("res://roads.gd")
 const CampusPlan := preload("res://campus_plan.gd")
 const Plots := preload("res://areas/plots.gd")
+const Gym := preload("res://areas/gym.gd")
 const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
-const FRAMINGS := [[112.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"], [32.0, "Chapel"]]
+const FRAMINGS := [[112.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"], [32.0, "Chapel"],
+	[84.0, "IH Gym"], [44.0, "Gym side"]]
 ## Down to about the student and an arm's length around them.
 const MIN_WIDTH := 5.0
 ## The plane the canteen view frames (the wing's open front), as z = 0 frames the APS front.
@@ -20,6 +22,11 @@ const CANTEEN_FACE_X := 33.0
 const CANTEEN_SPOT := Vector2(31.0, 10.3)
 ## Where the chapel framing (key 6) brings the student: the plaza, by the HAU seal.
 const CHAPEL_SPOT := Vector2(-34.0, 55.0)
+## Where the gym framings bring the student: the apron in front, the lane by the side entrance.
+const GYM_SPOT := Vector2(50.0, 95.8)
+const GYM_SIDE_SPOT := Vector2(79.0, 60.8)
+## The middle of the gym, which its wide framings centre on.
+const GYM_MIDDLE := Vector2(78.5, 101.5)
 const MAX_WIDTH := 140.0
 ## Sprite texels per metre (85 px over 1.83 m). Auto mode renders near this density.
 const SPRITE_DENSITY := 46.4
@@ -49,6 +56,10 @@ var follow := Vector2.ZERO
 var leg := 0.0
 ## 0..1: how far the camera has turned to face the chapel's glass front across its plaza.
 var chapel := 0.0
+## 1 faces the gym's front (east) from the east road and the apron; gable adds a
+## further quarter turn to face its north gable from the lane.
+var gym := 0.0
+var gable := 0.0
 var pixel_mode := "auto"
 var pixel_scale := 0
 var view_metres := Vector2(98, 55.125)
@@ -68,7 +79,9 @@ func _ready() -> void:
 	student.stepped.connect(_on_step)
 	_build_interface()
 
-	var canteen_start: bool = _args.get("view", "") == "canteen"
+	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0]}
+	var start: Array = views.get(_args.get("view", ""), [Vector2(0.7, 5.3), 112.0])
+	var spot: Vector2 = start[0]
 	hour = float(_args.get("hour", "16.5"))
 	if not HOURS.has(hour):
 		hour = 16.5
@@ -76,9 +89,8 @@ func _ready() -> void:
 	orbit = clampf(float(_args.get("angle", "0.12")), -0.25, 0.25)
 	if _args.has("girl"):
 		student.set_character("girl")
-	student.place(float(_args.get("x", str(CANTEEN_SPOT.x) if canteen_start else "0.7")),
-		float(_args.get("z", str(CANTEEN_SPOT.y) if canteen_start else "5.3")))
-	_set_zoom(float(_args.get("zoom", "28" if canteen_start else "112")), true)
+	student.place(float(_args.get("x", str(spot.x))), float(_args.get("z", str(spot.y))))
+	_set_zoom(float(_args.get("zoom", str(start[1]))), true)
 	if _args.has("hide-help"):
 		help.visible = false
 	_snap_follow()
@@ -229,6 +241,15 @@ static func leg_for(x: float, z: float) -> float:
 
 ## How far the camera should turn to face the chapel: on the lawn path past halfway,
 ## on the plaza and parking, and on the west road beside them.
+## How far the camera should turn to face the gym's front: on the east road past the
+## canteen's tip (where it looked north) and on the apron in front of the gym.
+static func gym_for(x: float, z: float) -> float:
+	return smoothstep(38.0, 46.0, z) * smoothstep(34.0, 38.0, x)
+
+## The further turn to face the gym's north gable, once past its north-west corner into the lane.
+static func gable_for(x: float, _z: float) -> float:
+	return smoothstep(Gym.FRONT_X, Gym.FRONT_X + 4.0, x)
+
 static func chapel_for(x: float, z: float) -> float:
 	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x))
 
@@ -236,11 +257,13 @@ func _snap_follow() -> void:
 	follow = Vector2(student.position.x - 0.15, student.position.z)
 	leg = leg_for(student.position.x, student.position.z)
 	chapel = chapel_for(student.position.x, student.position.z)
+	gym = gym_for(student.position.x, student.position.z)
+	gable = gable_for(student.position.x, student.position.z)
 
 ## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
 ## canteen or the chapel (their views never overlap: one is east of x 12, one west of -18).
 func _yaw() -> float:
-	return orbit - PI / 2.0 * (leg + chapel)
+	return orbit - PI / 2.0 * (leg + chapel + gym + gable)
 
 func _update_camera(delta: float) -> void:
 	if absf(width - target_width) > 0.001:
@@ -251,6 +274,8 @@ func _update_camera(delta: float) -> void:
 	follow = follow.lerp(Vector2(student.position.x - 0.15, student.position.z), 1.0 - exp(-delta * 4.0))
 	leg = lerpf(leg, leg_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	chapel = lerpf(chapel, chapel_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	gym = lerpf(gym, gym_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	gable = lerpf(gable, gable_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var wide := clampf((width - 22.0) / 34.0, 0.0, 1.0)
 	var campus := clampf((width - 56.0) / 42.0, 0.0, 1.0)
 	var close := clampf((22.0 - width) / 14.0, 0.0, 1.0)
@@ -270,8 +295,16 @@ func _update_camera(delta: float) -> void:
 	var target_y := lerpf(lerpf(lerpf(3.65, 8.4, wide), 10.0, campus), 1.05, close)
 	var distance := lerpf(lerpf(23.0, 60.0, wide), 90.0, campus)
 	var lift := lerpf(lerpf(3.15, width * 0.24, wide), 1.4, close)
-	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel)
-	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel
+	# Facing the gym it frames the front (sliding in z), or from the lane the north
+	# gable (sliding in x); close up it frames the student's own depth on the road.
+	var gym_face := minf(lerpf(Gym.FRONT_X, follow.x, close), follow.x + 18.0)
+	var gym_side := lerpf(lerpf(follow.y, clampf(follow.y, 88.0, 112.0), wide), GYM_MIDDLE.y, campus)
+	var gable_x := roundf(lerpf(follow.x, GYM_MIDDLE.x, wide) / pixel) * pixel
+	var gable_z := lerpf(Gym.NORTH + Gym.SHIFT, follow.y, close)
+	gym_side = roundf(gym_side / pixel) * pixel
+	var gym_focus := Vector3(gym_face, target_y, gym_side).lerp(Vector3(gable_x, target_y, gable_z), gable)
+	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym)
+	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
 	var yaw := _yaw()
 	camera.position = focus + Vector3(sin(yaw) * distance, lift, cos(yaw) * distance)
 	camera.look_at(focus)
@@ -350,7 +383,7 @@ func _build_interface() -> void:
 	stack.add_theme_constant_override("separation", 8)
 	help.add_child(stack)
 	var title := Label.new()
-	title.text = "Archbishop Pedro Santos Building"
+	title.text = "APS, the chapel and the IH Gym"
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color("fff1d8"))
 	title.add_theme_color_override("font_shadow_color", Color("272d39"))
@@ -358,7 +391,7 @@ func _build_interface() -> void:
 	stack.add_child(title)
 	var controls := Label.new()
 	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    C  Character    M  Mute\n" + \
-		"Wheel or +/-  Zoom    1-6  Framings    Q/E  Angle    P  Pixels\n" + \
+		"Wheel or +/-  Zoom    1-8  Framings    Q/E  Angle    P  Pixels\n" + \
 		"R  Reset    F11  Fullscreen    Tab  Hide controls    Esc  Close"
 	controls.add_theme_font_size_override("font_size", 14)
 	controls.add_theme_color_override("font_color", Color("e7e2d6"))
@@ -400,7 +433,13 @@ func _choose_framing(index: int) -> void:
 	elif value == 32.0:
 		student.place(CHAPEL_SPOT.x, CHAPEL_SPOT.y)
 		_snap_follow()
-	elif value <= 56.0 and value > 10.0 and (leg > 0.5 or chapel > 0.5):
+	elif value == 84.0:
+		student.place(GYM_SPOT.x, GYM_SPOT.y)
+		_snap_follow()
+	elif value == 44.0:
+		student.place(GYM_SIDE_SPOT.x, GYM_SIDE_SPOT.y)
+		_snap_follow()
+	elif value <= 56.0 and value > 10.0 and (leg > 0.5 or chapel > 0.5 or gym > 0.5):
 		student.place(0.7, 5.3)
 		_snap_follow()
 	_set_zoom(value)
@@ -447,7 +486,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_F11:
 			var full := get_window().mode == Window.MODE_FULLSCREEN
 			get_window().mode = Window.MODE_WINDOWED if full else Window.MODE_FULLSCREEN
-		KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6:
+		KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
 			_choose_framing(event.physical_keycode - KEY_1)
 			sound.select()
 
@@ -466,7 +505,7 @@ func _process(delta: float) -> void:
 	var direction := Vector2(float(_held([KEY_D, KEY_RIGHT])) - float(_held([KEY_A, KEY_LEFT])),
 		float(_held([KEY_S, KEY_DOWN])) - float(_held([KEY_W, KEY_UP])))
 	# Keys are relative to the camera, so D keeps walking screen-right round the corner.
-	var turn := -PI / 2.0 * (leg + chapel)
+	var turn := -PI / 2.0 * (leg + chapel + gym + gable)
 	var right := Vector2(cos(turn), -sin(turn))
 	var away := Vector2(-sin(turn), -cos(turn))
 	student.move(right * direction.x - away * direction.y, _held([KEY_SHIFT]), delta, direction.x)
@@ -564,7 +603,7 @@ func _verify_and_capture() -> void:
 		student.place(14.0, 2.5)
 		_snap_follow()
 		for i in 160:
-			var turn := -PI / 2.0 * (leg + chapel)
+			var turn := -PI / 2.0 * (leg + chapel + gym + gable)
 			student.move(Vector2(cos(turn), -sin(turn)), true, 1.0 / 30.0, 1.0)
 			_update_camera(1.0 / 30.0)
 		checks.walk_round_corner = leg > 0.9 and student.position.z > 8.0
@@ -596,6 +635,35 @@ func _verify_and_capture() -> void:
 		_update_camera(1.0)
 		var facing_front := (-camera.global_basis.z).dot(Vector3.RIGHT) > 0.95
 		checks.chapel_view_faces_front = chapel > 0.99 and facing_front and _all_visible([Chapel.NOSE.x], [0.9, 9.0], [Chapel.NOSE.y])
+		# The IH Gym: built on its plot at its surveyed size, facing the east road, solid,
+		# with its walk, steps, apron and lane, and framings that face the right way.
+		var gym_node := scene.find_child("IHGym", false, false) as Node3D
+		checks.gym_built = gym_node != null and gym_node.find_child("HOLY ANGEL UNIVERSITY", false, false) != null \
+			and gym_node.find_child("GYM", false, false) != null and not Plots.shapes().has("gym")
+		checks.gym_faces_road = gym_node != null and (gym_node.global_basis * Vector3.BACK).dot(Vector3.LEFT) > 0.99
+		checks.gym_real_size = is_equal_approx(Gym.DEPTH, 41.0) and is_equal_approx(Gym.SOUTH - Gym.NORTH, 69.5)
+		checks.gym_solid = World.blocked(78.0, 96.0) and World.blocked(58.3, 86.0) and World.blocked(98.7, 130.0)
+		var left_door := Gym.LEFT_DOOR + Gym.SHIFT
+		checks.gym_walk_and_steps = is_equal_approx(World.floor_height(56.0, 86.0), 0.15) \
+			and is_equal_approx(World.floor_height(57.8, left_door), 0.75) and not World.blocked(57.8, left_door) \
+			and is_equal_approx(World.floor_height(50.0, 86.0), -0.185) and not World.blocked(50.0, 86.0)
+		var east_road := not World.blocked(GYM_SIDE_SPOT.x, GYM_SIDE_SPOT.y)
+		for z in range(40, 100, 5):
+			east_road = east_road and not World.blocked(40.5, z) and is_equal_approx(World.floor_height(40.5, z), -0.19)
+		checks.east_road_and_lane_open = east_road
+		_choose_framing(6)
+		_set_zoom(84.0, true)
+		_update_camera(1.0)
+		checks.gym_front_visible = gym > 0.99 and gable < 0.01 and (-camera.global_basis.z).dot(Vector3.RIGHT) > 0.95 \
+			and _all_visible([Gym.FRONT_X], [0.0, Gym.EAVE], [Gym.NORTH + Gym.SHIFT, Gym.SOUTH + Gym.SHIFT])
+		_set_zoom(MIN_WIDTH, true)
+		_update_camera(1.0)
+		checks.gym_close_shows_student = _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
+		_choose_framing(7)
+		_set_zoom(44.0, true)
+		_update_camera(1.0)
+		checks.gym_side_faces_gable = gable > 0.99 and (-camera.global_basis.z).dot(Vector3.BACK) > 0.95 \
+			and _all_visible([Gym.FRONT_X, 99.0], [0.0, 12.0], [Gym.NORTH + Gym.SHIFT])
 		student.place(CANTEEN_SPOT.x, CANTEEN_SPOT.y)
 		_snap_follow()
 		_set_zoom(MIN_WIDTH, true)

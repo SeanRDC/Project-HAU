@@ -1,5 +1,12 @@
 # Project Context
 
+**The IH Gym in Godot, 2026-10-16.** `areas/gym.gd` builds the Immaculate Heart
+Gymnasium from outside on its plan plot at its real size (41 x 69.5 m, about 12 m
+to the fascia, 16.6 m to the ridge, solar panels on the roof). The east road is
+now walkable down past it, with the apron in front and the lane to the side
+entrance; keys 7 and 8 frame its front and side. The annex is still a reserved
+plot. See `sessions/2026-10-16-ih-gym-godot.md`.
+
 **Godot is the direction, 2026-10-15.** Campus work moves to Godot 4.7.2 in the
 style of `src/drafts/aps-godot/`. Every style rule and value is in
 `docs/godot-art-style.md`; read it before any Godot work and update it when a

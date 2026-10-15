@@ -68,7 +68,7 @@ const PLOTS := {
 	"court": {"name": "Covered Court", "short": "Covered Court", "no": 19, "built": false,
 		"label": Vector2(72.6, 38.8),
 		"outline": [Vector2(48.4, 56.4), Vector2(48.6, 17.8), Vector2(89.8, 18.2), Vector2(89.8, 42.8), Vector2(105.4, 43), Vector2(105.4, 57)]},
-	"gym": {"name": "Immaculate Heart Gymnasium", "short": "Gym", "no": 20, "built": false,
+	"gym": {"name": "Immaculate Heart Gymnasium", "short": "Gym", "no": 20, "built": true,
 		"label": Vector2(79, 101),
 		"outline": [Vector2(57.1, 135.2), Vector2(57.5, 120.4), Vector2(58.9, 66.3), Vector2(75.1, 66.8), Vector2(75.2, 62.7), Vector2(83.4, 63), Vector2(83.3, 67.1), Vector2(101, 67.7), Vector2(99, 136.5)]},
 	"annex": {"name": "Immaculate Heart Gymnasium Annex", "short": "Gym Annex", "no": 21, "built": false,

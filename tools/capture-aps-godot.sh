@@ -29,3 +29,7 @@ shot entrance-chunky --zoom=22 --pixel=pixel
 shot canteen-afternoon --view=canteen
 shot canteen-night --view=canteen --hour=21
 shot canteen-inside --view=canteen --z=-1 --zoom=22
+shot gym-afternoon --view=gym
+shot gym-night --view=gym --hour=21
+shot gym-front-close --view=gym --zoom=40
+shot gym-side --view=gym-side
