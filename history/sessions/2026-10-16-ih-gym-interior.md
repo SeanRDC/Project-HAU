@@ -126,6 +126,52 @@ Sean drew over a capture of the whole hall (`Downloads/fixes.png`, not in the re
 - Checks: 62 now (the new ones: the east stair, the side view on the stands and
   on the stage); the stand and stage checks follow the new stairs.
 
+## Second round: Sean's "new fixes" sketch and the photos (same day)
+
+Sean marked up another capture (`Downloads/new fixes.png`, not in the repo) and
+pointed at the photos "middle view", "on second floor viewing the stage",
+"entering from the left entrance" and its lobby. His answers to my questions:
+the west stair goes back to the photo's layout; the marks at the stands' south
+ends are stairs down to exits, like the left entrance, with new open doorways in
+the back wall for the east stand; the stage's stairs run along its side walls;
+and the camera faces the student's own side.
+
+- **Stairs and exits:** each stand has two stairs, each beside an exit as at the
+  left entrance: from the doorway a corridor runs in, the stair climbs beside it
+  behind a full-height grille (the accordion gate folded at its foot), away from
+  the door up to the aisle by the court rail. West: the left entrance (equipment
+  room on the left, the stair on the right, lockers in front, as in the photo)
+  and the right entrance. East: two open doorways in the back wall (bays 1 and
+  8, opposite the front's), with canopies and steps down to the alley (the alley
+  itself is still the annex's reserved plot). The rows run unbroken between each
+  stand's two stairs (x 84 to 121.6), flat deck beyond. The balcony's stairs and
+  the stair under the east aisle are gone.
+- **Stage:** long straight stairs up each side wall onto it (8 risers, 0.4 m
+  goings), as in the photo; line-array speakers hung high over its front.
+- **Curved walls:** the big striped end walls beside the stage now curve from
+  the outer wall (x 129) round to the stage's corner (x 131), in slices, the
+  panels following (`end_wall()`); the stands' decks end at the curve.
+- **Court lines:** fill the red surface as drawn, baselines at x 80.5 and 120.5
+  (centre court 100.5), real-size keys and three-point arcs, the seal and the
+  sideline lettering moved with them, the hoops at the new baselines.
+- **Lobby** from its photo: deep beams between the column lines under the deck,
+  a wooden platform, the red lift, folded tables against the fence, the bins and
+  a wooden cabinet by the wide gate.
+- **Camera:** the 35° hall view is gone. Inside it is a low 2.5D view (12°) in
+  three zones from Sean's L / F / R marks: west half faces the west stand, east
+  half the east stand, the stage area the stage (unchanged, as Sean liked it);
+  it glides round through the stage's view when crossing the middle. On a stand
+  it closes in facing that stand, like the "middle view" photo. Cut away by side:
+  the front wall and the props on its walk (facing east), the back wall (facing
+  west), the near stand, its walls and stairs, the near half of the roof
+  structure. Under a stand only its walls go, so the lobby keeps its ceiling.
+  Plot labels hide while inside (the annex's hung in the side views). Key 0 is
+  now centre court (30 m).
+- `arena_for` is 1 anywhere inside and only blends in front of a doorway, so the
+  camera no longer half-turns near the front wall.
+- Checks: 77 (new: the stands facing their sides, the back doorways, the east
+  stair from the aisle to the back passage).
+
 ## Left to refine (with Sean)
 
 - Room layouts not shown in the photos are guesses: which rooms are along the

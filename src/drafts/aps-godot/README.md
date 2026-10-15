@@ -21,12 +21,15 @@ block turns the camera to face the stalls, and A/D/W/S stay relative to the
 camera, so holding D walks you round the corner.
 
 The IH Gym down the east road can be walked into, through either front doorway
-or the side entrance. The camera glides round and down to look along the hall
-at the stage, and the roof, the north wall and whatever stands between it and
-the student fade away (they still cast their shadows). Inside: the court, the
-bleachers upstairs on both sides (climb the rows), the balcony over the side
-entrance, the lobby and equipment room, the corridors under the stands, the
-stage with its steps and the backstage rooms. Key 0 jumps onto the court.
+or the side entrance (the back has two open doorways too). Inside, the camera is
+a low 2.5D view that faces the student's own half of the hall: the west stand
+from the west half, the east stand from the east half, the stage from the stage.
+It glides round as the student crosses the middle, and whatever stands in front
+fades away (it still casts its shadow). Inside: the court, the bleachers upstairs
+on both sides (climb the rows; the camera closes in on them, as on the stage),
+each stand's two stairs beside its exits, the balcony over the side entrance,
+the lobby and equipment room, the corridors under the stands, the curved stage
+with its side stairs, and the backstage rooms. Key 0 jumps to centre court.
 
 ## Run
 

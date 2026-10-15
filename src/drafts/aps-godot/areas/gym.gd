@@ -55,7 +55,7 @@ const SIDE_DOOR := -20.5
 
 var w # the World being built (world.gd)
 var _lamp_glow: StandardMaterial3D
-## The pivot's group nodes by name (see Interior.GROUPS).
+## The pivot's group nodes by name (see Interior.group_names()).
 var groups := {}
 
 static func bay() -> float:
@@ -92,11 +92,18 @@ static func _blockers() -> Array:
 		list.append(prop)
 	return list
 
-## Back doors with a stoop in the alley (local x), one to a bay except the roll-up grilles.
+## The back's open doorways (bays 1 and 8, opposite the front's two): exits from the
+## stairs down from the east stand, like the front entrances.
+const BACK_DOORWAY_BAYS := [1, 8]
+## Every doorway through the front and the back wall: [local x, width, top].
+const OPENINGS := [[LEFT_DOOR, 2.3, 3.75], [RIGHT_DOOR, 1.7, 3.2]]
+
+## Back doors with a stoop in the alley (local x), one to a bay except the roll-up
+## grilles and the open doorways.
 static func back_doors() -> Array:
 	var list := []
 	for i in BAYS:
-		if i != 2 and i != 7:
+		if i != 2 and i != 7 and not BACK_DOORWAY_BAYS.has(i):
 			list.append(NORTH + (i + 0.5) * bay() - 1.2)
 	return list
 
@@ -148,18 +155,18 @@ func build(world) -> void:
 	w.root.add_child(pivot)
 	var saved: Node3D = w.root
 	w.root = pivot
-	for group in Interior.GROUPS:
+	for group in Interior.group_names():
 		var node := Node3D.new()
 		node.name = group
 		pivot.add_child(node)
 		groups[group] = node
 	_shell()
-	_front()
+	_door_steps()
 	_gable(SOUTH, 1.0)
-	_back()
 	_walk()
-	_props()
 	_side_steps()
+	_into("FrontWall", _front_group)
+	_into("BackWall", _back_group)
 	_into("NorthWall", _north_group)
 	_into("Roof", _roof_group)
 	Interior.new().build(w, groups)
@@ -182,6 +189,19 @@ func _cream() -> Material:
 func _white() -> Material:
 	return w.material("plain", Color("f1efe7"))
 
+## The front wall above its stub, everything on the front and the props on its walk
+## (cut away when the camera inside looks east, from the front).
+func _front_group() -> void:
+	_wall_band(-0.2, Interior.STUB, WALL_TOP, true)
+	_front()
+	_props()
+
+## The back wall above its stub and everything on the back (cut away when the camera
+## inside looks west, from the back).
+func _back_group() -> void:
+	_wall_band(-DEPTH + 0.2, Interior.STUB, WALL_TOP, true)
+	_back()
+
 ## The north gable above its stub, its decoration and the side entrance's canopy.
 func _north_group() -> void:
 	_north_wall()
@@ -203,29 +223,47 @@ func _into(group: String, build_group: Callable) -> void:
 	w._flush()
 	w.root = saved
 
-## The walls: front and back to the soffit, the south gable up under the roof, and
-## the stub of the north gable that stays when the camera cuts the rest away.
-## The front is open at its two doorways: a sill up to the hall floor, a lintel over.
+## The walls that always stand: the south gable up under the roof, and the stubs of
+## the front, back and north walls that stay when the camera cuts the rest away.
+## Front and back are open at their two doorways: a sill up to the hall floor.
 func _shell() -> void:
-	var middle := (NORTH + SOUTH) / 2.0
-	var length := SOUTH - NORTH
-	var cream := _cream()
-	var openings := [[LEFT_DOOR, 2.3, 3.75], [RIGHT_DOOR, 1.7, 3.2]]
-	var from := NORTH
-	for door in openings:
-		var left: float = door[0] - door[1] / 2.0
-		var right: float = door[0] + door[1] / 2.0
-		w.box(Vector3(left - from, WALL_TOP, 0.4), Vector3((from + left) / 2.0, WALL_TOP / 2.0, -0.2), cream)
-		w.box(Vector3(door[1], WALL_TOP - door[2], 0.4), Vector3(door[0], (WALL_TOP + door[2]) / 2.0, -0.2), cream)
-		w.box(Vector3(door[1], 0.75, 0.4), Vector3(door[0], 0.375, -0.2), w.material("concrete", Color("c4c2b9")))
-		from = right
-	w.box(Vector3(SOUTH - from, WALL_TOP, 0.4), Vector3((from + SOUTH) / 2.0, WALL_TOP / 2.0, -0.2), cream)
-	w.box(Vector3(length, WALL_TOP, 0.4), Vector3(middle, WALL_TOP / 2.0, -DEPTH + 0.2), cream)
+	for face in [-0.2, -DEPTH + 0.2]:
+		_wall_band(face, 0.0, Interior.STUB, false)
+		for door in OPENINGS:
+			w.box(Vector3(door[1], 0.75, 0.4), Vector3(door[0], 0.375, face), w.material("concrete", Color("c4c2b9")))
 	var gable: Material = w.material("stucco", Color("f6f2e6"))
 	w.box(Vector3(0.4, GABLE_BASE, DEPTH), Vector3(SOUTH - 0.2, GABLE_BASE / 2.0, MIDDLE), gable)
 	_triangle(SOUTH - 0.4, SOUTH, gable)
 	for piece in _north_pieces():
 		w.box(Vector3(0.4, Interior.STUB, piece[1] - piece[0]), Vector3(NORTH + 0.2, Interior.STUB / 2.0, (piece[0] + piece[1]) / 2.0), gable)
+
+## A long wall (front or back, centred on local z face) from y0 to y1, open at the
+## doorways; with lintels it closes over each doorway above its top.
+func _wall_band(face: float, y0: float, y1: float, lintels: bool) -> void:
+	var cream := _cream()
+	var from := NORTH
+	for door in OPENINGS:
+		var left: float = door[0] - door[1] / 2.0
+		w.box(Vector3(left - from, y1 - y0, 0.4), Vector3((from + left) / 2.0, (y0 + y1) / 2.0, face), cream)
+		var top: float = maxf(door[2], y0)
+		if lintels and top < y1:
+			w.box(Vector3(door[1], y1 - top, 0.4), Vector3(door[0], (top + y1) / 2.0, face), cream)
+		from = door[0] + door[1] / 2.0
+	w.box(Vector3(SOUTH - from, y1 - y0, 0.4), Vector3((from + SOUTH) / 2.0, (y0 + y1) / 2.0, face), cream)
+
+## The steps up from the walk to the two front doorways (they stay when the front is
+## cut away).
+func _door_steps() -> void:
+	var stone: Material = w.material("concrete", Color("bdbec1"))
+	for door in _doors():
+		var lx: float = door[0]
+		var half: float = door[1]
+		var risers: int = door[2]
+		for step in risers:
+			var top := 0.15 + 0.15 * (risers - step)
+			var near := 0.0 if step == 0 else 0.5 + (step - 1) * 0.4
+			var far := 0.5 + step * 0.4
+			w.box(Vector3(half * 2.0, top + 0.2, far - near), Vector3(lx, (top - 0.2) / 2.0, (near + far) / 2.0), stone)
 
 ## The north gable either side of the side entrance (local z ranges).
 func _north_pieces() -> Array:
@@ -326,7 +364,8 @@ func _front_north() -> void:
 		w.box(Vector3(2.3, 0.04, 0.09), Vector3(LEFT_DOOR, 3.8 + k * 0.15, 0.08), w.material("plain", Color("8c877b")))
 	w._omni(Vector3(LEFT_DOOR, 4.3, 1.0), Color("ffd79d"), 1.2, 6.0)
 
-## An open doorway into the hall with jambs, a grey box canopy and steps up from the walk.
+## An open doorway into the hall with jambs and a grey box canopy (its steps are
+## _door_steps()'s, so they stay when the front is cut away).
 func _front_door(lx: float, width: float, risers: int, canopy: Vector3, canopy_y: float) -> void:
 	var landing := 0.15 + 0.15 * risers
 	var height := 3.0 if risers > 3 else 2.6
@@ -336,13 +375,6 @@ func _front_door(lx: float, width: float, risers: int, canopy: Vector3, canopy_y
 	w.box(canopy, Vector3(lx, canopy_y, canopy.z / 2.0), w.material("plain", Color("a9adb2")))
 	w.box(Vector3(canopy.x - 0.1, 0.04, canopy.z - 0.1), Vector3(lx, canopy_y - canopy.y / 2.0 - 0.02, canopy.z / 2.0),
 		w.material("plain", Color("dadcdd")))
-	var stone: Material = w.material("concrete", Color("bdbec1"))
-	var half: float = 1.8 if risers > 3 else 1.5
-	for step in risers:
-		var top := 0.15 + 0.15 * (risers - step)
-		var near := 0.0 if step == 0 else 0.5 + (step - 1) * 0.4
-		var far := 0.5 + step * 0.4
-		w.box(Vector3(half * 2.0, top + 0.2, far - near), Vector3(lx, (top - 0.2) / 2.0, (near + far) / 2.0), stone)
 
 ## Cream wall with small awning windows and grey doors, and a flat porch on thin posts.
 func _front_middle() -> void:
@@ -633,6 +665,19 @@ func _back() -> void:
 		for k in 4:
 			w.box(Vector3(2.0, 0.04, 0.1), Vector3(centre, 7.4 + k * 0.2, face - 0.1), w.material("plain", Color("eeeee8")))
 		_wall_lamp(Vector3(centre + 1.8, 5.2, face - 0.1))
+		if BACK_DOORWAY_BAYS.has(i):
+			# An open doorway like the front's: jambs, a grey box canopy and steps down
+			# to the alley (the exits of the stairs from the east stand).
+			var door: Array = OPENINGS[0] if i == 1 else OPENINGS[1]
+			var width: float = door[1]
+			for side: float in [-1.0, 1.0]:
+				w.box(Vector3(0.25, door[2] - 0.25, 0.2), Vector3(centre + side * (width / 2.0 + 0.12), (door[2] + 0.75) / 2.0 - 0.25, face - 0.1),
+					pier)
+			w.box(Vector3(width + 1.0, 0.6, 1.5), Vector3(centre, door[2] + 0.75, face - 0.75), w.material("plain", Color("a9adb2")))
+			for step in 4:
+				var top := 0.6 - 0.15 * step
+				w.box(Vector3(width + 0.8, top + 0.2, 0.4), Vector3(centre, (top - 0.2) / 2.0, face - 0.2 - step * 0.4), stoop)
+			continue
 		if i == 2 or i == 7:
 			# A roll-up grille, open on a dark store room.
 			w.box(Vector3(3.0, 2.8, 0.06), Vector3(centre, 1.4, face - 0.04), w.material("plain", Color("2b2c30")))
