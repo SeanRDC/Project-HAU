@@ -10,7 +10,7 @@ The browser game (`npm run dev`) still runs and is not deleted. New 2.5D/3D work
 does not go into the browser or the Three.js trial (`aps-3d.html`); those are
 frozen references.
 
-**Contents:** [Quick start](#quick-start) · [Style pillars](#style-pillars) · [World conventions](#world-conventions) · [Pixel pipeline](#pixel-pipeline) · [Materials and textures](#materials-and-textures) · [Geometry](#geometry) · [Lighting](#lighting) · [Shadows](#shadows) · [Environment](#environment) · [Shaders](#shaders) · [Characters](#characters) · [Camera](#camera) · [Collision and floors](#collision-and-floors) · [Adding a new building or area](#adding-a-new-building-or-area) · [Before you open a pull request](#before-you-open-a-pull-request) · [Do not](#do-not) · [Prompt for your AI assistant](#prompt-for-your-ai-assistant)
+**Contents:** [Quick start](#quick-start) · [Style pillars](#style-pillars) · [World conventions](#world-conventions) · [Campus plan and merging buildings](#campus-plan-and-merging-buildings) · [Pixel pipeline](#pixel-pipeline) · [Materials and textures](#materials-and-textures) · [Geometry](#geometry) · [Trees and grass (2.5D foliage)](#trees-and-grass-25d-foliage) · [Lighting](#lighting) · [Shadows](#shadows) · [Environment](#environment) · [Shaders](#shaders) · [Characters](#characters) · [Camera](#camera) · [Collision and floors](#collision-and-floors) · [Adding a new building or area](#adding-a-new-building-or-area) · [Before you open a pull request](#before-you-open-a-pull-request) · [Do not](#do-not) · [Prompt for your AI assistant](#prompt-for-your-ai-assistant)
 
 ---
 
@@ -23,14 +23,19 @@ frozen references.
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--zoom=`, `--angle=`, `--view=canteen`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`) |
+| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--zoom=`, `--angle=`, `--view=canteen`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
 
 | File | Owns |
 | --- | --- |
 | `aps.gd` | The pixel buffer, camera, time of day, environment, UI, input, the headless checks and captures |
-| `world.gd` | Every building, prop, material, procedural texture, collision rule and floor height |
+| `world.gd` | APS, the canteen and patio, the street, the helpers, materials, procedural textures, and the collision rules and floor heights that tie every area together |
+| `campus_plan.gd` | **Generated, do not edit.** Every building's real outline and the named places from the team's plan, in Godot metres |
+| `roads.gd` | The campus loop road (centre line as straights and turns) and `across()`, the distance across the road at any point |
+| `areas/chapel.gd` | The chapel, its plaza, oval parking, banners, lawn paths, trees and palms |
+| `areas/plots.gd` | Reserved plots for every building not built yet |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -75,22 +80,64 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
 ## World conventions
 
 - **Units:** metres. **Y up.** **+Z points to the road (towards the camera).**
-- **Origin:** the APS main entrance, at ground level. The APS wing runs
-  x −18..18; the tall balcony block x 18..31; the stair tower x 31.3..36.5.
-- **Ground levels:** road −0.2, kerb top 0.0, sidewalk −0.04, canopy tile
-  0.03, patio −0.05, canteen hall floor 0.45.
+- **The grid is the team's campus plan** (`src/game/campus/plan.ts`, metres from
+  the chapel), moved but not turned: **x = u + 4.7, z = v + 58.8**. x runs along
+  APS (west to east), z from APS towards the chapel and SJH. The origin stays at
+  the APS main entrance, at ground level.
+- **APS on the grid:** the classroom wing x −63..18 (its real west end, beside
+  PGN), the tall balcony block x 18..31, the stair tower x 31.3..36.5, the
+  canteen wing x 32.7..43.3 and z −4.2..24.95 (its tip on the plan's z 24.9).
+- **The chapel** is at (4.7, 58.8); its round front faces west at x −25.7.
+- **Ground levels:** lawn −0.2 (the base under everything), road −0.19, kerb
+  top 0.0, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03, patio
+  −0.05, canteen hall floor 0.45, chapel floor 0.9.
 - **Storeys:** APS wing 3.05 m, tall block 3.0 m, canteen 3.05 m over a
   ~5.3 m open hall.
-- **Plan:** an L. The canteen wing stands forward from the stair tower towards
-  the road, its stalls facing **west** (−X) onto the herringbone-brick patio in
-  the corner. The road runs along the frontage at z 4..11, turns a quarter
-  circle about `BEND` (8.5, 20.5) with a 13 m centre-line radius, then runs
-  towards the camera at x 18..25. Lawn is inside the bend; kerb, sidewalk and
-  patio are outside it.
+- **Plan:** APS is an L. The canteen wing stands forward from the stair tower,
+  its stalls facing **west** (−X) onto the herringbone-brick patio in the corner.
+- **Roads** (`roads.gd`): one loop round the chapel lawn, drawn as straights and
+  quarter turns. It runs along the APS front at z 4..11, round the patio bend
+  (centre (8.5, 20.5), radius 13), past the canteen's tip, down the east road
+  (x 37..44, by the Covered Court and the Formation Center), along the south road
+  (z 106.5..113.5, by SJH), and back up the west road (x −62..−55, by PGN). The
+  lawn is always on the road's right and the buildings on its left. Everything
+  asks `across()`: under 4 is the building side, 4..11 the carriageway, over 11
+  the lawn. Change the road only by editing `PIECES`; the surface, kerbs,
+  sidewalks and paint follow.
 - **Local frames:** a wing that is not aligned with the frontage is built in its
   own straight coordinates under a turned `Node3D` (see `CanteenWing` in
   `world.gd` and `canteen_local()` / `canteen_world()`). Collision for it is
   tested in the same local frame. Reuse this pattern; do not hand-rotate every box.
+
+---
+
+## Campus plan and merging buildings
+
+Everyone builds on the same grid, so buildings line up when they are merged.
+
+- `campus_plan.gd` is **generated** by `npm run export:godot-plan` from the
+  plan the browser game and the campus map already use (`plan.ts` and the
+  OpenStreetMap outlines in `osm.ts`). Never edit it by hand: fix `plan.ts` and
+  regenerate.
+- Every building not drawn yet is a **reserved plot** (`areas/plots.gd`): pale
+  ground on its real footprint, a gold border, and its name standing over it.
+  The student cannot walk into a plot.
+- **To merge your building:**
+  1. Build it in `areas/<id>.gd` (`<id>` as in `plan.ts`: `sh`, `court`, `gym`,
+     `sjh`, `pgn`, `mgn`, `formation`...), on the plot's outline from
+     `CampusPlan.PLOTS["<id>"]`, using `world.gd`'s helpers the way
+     `areas/chapel.gd` does (`build(world)` gets the builder; call
+     `world.box()`, `world.material()`...).
+  2. Call it from `world.gd`'s `build()` next to `Chapel.new().build(self)`.
+  3. Add `<id>` to `BUILT` in `tools/export-godot-plan.mjs` and run
+     `npm run export:godot-plan`. The plot disappears.
+  4. Give it static `blocked(x, z)` / `walkable(x, z)` / `floor_height(x, z)`
+     functions and call them from `world.gd`, like the chapel's.
+  5. If the student walks round it, give it a **camera zone** (see Camera), and
+     check that the camera never stands inside or behind another building there.
+  6. Add headless checks and captures, as below.
+- Photos go in `assets/images/buildings/<BUILDING>/` (or the building folders
+  already in `assets/`); the chapel's are in `assets/CHAPEL/`.
 
 ---
 
@@ -143,6 +190,8 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | wood | 1.5 | `#8b6b4e` | planks every 13 px |
 | metal | 2.0 | `#8c9b9e` | grain only |
 | grass | 3.0 | `#7c8a5f` | 9/255 grain, 900 vertical blade flecks; mown bands tint `#f3f5ec` |
+| dirt | 2.5 | `#9a8566` | pebbles in four browns and darker trodden patches (the picnic strip, the corner garden; reserved plots tinted `#e8e1cb`) |
+| pavers | 2.4 | `#a69b8d` | stamped concrete: 16 px slabs of slightly different tone with dark joints (the chapel plaza and parking) |
 
 To add a kind: add it to `TILE_METRES`, `PALETTE` and a `match` branch in
 `_texture()`. Keep grain low (2–9/255). Keep colours slightly desaturated and
@@ -156,7 +205,10 @@ by position so it never changes between runs.
 Common colours: white stucco `#fffef5`, cream canteen `#fff8e8`, slab
 `#f3f0e5`, kerb `#bfc4bc`, sidewalk `#cfcdc1`, window frame `#333e49`, frame
 trim `#bbbcb3`, steel `#414b50`, awning blue `#526e8a`, awning trim `#8c4843`,
-umbrellas `#b96058` / `#9c6250`, lamp metal `#66503b`, lamp glass `#f2cc92`.
+umbrellas `#b96058` / `#9c6250`, lamp metal `#66503b`, lamp glass `#f2cc92`,
+patio chair steel `#2f3133` and slats `#e39a5a`, table top `#c98a5c`, street light
+pole `#8a9093` and head `#4c5254`, picnic-shed green `#2f7a55` / `#245f43`,
+pergola timber `#c9b39a`.
 
 ---
 
@@ -172,8 +224,12 @@ Helpers in `world.gd`:
 | `rod(from, to, radius, color)` | Poles, branches, trusses, rails at angles |
 | `_ground(triangles, y, material)` | Flat curved ground (lawn inside a bend, patio, sidewalk rings). It does not cast shadows |
 | `_ring(inner, outer)`, `_along_bend(radius, size, y, material, steps, piece)`, `bend_point()` | Surfaces, kerbs and road paint that follow the bend |
-| `_tree(at, height, seed)` | A trunk, four branches and four foliage cards |
-| `_umbrella(x, z, color)`, `pot(x, z)`, `_lantern(x, z)` | Patio and street props |
+| `_tree(at, height, seed)` | A 2.5D tree: trunk, fork, limbs and a round crown of 15 leaf clusters (see below) |
+| `_cards(width, height, lift, cross, cap)` | Crossed alpha-cut quads with UVs: leaf clusters, grass tufts, vine roofs. Cached by shape |
+| `_umbrella(x, z, color)`, `_chair(at, facing)`, `pot(x, z)`, `_lantern(x, z)`, `_street_light(x, z)` | Patio and street props: umbrella sets with four armchairs, the ornate double lantern, the tall LED street light |
+| `_yard()`, `_shed(x, z)` | Past the canteen: vine pergola, green picnic sheds, dirt yard. More sheds stand on the lawn opposite the entrance (`LAWN_SHEDS`), west of x 0, out of the canteen camera's sightline |
+| `_grasses()` | Every grass tuft, as one MultiMesh |
+| `_left_garden()`, `_bamboo(at, radius, culms, seed)`, `_shrub(at, size, seed)` | The planted garden left of the wing ("APS LEFT SIDE"): dirt to the kerb, bamboo, shade trees, red-tipped shrubs, a green-netted enclosure (`#2d8a5c`) behind a yellow mesh fence (`#d8b23c`). Not walkable; the road in front is |
 | `_omni(at, color, energy, reach, shadows)`, `_lamp(light, at)` | Night lights (hidden by day) |
 
 Rules:
@@ -187,6 +243,46 @@ Rules:
 - Keep the camera's sightlines clear: anything between the camera and the
   subject (lawn trees, for example) renders in front of it. At the Canteen
   framing the camera sits ~30 m back over the lawn; keep tall props out of that strip.
+
+---
+
+## Trees and grass (2.5D foliage)
+
+Foliage must look like a volume from **every** camera angle, because the camera
+turns 90° at the canteen. Never use single flat cards or camera-facing billboards
+for plants.
+
+- **Trees** (`_tree`): a trunk to a fork at 42 % of the height, then a crown centred
+  at 68 %. The crown is **15 leaf clusters** placed at random (seeded) in the outer
+  shell of an ellipsoid with radii 0.26 / 0.2 / 0.26 × height. Each cluster is
+  `_cards(size, size, -size / 2, 3, true)`: three vertical quads 60° apart plus a
+  level one, `size = 0.3 × height`, turned at random. Five limbs run from the fork
+  into the crown. Leaves cast **double-sided** shadows, so the shade is dappled.
+- **Leaf lighting** (`leaves.gdshader`): each tree's material has `center` set to the
+  crown's middle and `roundness 1.0`. The normal is worked out **per pixel** from
+  the world position, so the crown lights like one ball: bright on the sun side,
+  darker underneath, with no seams where cards cross. Cards that turn edge-on to
+  the view fade out (`smoothstep(0.1, 0.3, |card · view|)`), so no straight lines
+  of leaves cut through the crown.
+- **Grass** (`_grasses`): one `MultiMesh` named "Grass" of `_cards(0.62, 0.42, 0, 2)`
+  tufts (two crossed blade cards) with the shared `_grass_material()`: a 48 × 32 px
+  blade texture in four greens (`#4f6a3f` to `#9cae66`), sway 0.03, `center` far below
+  so it lights like the lawn. Tufts never cast shadows. Seeded placement: a thick
+  band along the lawn's kerbs, scattered tufts across the lawn, rings round tree roots,
+  half-size moss where the patio meets walls, the rail and the sidewalk, and grass
+  round the dirt yard. Keep the instance count under a few thousand.
+- **Bamboo** (`_bamboo`): culms are thin rods leaning out from a tight base,
+  with six small blade clusters each along their upper two thirds, arching out and
+  drooping a little, in one `MultiMesh` per clump. Its leaf texture is
+  `_leaf_material(seed, center, BAMBOO_COLORS, true)`: thin drooping blades in
+  yellow-greens. Avoid big round puffs at the tips; they read as balls on sticks.
+- **Shrubs** (`_shrub`): six clusters in a low dome, `SHRUB_COLORS` (greens with
+  red-orange new growth, the "Philippine red tip" hedges).
+- **Vines** (the pergola): leaf cards laid level over the rafters, with a fringe
+  hanging off the edge, lit round a centre far below the roof.
+- Planting rules: keep trees out of the camera's sightline to the subject (see
+  Geometry), keep grass off roads and patio walking lines, and seed every random
+  placement so all machines get the same plants.
 
 ---
 
@@ -209,6 +305,8 @@ Night lights (in `world.lamps`, visible only at night):
 
 - Street and patio lanterns: `SpotLight3D` pointing down, `#ffd194`, energy
   4.0, range 9, angle 62°, attenuation 0.8, **shadows on**.
+- LED street lights: `SpotLight3D` from the lamp head, `#fff0d9`, energy 5.0,
+  range 12, angle 68°, shadows on; the head glows `#fff3dc` (day 0.2, night 3.5).
 - Stall lights: omni `#ffd79d`, 1.6, reach 7.5.
 - Canopy strips: omni `#ffcf92`, 0.55, reach 4.6, plus emissive strips.
 - Omni attenuation is 1.4 everywhere.
@@ -254,7 +352,7 @@ before using them.
 | Shader | What it does | Parameters (defaults) | Rules |
 | --- | --- | --- | --- |
 | `edges.gdshader` | A full-screen quad on the camera (render priority 127) reads depth and normals. It draws a dark line where something sits in front of a farther surface and lightens convex creases by one pixel. It is **multiplied** over the image, so lighting, fog and glow stay intact | `line_dark 0.32`, `crease_light 0.16`, `depth_gap 0.45`, `strength` 1.0 when the pixel scale > 1, 0.7 at native resolution | The sky gets no lines. Don't add per-object outlines; this handles everything |
-| `leaves.gdshader` | Alpha-cut foliage cards that sway (shadows follow), are lit from both sides and glow when backlit | `sway 0.045`, `phase` per tree, scissor 0.4, backlight 0.45 × leaf colour | Leaf images are procedural (`_leaf_material(seed)`), five greens from `#3a5650` to `#a8ab70` |
+| `leaves.gdshader` | Alpha-cut foliage cards (leaves, grass, vines) that sway (shadows follow), are lit as a round volume and glow when backlit; edge-on cards fade out | `sway 0.045` (grass 0.03), `phase` per tree, `center` (crown middle; far below for grass), `roundness` (1.0 trees, 0.9 grass), scissor 0.4, backlight 0.45 × leaf colour | Leaf images are procedural (`_leaf_material(seed, center)`), five greens from `#3a5650` to `#a8ab70`. Round normals are per pixel |
 | `sky.gdshader` | An orthographic camera sees one direction, so the sky grades over the screen instead; fixed 2-px stars at night. Lighting probes use a direction-based gradient | `top_color`, `horizon_color`, `ground_color`, `stars` (set by `_set_hour`) | |
 | `display.gdshader` | Final grade on the enlarged image: shade towards `shade_tint`, light towards `light_tint`, soft vignette | `warmth 0.06`, `vignette 0.22`, tints from `_set_hour` | Keep this the only colour grade |
 
@@ -282,25 +380,38 @@ before using them.
 ## Camera
 
 - Orthographic. A framing is a **width in metres** of a 16:9 frame.
-  `MIN_WIDTH 5` (the student nearly fills the screen) to `MAX_WIDTH 110`.
+  `MIN_WIDTH 5` (the student nearly fills the screen) to `MAX_WIDTH 140`.
 
 | Key | Framing | Width (m) |
 | --- | --- | --- |
-| 1 | APS + canteen | 98 |
+| 1 | APS + canteen (the whole 109 m APS and the L) | 112 |
 | 2 | Whole building | 56 |
 | 3 | Corridor | 36 |
 | 4 | Canteen (moves the student to the patio) | 28 |
 | 5 | Close-up | 10 |
+| 6 | Chapel (moves the student to the plaza) | 32 |
 
 - Three blends drive the camera from the width: `close` (22 → 8 m drops the
   target to the student's chest height), `wide` (22 → 56 m) and `campus`
   (56 → 98 m) raise and pull it back.
-- **Legs:** `leg` blends from 0 (looking at the APS front, sliding in X) to 1
-  (turned −90°, looking east at the canteen front at x = 33, sliding in Z).
-  `leg_for(x, z)` decides it from the student's position, and it eases at rate 3.
-  A new wing gets its own leg the same way.
+- **Zones:** the camera has one view per place, blended by the student's
+  position (each eases at rate 3):
+  - **APS** (default): looks north at the APS front, sliding in X. Its focus
+    stays on the front (z 0) until the student walks away from it (the lawn
+    path, the strip by the Covered Court), then follows 5.3 m ahead.
+  - **Canteen** (`leg_for`): turned −90°, looking east at the canteen front
+    (x = 33), sliding in Z. It hands back to APS past the canteen's tip (z > 30)
+    and on the strip east of the wing (x > 43).
+  - **Chapel** (`chapel_for`): turned −90°, looking east at the glass front
+    (x = −26), sliding in Z, on the lawn path past z 24, the plaza, the parking
+    and the west road.
+  A new building gets its own zone the same way: a `*_for(x, z)` weight, a
+  facing, and the plane it frames. Make sure the camera's standing spot (focus
+  minus 23 m close up, up to 90 m wide) is not inside another building.
+- The east and south roads are drawn but not walkable yet: their views need the
+  Covered Court, the gym and SJH, which are still plots.
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
-  away/towards, rotated by the leg, so holding D walks you round the corner.
+  away/towards, rotated by the zone's turn, so holding D walks you round the corner.
 - **Q/E** orbit ±0.25 rad. Default orbit 0.12. Smooth zoom (rate 10). **R** resets.
 
 ---
@@ -311,11 +422,14 @@ Three static functions in `world.gd` are the whole physics:
 
 - `clamp_position(x, z)`: the outer bounds.
 - `blocked(x, z)`: true for columns, piers, the tower, rails (with a gap at the
-  steps), stalls, tables, the lawn, and anything outside the walkable L.
+  steps), stalls, tables, posts, the corner garden, reserved plots, the chapel,
+  and anything outside `walkable_ground()` (the north road and APS front, the
+  patio, the strip, the west road, the lawn path, the chapel plaza and parking).
   Canteen rules are tested in its local frame.
 - `floor_height(x, z)`: the walking height (hall 0.45, steps 0.3/0.15, kerb 0,
-  road −0.2, sidewalk −0.04, canopy tile 0.03). `across_road()` gives the
-  distance across the road on the straight, the bend and the leg alike.
+  road −0.19, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03,
+  lawn −0.2). `across_road()` (in `roads.gd`) gives the distance across the
+  road anywhere on the loop.
 
 The student moves on X then Z separately and refuses blocked spots, so it slides
 along walls. Any new walkable area must extend these three functions **and**
@@ -325,10 +439,13 @@ add a headless check.
 
 ## Adding a new building or area
 
+For a building in the plan, follow [Campus plan and merging buildings](#campus-plan-and-merging-buildings).
+For anything else (props, gardens, a wing of APS):
+
 1. Put the photos in `assets/images/buildings/<BUILDING>/` (see `assets/README.md`).
-2. Decide its world position from the aerial map and the existing coordinates.
-   Write the reasoning in a comment.
-3. Build it in a `_<name>()` function in `world.gd` with the helpers above. If
+2. Take its position from `campus_plan.gd` (outlines and named places) and the
+   existing coordinates. Write the reasoning in a comment.
+3. Build it in `areas/<name>.gd` (or a `_<name>()` function in `world.gd` for APS) with the helpers above. If
    it is turned relative to the frontage, build it straight under its own
    pivot `Node3D`, like `CanteenWing`, and add `<name>_local()` /
    `<name>_world()` helpers.
@@ -341,9 +458,8 @@ add a headless check.
 8. Capture morning, noon, afternoon and night, wide and close, and compare them
    side by side with the photos.
 
-When the project outgrows one scene, split `world.gd` into one file per area
-(`world_aps.gd`, `world_sjh.gd`, ...) that share the helpers and materials,
-and keep every rule in this document.
+New areas go in `areas/`, sharing `world.gd`'s helpers and materials; keep every
+rule in this document.
 
 ---
 
@@ -373,6 +489,8 @@ and keep every rule in this document.
 - Do not commit `.godot/`, `*.import`, `builds/` or engine binaries (already in `.gitignore`).
   Do commit the `*.uid` files Godot creates next to scripts and shaders.
 - Do not put new 2.5D work in the browser game or `aps-3d.html`.
+- Do not edit `campus_plan.gd` by hand or place a building off its plan outline.
+- Do not build on another team member's reserved plot.
 
 ---
 
@@ -383,9 +501,14 @@ Paste this at the start of a session (Claude Code or any other assistant):
 > We are building Project HAU's campus in **Godot 4.7.2** in `src/drafts/aps-godot/`.
 > Before doing anything, read `history/CONTEXT.md`, the newest file in
 > `history/sessions/`, `docs/godot-art-style.md` and `src/drafts/aps-godot/README.md`.
-> Follow `docs/godot-art-style.md` exactly: metres, Y up, +Z to the road; build
+> Follow `docs/godot-art-style.md` exactly: metres, Y up, +Z to the road, on the
+> team's campus plan grid (`campus_plan.gd`, generated by `npm run export:godot-plan`;
+> x = u + 4.7, z = v + 58.8). Build each building on its plot's real outline in
+> `areas/<id>.gd`, mark it built in `tools/export-godot-plan.mjs`, and give it a
+> camera zone if the student walks round it; build
 > everything in code with `world.gd`'s helpers (`box`, `window`, `panel`, `rod`,
-> `_ground`, `_tree`) and `material(kind, tint)`. Use only procedural 128 px
+> `_ground`, `_cards`, `_tree`) and `material(kind, tint)`. Trees and grass are
+> 2.5D crossed-card volumes lit by `leaves.gdshader`, never flat cards. Use only procedural 128 px
 > triplanar textures, Lambert and no specular (glass excepted), the four time
 > presets, one orthogonal sun with 8192 shadows and blur 0.55 (never
 > contact-hardening), the edges/leaves/sky/display shaders as they are, and the
