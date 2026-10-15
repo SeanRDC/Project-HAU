@@ -41,6 +41,7 @@ the ignored `builds/godot-tools/4.7.2/`. Other machines can
 | Q/E | Camera angle |
 | T | Morning, noon, afternoon, night |
 | C | Boy / girl |
+| M | Mute |
 | P | Pixels: Auto, Crisp, Chunky |
 | R | Reset |
 | F11 | Fullscreen |
@@ -95,7 +96,8 @@ because their kernel grows with zoom.
 | --- | --- |
 | `aps.gd` | Display buffer, camera, time of day, UI, input, checks/captures |
 | `world.gd` | All geometry, materials, procedural textures, collisions and floor heights |
-| `student.gd` | Sprite, animation, contact shadow, movement |
+| `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
+| `audio.gd` | Synthesised music, wind, footsteps, blips and crickets (no audio files) |
 | `shaders/` | Edges, leaves, sky, display grade |
 
 Boxes that share a size and material are batched into MultiMeshes (about 1,470 boxes).

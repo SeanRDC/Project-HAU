@@ -7,6 +7,9 @@ const HEIGHT := 1.83
 const STRIDE := 1.15 # metres per walk cycle, so feet do not slide
 const FRAMES := {"boy": {"idle": 12, "walk": 9}, "girl": {"idle": 12, "walk": 6}}
 
+## A foot landed: two steps per walk cycle.
+signal stepped
+
 var sprite := Sprite3D.new()
 var contact := Decal.new()
 var who := "boy"
@@ -70,7 +73,10 @@ func move(direction: Vector2, running: bool, delta: float, screen_x := NAN) -> v
 	place(position.x + step.x, position.z)
 	place(position.x, position.z + step.y)
 	var travelled := before.distance_to(Vector2(position.x, position.z))
+	var steps_before := floori(_distance / STRIDE * 2.0)
 	_distance += travelled
+	if floori(_distance / STRIDE * 2.0) != steps_before:
+		stepped.emit()
 	var sideways := direction.x if is_nan(screen_x) else screen_x
 	if sideways != 0.0:
 		_facing = signf(sideways)
