@@ -15,6 +15,7 @@ const GymInterior := preload("res://areas/gym_interior.gd")
 const Npcs := preload("res://npcs.gd")
 const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
+const Mgn := preload("res://areas/mgn.gd")
 const DevTravel := preload("res://dev_travel.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
@@ -50,6 +51,8 @@ const PERCH_DISTANCE := 60.0
 const PERCH_WIDTH := 16.0
 ## Where the SJH framing (key 9) brings the student: the south road, by the parking.
 const SJH_SPOT := Vector2(-11.0, 109.0)
+## Where --view=mgn brings the student: the west road, in front of MGN's entrance.
+const MGN_SPOT := Vector2(-60.5, 92.0)
 const MAX_WIDTH := 140.0
 ## Sprite texels per metre (85 px over 1.83 m). Auto mode renders near this density.
 const SPRITE_DENSITY := 46.4
@@ -107,6 +110,8 @@ var _was_inside := false
 var _zoom_before := -1.0
 ## 0..1: how far the camera has turned right round to face St. Joseph Hall from the parking.
 var sjh := 0.0
+## 0..1: how far the camera has turned right round to look west at MGN from the west road.
+var mgn := 0.0
 ## 0..1: how far the student is inside SJH's covered walkway (the same cutaway as the hallway).
 var walkway := 0.0
 ## 0..1: how far the student is inside the APS hallway (the cutaway and glide).
@@ -149,7 +154,7 @@ func _ready() -> void:
 	npcs.build_ui(self)
 
 	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0],
-		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0]}
+		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "mgn": [MGN_SPOT, 56.0]}
 	var start: Array = views.get(_args.get("view", ""), [Vector2(0.7, 5.3), 112.0])
 	var spot: Vector2 = start[0]
 	hour = float(_args.get("hour", "16.5"))
@@ -303,7 +308,8 @@ func _resize() -> void:
 func _set_zoom(value: float, immediate := false) -> void:
 	# Inside the gym the low view only goes out to ARENA_CAP: wider, its frame's lower
 	# edge would start under the floor.
-	var widest := ARENA_CAP if _was_inside or _was_perched else MAX_WIDTH
+	var inside_gym := student != null and arena_for(student.position.x, student.position.z) > 0.5
+	var widest := ARENA_CAP if inside_gym else MAX_WIDTH
 	target_width = clampf(value, MIN_WIDTH, widest)
 	if immediate:
 		width = target_width
@@ -361,7 +367,7 @@ static func perch_for(x: float, z: float, level: float) -> float:
 	return 1.0 if GymInterior.perched(p.x, p.y, level) else 0.0
 
 static func chapel_for(x: float, z: float) -> float:
-	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z))
+	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z))
 
 func _snap_follow() -> void:
 	follow = Vector2(student.position.x - 0.15, student.position.z)
@@ -374,18 +380,21 @@ func _snap_follow() -> void:
 	perch = perch_for(student.position.x, student.position.z, student.level())
 	hall = Hallway.hall_for(student.position.x, student.position.z)
 	sjh = Sjh.view_for(student.position.x, student.position.z)
+	mgn = Mgn.view_for(student.position.x, student.position.z)
 	walkway = Sjh.walkway_for(student.position.x, student.position.z)
 
 ## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
 ## canteen or the chapel (their views never overlap: one is east of x 12, one west of -18),
 ## -180° south at the gym's gable from the lane or down its hall from inside, and
-## -180° south at St. Joseph Hall (it takes over from the chapel and gym views).
+## -180° south at St. Joseph Hall (it takes over from the chapel and gym views), and
+## -270° west at MGN from the west road (it takes over from the chapel view; at the
+## corner it hands a quarter turn on to SJH's).
 func _yaw() -> float:
 	return orbit - PI / 2.0 * _turns()
 
-## The camera's turn in quarter turns (SJH's half turn counts two); the controls use it too.
+## The camera's turn in quarter turns (SJH's half turn counts two, MGN's three); the controls use it too.
 func _turns() -> float:
-	return leg + chapel + gym + gable + arena * face + 2.0 * sjh
+	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn
 
 func _update_camera(delta: float) -> void:
 	var was_inside := hall + walkway
@@ -406,6 +415,7 @@ func _update_camera(delta: float) -> void:
 	perch = lerpf(perch, perch_for(student.position.x, student.position.z, student.level()), 1.0 - exp(-delta * 3.0))
 	face = lerpf(face, face_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	sjh = lerpf(sjh, Sjh.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	mgn = lerpf(mgn, Mgn.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var wide := clampf((width - 22.0) / 34.0, 0.0, 1.0)
 	var campus := clampf((width - 56.0) / 42.0, 0.0, 1.0)
 	var close := clampf((22.0 - width) / 14.0, 0.0, 1.0)
@@ -447,9 +457,15 @@ func _update_camera(delta: float) -> void:
 	along = lerpf(lerpf(along, along * 0.4, wide), 0.0, campus)
 	var sjh_face := Sjh.world(along, 0.5)
 	var sjh_focus := Vector3(sjh_face.x, lerpf(target_y, target_y + 4.0, wide), sjh_face.y)
-	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh)
+	# Facing MGN it frames the long block's corridor front (sliding along it); wide, it
+	# centres on the building; close up it frames the student's own depth on the road.
+	var mgn_at := Mgn.local(follow.x, follow.y)
+	var mgn_along := lerpf(lerpf(mgn_at.x, 6.0, wide), 5.0, campus)
+	var mgn_face := Mgn.world(mgn_along, lerpf(0.0, mgn_at.y, close))
+	var mgn_focus := Vector3(mgn_face.x, lerpf(target_y, target_y + 3.0, wide), roundf(mgn_face.y / pixel) * pixel)
+	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
-	focus += sjh_focus * sjh
+	focus += sjh_focus * sjh + mgn_focus * mgn
 	# Inside a covered corridor (the APS hallway, SJH's walkway): glide in close and
 	# look a little down along it. Each gives the corridor's middle, how far in front
 	# of it the cut goes, and its ceiling.
@@ -481,6 +497,11 @@ func _update_camera(delta: float) -> void:
 	if sjh > 0.0:
 		var parking_edge := (Vector3(focus.x, focus.y, Sjh.PARKING.position.y - 0.6) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, parking_edge * smoothstep(0.0, 1.0, sjh))
+	# Facing MGN it stands over the chapel lawn: everything east of the west road (the
+	# lawn's trees, the chapel) is cut away.
+	if mgn > 0.0:
+		var lawn_edge := (Vector3(Mgn.CUT_X, focus.y, focus.z) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, lawn_edge * smoothstep(0.0, 1.0, mgn))
 	var grade := display.material as ShaderMaterial
 	grade.set_shader_parameter("cut", inside)
 	if inside > 0.0:
@@ -628,7 +649,7 @@ func _choose_framing(index: int) -> void:
 	elif value == 64.0:
 		student.place(SJH_SPOT.x, SJH_SPOT.y)
 		_snap_follow()
-	elif value <= 56.0 and value > 10.0 and (leg > 0.5 or chapel > 0.5 or gym > 0.5 or sjh > 0.5):
+	elif value <= 56.0 and value > 10.0 and (leg > 0.5 or chapel > 0.5 or gym > 0.5 or sjh > 0.5 or mgn > 0.5):
 		student.place(0.7, 5.3)
 		_snap_follow()
 	_set_zoom(value)
@@ -657,6 +678,8 @@ static func travel_places() -> Array:
 		["St. Joseph Hall", SJH_SPOT, 64.0],
 		["SJH walkway", Sjh.world(25.0, -1.8), 22.0],
 		["Mary statue", Vector2(-48.5, 113.6), 26.0],
+		["MGN", MGN_SPOT, 56.0],
+		["MGN entrance", Mgn.world(21.0, 2.5), 18.0],
 	]
 
 ## Jumps the student to a fast-travel place, with every camera zone, the gym's
@@ -1151,6 +1174,59 @@ func _verify_and_capture() -> void:
 		var inside_local := Sjh.local(student.position.x, student.position.z)
 		checks.walk_into_sjh_walkway = inside_local.y < -1.0 and walkway > 0.95 and shown_width < HALL_WIDTH + 0.2 \
 			and camera.near > 5.0 and _all_visible([student.position.x], [0.3, 1.9], [student.position.z])
+		# MGN: built on its plot facing the west road, solid, its garden planted, the entry
+		# walk under the wing open up to the turnstile, the road beside it walkable.
+		var mgn_node := scene.find_child("MGN", false, false) as Node3D
+		checks.mgn_built = mgn_node != null and mgn_node.find_child("MGN 09", false, false) != null and not Plots.shapes().has("mgn")
+		checks.mgn_faces_road = mgn_node != null and (mgn_node.global_basis * Vector3.BACK).dot(Vector3.RIGHT) > 0.99
+		var mgn_solid := true
+		for spot in [Vector2(0, -8), Vector2(35, -10), Vector2(-24, -10), Vector2(-24, 4), Vector2(12, -1.5), Vector2(0, 2.0)]:
+			var p := Mgn.world(spot.x, spot.y)
+			mgn_solid = mgn_solid and World.blocked(p.x, p.y)
+		checks.mgn_solid_and_garden = mgn_solid
+		var porch := Mgn.world(21.0, 2.5)
+		var turnstile := Mgn.world(21.0, 0.4)
+		var column := Mgn.world(Mgn.PORCH_COLUMNS[0], Mgn.COLUMN_Z)
+		var stair := Mgn.world(27.0, 2.0)
+		checks.mgn_entry_to_turnstile = not World.blocked(porch.x, porch.y) and is_equal_approx(World.floor_height(porch.x, porch.y), Mgn.FLOOR_Y) \
+			and World.blocked(turnstile.x, turnstile.y) and World.blocked(column.x, column.y) and World.blocked(stair.x, stair.y)
+		var west_road := true
+		for z in range(70, 102, 4):
+			west_road = west_road and not World.blocked(-58.5, z) and not World.blocked(-63.0, z)
+		checks.west_road_beside_mgn = west_road
+		# Walking in from the sidewalk under the wing, up to the turnstile.
+		var sidewalk := Mgn.world(21.0, 5.6)
+		student.place(sidewalk.x, sidewalk.y)
+		for i in 90:
+			student.move(Vector2(-1, 0), false, 1.0 / 30.0, 0.0)
+		var walked_in := Mgn.local(student.position.x, student.position.z)
+		checks.mgn_walk_in = walked_in.y < 1.2 and walked_in.y > Mgn.TURNSTILE_Z and is_equal_approx(student.position.y, Mgn.FLOOR_Y + 0.015)
+		# Down the west road from the walkway end: the camera turns right round to face MGN,
+		# stands over the lawn (cut away up to the road), never inside a building.
+		student.place(-58.5, 58.0)
+		_set_zoom(36.0, true)
+		_snap_follow()
+		for i in 240:
+			student.move(Vector2(0, 1), true, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		var forward := -camera.global_basis.z
+		var lawn_cut := (Vector3(Chapel.NOSE.x, 1.0, Chapel.NOSE.y) - camera.position).dot(forward) < camera.near
+		checks.walk_past_mgn = student.position.z > 85.0 and mgn > 0.95 and forward.dot(Vector3.LEFT) > 0.9 \
+			and camera.position.x > Mgn.CUT_X and camera.near > (Vector3(Mgn.CUT_X, 0, student.position.z) - camera.position).dot(forward) - 1.0
+		student.place(MGN_SPOT.x, MGN_SPOT.y)
+		_was_perched = false # left over from the gym checks, it would cap the zoom
+		_set_zoom(56.0, true)
+		_snap_follow()
+		_update_camera(1.0)
+		forward = -camera.global_basis.z
+		var north := Mgn.world(Mgn.WING.y, Mgn.WING_FRONT)
+		var south := Mgn.world(-Mgn.LONG, 0.0)
+		checks.mgn_view_faces_front = mgn > 0.99 and forward.dot(Vector3.LEFT) > 0.95 and lawn_cut \
+			and _all_visible([north.x, south.x], [0.0, Mgn.ROOF], [north.y, south.y]) \
+			and not Mgn.inside(Mgn.local(camera.position.x, camera.position.z).x, Mgn.local(camera.position.x, camera.position.z).y)
+		_set_zoom(MIN_WIDTH, true)
+		_update_camera(1.0)
+		checks.mgn_close_shows_student = _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
 		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
 		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)
 		checks.hallway_props_block = World.blocked(-60.0, -2.4) and World.blocked(-24.0, -0.2) \

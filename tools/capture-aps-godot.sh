@@ -41,3 +41,8 @@ shot gym-in-stand --x=63 --z=97 --level=6.95 --zoom=36
 shot gym-in-stage --x=78.5 --z=129 --level=1.95 --zoom=32
 shot gym-in-east --x=91 --z=95.8 --zoom=28
 shot gym-walk-in --x=55.5 --z=75.5 --zoom=36 --walk=3.5
+shot mgn-afternoon --view=mgn
+shot mgn-morning --view=mgn --hour=8
+shot mgn-night --view=mgn --hour=21
+shot mgn-entrance --view=mgn --zoom=18
+shot mgn-corner --x=-57 --z=103 --zoom=56

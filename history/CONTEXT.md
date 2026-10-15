@@ -1,6 +1,15 @@
 # Project Context
 
-Dev fast travel in Godot, 2026-10-16: F1 opens a panel of 13 places (APS, hallway, canteen, chapel, gym, SJH, Mary...) and jumps there with a short fade. Add new buildings' spots to `travel_places()` in `aps.gd`. See `sessions/2026-10-16-godot-dev-fast-travel.md`.
+**MGN in Godot, 2026-10-16.** `areas/mgn.gd` builds the Mamerto G. Nepomuceno
+Building from outside on its plan plot (five storeys, ~17 m, facing east onto the west
+road): the open-corridor long block, the box-window wing over the entrance with the
+turnstile and the open stair, the north block, the south wing with its roof tank, and
+the raised garden. The student can walk in under the wing up to the turnstile. On the
+west road the camera turns right round to face it (`--view=mgn`), the chapel lawn cut
+away behind. Geometry not in the photos is listed as guesses in
+`sessions/2026-10-16-mgn-godot.md`.
+
+Dev fast travel in Godot, 2026-10-16: F1 opens a panel of 15 places (APS, hallway, canteen, chapel, gym, SJH, Mary, MGN...) and jumps there with a short fade. Add new buildings' spots to `travel_places()` in `aps.gd`. See `sessions/2026-10-16-godot-dev-fast-travel.md`.
 
 **Inside the IH Gym, 2026-10-16.** The gym can be walked into through either
 front doorway (the right one is now open, like the left) or the side entrance.
