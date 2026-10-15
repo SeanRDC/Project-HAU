@@ -160,6 +160,7 @@ export function buildGym(): AreaDef {
     id: 'gym',
     title: 'Immaculate Heart Gymnasium',
     subtitle: 'Covered Court at Gym Annex',
+    subtitleEn: 'Covered Court and Gym Annex',
     width: WIDTH,
     walkY: WALK,
     bounds: [24, WIDTH - 12],

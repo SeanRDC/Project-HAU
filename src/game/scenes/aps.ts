@@ -228,6 +228,7 @@ export function buildAps(): AreaDef {
     id: 'aps',
     title: 'Archbishop Pedro Santos Building',
     subtitle: 'Hanggang canteen at gym lane',
+    subtitleEn: 'Down to the canteen and the gym lane',
     width: WIDTH,
     walkY: WALK,
     bounds: [24, WIDTH - 40],

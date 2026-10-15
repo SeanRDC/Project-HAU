@@ -218,6 +218,7 @@ export function buildApsLobby(): AreaDef {
     id: 'apslobby',
     title: 'APS Lobby',
     subtitle: 'Sa ilalim ng canopy',
+    subtitleEn: 'Under the canopy',
     width: WIDTH,
     walkY: WALK,
     bounds: [24, WIDTH - 24],
