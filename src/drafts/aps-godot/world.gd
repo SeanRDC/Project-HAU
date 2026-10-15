@@ -44,14 +44,17 @@ const LEAVES_SHADER := preload("res://shaders/leaves.gdshader")
 const Roads := preload("res://roads.gd")
 const Chapel := preload("res://areas/chapel.gd")
 const Plots := preload("res://areas/plots.gd")
+const Gym := preload("res://areas/gym.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
-	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4}
+	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
+	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6}
 const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile": "d6d1c3",
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
-	"dirt": "9a8566", "pavers": "a69b8d"}
+	"dirt": "9a8566", "pavers": "a69b8d",
+	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae"}
 
 var root: Node3D
 var lamps: Array[Light3D] = []
@@ -82,12 +85,15 @@ static func in_garden(x: float, z: float) -> bool:
 
 ## Where the student may walk outside the buildings: the north road and the APS
 ## front, the patio and canteen, the road past the canteen's tip, the strip by the
-## Covered Court, the west road, the lawn path, and the chapel's plaza and parking.
-## The east and south roads wait for the gym and SJH (their views need those buildings).
+## Covered Court, the west road, the lawn path, the chapel's plaza and parking, and
+## the east road down past the gym with its apron and lane. The south road waits for
+## SJH (its view needs that building).
 static func walkable_ground(x: float, z: float) -> bool:
 	var across := across_road(x, z)
-	if across >= 2.2 and across <= 10.6 and (z < 38.0 or x < -45.0):
+	if across >= 2.2 and across <= 10.6 and (z < 38.0 or x < -45.0 or (x > 36.0 and z < 104.0)):
 		return true # carriageway and sidewalks
+	if Gym.on_apron(x, z):
+		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
 	if STRIP.has_point(Vector2(x, z)):
@@ -108,7 +114,7 @@ static func blocked(x: float, z: float) -> bool:
 	if in_canteen(x, z):
 		if local.y < -6.4 or local.x < 41.5 or local.x > 65.3:
 			return true # rear wall, end walls, and the part inside the tower
-	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z) or Chapel.blocked(x, z):
+	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z) or Chapel.blocked(x, z) 			or Gym.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -135,6 +141,9 @@ static func floor_height(x: float, z: float) -> float:
 		return 0.45
 	if local.x > 49.0 and local.x < 53.0 and local.y <= 3.26 and local.y >= 2.45:
 		return 0.15 if local.y > 2.8 else 0.3
+	var gym := Gym.floor_height(x, z)
+	if not is_nan(gym):
+		return gym
 	var across := across_road(x, z)
 	if across > 4.135 and across < 10.865:
 		return -0.19 # carriageway
@@ -149,7 +158,7 @@ static func floor_height(x: float, z: float) -> float:
 
 ## The outer bounds; blocked() shapes the walkable campus inside them.
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -63.0, 48.0), clampf(z, -1.0, 104.0))
+	return Vector2(clampf(x, -63.0, 101.0), clampf(z, -1.0, 116.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -162,6 +171,7 @@ func build(parent: Node3D) -> void:
 	_left_garden()
 	Chapel.new().build(self)
 	Plots.new().build(self)
+	Gym.new().build(self)
 	_grasses()
 	_flush()
 	# The canteen wing is built in its old straight-frontage coordinates under a
@@ -294,6 +304,37 @@ func _texture(kind: String) -> Texture2D:
 			for i in 17:
 				_rect(image, random.randi_range(0, 127), random.randi_range(0, 116), 1, random.randi_range(2, 11),
 					Color(0.318, 0.325, 0.282, 0.09))
+		"concrete":
+			# Poured slabs: a saw-cut joint at the tile edge and a few faint stains.
+			for i in 26:
+				_rect(image, random.randi_range(0, 120), random.randi_range(0, 120), random.randi_range(3, 9),
+					random.randi_range(2, 6), Color(0.38, 0.39, 0.36, 0.07))
+			_rect(image, 0, 0, 128, 1, Color("85867e"))
+			_rect(image, 0, 0, 1, 128, Color("85867e"))
+		"slate":
+			# Grey stone tiles in staggered courses, as on the gym's lower walls.
+			var tones: Array[Color] = [Color("5d5b5a"), Color("676462"), Color("545250"), Color("6f6b67")]
+			for y in range(0, 128, 16):
+				var x := -random.randi_range(0, 30)
+				while x < 128:
+					var w := random.randi_range(22, 40)
+					_rect(image, x, y, w, 16, tones[random.randi_range(0, 3)])
+					_rect(image, x, y, w, 1, Color("434140"))
+					_rect(image, x, y, 1, 16, Color("434140"))
+					x += w
+		"solar":
+			# Cells in a fine grid with a faint sheen down every other row.
+			for y in 128:
+				for x in 128:
+					if x % 16 == 0 or y % 16 == 0:
+						image.set_pixel(x, y, Color("3d4e69"))
+					elif (y / 16) % 2 == 0 and (x + y) % 16 < 3:
+						image.set_pixel(x, y, Color("2f4060"))
+		"ribbed":
+			# Roof sheeting: a raised rib every 8 px, lit on one side.
+			for y in range(0, 128, 8):
+				_rect(image, 0, y, 128, 1, Color("c9cdcc"))
+				_rect(image, 0, y + 1, 128, 1, Color("8a8f90"))
 	image.generate_mipmaps()
 	var texture := ImageTexture.create_from_image(image)
 	_textures[kind] = texture
@@ -382,11 +423,12 @@ func _grass_material() -> ShaderMaterial:
 # --- Geometry helpers -------------------------------------------------------
 
 ## Boxes that share a size and material become one MultiMesh, like the browser's instancing.
-func box(size: Vector3, at: Vector3, made: Material, turn := 0.0) -> void:
+## turn rotates about Y; tilt then leans the box about its own X (roof slopes, open panes).
+func box(size: Vector3, at: Vector3, made: Material, turn := 0.0, tilt := 0.0) -> void:
 	var key := str(size) + "#" + str(made.get_instance_id())
 	if not _batches.has(key):
 		_batches[key] = {"size": size, "material": made, "at": []}
-	(_batches[key]["at"] as Array).append(Transform3D(Basis(Vector3.UP, turn), at))
+	(_batches[key]["at"] as Array).append(Transform3D(Basis(Vector3.UP, turn) * Basis(Vector3.RIGHT, tilt), at))
 	box_count += 1
 
 func _flush() -> void:
@@ -491,15 +533,19 @@ func _along_bend(radius: float, size: Vector2, y: float, made: Material, steps :
 		var at := bend_point(radius, a)
 		box(Vector3(length, size.y, size.x), Vector3(at.x, y, at.y), made, -a - PI / 2.0)
 
-func window(x: float, y: float, z: float, w := 2.05, h := 1.05) -> void:
-	box(Vector3(w + 0.15, h + 0.15, 0.07), Vector3(x, y, z), material("plain", Color("333e49")))
+## Window glass; lit glass is the one shared warm glass that glows at night.
+func room_glass(lit: bool) -> StandardMaterial3D:
 	if _room_glass == null:
 		_room_glass = material("glass").duplicate() as StandardMaterial3D
 		_room_glass.emission_enabled = true
 		_room_glass.emission = Color("ffc281")
 		glows.append([_room_glass, 0.0, 1.35])
+	return _room_glass if lit else material("glass")
+
+func window(x: float, y: float, z: float, w := 2.05, h := 1.05) -> void:
+	box(Vector3(w + 0.15, h + 0.15, 0.07), Vector3(x, y, z), material("plain", Color("333e49")))
 	var occupied := posmod(roundi(x * 7.0 + y * 11.0), 4) == 0
-	box(Vector3(w, h, 0.035), Vector3(x, y, z + 0.05), _room_glass if occupied else material("glass"))
+	box(Vector3(w, h, 0.035), Vector3(x, y, z + 0.05), room_glass(occupied))
 	var frame := material("plain", Color("bbbcb3"))
 	for dx in [-w / 2.0, 0.0, w / 2.0]:
 		box(Vector3(0.035, h + 0.08, 0.05), Vector3(x + dx, y, z + 0.09), frame)
