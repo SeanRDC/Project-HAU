@@ -8,7 +8,7 @@ extends RefCounted
 ## wall with piers between twelve bays, a slatted band under a row of white
 ## awning-window grids, and a deep eave whose fascia carries HOLY ANGEL
 ## UNIVERSITY. The left entrance goes up steps under a grey box canopy past the
-## grey stone-tile wall and three white fins; the right one is a glass door
+## grey stone-tile wall and three white fins; the right one is an open doorway
 ## under the seal and HOLY ANGEL UNIVERSITY GYM. The north gable faces the
 ## covered court: a grey metal band under the roof, three tall louvred windows,
 ## a wide grey box canopy over the side entrance, a maroon band and stone-tile
@@ -20,6 +20,12 @@ extends RefCounted
 ## along the front (world z = local x + SHIFT), local +z points out of the front
 ## (world -x), so window and sign helpers that face +z face the road. The east road
 ## (roads.gd) runs past the front, across a concrete apron with parking.
+##
+## The two front doorways and the side entrance are open: the inside is built by
+## gym_interior.gd. The roof and the north wall are in their own groups so the
+## camera can cut them away (they still cast their shadows) while the student is in.
+
+const Interior := preload("res://areas/gym_interior.gd")
 
 ## World x of the front wall; local z = FRONT_X - world x.
 const FRONT_X := 58.0
@@ -49,6 +55,8 @@ const SIDE_DOOR := -20.5
 
 var w # the World being built (world.gd)
 var _lamp_glow: StandardMaterial3D
+## The pivot's group nodes by name (see Interior.GROUPS).
+var groups := {}
 
 static func bay() -> float:
 	return (SOUTH - NORTH) / BAYS
@@ -92,10 +100,15 @@ static func back_doors() -> Array:
 			list.append(NORTH + (i + 0.5) * bay() - 1.2)
 	return list
 
-static func blocked(x: float, z: float) -> bool:
+## Inside the gym's walls (the doorways and the side entrance's reveals included).
+static func inside(x: float, z: float) -> bool:
 	var p := gym_local(x, z)
-	if p.x > NORTH and p.x < SOUTH and p.y < 0.0 and p.y > -DEPTH:
-		return true
+	return p.x > NORTH and p.x < SOUTH and p.y < 0.0 and p.y > -DEPTH
+
+static func blocked(x: float, z: float, level := NAN) -> bool:
+	var p := gym_local(x, z)
+	if inside(x, z):
+		return Interior.blocked(p.x, p.y, level)
 	for item in _blockers():
 		if p.distance_to(Vector2(item[0], item[1])) < item[2]:
 			return true
@@ -105,9 +118,12 @@ static func blocked(x: float, z: float) -> bool:
 				return true
 	return false
 
-## The gym's own raised ground (walk, steps, the slab under the side canopy), or NAN.
-static func floor_height(x: float, z: float) -> float:
+## The gym's own raised ground (walk, steps, the slab under the side canopy, and
+## every floor inside on the storey nearest level), or NAN.
+static func floor_height(x: float, z: float, level := NAN) -> float:
 	var p := gym_local(x, z)
+	if inside(x, z):
+		return Interior.floor_at(p.x, p.y, level)
 	for door in _doors():
 		var reach: float = 0.5 + (door[2] - 1) * 0.4
 		if absf(p.x - door[0]) < door[1] and p.y >= 0.0 and p.y < reach:
@@ -132,17 +148,21 @@ func build(world) -> void:
 	w.root.add_child(pivot)
 	var saved: Node3D = w.root
 	w.root = pivot
+	for group in Interior.GROUPS:
+		var node := Node3D.new()
+		node.name = group
+		pivot.add_child(node)
+		groups[group] = node
 	_shell()
 	_front()
-	_eave(0.0, 1.0)
-	_eave(-DEPTH, -1.0)
-	_gable(NORTH, -1.0)
 	_gable(SOUTH, 1.0)
-	_side_entrance()
 	_back()
-	_roof()
 	_walk()
 	_props()
+	_side_steps()
+	_into("NorthWall", _north_group)
+	_into("Roof", _roof_group)
+	Interior.new().build(w, groups)
 	w._flush()
 	w.root = saved
 	_apron()
@@ -162,23 +182,63 @@ func _cream() -> Material:
 func _white() -> Material:
 	return w.material("plain", Color("f1efe7"))
 
-## The walls: front and back to the soffit, the gables up under the roof.
+## The north gable above its stub, its decoration and the side entrance's canopy.
+func _north_group() -> void:
+	_north_wall()
+	_gable(NORTH, -1.0)
+	_side_entrance()
+
+## The eaves (with the fascia's lettering) and the roof with its solar panels.
+func _roof_group() -> void:
+	_eave(0.0, 1.0)
+	_eave(-DEPTH, -1.0)
+	_roof()
+
+## Builds into one of the pivot's groups (flushing the boxes so far where they belong).
+func _into(group: String, build_group: Callable) -> void:
+	w._flush()
+	var saved: Node3D = w.root
+	w.root = groups[group]
+	build_group.call()
+	w._flush()
+	w.root = saved
+
+## The walls: front and back to the soffit, the south gable up under the roof, and
+## the stub of the north gable that stays when the camera cuts the rest away.
+## The front is open at its two doorways: a sill up to the hall floor, a lintel over.
 func _shell() -> void:
 	var middle := (NORTH + SOUTH) / 2.0
 	var length := SOUTH - NORTH
-	w.box(Vector3(length, WALL_TOP, 0.4), Vector3(middle, WALL_TOP / 2.0, -0.2), _cream())
-	w.box(Vector3(length, WALL_TOP, 0.4), Vector3(middle, WALL_TOP / 2.0, -DEPTH + 0.2), _cream())
+	var cream := _cream()
+	var openings := [[LEFT_DOOR, 2.3, 3.75], [RIGHT_DOOR, 1.7, 3.2]]
+	var from := NORTH
+	for door in openings:
+		var left: float = door[0] - door[1] / 2.0
+		var right: float = door[0] + door[1] / 2.0
+		w.box(Vector3(left - from, WALL_TOP, 0.4), Vector3((from + left) / 2.0, WALL_TOP / 2.0, -0.2), cream)
+		w.box(Vector3(door[1], WALL_TOP - door[2], 0.4), Vector3(door[0], (WALL_TOP + door[2]) / 2.0, -0.2), cream)
+		w.box(Vector3(door[1], 0.75, 0.4), Vector3(door[0], 0.375, -0.2), w.material("concrete", Color("c4c2b9")))
+		from = right
+	w.box(Vector3(SOUTH - from, WALL_TOP, 0.4), Vector3((from + SOUTH) / 2.0, WALL_TOP / 2.0, -0.2), cream)
+	w.box(Vector3(length, WALL_TOP, 0.4), Vector3(middle, WALL_TOP / 2.0, -DEPTH + 0.2), cream)
 	var gable: Material = w.material("stucco", Color("f6f2e6"))
-	# The north gable is open under the side canopy; the south one is solid.
-	var open_left := SIDE_DOOR - 2.9
-	var open_right := SIDE_DOOR + 2.9
-	for piece in [[-DEPTH, open_left], [open_right, 0.0]]:
-		var width: float = piece[1] - piece[0]
-		w.box(Vector3(0.4, 4.7, width), Vector3(NORTH + 0.2, 2.35, (piece[0] + piece[1]) / 2.0), gable)
-	w.box(Vector3(0.4, GABLE_BASE - 4.7, DEPTH), Vector3(NORTH + 0.2, (GABLE_BASE + 4.7) / 2.0, MIDDLE), gable)
 	w.box(Vector3(0.4, GABLE_BASE, DEPTH), Vector3(SOUTH - 0.2, GABLE_BASE / 2.0, MIDDLE), gable)
-	_triangle(NORTH, NORTH + 0.4, gable)
 	_triangle(SOUTH - 0.4, SOUTH, gable)
+	for piece in _north_pieces():
+		w.box(Vector3(0.4, Interior.STUB, piece[1] - piece[0]), Vector3(NORTH + 0.2, Interior.STUB / 2.0, (piece[0] + piece[1]) / 2.0), gable)
+
+## The north gable either side of the side entrance (local z ranges).
+func _north_pieces() -> Array:
+	return [[-DEPTH, SIDE_DOOR - 2.9], [SIDE_DOOR + 2.9, 0.0]]
+
+## The north gable above its stub: open under the side canopy, solid above it.
+func _north_wall() -> void:
+	var gable: Material = w.material("stucco", Color("f6f2e6"))
+	for piece in _north_pieces():
+		var width: float = piece[1] - piece[0]
+		w.box(Vector3(0.4, 4.7 - Interior.STUB, width), Vector3(NORTH + 0.2, (4.7 + Interior.STUB) / 2.0, (piece[0] + piece[1]) / 2.0), gable)
+	w.box(Vector3(0.4, GABLE_BASE - 4.7, DEPTH), Vector3(NORTH + 0.2, (GABLE_BASE + 4.7) / 2.0, MIDDLE), gable)
+	_triangle(NORTH, NORTH + 0.4, gable)
 
 ## The triangle of a gable wall, from lx0 to lx1, under the roof.
 func _triangle(lx0: float, lx1: float, made: Material) -> void:
@@ -266,11 +326,10 @@ func _front_north() -> void:
 		w.box(Vector3(2.3, 0.04, 0.09), Vector3(LEFT_DOOR, 3.8 + k * 0.15, 0.08), w.material("plain", Color("8c877b")))
 	w._omni(Vector3(LEFT_DOOR, 4.3, 1.0), Color("ffd79d"), 1.2, 6.0)
 
-## A dark doorway with jambs, a grey box canopy and steps up from the walk.
+## An open doorway into the hall with jambs, a grey box canopy and steps up from the walk.
 func _front_door(lx: float, width: float, risers: int, canopy: Vector3, canopy_y: float) -> void:
 	var landing := 0.15 + 0.15 * risers
 	var height := 3.0 if risers > 3 else 2.6
-	w.box(Vector3(width, height, 0.06), Vector3(lx, landing + height / 2.0, 0.05), w.material("plain", Color("28292e")))
 	for side: float in [-1.0, 1.0]:
 		w.box(Vector3(0.25, height + 0.5, 0.2), Vector3(lx + side * (width / 2.0 + 0.12), landing + (height + 0.5) / 2.0, 0.1),
 			w.material("stucco", Color("fffaee")))
@@ -307,13 +366,12 @@ func _porch(from: float, to: float) -> void:
 	for lx in posts:
 		w.box(Vector3(0.1, 3.3, 0.1), Vector3(lx, 0.15 + 1.65, 2.35), w.material("plain", Color("b9bcc2")))
 
-## The right entrance: glass door under the seal and HOLY ANGEL UNIVERSITY GYM,
-## a small box canopy, steps with a yellow and black edge, a blue door beside it.
+## The right entrance: an open doorway (like the left one) under the seal and HOLY
+## ANGEL UNIVERSITY GYM, a small box canopy, steps with a yellow and black edge, a
+## blue door beside it.
 func _front_right() -> void:
 	_porch(112.2, 118.2)
 	_front_door(RIGHT_DOOR, 1.7, 3, Vector3(2.6, 0.7, 1.4), 3.95)
-	w.box(Vector3(1.6, 2.4, 0.04), Vector3(RIGHT_DOOR, 0.6 + 1.25, 0.09), w.room_glass(true))
-	w.box(Vector3(0.05, 2.4, 0.06), Vector3(RIGHT_DOOR, 0.6 + 1.25, 0.12), w.material("plain", Color("3d4856")))
 	var yellow: Material = w.material("plain", Color("e2c13a"))
 	var black: Material = w.material("plain", Color("26262a"))
 	for k in 6:
@@ -473,8 +531,10 @@ func _gable(at: float, out: float) -> void:
 		var reach := maxf(0.0, (y + 2.2 - GABLE_BASE) / tan(theta))
 		w.box(Vector3(0.06, 0.04, DEPTH - reach * 2.0), Vector3(face + out * 0.03, y, MIDDLE), line)
 	_louvre(face, out, SIDE_DOOR, 5.6, 7.4, 14.0, 5)
-	_louvre(face, out, -8.0, 3.4, 7.4, 11.3, 3)
-	_louvre(face, out, -33.0, 3.4, 7.4, 11.3, 3)
+	# The south gable's side windows sit close to the middle, over the stage (see the
+	# stage photos); the north ones are out over the balcony's ends.
+	for centre in ([-8.0, -33.0] if out < 0.0 else [-14.6, -26.4]):
+		_louvre(face, out, centre, 3.4, 7.4, 11.3, 3)
 	var belt: Material = w.material("plain", Color("c7cacd"))
 	w.box(Vector3(0.18, 1.4, DEPTH), Vector3(face + out * 0.09, 6.15, MIDDLE), belt)
 	for k in range(1, 18):
@@ -518,7 +578,6 @@ func _side_entrance() -> void:
 	for dz in [-3.0, 3.0]:
 		w.box(Vector3(0.2, 0.1, 0.2), Vector3(face - 1.8, 5.3, SIDE_DOOR + dz), w.material("plain", Color("2a2a30")))
 		w._omni(Vector3(face - 1.8, 5.0, SIDE_DOOR + dz), Color("ffd79d"), 1.0, 6.5)
-	w.box(Vector3(3.6, 0.2, 12.0), Vector3(face - 1.8, -0.1, SIDE_DOOR), w.material("concrete", Color("c4c2b9")))
 	var slate: Material = w.material("slate")
 	for piece in [[-36.0, left], [right, -5.0]]:
 		var width: float = piece[1] - piece[0]
@@ -534,14 +593,24 @@ func _side_entrance() -> void:
 			w.box(Vector3(0.48, 0.05, 2.6), Vector3(face - 0.24, 4.0 + k * 0.2, mid), w.material("plain", Color("9c8865")))
 	for lz in [-38.0, -27.0, -14.0, -3.0]:
 		_wall_lamp(Vector3(face - 0.08, 2.6, lz))
-	# The opening: a cream surround, reveals and a dark hall beyond.
+	# The opening: a cream surround and reveals; the steps up to the hall are in _side_steps.
 	var surround: Material = w.material("stucco", Color("fffaee"))
 	w.box(Vector3(0.25, 0.3, right - left + 0.5), Vector3(face - 0.12, 4.85, SIDE_DOOR), surround)
 	for lz in [left - 0.12, right + 0.12]:
 		w.box(Vector3(0.25, 4.7, 0.25), Vector3(face - 0.12, 2.35, lz), surround)
 		w.box(Vector3(3.0, 4.7, 0.1), Vector3(face + 1.5, 2.35, lz + (0.06 if lz < SIDE_DOOR else -0.06)), surround)
-	w.box(Vector3(0.1, 4.7, right - left), Vector3(face + 3.0, 2.35, SIDE_DOOR), w.material("plain", Color("1d1d21")))
-	w.box(Vector3(3.0, 0.1, right - left), Vector3(face + 1.5, 0.0, SIDE_DOOR), w.material("plain", Color("5a4747")))
+
+## The slab under the side canopy and the five steps inside the side entrance up to
+## the hall floor (Interior.FLOOR); these stay when the north wall is cut away.
+func _side_steps() -> void:
+	var concrete: Material = w.material("concrete", Color("c4c2b9"))
+	w.box(Vector3(3.6, 0.2, 12.0), Vector3(NORTH - 1.8, -0.1, SIDE_DOOR), concrete)
+	var tread: Material = w.material("concrete", Color("8d9397"))
+	for k in 5:
+		var top := 0.15 * (k + 1)
+		var from := NORTH + 0.5 * k
+		w.box(Vector3(Interior.VESTIBULE_END - from, top + 0.2, 5.8), Vector3((from + Interior.VESTIBULE_END) / 2.0, (top - 0.2) / 2.0, SIDE_DOOR), tread)
+		w.box(Vector3(0.06, 0.02, 5.8), Vector3(from + 0.03, top + 0.005, SIDE_DOOR), w.material("plain", Color("e2c13a")))
 
 # --- Back -----------------------------------------------------------------------
 
