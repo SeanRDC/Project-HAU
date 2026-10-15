@@ -11,6 +11,7 @@ import { Mood } from '../engine/tod';
 import { CHAR_HEIGHT, Face, Look, drawCat, drawCharacter, drawCharacterFacing, drawShadow } from './art/character';
 import { baseLook, character } from './art/player';
 import { drawSprite, drawSpriteFacing, spriteHeight, spritesReady } from './art/sprites';
+import { tr } from './lang';
 import { P } from './art/palette';
 import { Sky } from './art/sky';
 import { px, rect } from '../engine/pix';
@@ -303,7 +304,9 @@ export class Area implements AreaRuntime {
       if (!n.gone && d < 24 && d < bestD) {
         bestD = d;
         best = {
-          label: n.def.cat ? `Lapitan si ${n.def.name}` : `Kausapin si ${n.def.name}`,
+          label: n.def.cat
+            ? tr(`Lapitan si ${n.def.name}`, `Go up to ${n.def.name}`)
+            : tr(`Kausapin si ${n.def.name}`, `Talk to ${n.def.name}`),
           x: n.x,
           top: n.y - (n.def.cat ? 18 : CHAR_HEIGHT + 6),
           use: (g) => {
@@ -317,7 +320,7 @@ export class Area implements AreaRuntime {
       const d = Math.abs(h.x - this.player.x);
       if (d < h.range && d < bestD) {
         bestD = d;
-        best = { label: h.label, x: h.x, top: this.def.walkY - (h.height ?? CHAR_HEIGHT + 10), use: (g) => h.use(g) };
+        best = { label: tr(h.label, h.labelEn), x: h.x, top: this.def.walkY - (h.height ?? CHAR_HEIGHT + 10), use: (g) => h.use(g) };
       }
     }
     return best;

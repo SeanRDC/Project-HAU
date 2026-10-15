@@ -2,6 +2,7 @@ import { Ctx, VIEW_H, VIEW_W } from '../../engine/display';
 import { drawCharacter, drawShadow } from '../art/character';
 import { Character, LOOKS } from '../art/player';
 import { drawSpriteFacing, spritesReady } from '../art/sprites';
+import { tr } from '../lang';
 import { GOLD, SERIF, font, keyCap, roundRect } from './draw';
 
 const PANEL_W = 92;
@@ -85,9 +86,9 @@ export function drawSelect(ui: Ctx, t: number, a: number, girl: number): void {
   // key hints
   ui.textAlign = 'left';
   const hints: [string[], string][] = [
-    [['A', 'D'], 'lumipat'],
-    [['Enter'], 'piliin'],
-    [['Esc'], 'bumalik'],
+    [['A', 'D'], tr('lumipat', 'switch')],
+    [['Enter'], tr('piliin', 'choose')],
+    [['Esc'], tr('bumalik', 'back')],
   ];
   font(ui, 5.5, 500);
   const widths = hints.map(([keys, label]) => {
@@ -173,18 +174,18 @@ export function drawName(ui: Ctx, t: number, a: number, who: Character, name: st
   ui.textAlign = 'left';
   const hy = VIEW_H - 30;
   font(ui, 5.5, 500);
-  const w1 = ui.measureText('simulan').width;
-  const w2 = ui.measureText('bumalik').width;
+  const w1 = ui.measureText(tr('simulan', 'start')).width;
+  const w2 = ui.measureText(tr('bumalik', 'back')).width;
   let hx = cx - (24 + w1 + 14 + 18 + w2) / 2;
   hx += keyCap(ui, 'Enter', hx, hy) + 4;
   font(ui, 5.5, 500);
   ui.fillStyle = 'rgba(255,246,224,0.85)';
-  ui.fillText('simulan', hx, hy + 1.6);
+  ui.fillText(tr('simulan', 'start'), hx, hy + 1.6);
   hx += w1 + 14;
   hx += keyCap(ui, 'Esc', hx, hy) + 4;
   font(ui, 5.5, 500);
   ui.fillStyle = 'rgba(255,246,224,0.85)';
-  ui.fillText('bumalik', hx, hy + 1.6);
+  ui.fillText(tr('bumalik', 'back'), hx, hy + 1.6);
 
   ui.globalAlpha = 1;
 }

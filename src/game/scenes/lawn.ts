@@ -264,6 +264,7 @@ export function buildLawn(): AreaDef {
     id: 'lawn',
     title: 'Chapel of the Holy Guardian Angel',
     subtitle: 'Ang gitna ng campus',
+    subtitleEn: 'The heart of the campus',
     width: WIDTH,
     walkY: WALK,
     bounds: [24, WIDTH - 24],

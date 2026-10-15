@@ -85,6 +85,7 @@ export function buildLane(): AreaDef {
     id: 'lane',
     title: 'Parking Lane',
     subtitle: 'Sa pagitan ng SFJ at St. Therese of Lisieux',
+    subtitleEn: 'Between SFJ and St. Therese of Lisieux',
     width: WIDTH,
     walkY: WALK,
     bounds: [24, WIDTH - 24],

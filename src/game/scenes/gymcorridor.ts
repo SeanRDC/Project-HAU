@@ -127,6 +127,7 @@ export function buildGymCorridor(): AreaDef {
     id: 'gymcorridor',
     title: 'IH Gym Corridor',
     subtitle: 'Equipment room at hagdan',
+    subtitleEn: 'Equipment room and stairs',
     width: WIDTH,
     walkY: WALK,
     bounds: [14, WIDTH - 16],

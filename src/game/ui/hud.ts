@@ -1,6 +1,7 @@
 import { Ctx, VIEW_H, VIEW_W } from '../../engine/display';
 import { clockLabel } from '../../engine/tod';
 import { Target } from '../area';
+import { tr } from '../lang';
 import { GOLD, INK, PAPER, SERIF, font, keyCap, roundRect } from './draw';
 
 /** "E  Kausapin si ..." floating over whatever is in reach. */
@@ -112,7 +113,15 @@ export function drawControlsHint(ui: Ctx, alpha: number): void {
   if (alpha <= 0) return;
   ui.globalAlpha = alpha;
   let x = VIEW_W - 8;
-  const items: [string, string][] = [['T', 'Oras'], ['C', 'Mapa'], ['Q', 'Phone'], ['E', 'Kausapin'], ['Shift', 'Takbo'], ['A D', 'Lakad']];
+  const items: [string, string][] = [
+    ['L', tr('Wika', 'Language')],
+    ['T', tr('Oras', 'Time')],
+    ['C', tr('Mapa', 'Map')],
+    ['Q', 'Phone'],
+    ['E', tr('Kausapin', 'Talk')],
+    ['Shift', tr('Takbo', 'Run')],
+    ['A D', tr('Lakad', 'Walk')],
+  ];
   for (const [key, label] of items) {
     font(ui, 6, 500);
     const lw = ui.measureText(label).width;

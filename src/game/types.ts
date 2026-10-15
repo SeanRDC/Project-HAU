@@ -6,6 +6,8 @@ import { Face, Look } from './art/character';
 
 export interface Choice {
   text: string;
+  /** the same choice in English; leave it out and English shows `text` (see lang.ts) */
+  en?: string;
   then: Line[];
 }
 
@@ -16,6 +18,8 @@ export interface Line {
   /** npc id, 'you' for the player, or '' for narration */
   who: string;
   text: string;
+  /** the same line in English; leave it out and English shows `text` (see lang.ts) */
+  en?: string;
   /**
    * how the speaker looks saying it, on their face, in their arms and in the portrait by the bubble;
    * they keep it while others talk, until their next line. Leave it out for a plain face.
@@ -30,6 +34,8 @@ export interface Line {
   pesos?: number;
   /** what the money was for, shown on the phone, e.g. 'Taho' */
   item?: string;
+  /** the same in English, when it isn't the same (lang.ts) */
+  itemEn?: string;
 }
 
 /** Short synthesised sound effects a cutscene can ask for. */
@@ -104,6 +110,8 @@ export interface Hotspot {
   x: number;
   range: number;
   label: string;
+  /** the label in English, if it has one */
+  labelEn?: string;
   /** how far above the walk line the prompt floats */
   height?: number;
   use(game: GameApi): void;
@@ -145,6 +153,8 @@ export interface AreaDef {
   /** shown briefly when you walk in */
   title: string;
   subtitle: string;
+  /** the subtitle in English, if it has one; titles are names and stay as they are */
+  subtitleEn?: string;
   width: number;
   walkY: number;
   bounds: [number, number];

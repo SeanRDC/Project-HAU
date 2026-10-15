@@ -85,6 +85,7 @@ export function buildAeroLab(): AreaDef {
     id: 'aerolab',
     title: 'Aero Laboratory',
     subtitle: 'Sa dulo ng Covered Court',
+    subtitleEn: 'At the far end of the Covered Court',
     width: WIDTH,
     walkY: WALK,
     bounds: [16, WIDTH - 16],

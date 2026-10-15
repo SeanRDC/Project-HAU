@@ -279,6 +279,7 @@ export function buildLobby(): AreaDef {
     id: 'lobby',
     title: 'DJN Building Lobby',
     subtitle: 'Itinayo noong 1940',
+    subtitleEn: 'Built in 1940',
     width: WIDTH,
     walkY: WALK,
     bounds: [34, WIDTH - 30],
