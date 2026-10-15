@@ -5,6 +5,7 @@ extends Node
 
 const World := preload("res://world.gd")
 const Student := preload("res://student.gd")
+const Sound := preload("res://audio.gd")
 const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
 const FRAMINGS := [[98.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"]]
 ## Down to about the student and an arm's length around them.
@@ -28,6 +29,7 @@ var environment := Environment.new()
 var sky_material := ShaderMaterial.new()
 var edges := ShaderMaterial.new()
 var student: Student
+var sound: Sound
 var help: Control
 var time_label: Label
 var view_label: Label
@@ -53,6 +55,9 @@ func _ready() -> void:
 	world.build(scene)
 	student = Student.new()
 	scene.add_child(student)
+	sound = Sound.new()
+	add_child(sound)
+	student.stepped.connect(_on_step)
 	_build_interface()
 
 	var canteen_start: bool = _args.get("view", "") == "canteen"
@@ -278,6 +283,8 @@ func _set_hour(value: float) -> void:
 	grade.set_shader_parameter("light_tint", Color("e6eeff") if night else Color("fff6e4"))
 	grade.set_shader_parameter("shade_tint", Color("c9d6ff") if night else Color("eceef4"))
 	world.set_night(night)
+	if sound:
+		sound.night = night
 	if time_label:
 		time_label.text = "Night · 9:00 PM" if night else ("Noon · 12:00 PM" if noon else ("Morning · 8:00 AM" if morning else "Afternoon · 4:30 PM"))
 
@@ -325,7 +332,7 @@ func _build_interface() -> void:
 	title.add_theme_constant_override("shadow_offset_y", 2)
 	stack.add_child(title)
 	var controls := Label.new()
-	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    C  Character\n" + \
+	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    C  Character    M  Mute\n" + \
 		"Wheel or +/-  Zoom    1-5  Framings    Q/E  Angle    P  Pixels\n" + \
 		"R  Reset    F11  Fullscreen    Tab  Hide controls    Esc  Close"
 	controls.add_theme_font_size_override("font_size", 14)
@@ -391,8 +398,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().quit()
 		KEY_T:
 			_set_hour(HOURS[(HOURS.find(hour) + 1) % HOURS.size()])
+			sound.select()
 		KEY_C:
 			student.set_character("girl" if student.who == "boy" else "boy")
+			sound.select()
+		KEY_M:
+			sound.toggle_mute()
 		KEY_P:
 			pixel_mode = PIXEL_MODES[(PIXEL_MODES.find(pixel_mode) + 1) % PIXEL_MODES.size()]
 			pixel_scale = 0
@@ -410,6 +421,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_window().mode = Window.MODE_WINDOWED if full else Window.MODE_FULLSCREEN
 		KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
 			_choose_framing(event.physical_keycode - KEY_1)
+			sound.select()
+
+## Tiles, kerbs and the canteen floor click; the road and the patio thud.
+func _on_step() -> void:
+	sound.footstep(World.floor_height(student.position.x, student.position.z) > 0.0)
 
 func _held(keys: Array) -> bool:
 	for key in keys:
@@ -426,6 +442,7 @@ func _process(delta: float) -> void:
 	var right := Vector2(cos(turn), -sin(turn))
 	var away := Vector2(-sin(turn), -cos(turn))
 	student.move(right * direction.x - away * direction.y, _held([KEY_SHIFT]), delta, direction.x)
+	sound.indoor = World.floor_height(student.position.x, student.position.z) >= 0.45
 	orbit = clampf(orbit + (float(_held([KEY_E])) - float(_held([KEY_Q]))) * delta * 0.25, -0.25, 0.25)
 	_update_camera(delta)
 
@@ -495,6 +512,11 @@ func _verify_and_capture() -> void:
 		for i in 60:
 			student.move(Vector2(1, 0), false, 0.05)
 		checks.walk_into_canteen = student.position.x > 35.0 and is_equal_approx(student.position.y, 0.465)
+		var steps_before := sound.steps
+		for i in 20:
+			student.move(Vector2(-1, 0), false, 0.05)
+		checks.footsteps_while_walking = sound.steps - steps_before >= 3
+		checks.ambience_playing = sound.wind.playing and AudioServer.get_bus_index("Music") >= 0
 		# Holding D from the APS front walks round the corner onto the patio.
 		student.place(14.0, 2.5)
 		_snap_follow()

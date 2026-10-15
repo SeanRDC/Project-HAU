@@ -10,6 +10,11 @@ corner, and the road bends round it with lawn inside the bend. The camera turns 
 face the stalls on the patio, controls follow the camera, and the zoom goes in to
 5 m. See `sessions/2026-10-15-aps-godot-l-layout-and-style-guide.md`.
 
+APS Godot sound, 2026-10-15: `src/drafts/aps-godot/audio.gd` ports the browser
+game's synthesised audio (wind, the pentatonic melody with its echo, footsteps,
+the menu blip, night crickets). There are still no audio files. M mutes. See
+`sessions/2026-10-15-aps-godot-sound.md`.
+
 APS Godot port, 2026-10-15: we are moving APS to Godot while polishing the
 art style and graphics. `src/drafts/aps-godot/` now holds the full browser
 frontage (wing, canopy, tall block, stair tower, canteen) with sun shadows,
