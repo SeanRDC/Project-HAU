@@ -127,6 +127,17 @@ export interface AreaView {
   time: number;
   camX: number;
   mood: Mood;
+  rain: number;
+}
+
+/** Optional directional lighting; scenes opt in without changing the other areas. */
+export interface AreaSunlight {
+  /** Ground projection per pixel of object height, and shadow opacity. */
+  projection(view: AreaView): { x: number; y: number; strength: number };
+  /** Amount of cool shade at someone's feet (0..1). */
+  shadeAt(x: number, y: number, view: AreaView): number;
+  bloom: number;
+  glare: number;
 }
 
 export interface AreaDef {
@@ -154,6 +165,7 @@ export interface AreaDef {
    * as it gets dark.
    */
   lightBake?: HTMLCanvasElement;
+  sunlight?: AreaSunlight;
   lights: AreaLight[];
   hotspots: Hotspot[];
   npcs: NpcDef[];
