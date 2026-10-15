@@ -3,5 +3,8 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: './',
   server: { port: 5173, strictPort: true },
-  build: { outDir: 'builds/web', emptyOutDir: true },
+  build: {
+    outDir: 'builds/web', emptyOutDir: true,
+    rollupOptions: { input: ['index.html', 'aps-3d.html'] },
+  },
 });

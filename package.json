@@ -13,10 +13,15 @@
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "check:links": "node tools/check-links.mjs",
+    "check:aps-browser": "node tools/check-aps-browser.mjs",
     "import:osm": "node tools/import-osm.mjs"
   },
   "devDependencies": {
+    "@types/three": "0.186.0",
     "typescript": "^5.6.0",
     "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "three": "0.186.1"
   }
 }

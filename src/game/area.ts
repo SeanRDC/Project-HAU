@@ -2,7 +2,7 @@
 // render with lighting on top.
 
 import { Camera } from '../engine/camera';
-import { Ctx, VIEW_H, VIEW_W, makeCanvas } from '../engine/display';
+import { Ctx, DETAIL, VIEW_H, VIEW_W, makeCanvas } from '../engine/display';
 import { Input } from '../engine/input';
 import { LightMap, drawVignette } from '../engine/lighting';
 import { RGB, clamp, css, damp, mix, smooth } from '../engine/math';
@@ -102,6 +102,8 @@ export class Area implements AreaRuntime {
   private time = 0;
   private hazeBuf: HTMLCanvasElement;
   private hazeCtx: Ctx;
+  private actorBuffer?: [HTMLCanvasElement, Ctx];
+  private shadowBuffer?: [HTMLCanvasElement, Ctx];
   /** called every time a foot lands, for the footstep sound */
   onStep: (() => void) | null = null;
   /** who is speaking right now, mouth moving while the words come out */
@@ -126,6 +128,10 @@ export class Area implements AreaRuntime {
       goal: null,
     }));
     [this.hazeBuf, this.hazeCtx] = makeCanvas(VIEW_W, VIEW_H);
+    if (def.sunlight) {
+      this.actorBuffer = makeCanvas(80 * DETAIL, 112 * DETAIL);
+      this.shadowBuffer = makeCanvas(80 * DETAIL, 112 * DETAIL);
+    }
   }
 
   enter(spawn: string): void {
@@ -408,7 +414,46 @@ export class Area implements AreaRuntime {
   }
 
   private view(mood: Mood): AreaView {
-    return { time: this.time, camX: this.camera.x, mood };
+    return { time: this.time, camX: this.camera.x, mood, rain: this.rain };
+  }
+
+  /** Light a complete sprite once, preserving both its alpha and half-pixel detail. */
+  private litActor(ctx: Ctx, x: number, y: number, view: AreaView, travelling: boolean, draw: (c: Ctx) => void): void {
+    const sunlight = this.def.sunlight;
+    if (!sunlight || !this.actorBuffer || !this.shadowBuffer) { draw(ctx); return; }
+    const [image, c] = this.actorBuffer;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, image.width, image.height);
+    c.setTransform(DETAIL, 0, 0, DETAIL, (40 - x) * DETAIL, (88 - y) * DETAIL);
+    draw(c);
+
+    const shade = clamp(sunlight.shadeAt(x + Math.round(view.camX), y, view), 0, 1);
+    const sun = sunlight.projection(view);
+    if (!travelling && sun.strength > 0.005) {
+      const [mask, s] = this.shadowBuffer;
+      s.setTransform(1, 0, 0, 1, 0, 0);
+      s.clearRect(0, 0, mask.width, mask.height);
+      s.drawImage(image, 0, 0);
+      s.globalCompositeOperation = 'source-in';
+      s.fillStyle = '#303449';
+      s.fillRect(0, 0, mask.width, mask.height);
+      s.globalCompositeOperation = 'source-over';
+      ctx.save();
+      ctx.globalAlpha = sun.strength * (1 - shade * 0.85);
+      ctx.translate(Math.round(x), Math.round(y));
+      ctx.transform(1, 0, -sun.x, -sun.y, 0, 0);
+      ctx.drawImage(mask, -40, -88, 80, 112);
+      ctx.restore();
+    }
+
+    c.globalCompositeOperation = 'source-atop';
+    // The cool fill belongs to the sprite only, never a rectangle over the scenery.
+    if (shade > 0.005) {
+      c.fillStyle = css([42, 53, 83], shade * 0.38);
+      c.fillRect(x - 40, y - 88, 80, 112);
+    }
+    c.globalCompositeOperation = 'source-over';
+    ctx.drawImage(image, Math.round(x) - 40, Math.round(y) - 88, 80, 112);
   }
 
   private drawLayer(ctx: Ctx, layer: Layer, mood: Mood): void {
@@ -598,25 +643,26 @@ export class Area implements AreaRuntime {
       };
       // the two students have their own sprite sheets; everyone else is drawn from the rig
       const sprite = !npc && this.playerSprite();
-      if (tr) {
-        // further from the camera with every step: higher up and smaller, seen from behind going in
-        // and from the front coming out, and lost in the shade once deep enough in the doorway
-        const size = 1 - AWAY_SHRINK * k;
-        const y = w.y - tr.rise * k;
-        ctx.save();
-        ctx.globalAlpha = clamp((1 - k) / (1 - AWAY_FADE), 0, 1);
-        ctx.translate(Math.round(sx), Math.round(y));
-        ctx.scale(size, size);
-        drawShadow(ctx, 0, 0);
-        if (sprite) drawSpriteFacing(ctx, character(), 0, 0, tr.out ? 'front' : 'back');
-        else drawCharacterFacing(ctx, 0, 0, look, pose, tr.out ? 'front' : 'back');
-        ctx.restore();
-        continue;
-      }
-      if (sprite) {
-        const anim = w.stride > 0.3 ? 'walk' : this.talker === id ? 'talk' : this.inCutscene ? 'tired' : 'idle';
-        drawSprite(ctx, character(), sx, w.y, w.facing, anim, this.time, w.phase);
-      } else drawCharacter(ctx, sx, w.y, look, pose);
+      this.litActor(ctx, sx, w.y, view, !!tr, (body) => {
+        if (tr) {
+          // Further into the door: higher, smaller, and lost in the entrance shade.
+          const size = 1 - AWAY_SHRINK * k;
+          const y = w.y - tr.rise * k;
+          body.save();
+          body.globalAlpha = clamp((1 - k) / (1 - AWAY_FADE), 0, 1);
+          body.translate(Math.round(sx), Math.round(y));
+          body.scale(size, size);
+          drawShadow(body, 0, 0);
+          if (sprite) drawSpriteFacing(body, character(), 0, 0, tr.out ? 'front' : 'back');
+          else drawCharacterFacing(body, 0, 0, look, pose, tr.out ? 'front' : 'back');
+          body.restore();
+          return;
+        }
+        if (sprite) {
+          const anim = w.stride > 0.3 ? 'walk' : this.talker === id ? 'talk' : this.inCutscene ? 'tired' : 'idle';
+          drawSprite(body, character(), sx, w.y, w.facing, anim, this.time, w.phase);
+        } else drawCharacter(body, sx, w.y, look, pose);
+      });
     }
 
     def.drawFront?.(ctx, view);
@@ -633,7 +679,7 @@ export class Area implements AreaRuntime {
       this.light.add(l.x - cam, l.y, l.r, l.daylight ? mood.sun : l.color, a);
     }
     if (def.lightBake) this.light.addBaked(def.lightBake, -cam, night);
-    this.light.apply(ctx, 0.2);
+    this.light.apply(ctx, def.sunlight?.bloom ?? 0.2);
 
     if (def.glow && night > 0.02) {
       ctx.globalCompositeOperation = 'lighter';
@@ -650,8 +696,9 @@ export class Area implements AreaRuntime {
       // low sun flooding the whole frame
       const sun = this.sky.sunPosition(mood);
       const g = ctx.createRadialGradient(sun.x, sun.y, 0, sun.x, sun.y, 330);
-      g.addColorStop(0, css(mood.sun, 0.3 * mood.glow));
-      g.addColorStop(0.5, css(mood.sun, 0.1 * mood.glow));
+      const glare = def.sunlight?.glare ?? 1;
+      g.addColorStop(0, css(mood.sun, 0.3 * mood.glow * glare));
+      g.addColorStop(0.5, css(mood.sun, 0.1 * mood.glow * glare));
       g.addColorStop(1, css(mood.sun, 0));
       ctx.globalCompositeOperation = 'lighter';
       ctx.fillStyle = g;
