@@ -1,5 +1,20 @@
 # Project Context
 
+**Inside the IH Gym, 2026-10-16.** The gym can be walked into through either
+front doorway (the right one is now open, like the left) or the side entrance.
+The camera glides round to look south down the hall at the stage from 35° up,
+and the roof, the north wall, the balcony, a stand over the student or nearer
+roof bays fade away but keep their shadows. Inside: the court, bleacher rows on
+both sides, the balcony, the lobby, equipment room and corridors, closed rooms,
+the stage and backstage. Floors are now levels: `blocked()` / `floor_height()`
+take the walker's height (see "Storeys" and "Interiors and the cutaway" in
+`docs/godot-art-style.md`). Key 9 jumps onto the court. After Sean's marked-up
+screenshot: the red court runs on to a landscape practice court in front of a
+curved stage with flush corner steps, the stands' rows are one run with their
+stairs at the north ends, and on the stage or the stands the camera closes in to
+a low side view. Room layouts not in the photos are still first guesses. See
+`sessions/2026-10-16-ih-gym-interior.md`.
+
 **The IH Gym in Godot, 2026-10-16.** `areas/gym.gd` builds the Immaculate Heart
 Gymnasium from outside on its plan plot at its real size (41 x 69.5 m, about 12 m
 to the fascia, 16.6 m to the ridge, solar panels on the roof). The east road is
