@@ -51,7 +51,19 @@ func build(w: RefCounted) -> void:
 			w.box(Vector3(snappedf(a.distance_to(b) + 0.35, 0.05), 0.06, 0.35), Vector3(middle.x, -0.16, middle.y), border, atan2(-(b - a).y, (b - a).x))
 		# A marker standing over the plot (it turns to the camera; it is a placeholder,
 		# not part of the art): the short name large, the full name and "reserved" small.
+		# A label point off its own plot (the annex's lands inside the gym) moves to the
+		# middle of the plot's largest triangle.
 		var at: Vector2 = plot["label"]
+		if not Geometry2D.is_point_in_polygon(at, shape):
+			var largest := 0.0
+			for i in range(0, indices.size(), 3):
+				var a := shape[indices[i]]
+				var b := shape[indices[i + 1]]
+				var c := shape[indices[i + 2]]
+				var area := absf((b - a).cross(c - a))
+				if area > largest:
+					largest = area
+					at = (a + b + c) / 3.0
 		for line in [[plot["short"], 0.04, 3.2], [plot["name"] + " · reserved", 0.014, 2.2]]:
 			var label := Label3D.new()
 			label.name = "Plot %s %s" % [id, line[1]]
