@@ -202,7 +202,7 @@ export function parkHotspots(x: {
         g.say([
           { who: '', text: 'Bilog na fountain sa gitna ng plaza sa harap ng SFJ. Isang singsing ng bumubulang tubig sa paligid ng batong mangkok sa gitna.', en: 'A round fountain in the middle of the plaza in front of SFJ. A ring of bubbling jets around a stone bowl in the center.' },
           { who: 'you', text: 'Uy, bukas ang fountain. Binubuksan lang nila \'to pag may bisita.', en: 'Oh, the fountain\'s on. They only turn it on when there are visitors.' },
-          { who: 'you', text: '...Sino kayang bisita ngayon?', en: '...Wonder who\'s visiting today.' },
+          { who: 'you', text: '...Sino kayang bisita ngayon?', en: '...Who could be visiting today?' },
         ]),
     },
     wayTo('exit', x.exit, 'Pumunta sa harap ng Main Bldg.', 'plaza', 'epiphany', 50, 'Go to the front of the Main Bldg.'),

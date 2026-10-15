@@ -96,7 +96,7 @@ function bagCheck(cp: Checkpoint, hour: number): Step[] {
           choices: [
             { text: 'Wala po.', en: 'No, sir.', then: [{ who: 'nonoy', text: 'Good.' }] },
             {
-              text: 'Ballpen lang po.', en: 'Just a ballpen, sir.',
+              text: 'Ballpen lang po.', en: 'Just a pen, sir.',
               then: [{ who: 'nonoy', face: 'happy', text: 'Hahaha! Pwede \'yan. \'Yan nga ang pinaka-kailangan mo dito.', en: 'Hahaha! That\'s fine. That\'s the one thing you\'ll really need here.' }],
             },
             {

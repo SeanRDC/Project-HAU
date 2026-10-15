@@ -268,9 +268,9 @@ export class CampusMap {
     }
     font(ui, 4.4, 500);
     ui.fillStyle = 'rgba(42,32,48,0.65)';
-    if (ALL.some((b) => !b.sure)) ui.fillText(tr('Tuldok-tuldok: hula pa ang pwesto.', 'Dotted: the spot is still a guess.'), LIST_X, ky - 16);
+    if (ALL.some((b) => !b.sure)) ui.fillText(tr('Tuldok-tuldok: hula pa ang pwesto.', 'Dotted: location not confirmed yet.'), LIST_X, ky - 16);
     // the building outlines and streets come from OSM, whose licence asks for this credit
-    ui.fillText('Mapa: © OpenStreetMap contributors', LIST_X, ky - 9);
+    ui.fillText(tr('Mapa: © OpenStreetMap contributors', 'Map: © OpenStreetMap contributors'), LIST_X, ky - 9);
   }
 }
 

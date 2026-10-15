@@ -24,7 +24,7 @@ export function plazaNpcs(): NpcDef[] {
           : [
               { who: 'guard', text: 'Mayap a gatpanapun! ID po natin?', en: 'Mayap a gatpanapun! Good afternoon! May I see your ID, please?' },
               { who: 'you', text: 'Eto po, Kuya. Freshman po ako. First day.', en: 'Here you go, Kuya. I\'m a freshman. First day.' },
-              { who: 'guard', text: 'Ahh, kaya pala parang naliligaw. Bagong-bago pa \'yang lace mo, oh.', en: 'Ahh, that\'s why you look lost. Look, your ID lace is still brand new.' },
+              { who: 'guard', text: 'Ahh, kaya pala parang naliligaw. Bagong-bago pa \'yang lace mo, oh.', en: 'Ahh, that\'s why you look lost. Look, your ID lanyard is still brand new.' },
               {
                 who: 'guard',
                 text: 'Saan ka ba dapat?', en: 'Where are you supposed to be?',

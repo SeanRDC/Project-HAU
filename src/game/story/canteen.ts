@@ -89,7 +89,7 @@ export function canteenBackHotspots(x: { front: number; coop: number; tables: nu
   return [
     { id: 'front', x: x.front, range: 22, label: 'Bumalik sa harap ng canteen', labelEn: 'Back to the front of the canteen', height: 70, use: (g) => g.travel('canteen', 'back') },
     stall('coop', x.coop, 'HAU Coop Canteen', '"HAU COOP CANTEEN. EAT, DRINK, ENJOY." Nakasabit sa buong stall ang mga sitsirya, may tinapay sa salamin.', (g) => [
-      buy(g, 'Pandesal at kape', 25, [{ who: '', text: 'Mainit pa ang pandesal. Instant na kape sa styro.', en: 'The pandesal is still warm. Instant coffee in a styro cup.' }], 'Pandesal and coffee'),
+      buy(g, 'Pandesal at kape', 25, [{ who: '', text: 'Mainit pa ang pandesal. Instant na kape sa styro.', en: 'The pandesal is still warm. Instant coffee in a styrofoam cup.' }], 'Pandesal and coffee'),
       buy(g, 'Sitsirya', 15, [{ who: 'you', text: 'Pang-tawid gutom hanggang uwian.', en: 'Enough to hold me over till home time.' }]),
     ], '"HAU COOP CANTEEN. EAT, DRINK, ENJOY." Sitsirya hangs all over the stall, with bread behind the glass.'),
     {
