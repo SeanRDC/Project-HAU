@@ -1,5 +1,6 @@
 # Project Context
 
+Last updated: 2026-10-15 (the boy and girl are PixelLab sprite sheets with idle, walk, talk and a cutscene-only tired stance, talking portraits and the girl's emotions, drawn on a double-detail buffer; draft. Before that: characters restyled with outlines and three-tone shading, draft v1; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 Last updated: 2026-10-15 (APS lit at night: window light spilling onto the walls and trees, softer lanterns, shading, wet-road reflections in the rain; the chapel lawn's ends: no way to the back road, only APS at its left end; the chapel walkway as five lanes, with the student center and Cafe Juan, from 31 photos; St. Joseph Hall redrawn from photos with the statue of Mary, MGN as its own stop between the chapel and SJH, the chapel with depth and the oval parking; the Covered Court and the Aero Laboratory, from 15 photos; the IH Gym outside and in, from 21 photos: front, side entrance, lobby, corridor, court, stage and second floor; characters restyled with outlines and three-tone shading, draft v1; the side gate entryway and its flag plaza; APS, its canteen and the chapel lawn redrawn from the walk photos, with a 3D chapel; GGN redrawn from photos at its real size, and the campus map redrawn to match the aerial photo; before that, the fountain plaza in front of SFJ, buildings from photos, the side gate and the opening screens)
 
 ## What This Is
@@ -17,7 +18,8 @@ A free-roam, side-view pixel art game set on the Holy Angel University campus in
 | Scale | 9 game pixels per metre | The DJN Building and the angel pedestals were already drawn at about this |
 | Camera per street | Each street picks the side with the most to see | A side view only shows one side of a road. Buildings behind the camera get a sign and a "look back" hotspot |
 | Saving | Autosave to the browser | No menus to build; Enter continues, N starts over |
-| Art | Drawn by code, no image files yet | Lets the time-of-day lighting recolour everything; replace with real sprites later |
+| Art | Drawn by code, except the two playable students | Lets the time-of-day lighting recolour everything. The boy and girl are PixelLab sprite sheets (`src/game/sprites/`), still lit by the light map |
+| Render detail | The scene buffer is 2x the 480x270 view (`DETAIL` in `engine/display.ts`) | Drawing code keeps 480x270 coordinates; the students' sheets are drawn at half a game pixel per pixel so none of their pixels are lost |
 | Character style | Outlined, three tones, rounder heads, same 33 px rig | Matches the reference image picked in October; the outline is stamped from the drawn body so every look gets it |
 | Player | Choose Boy or Girl, then type a name, before a new game | Same rig for both (`Look`), so the girl is just a different look; the name only labels the player's speech bubbles |
 | Opening | New games start outside the Main Gate with a cutscene | Bag check and ID tap are the first thing every HAU student does each day |

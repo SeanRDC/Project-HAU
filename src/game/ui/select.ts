@@ -1,10 +1,11 @@
 import { Ctx, VIEW_H, VIEW_W } from '../../engine/display';
 import { drawCharacter, drawShadow } from '../art/character';
 import { Character, LOOKS } from '../art/player';
+import { drawSpriteFacing, spritesReady } from '../art/sprites';
 import { GOLD, SERIF, font, keyCap, roundRect } from './draw';
 
 const PANEL_W = 92;
-const PANEL_H = 108;
+const PANEL_H = 124;
 const GAP = 16;
 const PANEL_Y = 74;
 const SCALE = 2;
@@ -53,7 +54,7 @@ export function drawSelect(ui: Ctx, t: number, a: number, girl: number): void {
     const focus = i === 0 ? 1 - girl : girl;
     const x = left + i * (PANEL_W + GAP);
     const cx = x + PANEL_W / 2;
-    const feet = PANEL_Y + 82;
+    const feet = PANEL_Y + 98;
 
     roundRect(ui, x, PANEL_Y, PANEL_W, PANEL_H, 6, `rgba(251,245,230,${0.06 + focus * 0.12})`);
     if (focus > 0.02) {
@@ -66,19 +67,19 @@ export function drawSelect(ui: Ctx, t: number, a: number, girl: number): void {
       ui.globalAlpha = a;
     }
 
-    // the preview: facing inward, breathing and blinking, a touch brighter when chosen
+    // the preview: facing you and breathing, a touch brighter when chosen
     ui.globalAlpha = a * (0.5 + focus * 0.5);
     ui.save();
     ui.translate(cx, feet);
     ui.scale(SCALE, SCALE);
     drawShadow(ui, 0, 0, 7);
-    drawCharacter(ui, 0, 0, LOOKS[o.id], { facing: i === 0 ? 1 : -1, phase: 0, stride: 0, time: t + i * 1.7 });
+    preview(ui, o.id, i === 0 ? 1 : -1, t + i * 1.7);
     ui.restore();
     ui.globalAlpha = a;
 
     font(ui, 10, 400, SERIF, true);
     ui.fillStyle = focus > 0.5 ? '#fff6e0' : 'rgba(255,246,224,0.55)';
-    ui.fillText(o.label, cx, PANEL_Y + PANEL_H - 20);
+    ui.fillText(o.label, cx, PANEL_Y + PANEL_H - 18);
   });
 
   // key hints
@@ -127,13 +128,13 @@ export function drawName(ui: Ctx, t: number, a: number, who: Character, name: st
   ui.fillRect(VIEW_W / 2 - 22, 62, 44, 1);
 
   const cx = VIEW_W / 2;
-  const py = 70;
-  roundRect(ui, cx - PANEL_W / 2, py, PANEL_W, 88, 6, 'rgba(251,245,230,0.14)');
+  const py = 66;
+  roundRect(ui, cx - PANEL_W / 2, py, PANEL_W, 96, 6, 'rgba(251,245,230,0.14)');
   ui.save();
-  ui.translate(cx, py + 76);
+  ui.translate(cx, py + 92);
   ui.scale(SCALE, SCALE);
   drawShadow(ui, 0, 0, 7);
-  drawCharacter(ui, 0, 0, LOOKS[who], { facing: 1, phase: 0, stride: 0, time: t });
+  preview(ui, who, 1, t);
   ui.restore();
 
   // the text box
@@ -186,4 +187,13 @@ export function drawName(ui: Ctx, t: number, a: number, who: Character, name: st
   ui.fillText('bumalik', hx, hy + 1.6);
 
   ui.globalAlpha = 1;
+}
+
+/**
+ * The chosen student standing at 0, 0, facing you, from their sprite sheets
+ * once they load. Every so often they breathe in and rise a pixel.
+ */
+function preview(ui: Ctx, who: Character, facing: 1 | -1, t: number): void {
+  if (spritesReady(who)) drawSpriteFacing(ui, who, 0, Math.sin(t * 1.6) > 0.3 ? -1 : 0, 'front');
+  else drawCharacter(ui, 0, 0, LOOKS[who], { facing, phase: 0, stride: 0, time: t });
 }

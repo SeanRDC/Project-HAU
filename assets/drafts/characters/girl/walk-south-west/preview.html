@@ -1,0 +1,18 @@
+<!doctype html>
+<!-- Open this file in a browser to watch the walk cycle. sheet.png is 6 frames of 44x83, left to right. -->
+<html><head><meta charset="utf-8"><title>Girl walk (south-west)</title></head>
+<body style="margin:0;background:#9aaab8;display:grid;place-items:center;height:100vh;font:14px sans-serif">
+<div style="text-align:center">
+  <canvas id="c" width="44" height="83" style="width:264px;height:498px;image-rendering:pixelated"></canvas>
+  <p>Speed: <input id="fps" type="range" min="2" max="16" value="8"> <span id="v">8</span> fps</p>
+</div>
+<script>
+const sheet = new Image(); sheet.src = 'sheet.png';
+const g = document.getElementById('c').getContext('2d'); g.imageSmoothingEnabled = false;
+const fps = document.getElementById('fps'), v = document.getElementById('v');
+let frame = 0, timer = 0;
+function draw() { g.clearRect(0, 0, 44, 83); g.drawImage(sheet, frame * 44, 0, 44, 83, 0, 0, 44, 83); }
+function play() { clearInterval(timer); v.textContent = fps.value; timer = setInterval(() => { frame = (frame + 1) % 6; draw(); }, 1000 / fps.value); }
+fps.oninput = play;
+sheet.onload = () => { draw(); play(); };
+</script></body></html>

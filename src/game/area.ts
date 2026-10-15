@@ -9,7 +9,8 @@ import { RGB, clamp, css, damp, mix, smooth } from '../engine/math';
 import { Particle, Particles } from '../engine/particles';
 import { Mood } from '../engine/tod';
 import { CHAR_HEIGHT, Face, Look, drawCat, drawCharacter, drawCharacterFacing, drawShadow } from './art/character';
-import { baseLook } from './art/player';
+import { baseLook, character } from './art/player';
+import { drawSprite, drawSpriteFacing, spriteHeight, spritesReady } from './art/sprites';
 import { P } from './art/palette';
 import { Sky } from './art/sky';
 import { px, rect } from '../engine/pix';
@@ -92,6 +93,8 @@ export class Area implements AreaRuntime {
   playerLook: Look = baseLook();
   /** how hard it is raining, 0..1, set by the game every frame */
   rain = 0;
+  /** true while a cutscene plays, set by the game every frame; the player stands tired then */
+  inCutscene = false;
   /** set by a cutscene: the player walks here on their own, then stops */
   walkTo: number | null = null;
   private particles = new Particles();
@@ -254,9 +257,19 @@ export class Area implements AreaRuntime {
     return this.player.x;
   }
 
+  /** True when the player is drawn from sprite sheets rather than the rig. */
+  playerSprite(): boolean {
+    return spritesReady(character());
+  }
+
+  /** How tall the player stands, for bubbles and emotes over their head. */
+  playerHeight(): number {
+    return this.playerSprite() ? spriteHeight(character()) : CHAR_HEIGHT;
+  }
+
   /** Screen position just above a speaker's head, for dialogue bubbles. */
   anchor(who: string): { x: number; y: number } | null {
-    if (who === 'you') return { x: this.player.x - this.camera.x, y: this.player.y - CHAR_HEIGHT - 4 };
+    if (who === 'you') return { x: this.player.x - this.camera.x, y: this.player.y - this.playerHeight() - 4 };
     const n = this.npcs.find((n) => n.def.id === who);
     if (!n || n.gone) return null;
     return { x: n.x - this.camera.x, y: n.y - (n.def.cat ? 16 : CHAR_HEIGHT + 4 + (n.def.look.height ?? 0)) };
@@ -583,6 +596,8 @@ export class Area implements AreaRuntime {
         react: felt ? this.time - felt.since : undefined,
         talk: this.talker === id && this.time % 0.22 < 0.12,
       };
+      // the two students have their own sprite sheets; everyone else is drawn from the rig
+      const sprite = !npc && this.playerSprite();
       if (tr) {
         // further from the camera with every step: higher up and smaller, seen from behind going in
         // and from the front coming out, and lost in the shade once deep enough in the doorway
@@ -593,11 +608,15 @@ export class Area implements AreaRuntime {
         ctx.translate(Math.round(sx), Math.round(y));
         ctx.scale(size, size);
         drawShadow(ctx, 0, 0);
-        drawCharacterFacing(ctx, 0, 0, look, pose, tr.out ? 'front' : 'back');
+        if (sprite) drawSpriteFacing(ctx, character(), 0, 0, tr.out ? 'front' : 'back');
+        else drawCharacterFacing(ctx, 0, 0, look, pose, tr.out ? 'front' : 'back');
         ctx.restore();
         continue;
       }
-      drawCharacter(ctx, sx, w.y, look, pose);
+      if (sprite) {
+        const anim = w.stride > 0.3 ? 'walk' : this.talker === id ? 'talk' : this.inCutscene ? 'tired' : 'idle';
+        drawSprite(ctx, character(), sx, w.y, w.facing, anim, this.time, w.phase);
+      } else drawCharacter(ctx, sx, w.y, look, pose);
     }
 
     def.drawFront?.(ctx, view);
