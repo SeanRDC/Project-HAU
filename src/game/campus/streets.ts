@@ -28,8 +28,17 @@ export const STREETS = {
   entry: { id: 'entry', path: [PLACES.flagEast, PLACES.flagWest], looks: 'S', lead: 210, tail: 210 },
   /** Epiphany of Angels: from the main gate to the fountain plaza */
   park: { id: 'park', path: [PLACES.mainGate, PLACES.fountainPlaza], looks: 'NW', lead: 60, tail: 190 },
-  /** the walkway from the rotunda to the chapel lawn, along STL and PGN */
-  walkway: { id: 'walkway', path: [PLACES.rotunda, PLACES.walkwayEnd], looks: 'NW', lead: 70, tail: 70 },
+  // The chapel walkway, rotunda to chapel lawn, as five lanes side by side
+  // (photos in assets/images/buildings/beside the main building + the main walkways/).
+  // The Main Building side, looking south-east at the student center and the DJN, from MGN on the left to the
+  // rotunda on the right: the student center arcade along the DJN, then the covered sidewalk 1, then sidewalk 2.
+  stuc: { id: 'stuc', path: [{ u: -84, v: 17 }, { u: -164, v: 17 }], looks: 'SE', lead: 40, tail: 40 },
+  djnsw1: { id: 'djnsw1', path: [{ u: -84, v: 13 }, { u: -164, v: 13 }], looks: 'SE', lead: 40, tail: 40 },
+  djnsw2: { id: 'djnsw2', path: [{ u: -84, v: 9.5 }, { u: -164, v: 9.5 }], looks: 'SE', lead: 40, tail: 40 },
+  // The PGN side, looking north-west at STL and PGN, rotunda on the left: sidewalk 2 by the road (the scene
+  // keeps its old id, walkway), then the covered sidewalk 1 along the PGN podium.
+  walkway: { id: 'walkway', path: [{ u: -164, v: -3 }, { u: -66, v: -3 }], looks: 'NW', lead: 40, tail: 40 },
+  pgnsw1: { id: 'pgnsw1', path: [{ u: -164, v: -6 }, { u: -66, v: -6 }], looks: 'NW', lead: 40, tail: 40 },
   /** the parking lane from the back road down to the rotunda, STL on the far side */
   lane: { id: 'lane', path: [PLACES.westJunction, PLACES.rotunda], looks: 'NE', lead: 60, tail: 70 },
   /** the back road past the food court and the three halls, then the whole front of GGN, which runs on past the corner */
@@ -41,11 +50,19 @@ export const STREETS = {
     id: 'lawn',
     path: [PLACES.northJunction, PLACES.walkwayEnd, PLACES.southJunction],
     looks: 'NE',
-    lead: 60,
-    tail: 60,
+    // it starts at the first tree of the shady corner, the end of APS just out of sight
+    lead: 10,
+    // it ends just past the last car in front of the chapel, at the way on to MGN
+    tail: 100,
   },
-  /** the road in front of St. Joseph Hall, from the gym back to the lawn */
-  sjh: { id: 'sjh', path: [PLACES.gymCorner, PLACES.southJunction], looks: 'SE', lead: 70, tail: 200 },
+  /** the road in front of St. Joseph Hall, from the gym; past its end the road bends round the statue of Mary to MGN (its own scene) */
+  sjh: { id: 'sjh', path: [PLACES.gymCorner, PLACES.southJunction], looks: 'SE', lead: 70, tail: 140 },
+  /**
+   * The lane between the covered court and the gym, looking south-east at
+   * the gym's left side (its north-west end, with the side entrance). From
+   * the annex at the far end on the left to the gym lane on the right.
+   */
+  gymside: { id: 'gymside', path: [{ u: 100, v: 0.5 }, { u: 40, v: 0.5 }], looks: 'SE', lead: 40, tail: 60 },
   /** the lane behind the chapel, past the covered court and the gym */
   gym: { id: 'gym', path: [PLACES.northEastJunction, PLACES.gymCorner], looks: 'NE', lead: 80, tail: 420 },
 } satisfies Record<string, Street>;
@@ -145,10 +162,22 @@ const FIXED: Record<string, { x0: number; a: Spot; x1: number; b: Spot }> = {
   // the front of the Main Building: rotunda on the left, St. Barachiel Gate on the right
   plaza: { x0: 190, a: PLACES.rotunda, x1: 1250, b: PLACES.barachielGate },
   lobby: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },
+  // inside the IH Gym: the lobby across its north-west end, the corridor in from the front's left door,
+  // and the court, stage and bleachers along its length, north-west to south-east
+  gymlobby: { x0: 0, a: { u: 92, v: 12 }, x1: 540, b: { u: 56, v: 12 } },
+  gymcorridor: { x0: 0, a: { u: 66, v: 12 }, x1: 500, b: { u: 53, v: 12 } },
+  gymhall: { x0: 0, a: { u: 66, v: 8 }, x1: 780, b: { u: 66, v: 70 } },
+  gymstage: { x0: 0, a: { u: 82, v: 70 }, x1: 600, b: { u: 58, v: 70 } },
+  // the covered court along its length, from the aero lab at its far end to the gym lane; the aero lab at the far end
+  ccourt: { x0: 0, a: { u: 98, v: -22 }, x1: 1120, b: { u: 45, v: -22 } },
+  aerolab: { x0: 0, a: { u: 97, v: -32 }, x1: 720, b: { u: 97, v: -10 } },
+  gymupper: { x0: 0, a: { u: 58, v: 8 }, x1: 780, b: { u: 58, v: 70 } },
   courtyard: { x0: 0, a: BUILDINGS.djdn.blocks[0].at, x1: 1, b: BUILDINGS.djdn.blocks[0].at },
   // the canteen is in the east wing of APS, by the lane to the gym
   canteen: { x0: 0, a: BUILDINGS.aps.blocks[1].at, x1: 1, b: BUILDINGS.aps.blocks[1].at },
   canteenback: { x0: 0, a: BUILDINGS.aps.blocks[1].at, x1: 1, b: BUILDINGS.aps.blocks[1].at },
+  // the road along MGN, between SJH (left) and the chapel lawn (right)
+  mgn: { x0: 0, a: BUILDINGS.mgn.blocks[0].at, x1: 1, b: BUILDINGS.mgn.blocks[0].at },
   // the lobby under the canopy of APS's long wing
   apslobby: { x0: 0, a: BUILDINGS.aps.blocks[0].at, x1: 1, b: BUILDINGS.aps.blocks[0].at },
 };

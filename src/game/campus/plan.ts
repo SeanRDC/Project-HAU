@@ -1,7 +1,7 @@
 // The campus plan: where everything at Holy Angel University sits.
 //
 // Every position here was read off one picture, the satellite photo in
-// `assets/Aerial shot of HAU enclosed in red line.png` (1308 x 682), and is
+// `assets/images/other references/Aerial shot of HAU enclosed in red line.png` (1308 x 682), and is
 // kept in that picture's pixels so it can be checked against it. The code then
 // turns those pixels into metres measured from the Chapel of the Holy Guardian
 // Angel, which is the anchor for the whole campus.

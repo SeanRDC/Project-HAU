@@ -156,9 +156,9 @@ export function courtyardHotspots(x: { door: number; arch: number; chair: number
       id: 'gate',
       x: x.gate - 22,
       range: 20,
-      label: 'Lumabas sa chapel walkway',
+      label: 'Lumabas sa student center',
       height: 60,
-      use: (g) => g.travel('walkway', 'courtyard'),
+      use: (g) => g.travel('stuc', 'courtyard'),
     },
   ];
 }

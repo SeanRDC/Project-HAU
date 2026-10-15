@@ -139,11 +139,13 @@ export function plazaNpcs(): NpcDef[] {
 }
 
 export function plazaHotspots(x: {
-  lane: number; walkway: number; fountain: number; epiphany: number; entry: number; door: number; statue: number; gate: number;
+  lane: number; walkway: number; sw1: number; stuc: number; fountain: number; epiphany: number; entry: number; door: number; statue: number; gate: number;
 }): Hotspot[] {
   return [
     wayTo('lane', x.lane, 'Pumunta sa parking lane', 'lane', 'plaza', 66),
-    wayTo('walkway', x.walkway, 'Pumunta sa chapel walkway', 'walkway', 'rotunda', 66),
+    wayTo('walkway', x.walkway, 'Pumunta sa walkway, PGN side', 'walkway', 'rotunda', 66),
+    wayTo('sw1', x.sw1, 'Pumunta sa sidewalk, Main Bldg. side', 'djnsw2', 'plaza', 80),
+    wayTo('stuc', x.stuc, 'Pumunta sa student center', 'stuc', 'plaza', 70),
     {
       id: 'fountain',
       x: x.fountain,

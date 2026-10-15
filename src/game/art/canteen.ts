@@ -1,5 +1,5 @@
 // The east end of APS and the canteen in it, drawn from the photos in
-// `assets/PANERGO AND GIL APS BUILDING/` and `assets/APS WALK FROM CHAPEL LAWN/`.
+// `assets/images/buildings/PANERGO AND GIL APS BUILDING/` and `assets/APS WALK FROM CHAPEL LAWN/`.
 // Outside, walking towards the gym lane: the tall block where the long wing
 // ends, its floors wrapped in deep balcony slabs with rounded edges over
 // arched openings; a plain white stair tower; then the canteen block, cream,
@@ -346,7 +346,11 @@ export function canteenBlock(c: Ctx, g: Ctx, x: number, w: number, base: number,
     rect(c, sx + 11, gy + 31, stallW - 20, 5, '#b4d6dc');
     for (let fx = sx + 12; fx < sx + stallW - 10; fx += 4) rect(c, fx, gy + 34, 3, 2, ['#c98a3a', '#e0c070', '#a83a2a'][(fx >> 2) % 3]);
     rect(c, sx + 11, gy + 36, stallW - 20, 1, '#c8342f');
-    rect(g, sx + 9, gy + 30, stallW - 16, fl - gy - 30, LIT);
+    // lit at night, but dimmer than a window: the counter glows under the stall light, the wall
+    // above it less, so the pale tiles don't burn out to white
+    const sh = fl - gy - 30;
+    rect(g, sx + 9, gy + 30, stallW - 16, Math.round(sh * 0.4), '#5a4024');
+    rect(g, sx + 9, gy + 30 + Math.round(sh * 0.4), stallW - 16, sh - Math.round(sh * 0.4), '#8a6436');
   });
   // the tiled floor and the three steps up to it
   rect(c, x, fl, w, 6, TILE);

@@ -27,7 +27,11 @@ export const STOPS: [string, string][] = [
   ['plaza', 'start'],
   ['lobby', 'front'],
   ['courtyard', 'lobby'],
+  ['stuc', 'plaza'],
+  ['djnsw1', 'plaza'],
+  ['djnsw2', 'plaza'],
   ['walkway', 'rotunda'],
+  ['pgnsw1', 'plaza'],
   ['lane', 'plaza'],
   ['halls', 'lane'],
   ['aps', 'halls'],
@@ -35,8 +39,15 @@ export const STOPS: [string, string][] = [
   ['canteen', 'front'],
   ['canteenback', 'front'],
   ['lawn', 'walkway'],
-  ['sjh', 'lawn'],
+  ['mgn', 'lawn'],
+  ['sjh', 'mgn'],
   ['gym', 'aps'],
+  ['gymside', 'lane'],
+  ['gymhall', 'front'],
+  ['gymstage', 'court'],
+  ['gymupper', 'stairs'],
+  ['ccourt', 'front'],
+  ['aerolab', 'door'],
 ];
 
 export interface Stop {

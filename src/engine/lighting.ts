@@ -17,6 +17,7 @@ export class LightMap {
   private canvas: HTMLCanvasElement;
   private ctx: Ctx;
   private blobs: Blob[] = [];
+  private baked: { img: HTMLCanvasElement; x: number; a: number } | null = null;
 
   constructor() {
     [this.canvas, this.ctx] = makeCanvas(VIEW_W, VIEW_H);
@@ -24,6 +25,7 @@ export class LightMap {
 
   begin(ambient: RGB): void {
     this.blobs.length = 0;
+    this.baked = null;
     const c = this.ctx;
     c.globalCompositeOperation = 'source-over';
     c.fillStyle = css(ambient);
@@ -50,8 +52,25 @@ export class LightMap {
     c.globalCompositeOperation = 'source-over';
   }
 
+  /**
+   * Light that was worked out once, ahead of time, drawn in at `x` (world to
+   * screen) and faded by `a`: the spill round a scene's lit windows, say. It
+   * goes into the light map only, no bloom.
+   */
+  addBaked(img: HTMLCanvasElement, x: number, a: number): void {
+    if (a > 0.01) this.baked = { img, x, a };
+  }
+
   /** Multiply the light map over `target`, then add bloom. */
   apply(target: Ctx, bloom = 0.22): void {
+    if (this.baked) {
+      const c = this.ctx;
+      c.globalCompositeOperation = 'lighter';
+      c.globalAlpha = this.baked.a;
+      c.drawImage(this.baked.img, this.baked.x, 0);
+      c.globalAlpha = 1;
+      c.globalCompositeOperation = 'source-over';
+    }
     this.paint(this.ctx, 1, 1);
     target.globalCompositeOperation = 'multiply';
     target.drawImage(this.canvas, 0, 0);
