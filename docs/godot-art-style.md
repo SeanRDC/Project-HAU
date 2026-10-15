@@ -38,6 +38,7 @@ Files:
 | `areas/plots.gd` | Reserved plots for every building not built yet |
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
+| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map, its covered walkway, the Mary statue garden at its west end, and two rows of parked cars (by the chapel, and in front of SJH) |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -404,6 +405,7 @@ before using them.
 | 6 | Chapel (moves the student to the plaza) | 32 |
 | 7 | IH Gym (moves the student to the apron in front) | 84 |
 | 8 | Gym side (moves the student to the lane by the side entrance) | 44 |
+| 9 | SJH (moves the student to the south road by the parking) | 64 |
 
 - Three blends drive the camera from the width: `close` (22 → 8 m drops the
   target to the student's chest height), `wide` (22 → 56 m) and `campus`
@@ -430,6 +432,12 @@ before using them.
 - The east road is walkable down past the gym, with the gym's apron and the
   lane to its side entrance. The south road is drawn but not walkable yet: its
   view needs SJH, which is still a plot.
+- **SJH zone** (`Sjh.view_for`): on the south road, the parking and the walkway the
+  camera turns right round (−180°) to face SJH's front, which faces north; it takes
+  over from the chapel and gym zones (their weights are multiplied by
+  `1 − view_for`). Because the camera then stands north of the chapel, the near plane
+  also cuts everything north of the parking (z < 97), so the chapel and its trees
+  never stand in front of SJH.
 - **Interiors (cutaway):** walking into a covered space like the APS hallway
   blends in a weight (`hall`, from `Hallway.hall_for`, eased at rate 3.5) that:
   1. closes the view in to `HALL_WIDTH` (8.5 m) and glides the camera to the
@@ -440,8 +448,11 @@ before using them.
   3. closes dark bands (`display.gdshader` `cut`, colour `#13110f`) over
      everything above the ceiling (y 3.22) and below the floor's cut edge, so
      only the corridor is seen.
-  Walking out reverses all three. The sound treats it as indoors. Reuse this
-  for any building's interior: a `*_for(x, z)` weight, a cut plane, a ceiling.
+  Walking out reverses all three. The sound treats it as indoors. SJH's covered
+  walkway uses the same cutaway (`walkway`, `Sjh.walkway_for`); the cut plane is now
+  set relative to the camera (the corridor's middle plus an offset towards it), so
+  it works whichever way the corridor faces. Reuse it for any building: a
+  `*_for(x, z)` weight, a corridor middle, a cut offset and a ceiling.
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
   away/towards, rotated by the zone's turn, so holding D walks you round the corner.
 - **Q/E** orbit ±0.25 rad. Default orbit 0.12. Smooth zoom (rate 10). **R** resets.
