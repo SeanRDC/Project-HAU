@@ -50,11 +50,11 @@ const Gym := preload("res://areas/gym.gd")
 ## the pixel density even on every face, so long walls never stretch their texels.
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
-	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6}
+	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "stripes": 6.0}
 const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile": "d6d1c3",
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
 	"dirt": "9a8566", "pavers": "a69b8d",
-	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae"}
+	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc"}
 
 var root: Node3D
 var lamps: Array[Light3D] = []
@@ -92,7 +92,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 	var across := across_road(x, z)
 	if across >= 2.2 and across <= 10.6 and (z < 38.0 or x < -45.0 or (x > 36.0 and z < 104.0)):
 		return true # carriageway and sidewalks
-	if Gym.on_apron(x, z):
+	if Gym.on_apron(x, z) or Gym.inside(x, z):
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
@@ -104,7 +104,9 @@ static func in_canteen(x: float, z: float) -> bool:
 	var local := canteen_local(x, z)
 	return local.x > 36.5 and local.x < 65.5 and local.y > -7.3 and local.y < 3.3
 
-static func blocked(x: float, z: float) -> bool:
+## level is the height the walker stands at now (NAN: the ground, for a jump or a
+## teleport); it picks the storey inside the gym, where the lobby and the stands overlap.
+static func blocked(x: float, z: float, level := NAN) -> bool:
 	for column in COLUMN_X:
 		if absf(x - column) < 0.48 and absf(z - 3.05) < 0.48:
 			return true
@@ -114,7 +116,7 @@ static func blocked(x: float, z: float) -> bool:
 	if in_canteen(x, z):
 		if local.y < -6.4 or local.x < 41.5 or local.x > 65.3:
 			return true # rear wall, end walls, and the part inside the tower
-	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z) or Chapel.blocked(x, z) 			or Gym.blocked(x, z):
+	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z) or Chapel.blocked(x, z) 			or Gym.blocked(x, z, level):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -135,13 +137,13 @@ static func blocked(x: float, z: float) -> bool:
 			return true
 	return false
 
-static func floor_height(x: float, z: float) -> float:
+static func floor_height(x: float, z: float, level := NAN) -> float:
 	var local := canteen_local(x, z)
 	if local.x >= 36.5 and local.x <= 65.5 and local.y < 2.45 and local.y > -7.3:
 		return 0.45
 	if local.x > 49.0 and local.x < 53.0 and local.y <= 3.26 and local.y >= 2.45:
 		return 0.15 if local.y > 2.8 else 0.3
-	var gym := Gym.floor_height(x, z)
+	var gym := Gym.floor_height(x, z, level)
 	if not is_nan(gym):
 		return gym
 	var across := across_road(x, z)
@@ -158,7 +160,7 @@ static func floor_height(x: float, z: float) -> float:
 
 ## The outer bounds; blocked() shapes the walkable campus inside them.
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -63.0, 101.0), clampf(z, -1.0, 116.0))
+	return Vector2(clampf(x, -63.0, 101.0), clampf(z, -1.0, 137.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -335,6 +337,22 @@ func _texture(kind: String) -> Texture2D:
 			for y in range(0, 128, 8):
 				_rect(image, 0, y, 128, 1, Color("c9cdcc"))
 				_rect(image, 0, y + 1, 128, 1, Color("8a8f90"))
+		"stripes":
+			# The gym's mural: broad diagonal bands of red, yellow, grey and beige on
+			# cream, worn white in places, as on its parapet walls and end-wall panels.
+			var bands: Array[Color] = [Color("e9e1cc"), Color("c63a3c"), Color("e9e1cc"), Color("e0bb32"),
+				Color("a9aba7"), Color("d8cbae"), Color("e0bb32"), Color("e9e1cc")]
+			for y in 128:
+				for x in 128:
+					var tone := bands[posmod(x + y, 128) / 16]
+					var noise := random.randf_range(-0.5, 0.5) * 4.0 / 255.0
+					image.set_pixel(x, y, Color(tone.r + noise, tone.g + noise, tone.b + noise))
+			for i in 14:
+				var cx := random.randi_range(0, 127)
+				var cy := random.randi_range(0, 127)
+				for p in 26:
+					_rect(image, cx + random.randi_range(-6, 6), cy + random.randi_range(-2, 2), random.randi_range(1, 3), 1,
+						Color("f4f2ec"))
 	image.generate_mipmaps()
 	var texture := ImageTexture.create_from_image(image)
 	_textures[kind] = texture

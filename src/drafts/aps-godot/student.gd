@@ -58,20 +58,26 @@ func set_character(character: String) -> void:
 	animation = ""
 	_animate(false, 0.0)
 
-func place(x: float, z: float) -> bool:
+## Without a level the student lands on the ground (a framing's jump); walking passes
+## its own height, so inside the gym it keeps to the storey it is on.
+func place(x: float, z: float, level := NAN) -> bool:
 	var at := World.clamp_position(x, z)
-	if World.blocked(at.x, at.y):
+	if World.blocked(at.x, at.y, level):
 		return false
-	position = Vector3(at.x, World.floor_height(at.x, at.y) + 0.015, at.y)
+	position = Vector3(at.x, World.floor_height(at.x, at.y, level) + 0.015, at.y)
 	return true
+
+## The height the student stands at (the floor under its feet).
+func level() -> float:
+	return position.y - 0.015
 
 ## direction is in world x/z; screen_x (the A/D input) picks which way the sprite faces.
 func move(direction: Vector2, running: bool, delta: float, screen_x := NAN) -> void:
 	var speed := 4.2 if running else 2.4
 	var step := direction.normalized() * speed * delta
 	var before := Vector2(position.x, position.z)
-	place(position.x + step.x, position.z)
-	place(position.x, position.z + step.y)
+	place(position.x + step.x, position.z, level())
+	place(position.x, position.z + step.y, level())
 	var travelled := before.distance_to(Vector2(position.x, position.z))
 	var steps_before := floori(_distance / STRIDE * 2.0)
 	_distance += travelled
