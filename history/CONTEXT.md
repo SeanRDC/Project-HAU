@@ -9,6 +9,16 @@ stands forward from the stair tower, its stalls facing the brick patio in the
 corner, and the road bends round it with lawn inside the bend. The camera turns to
 face the stalls on the patio, controls follow the camera, and the zoom goes in to
 5 m. See `sessions/2026-10-15-aps-godot-l-layout-and-style-guide.md`.
+Then: trees are 2.5D (round crowns of crossed leaf clusters), there is grass
+everywhere, patio armchairs, LED street lights, and a pergola and green picnic
+sheds past the canteen. See `sessions/2026-10-15-aps-godot-patio-polish.md`.
+**Since then, the Godot world is the team's campus plan** (`campus_plan.gd`,
+generated from `plan.ts` by `npm run export:godot-plan`; x = u + 4.7,
+z = v + 58.8). APS is full length, a road loop circles the chapel lawn, the chapel
+stands with its plaza and oval parking, and every other building is a reserved
+plot. Merge a building as `areas/<id>.gd` on its plot (see "Campus plan and
+merging buildings" in `docs/godot-art-style.md`). See
+`sessions/2026-10-15-godot-chapel-and-campus-plan.md`.
 
 APS Godot sound, 2026-10-15: `src/drafts/aps-godot/audio.gd` ports the browser
 game's synthesised audio (wind, the pentatonic melody with its echo, footsteps,

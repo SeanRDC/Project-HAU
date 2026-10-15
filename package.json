@@ -14,7 +14,8 @@
     "check": "tsc --noEmit",
     "check:links": "node tools/check-links.mjs",
     "check:aps-browser": "node tools/check-aps-browser.mjs",
-    "import:osm": "node tools/import-osm.mjs"
+    "import:osm": "node tools/import-osm.mjs",
+    "export:godot-plan": "node tools/export-godot-plan.mjs"
   },
   "devDependencies": {
     "@types/three": "0.186.0",

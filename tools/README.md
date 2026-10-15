@@ -24,6 +24,12 @@ If anyone needs to introduce a new tool into the pipeline (like a specific tilem
   `CHROME` overrides the executable; `GAME_URL` overrides the server address.
   Use `-- --production` against `npm run preview` for the built-page smoke check.
 
+* `export-godot-plan.mjs` - writes `src/drafts/aps-godot/campus_plan.gd` from the
+  campus plan (`src/game/campus/plan.ts` and `osm.ts`): every building's real
+  outline and the named places, in Godot metres, and which ones Godot already
+  draws (`BUILT`). Run `npm run export:godot-plan` whenever the plan changes or a
+  building is merged. Uses the esbuild that comes with Vite; nothing to install.
+
 * `run-aps-godot.cmd` - opens the standalone APS 2.5D graphics trial in
   `src/drafts/aps-godot/`. Uses the local portable Godot 4.7.2 in ignored
   `builds/godot-tools/`, `GODOT` if set to an executable, or `godot` in PATH.

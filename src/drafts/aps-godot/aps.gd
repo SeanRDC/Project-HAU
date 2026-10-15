@@ -6,15 +6,21 @@ extends Node
 const World := preload("res://world.gd")
 const Student := preload("res://student.gd")
 const Sound := preload("res://audio.gd")
+const Chapel := preload("res://areas/chapel.gd")
+const Roads := preload("res://roads.gd")
+const CampusPlan := preload("res://campus_plan.gd")
+const Plots := preload("res://areas/plots.gd")
 const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
-const FRAMINGS := [[98.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"]]
+const FRAMINGS := [[112.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"], [32.0, "Chapel"]]
 ## Down to about the student and an arm's length around them.
 const MIN_WIDTH := 5.0
 ## The plane the canteen view frames (the wing's open front), as z = 0 frames the APS front.
 const CANTEEN_FACE_X := 33.0
 ## Where the canteen framing brings the student: the patio, in front of the steps.
-const CANTEEN_SPOT := Vector2(31.0, 15.0)
-const MAX_WIDTH := 110.0
+const CANTEEN_SPOT := Vector2(31.0, 10.3)
+## Where the chapel framing (key 6) brings the student: the plaza, by the HAU seal.
+const CHAPEL_SPOT := Vector2(-34.0, 55.0)
+const MAX_WIDTH := 140.0
 ## Sprite texels per metre (85 px over 1.83 m). Auto mode renders near this density.
 const SPRITE_DENSITY := 46.4
 const PIXEL_MODES := ["auto", "crisp", "pixel"]
@@ -36,11 +42,13 @@ var view_label: Label
 
 var hour := 16.5
 var orbit := 0.12
-var width := 98.0
-var target_width := 98.0
+var width := 112.0
+var target_width := 112.0
 var follow := Vector2.ZERO
 ## 0 frames the APS front from the road; 1 has turned to face the canteen across the patio.
 var leg := 0.0
+## 0..1: how far the camera has turned to face the chapel's glass front across its plaza.
+var chapel := 0.0
 var pixel_mode := "auto"
 var pixel_scale := 0
 var view_metres := Vector2(98, 55.125)
@@ -70,7 +78,7 @@ func _ready() -> void:
 		student.set_character("girl")
 	student.place(float(_args.get("x", str(CANTEEN_SPOT.x) if canteen_start else "0.7")),
 		float(_args.get("z", str(CANTEEN_SPOT.y) if canteen_start else "5.3")))
-	_set_zoom(float(_args.get("zoom", "28" if canteen_start else "98")), true)
+	_set_zoom(float(_args.get("zoom", "28" if canteen_start else "112")), true)
 	if _args.has("hide-help"):
 		help.visible = false
 	_snap_follow()
@@ -214,16 +222,25 @@ func _set_zoom(value: float, immediate := false) -> void:
 
 ## How far round the corner the camera should be for a spot: the APS front up to
 ## the tall block, the canteen view once on the patio or the road's leg past it.
+## Past the canteen's tip, and on the strip beside it, it looks north again.
 static func leg_for(x: float, z: float) -> float:
-	return clampf(smoothstep(16.0, 26.0, x) + smoothstep(4.0, 12.0, z) * smoothstep(12.0, 18.0, x), 0.0, 1.0)
+	var turn := clampf(smoothstep(16.0, 26.0, x) + smoothstep(4.0, 12.0, z) * smoothstep(12.0, 18.0, x), 0.0, 1.0)
+	return turn * (1.0 - smoothstep(30.0, 34.0, z)) * (1.0 - smoothstep(42.6, 43.8, x))
+
+## How far the camera should turn to face the chapel: on the lawn path past halfway,
+## on the plaza and parking, and on the west road beside them.
+static func chapel_for(x: float, z: float) -> float:
+	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x))
 
 func _snap_follow() -> void:
 	follow = Vector2(student.position.x - 0.15, student.position.z)
 	leg = leg_for(student.position.x, student.position.z)
+	chapel = chapel_for(student.position.x, student.position.z)
 
-## The camera's turn about the vertical: 0 looks at the APS front, -90° at the canteen.
+## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
+## canteen or the chapel (their views never overlap: one is east of x 12, one west of -18).
 func _yaw() -> float:
-	return orbit - PI / 2.0 * leg
+	return orbit - PI / 2.0 * (leg + chapel)
 
 func _update_camera(delta: float) -> void:
 	if absf(width - target_width) > 0.001:
@@ -233,20 +250,28 @@ func _update_camera(delta: float) -> void:
 		_resize()
 	follow = follow.lerp(Vector2(student.position.x - 0.15, student.position.z), 1.0 - exp(-delta * 4.0))
 	leg = lerpf(leg, leg_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	chapel = lerpf(chapel, chapel_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var wide := clampf((width - 22.0) / 34.0, 0.0, 1.0)
 	var campus := clampf((width - 56.0) / 42.0, 0.0, 1.0)
 	var close := clampf((22.0 - width) / 14.0, 0.0, 1.0)
-	# Along the APS front the camera slides in x; along the canteen it slides in z.
-	var front := lerpf(lerpf(follow.x, 5.5 + follow.x * 0.1, wide), 12.0, campus)
-	var side := lerpf(lerpf(follow.y, 15.0, wide), 12.0, campus)
+	# Along the APS front the camera slides in x; along the canteen and the chapel in z.
+	# Each view frames its building's face, or stays ahead of a student who walks
+	# away from it (down the lawn path, along the strip, onto the west road).
+	var front := lerpf(lerpf(follow.x, 5.5 + follow.x * 0.1, wide), -8.0, campus)
+	var side := lerpf(lerpf(follow.y, 12.6, wide), 12.0, campus)
+	var aisle := lerpf(lerpf(follow.y, 59.5, wide), 59.5, campus)
+	var depth := maxf(0.0, follow.y - 5.3)
+	var reach := minf(Chapel.FACE_X, follow.x + 6.0)
 	# Move in whole render pixels so facade and shadow edges do not crawl.
 	var pixel := view_metres.x / float(viewport.size.x) / cos(orbit)
 	front = roundf(front / pixel) * pixel
 	side = roundf(side / pixel) * pixel
+	aisle = roundf(aisle / pixel) * pixel
 	var target_y := lerpf(lerpf(lerpf(3.65, 8.4, wide), 10.0, campus), 1.05, close)
 	var distance := lerpf(lerpf(23.0, 60.0, wide), 90.0, campus)
 	var lift := lerpf(lerpf(3.15, width * 0.24, wide), 1.4, close)
-	var focus := Vector3(front, target_y, 0).lerp(Vector3(CANTEEN_FACE_X, target_y, side), leg)
+	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel)
+	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel
 	var yaw := _yaw()
 	camera.position = focus + Vector3(sin(yaw) * distance, lift, cos(yaw) * distance)
 	camera.look_at(focus)
@@ -333,7 +358,7 @@ func _build_interface() -> void:
 	stack.add_child(title)
 	var controls := Label.new()
 	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    C  Character    M  Mute\n" + \
-		"Wheel or +/-  Zoom    1-5  Framings    Q/E  Angle    P  Pixels\n" + \
+		"Wheel or +/-  Zoom    1-6  Framings    Q/E  Angle    P  Pixels\n" + \
 		"R  Reset    F11  Fullscreen    Tab  Hide controls    Esc  Close"
 	controls.add_theme_font_size_override("font_size", 14)
 	controls.add_theme_color_override("font_color", Color("e7e2d6"))
@@ -372,7 +397,10 @@ func _choose_framing(index: int) -> void:
 	if value == 28.0:
 		student.place(CANTEEN_SPOT.x, CANTEEN_SPOT.y)
 		_snap_follow()
-	elif value <= 56.0 and value > 10.0 and leg > 0.5:
+	elif value == 32.0:
+		student.place(CHAPEL_SPOT.x, CHAPEL_SPOT.y)
+		_snap_follow()
+	elif value <= 56.0 and value > 10.0 and (leg > 0.5 or chapel > 0.5):
 		student.place(0.7, 5.3)
 		_snap_follow()
 	_set_zoom(value)
@@ -382,7 +410,7 @@ func _reset() -> void:
 	orbit = 0.12
 	_snap_follow()
 	_set_hour(16.5)
-	_set_zoom(98.0)
+	_set_zoom(112.0)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
@@ -419,7 +447,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_F11:
 			var full := get_window().mode == Window.MODE_FULLSCREEN
 			get_window().mode = Window.MODE_WINDOWED if full else Window.MODE_FULLSCREEN
-		KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
+		KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6:
 			_choose_framing(event.physical_keycode - KEY_1)
 			sound.select()
 
@@ -438,7 +466,7 @@ func _process(delta: float) -> void:
 	var direction := Vector2(float(_held([KEY_D, KEY_RIGHT])) - float(_held([KEY_A, KEY_LEFT])),
 		float(_held([KEY_S, KEY_DOWN])) - float(_held([KEY_W, KEY_UP])))
 	# Keys are relative to the camera, so D keeps walking screen-right round the corner.
-	var turn := -PI / 2.0 * leg
+	var turn := -PI / 2.0 * (leg + chapel)
 	var right := Vector2(cos(turn), -sin(turn))
 	var away := Vector2(-sin(turn), -cos(turn))
 	student.move(right * direction.x - away * direction.y, _held([KEY_SHIFT]), delta, direction.x)
@@ -488,9 +516,24 @@ func _verify_and_capture() -> void:
 		var hall := World.canteen_world(51, 0)
 		checks.canteen_floor = is_equal_approx(World.floor_height(hall.x, hall.y), 0.45)
 		# Road in the bend, lawn inside it, patio outside it.
-		checks.bend_is_road = is_equal_approx(World.floor_height(17.7, 11.3), -0.2) and not World.blocked(17.7, 11.3)
+		checks.bend_is_road = is_equal_approx(World.floor_height(17.7, 11.3), -0.19) and not World.blocked(17.7, 11.3)
 		checks.lawn_blocks = World.blocked(12.5, 18.0) and World.blocked(5.0, 14.0)
 		checks.patio_walkable = not World.blocked(25.0, 2.0) and not World.blocked(30.6, 24.0)
+		# The strip by the Covered Court: under the pergola is walkable; posts, sheds and poles are solid.
+		checks.yard_walkable = not World.blocked(45.5, 14.2) and not World.blocked(45.5, 10.0)
+		checks.yard_props_block = World.blocked(45.5, 3.3) and World.blocked(43.8, 12.0) and World.blocked(26.9, 18.4)
+		# The corner garden is planted, not walkable; the road turning past it is.
+		checks.left_garden_blocks = World.blocked(-58.0, 8.0) and not World.blocked(-52.0, 10.0)
+		# The shared campus plan: every building, the closed road loop, reserved plots.
+		checks.plan_loaded = CampusPlan.PLOTS.size() == 21 and CampusPlan.PLOTS["aps"]["built"]
+		checks.road_loop_closed = Roads.points()[0].distance_to(Roads.points()[-1]) < 0.01
+		checks.plots_reserved = Plots.occupied(72.6, 38.8) and Plots.occupied(76.8, -7.1) and not Plots.occupied(-8.7, 58.1)
+		# The chapel is solid; its plaza, parking and the lawn path are walkable.
+		checks.chapel_blocks = World.blocked(-8.7, 58.1) and World.blocked(-25.0, 59.5)
+		var plaza_floor := World.floor_height(CHAPEL_SPOT.x, CHAPEL_SPOT.y)
+		checks.chapel_plaza_walkable = not World.blocked(CHAPEL_SPOT.x, CHAPEL_SPOT.y) and is_equal_approx(plaza_floor, -0.04)
+		checks.lawn_path_walkable = not World.blocked(-36.0, 24.0) and World.blocked(-30.0, 24.0)
+		checks.grass_built = (scene.find_child("Grass", false, false) as MultiMeshInstance3D).multimesh.instance_count > 800
 		var saved := student.position
 		_set_hour(21.0)
 		checks.night_lamps = world.lamps.all(func(l: Light3D) -> bool: return l.visible) and sun.light_energy < 0.3
@@ -520,16 +563,23 @@ func _verify_and_capture() -> void:
 		# Holding D from the APS front walks round the corner onto the patio.
 		student.place(14.0, 2.5)
 		_snap_follow()
-		for i in 400:
-			var turn := -PI / 2.0 * leg
+		for i in 160:
+			var turn := -PI / 2.0 * (leg + chapel)
 			student.move(Vector2(cos(turn), -sin(turn)), true, 1.0 / 30.0, 1.0)
 			_update_camera(1.0 / 30.0)
 		checks.walk_round_corner = leg > 0.9 and student.position.z > 8.0
+		# From the APS road down the lawn path to the chapel plaza: the camera turns to face it.
+		student.place(-36.0, 6.0)
+		_snap_follow()
+		for i in 300:
+			student.move(Vector2(0, 1), true, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		checks.walk_to_chapel = student.position.z > 40.0 and chapel > 0.9 and (-camera.global_basis.z).dot(Vector3.RIGHT) > 0.9
 		student.position = saved
-		_set_zoom(98.0, true)
+		_set_zoom(112.0, true)
 		_snap_follow()
 		_update_camera(1.0)
-		checks.wide_shows_l = _all_visible([-18.3, 43.3], [0.0, 23.3], [-7.5, 4.2]) and _all_visible([33.0, 43.3], [0.0, 18.4], [30.6])
+		checks.wide_shows_l = _all_visible([-62.5, 43.3], [0.0, 13.4], [-3.4, 0.3]) and _all_visible([33.0, 43.3], [0.0, 18.4], [24.9])
 		student.place(0.7, 5.3)
 		_set_zoom(56.0, true)
 		_snap_follow()
@@ -540,12 +590,20 @@ func _verify_and_capture() -> void:
 		_snap_follow()
 		_update_camera(1.0)
 		checks.canteen_view_faces_stalls = leg > 0.99 and (-camera.global_basis.z).dot(Vector3.RIGHT) > 0.95
+		student.place(CHAPEL_SPOT.x, CHAPEL_SPOT.y)
+		_set_zoom(32.0, true)
+		_snap_follow()
+		_update_camera(1.0)
+		var facing_front := (-camera.global_basis.z).dot(Vector3.RIGHT) > 0.95
+		checks.chapel_view_faces_front = chapel > 0.99 and facing_front and _all_visible([Chapel.NOSE.x], [0.9, 9.0], [Chapel.NOSE.y])
+		student.place(CANTEEN_SPOT.x, CANTEEN_SPOT.y)
+		_snap_follow()
 		_set_zoom(MIN_WIDTH, true)
 		_update_camera(1.0)
 		checks.close_zoom_shows_student = _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
 		student.position = saved
 		_snap_follow()
-		_set_zoom(float(_args.get("zoom", "98")), true)
+		_set_zoom(float(_args.get("zoom", "112")), true)
 		_update_camera(1.0)
 	var okay := not checks.values().has(false)
 	print(JSON.stringify({"scene": "APS 2.5D", "checks": checks, "checks_pass": okay, "boxes": world.box_count,
