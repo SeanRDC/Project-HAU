@@ -1,5 +1,11 @@
 # Project Context
 
+**The sun turns with the view, 2026-10-16.** The sun was fixed for APS, so north- and
+east-facing buildings (SJH, MGN) sat in shade. `_aim_sun()` in `aps.gd` now turns it
+with each camera zone, so every view's face is lit like the APS front. The exceptions
+are the canteen (keeps the old sun), the gym inside, and MGN (slant mirrored). See
+`sessions/2026-10-16-view-lit-sun.md`.
+
 **The middle road in Godot, 2026-10-16.** `areas/middle_road.gd`: the divided
 boulevard between PGN and MGN, from the west road's mouth (the sidewalk opens there,
 `Roads.OPENINGS`) to the flagpole at the flag circle. Two carriageways, a hedged
