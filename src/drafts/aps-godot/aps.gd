@@ -86,6 +86,10 @@ var time_label: Label
 var view_label: Label
 
 var hour := 16.5
+## The time preset's sun offset, as seen from the APS front view; _aim_sun() turns it
+## with the camera so every view's face gets the light the APS front gets.
+var _sun_offset := Vector3(-55, 44, 60)
+var _sun_turn := INF
 var orbit := 0.12
 var width := 112.0
 var target_width := 112.0
@@ -541,17 +545,39 @@ func _update_camera(delta: float) -> void:
 	environment.fog_depth_begin = distance + 14.0
 	environment.fog_depth_end = distance + 170.0
 	student.face(camera)
+	_aim_sun()
 
 # --- Time of day ---------------------------------------------------------------
+
+## The view's turn the sun follows: every zone's but the canteen's (its patio was tuned
+## under the APS sun, and turned, the tall block shades the wing) and the gym's inside
+## faces (inside, the sun stays where the gym's front view puts it, so the hall's light
+## does not swing).
+func _sun_turns() -> float:
+	return _turns() - arena * face - leg
+
+## Turns the preset's sun offset with the camera's view, so the face a view looks at is
+## lit the way the APS front is (from the camera's side, slanting in from the left or
+## right with the time of day). Re-aimed only when the turn changes.
+func _aim_sun(force := false) -> void:
+	var turn := -PI / 2.0 * _sun_turns()
+	# Facing MGN the sun slants in from the other side: from the usual side SJH's slab
+	# shades most of MGN's front. (mgn is folded into the key so the swap re-aims too.)
+	var key := turn + mgn * 10.0
+	if not force and absf(key - _sun_turn) < 0.0005:
+		return
+	_sun_turn = key
+	var offset := _sun_offset * Vector3(1.0 - 2.0 * mgn, 1.0, 1.0)
+	var target := Vector3(22, 7, 0)
+	sun.look_at_from_position(target + Basis(Vector3.UP, turn) * offset, target)
 
 func _set_hour(value: float) -> void:
 	hour = value
 	var night := hour >= 19.0 or hour < 6.0
 	var noon := hour >= 10.0 and hour < 15.0
 	var morning := hour < 10.0 and not night
-	var target := Vector3(22, 7, 0)
-	var offset := Vector3(55 if night or morning else -55, 58 if night else (95 if noon else 44), 18 if noon else 60)
-	sun.look_at_from_position(target + offset, target)
+	_sun_offset = Vector3(55 if night or morning else -55, 58 if night else (95 if noon else 44), 18 if noon else 60)
+	_aim_sun(true)
 	sun.light_color = Color("a7bee5") if night else (Color("fff4de") if noon else Color("ffce96"))
 	sun.light_energy = 0.2 if night else (1.0 if noon else 1.08)
 	environment.ambient_light_color = Color("6f86c2") if night else (Color("bcc3c8") if noon else Color("b8bec6"))
