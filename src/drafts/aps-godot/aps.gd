@@ -13,6 +13,7 @@ const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
 const GymInterior := preload("res://areas/gym_interior.gd")
 const Npcs := preload("res://npcs.gd")
+const Atmosphere := preload("res://atmosphere.gd")
 const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
@@ -70,6 +71,7 @@ var edges := ShaderMaterial.new()
 var student: Student
 var sound: Sound
 var npcs: Npcs
+var atmosphere: Atmosphere
 ## E was just used to talk, so holding it does not also turn the camera.
 var _e_talk := false
 var help: Control
@@ -150,8 +152,20 @@ func _ready() -> void:
 	npcs.camera = camera
 	npcs.student = student
 	npcs.to_screen = _to_screen
+	npcs.sound = sound
 	scene.add_child(npcs)
 	npcs.build_ui(self)
+	# weather and atmosphere: rain, falling leaves, light shafts
+	atmosphere = Atmosphere.new()
+	atmosphere.world = world
+	atmosphere.camera = camera
+	atmosphere.sun = sun
+	atmosphere.environment = environment
+	atmosphere.sky = sky_material
+	scene.add_child(atmosphere)
+	atmosphere.build()
+	if _args.has("rain"):
+		atmosphere.start_raining() # --rain starts in a shower, for captures
 
 	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0],
 		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "mgn": [MGN_SPOT, 56.0]}
@@ -542,8 +556,11 @@ func _set_hour(value: float) -> void:
 	grade.set_shader_parameter("light_tint", Color("e6eeff") if night else Color("fff6e4"))
 	grade.set_shader_parameter("shade_tint", Color("c9d6ff") if night else Color("eceef4"))
 	world.set_night(night)
+	if atmosphere:
+		atmosphere.set_hour(hour, night)
 	if sound:
 		sound.night = night
+		sound.hour = hour
 	if time_label:
 		time_label.text = "Night · 9:00 PM" if night else ("Noon · 12:00 PM" if noon else ("Morning · 8:00 AM" if morning else "Afternoon · 4:30 PM"))
 
@@ -591,7 +608,7 @@ func _build_interface() -> void:
 	title.add_theme_constant_override("shadow_offset_y", 2)
 	stack.add_child(title)
 	var controls := Label.new()
-	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    C  Character    M  Mute\n" + \
+	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    G  Rain    C  Character    M  Mute\n" + \
 		"E/Space  Talk (near someone)\n" + \
 		"Wheel or +/-  Zoom    1-9, 0  Framings    Q/E  Angle    P  Pixels\n" + \
 		"R  Reset    F11  Fullscreen    F1  Fast travel (dev)    Tab  Hide controls    Esc  Close"
@@ -718,6 +735,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
+	# replies on offer: W/S or the arrows move, 1-3 says one straight away
+	if npcs.choosing():
+		match event.physical_keycode:
+			KEY_W, KEY_UP:
+				npcs.move_choice(-1)
+				return
+			KEY_S, KEY_DOWN:
+				npcs.move_choice(1)
+				return
+			KEY_1, KEY_2, KEY_3:
+				if npcs.pick(event.physical_keycode - KEY_1):
+					sound.select()
+				return
 	match event.physical_keycode:
 		KEY_ESCAPE:
 			get_tree().quit()
@@ -726,6 +756,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			sound.select()
 		KEY_C:
 			student.set_character("girl" if student.who == "boy" else "boy")
+			sound.select()
+		KEY_G:
+			atmosphere.toggle_rain()
 			sound.select()
 		KEY_M:
 			sound.toggle_mute()
@@ -771,6 +804,18 @@ func _to_screen(point: Vector3) -> Vector2:
 	var scale := maxf(ui.x / pixels.x, ui.y / pixels.y)
 	return p * scale + (ui - pixels * scale) * 0.5
 
+## Where the student is, for the campus sounds: how near the busy spots where students gather.
+const BUSY_SPOTS: Array[Vector2] = [Vector2(0.7, 5.3), Vector2(28.0, 12.0), Vector2(-34.0, 55.0), Vector2(50.0, 95.8)]
+func _listen() -> void:
+	var at := Vector2(student.position.x, student.position.z)
+	var busy := 0.0
+	for spot in BUSY_SPOTS:
+		busy = maxf(busy, 1.0 - at.distance_to(spot) / 22.0)
+	sound.crowd = clampf(busy, 0.0, 1.0)
+
+func night_now() -> bool:
+	return hour >= 19.0 or hour < 6.0
+
 func _held(keys: Array) -> bool:
 	for key in keys:
 		if Input.is_physical_key_pressed(key):
@@ -787,8 +832,12 @@ func _process(delta: float) -> void:
 	var turn := -PI / 2.0 * _turns()
 	var right := Vector2(cos(turn), -sin(turn))
 	var away := Vector2(-sin(turn), -cos(turn))
+	# like the browser game, the student stands still while someone is talking
+	if npcs.talking_to != null:
+		direction = Vector2.ZERO
 	student.move(right * direction.x - away * direction.y, _held([KEY_SHIFT]), delta, direction.x)
 	sound.indoor = World.floor_height(student.position.x, student.position.z, student.level()) >= 0.45 or hall > 0.5 or walkway > 0.5
+	_listen()
 	if not _held([KEY_E]):
 		_e_talk = false
 	orbit = clampf(orbit + (float(_held([KEY_E]) and not _e_talk) - float(_held([KEY_Q]))) * delta * 0.25, -0.25, 0.25)
@@ -796,6 +845,12 @@ func _process(delta: float) -> void:
 	_update_camera(delta)
 	_update_cutaways(delta)
 	npcs.update(delta)
+	atmosphere.focus = student.position
+	atmosphere.view_width = width
+	atmosphere.indoor = sound.indoor
+	atmosphere.update(delta)
+	sound.rain = atmosphere.rain
+	npcs.rain = atmosphere.rain
 
 ## Walking into the gym from a wide framing glides the zoom in to the hall's; walking
 ## out again glides back, unless the zoom was changed inside.
@@ -1254,20 +1309,100 @@ func _verify_and_capture() -> void:
 		# into anything, and talking opens the bubble and walking away closes it.
 		checks.npcs_spawned = npcs.cast.size() == Npcs.CAST.size()
 		checks.npcs_on_walkable_ground = npcs.cast.all(func(n: Node3D) -> bool: return not World.blocked(n.position.x, n.position.z))
+		# (the student well away, or the strollers would stop to look at them)
+		var student_was := student.position
+		student.position = Vector3(-70.0, 0.0, 30.0)
 		for i in 900:
 			npcs.update(1.0 / 30.0)
 		checks.npcs_wander = npcs.cast.filter(func(n: Node3D) -> bool: return n.roam > 0.0).all(func(n: Node3D) -> bool: return n.walked > 0.5) \
 			and npcs.cast.all(func(n: Node3D) -> bool: return not World.blocked(n.position.x, n.position.z) and n.ground().distance_to(n.home) <= n.roam + 0.6)
 		var guard: Node3D = npcs.cast.filter(func(n: Node3D) -> bool: return n.id == "kuya-ben")[0]
 		student.place(guard.position.x + 0.9, guard.position.z)
-		var talked: bool = npcs.interact() and npcs.bubble.visible and npcs.bubble_text.text == guard.lines[0] and guard.talking
+		# like the browser game: the line types out with the mouth moving, a key shows it
+		# all, the next key moves on; a question offers replies once it is all out
+		var opening: Array = npcs.script_for(guard)
+		var talked: bool = npcs.interact() and npcs.bubble.visible and npcs.said() == opening[0] and guard.talking
 		npcs.update(1.0 / 30.0)
-		talked = talked and guard.animation == "talk"
+		talked = talked and npcs.typing() and npcs.shown > 0.0 and guard.animation == "talk"
 		npcs.interact()
-		talked = talked and npcs.bubble_text.text == guard.lines[1]
+		npcs.update(1.0 / 30.0)
+		talked = talked and not npcs.typing() and not npcs.choosing() and guard.animation == "idle"
+		npcs.interact()
+		talked = talked and npcs.said() == opening[1].ask and npcs.typing() and not npcs.choosing()
+		npcs.interact()
+		npcs.update(1.0 / 30.0)
+		checks.npc_talks = talked and npcs.choosing() and npcs.choice_panel.visible and npcs.choice_list.get_child_count() == 2
+		# picking a reply: their answer, then the talk ends; next time they remember it
+		npcs.move_choice(1)
+		var picked: bool = npcs.choice == 1 and npcs.pick(npcs.choice) and npcs.memory.has("ben.no_id") and not npcs.choice_panel.visible
+		for i in 6:
+			if npcs.talking_to != null:
+				npcs.interact()
+		picked = picked and not npcs.bubble.visible and not guard.talking and npcs.memory.has("met.kuya-ben")
+		npcs.interact()
+		picked = picked and npcs.said().begins_with("Bukas, dala mo na ID mo")
+		for i in 4:
+			if npcs.talking_to != null:
+				npcs.interact()
+		# one NPC's words reach another: Rica's message for Paolo
+		var paolo: Node3D = npcs.cast.filter(func(n: Node3D) -> bool: return n.id == "paolo")[0]
+		var before: String = npcs.script_for(paolo)[0]
+		npcs.memory["rica.asked"] = true
+		checks.dialogue_choices = picked and npcs.talking_to == null and npcs.script_for(paolo)[0] != before
+		npcs.memory.clear()
+		# and walking off mid-line closes it
+		npcs.interact()
 		student.place(guard.position.x + 6.0, guard.position.z + 1.5)
 		npcs.update(1.0 / 30.0)
-		checks.npc_talks = talked and not npcs.bubble.visible and not guard.talking
+		checks.npc_talk_closes_when_away = not npcs.bubble.visible
+		# NPCs notice the student: a stroller stops, turns to them and waves, once
+		var bea: Node3D = npcs.cast.filter(func(n: Node3D) -> bool: return n.id == "bea")[0]
+		student.position = Vector3(-70.0, 0.0, 30.0)
+		npcs.update(1.0 / 30.0)
+		var side := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
+		var by_bea: Vector2 = bea.ground() + side * 2.2
+		student.position = Vector3(by_bea.x, bea.position.y, by_bea.y)
+		npcs.update(1.0 / 30.0)
+		var waving: bool = bea.noticed and bea.animation == "wave" and bea.waved == 1 and not bea.sprite.flip_h
+		var walked_before: float = bea.walked
+		for i in 90:
+			npcs.update(1.0 / 30.0)
+		checks.npc_notices_and_waves = waving and bea.animation == "idle" and bea.waved == 1 and bea.walked == walked_before
+		# in the rain, umbrellas open outside, and not under the canteen roof
+		npcs.rain = 1.0
+		for i in 15:
+			npcs.update(1.0 / 30.0)
+		var lorna: Node3D = npcs.cast.filter(func(n: Node3D) -> bool: return n.id == "ate-lorna")[0]
+		checks.npc_umbrellas = bea.umbrella.visible and lorna.sheltered and not lorna.umbrella.visible
+		npcs.rain = 0.0
+		for i in 15:
+			npcs.update(1.0 / 30.0)
+		checks.npc_umbrellas = checks.npc_umbrellas and not bea.umbrella.visible
+		student.position = student_was
+		# the campus sounds: a murmur by the APS front, and birds by day
+		sound.warm_all()
+		student.place(0.7, 5.3)
+		_listen()
+		sound.indoor = false
+		var calls := sound.bird_calls
+		for i in 600:
+			sound._process(1.0 / 30.0)
+		# weather: a shower wets the ground (glossy) and is heard, and the ground dries matte after
+		atmosphere.start_raining()
+		atmosphere.indoor = false
+		atmosphere.focus = student.position
+		for i in 5:
+			atmosphere.update(0.1)
+		sound.rain = atmosphere.rain
+		var raining := atmosphere.rain > 0.99 and atmosphere.rain_fx.emitting and atmosphere.wet_count() > 0 and atmosphere.puddles.size() > 50 and atmosphere.puddles[0].visible
+		atmosphere.rain_target = 0.0
+		atmosphere.rain = 0.0
+		atmosphere.update(0.1)
+		sound.rain = 0.0
+		checks.rain_wets_then_dries = raining and atmosphere.wet_count() == 0 and not atmosphere.puddles[0].visible
+		# light: every tree drops leaves and (by day) casts shafts
+		checks.leaves_and_shafts = world.trees.size() > 10 and atmosphere.leaves.size() == world.trees.size() 			and (night_now() or atmosphere.shafts.get_child_count() >= world.trees.size())
+		checks.campus_sounds = sound.murmur.playing and sound.crowd > 0.9 and (sound.night or sound.bird_calls > calls)
 		# Fast travel (dev): every place is walkable and the jump lands there, framed.
 		var travelled := travel.panel.get_child(0).get_child(1).get_child_count() == travel_places().size()
 		for i in travel_places().size():
@@ -1289,7 +1424,7 @@ func _verify_and_capture() -> void:
 	if _args.has("capture"):
 		# --talk: open a conversation with whoever is in reach, to review the bubble
 		if _args.has("talk") and npcs.interact():
-			npcs.update(1.0 / 60.0)
+			npcs.update(float(_args.get("talk-time", "0.6")))
 			await get_tree().process_frame
 			npcs.update(1.0 / 60.0)
 		await RenderingServer.frame_post_draw
