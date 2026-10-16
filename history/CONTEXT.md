@@ -1,5 +1,12 @@
 # Project Context
 
+**The middle road in Godot, 2026-10-16.** `areas/middle_road.gd`: the divided
+boulevard between PGN and MGN, from the west road's mouth (the sidewalk opens there,
+`Roads.OPENINGS`) to the flagpole at the flag circle. Two carriageways, a hedged
+median, covered walkways on terracotta pillars both sides, trees and bannered
+lampposts, zebras at the mouth and halfway. On it the camera faces south; PGN's side
+fades out (`MiddleRoadNorth`, shadows kept). See `sessions/2026-10-16-middle-road.md`.
+
 **MGN in Godot, 2026-10-16.** `areas/mgn.gd` builds the Mamerto G. Nepomuceno
 Building from outside on its plan plot (five storeys, ~17 m, facing east onto the west
 road): the open-corridor long block, the box-window wing over the entrance with the
