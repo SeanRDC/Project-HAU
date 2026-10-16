@@ -618,6 +618,28 @@ func window(x: float, y: float, z: float, w := 2.05, h := 1.05) -> void:
 		box(Vector3(w + 0.09, 0.045, 0.075), Vector3(x, y + dy, z + 0.09), frame)
 	box(Vector3(w + 0.23, 0.08, 0.24), Vector3(x, y - h / 2.0 - 0.08, z + 0.11), material("stucco"))
 
+## window()'s look on any face: `normal` is the face's outward direction (±X or ±Z in
+## the current frame), `at` the middle of the opening on the wall's surface. A dark
+## frame, the glass (lit glass glows at night only), light mullions and rails, a sill
+## that stands out and a shallow head over it, so a plain wall reads in depth like
+## the APS front. `mullions` splits the glass into that many plus one panes.
+func framed_window(at: Vector3, width: float, height: float, normal: Vector3, lit := false, mullions := 1,
+		frame_color := Color("e8e6de")) -> void:
+	var across := Vector3(-normal.z, 0, normal.x).abs()
+	var piece := func(along: float, tall: float, deep: float, u: float, y: float, out: float, made: Material) -> void:
+		var size := across * along + Vector3(0, tall, 0) + normal.abs() * deep
+		box(size, at + across * u + Vector3(0, y, 0) + normal * out, made)
+	var bar := material("plain", frame_color)
+	var ledge := material("stucco", frame_color.darkened(0.06))
+	piece.call(width + 0.15, height + 0.15, 0.07, 0.0, 0.0, 0.0, material("plain", Color("333e49")))
+	piece.call(width, height, 0.035, 0.0, 0.0, 0.05, room_glass(lit))
+	for k in mullions + 2:
+		piece.call(0.04, height + 0.08, 0.05, -width / 2.0 + width * k / (mullions + 1), 0.0, 0.09, bar)
+	for dy in [-height / 2.0, height / 2.0]:
+		piece.call(width + 0.09, 0.05, 0.075, 0.0, dy, 0.09, bar)
+	piece.call(width + 0.3, 0.09, 0.26, 0.0, -height / 2.0 - 0.1, 0.12, ledge)
+	piece.call(width + 0.36, 0.11, 0.16, 0.0, height / 2.0 + 0.14, 0.07, ledge)
+
 ## A lit sign: a backing board and shaded text, readable at every zoom.
 func panel(text: String, at: Vector3, width: float, height: float, ink: Color, board := Color(0, 0, 0, 0)) -> Label3D:
 	if board.a > 0.0:
