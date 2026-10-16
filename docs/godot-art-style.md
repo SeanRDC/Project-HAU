@@ -79,7 +79,9 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
    gentle fog in the distance, a mild vignette. Nothing glossy, nothing bloomy
    in daylight.
 7. **Matte materials.** Lambert diffuse, specular off (glass is the only
-   exception). Nothing should look wet or plastic.
+   exception). Nothing should look wet or plastic, **except while it rains**
+   (see Weather and atmosphere): then the hard ground goes dark and glossy and
+   dries again when the rain stops.
 
 ---
 
@@ -334,6 +336,40 @@ before using them.
 
 ---
 
+## Weather and atmosphere
+
+`atmosphere.gd` (made in `aps.gd` after the NPCs). **Rule exception, added
+2026-10-16 at Mclaren's request; Sean, please confirm.** Rain is the only time
+anything is wet or has specular other than glass.
+
+- **Rain** comes and goes on its own (dry spells of 80-160 s, showers of
+  50-90 s); **G** starts or stops it, `--rain` starts it at once. It
+  fades in and out over about 6 s. Streaks are `QuadMesh` 0.03 x 0.55 at alpha
+  0.24 (4000 at full rain), splashes 0.1 x 0.035 at alpha 0.28 (320). Both
+  follow the student.
+- **Wet ground** only while it rains, on `road`, `stone`, `brick`, `pavers`,
+  `concrete` and `slate`: albedo down to 70%, roughness 0.18, Schlick-GGX
+  specular, `metallic_specular` 0.6. The sun dims, ambient and sky go grey,
+  fog comes closer. Everything returns to the preset when it dries.
+- **Puddles:** 120 soft oval decals on open ground, shown once the rain is past
+  a quarter, tinted from the horizon colour (`#4d5779`-ish at night).
+- **Lamp reflections at night:** an orthographic camera gets no screen-space
+  reflections, and a ground decal is squashed flat by the low camera, so each
+  lamp gets an upright additive card (`#ffd08a`, `shaft.gdshader`) standing
+  9 m towards the camera from the lamp's foot, as tall as that ground looks.
+- **Light shafts** (`shaft.gdshader`, additive, unshaded, no depth write):
+  one card under each tree crown along the sun, turned to face the camera.
+  Morning and afternoon only; hidden at night, in rain and indoors.
+- **No floating specks.** Dust motes by day and fireflies at night were tried
+  and dropped: they read as white and green dots over everything.
+- **Falling leaves** from every tree in `world.trees`, stopping in heavy rain.
+- **No foreground layer.** Dark posts and branches sliding past in front
+  were tried and dropped.
+- Sound: rain is a looped filtered noise (low-pass 5200 Hz outside, 700 Hz
+  indoors); it halves the murmur and stops the birds.
+
+---
+
 ## Shadows
 
 - One `DirectionalLight3D` "Sun", **orthogonal** shadow mode, **8192**
@@ -372,6 +408,7 @@ before using them.
 | `edges.gdshader` | A full-screen quad on the camera (render priority 127) reads depth and normals. It draws a dark line where something sits in front of a farther surface and lightens convex creases by one pixel. It is **multiplied** over the image, so lighting, fog and glow stay intact | `line_dark 0.32`, `crease_light 0.16`, `depth_gap 0.45`, `strength` 1.0 when the pixel scale > 1, 0.7 at native resolution | The sky gets no lines. Don't add per-object outlines; this handles everything |
 | `leaves.gdshader` | Alpha-cut foliage cards (leaves, grass, vines) that sway (shadows follow), are lit as a round volume and glow when backlit; edge-on cards fade out | `sway 0.045` (grass 0.03), `phase` per tree, `center` (crown middle; far below for grass), `roundness` (1.0 trees, 0.9 grass), scissor 0.4, backlight 0.45 × leaf colour | Leaf images are procedural (`_leaf_material(seed, center)`), five greens from `#3a5650` to `#a8ab70`. Round normals are per pixel |
 | `sky.gdshader` | An orthographic camera sees one direction, so the sky grades over the screen instead; fixed 2-px stars at night. Lighting probes use a direction-based gradient | `top_color`, `horizon_color`, `ground_color`, `stars` (set by `_set_hour`) | |
+| `shaft.gdshader` | Light shafts under trees and the lamp reflections on wet ground: an additive card, brightest in the middle, fading at its edges and ends | `color`, `strength` (0.08) | Unshaded, no fog, never writes depth |
 | `display.gdshader` | Final grade on the enlarged image: shade towards `shade_tint`, light towards `light_tint`, soft vignette | `warmth 0.06`, `vignette 0.22`, tints from `_set_hour` | Keep this the only colour grade |
 
 ---
@@ -393,12 +430,39 @@ before using them.
   centre of each 655/85 block). Never generate small: PixelLab's native pixel art is crisp
   and black-outlined and does not match. Edges are a darker tone of their own colour, no
   black outline and no orange sunset rim (lighting comes from Godot). Girls wear the grey
-  HAU plaid (`assets/drafts/characters/npcs/Plaid.cs`). They move exactly like the boy:
-  `assets/drafts/characters/npcs/rig/` is his rig made general, with each NPC's head,
-  arms, backpack, hips, eyes and mouth set up in `NpcCast.cs`; girls get skin legs and
-  socks under the skirt. Sheets per NPC: `walk` 12, `idle` 24, `talk` 4 (mouth and hand).
-  Rebuild with that folder's `build.ps1`. Students stroll within `roam` metres of home
+  HAU plaid (`assets/drafts/characters/npcs/Plaid.cs`). Sheets per NPC, all in one box
+  with the feet on the bottom row: `walk` 12 and `wave` 4 are **PixelLab redraws**
+  (`animate-with-skeleton-v3`) of the reference drawing, posed by skeletons taken from the
+  rig's walk angles (`assets/drafts/characters/npcs/pixellab/animate-all.mjs`, frames kept
+  in `pixellab/frames/<id>/`); `idle` 24 and `talk` 4 are the reference drawing itself
+  from the rig (`npcs/rig/`, setups in `NpcCast.cs`): breathing, blinking, a breeze in
+  the hair, the mouth moving. **Do not turn or stretch drawn limbs** for new poses: the
+  rig's rotated arms and code-drawn legs blurred hands and left cut edges; redraw the pose
+  instead. `rig/NpcSheets.cs` cleans PixelLab frames the same way every time (solid
+  alpha, colours snapped to the drawing's own palette, specks and notches fixed, feet on
+  the ground). Rebuild with `rig/build.ps1 <id>` and check with `rig/check.ps1`.
+  **Migo is kept in pxl** (`assets/drafts/characters/npcs/pxl/migo/`, the pxl pixel-art
+  tool from github.com/crsolver/claude-pxl): his four sheets on one 20-colour palette,
+  the smudge under his chin cleaned and his chin the same in every frame, and his hair
+  moving in the walk (the crown lands a frame after the body, the tips trail on each
+  push-off). `rig/build.ps1` skips him; build him with that folder's `build.ps1`.
+  **The player boy is made the same way** (`assets/drafts/characters/boy/pxl/`): his idle
+  is his reference drawing from his rig, his walk a PixelLab skeleton redraw, both on one
+  20-colour palette in pxl, his chin the same in every frame, his hair moving in the walk,
+  stray specks on the legs removed. His rig (`boy/three-quarter/rig/`) now only makes the
+  idle frames. Students stroll within `roam` metres of home
   along clear straight lines (no kerbs or steps); posts (`roam` 0) stay put.
+- **NPCs react.** Within 3 m of the student they stop, turn to them and wave once
+  (again only after the student has gone 6 m away). In rain past 0.35 they open an
+  umbrella (an eight-sided matte canopy in their own colour, a steel rim and shaft,
+  springing open over a quarter second) unless they stand under a roof (floor 0.45 m
+  or higher, as in the canteen hall).
+- **Talks are scripts** in `npcs.gd` `CAST`: lines, and questions with two or three
+  replies the student picks (W/S or arrows and E, 1-3, or the mouse) on a dark card at
+  the bottom of the screen, the picked one in maroon. A reply can be remembered, and
+  the next talk is the first that fits what is remembered, so NPCs answer what you
+  said before and pass things on (Rica's message reaches Paolo, Bea tells Ate Lorna
+  about the turon). Memory lasts the session. Lines stay Taglish with a little Kapampangan.
 - `Sprite3D`: `pixel_size = 1.83 / texture height` (1.83 m tall), **shaded**,
   `ALPHA_CUT_DISCARD` with scissor 0.35, `TEXTURE_FILTER_NEAREST_WITH_MIPMAPS`,
   double-sided, casts a double-sided shadow. Mipmaps are generated at load.
@@ -614,7 +678,7 @@ Build an interior the same way:
 
 - Do not smooth the upscale, use linear texture filtering or turn off mipmaps.
 - Do not import photo textures, PBR material packs or 3D models. Draw from the photos in code.
-- Do not use specular or metallic materials except glass.
+- Do not use specular or metallic materials except glass (and wet ground while it rains, in `atmosphere.gd`).
 - Do not enable contact-hardening shadows, a wide shadow blur, or bloom by day.
 - Do not add a second colour grade, LUT or post effect outside `display.gdshader`.
 - Do not change the time presets, palette, sprite density or shader parameters
