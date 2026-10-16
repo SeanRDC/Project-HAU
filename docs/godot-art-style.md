@@ -250,6 +250,7 @@ Helpers in `world.gd`:
 | `box(size, at, material, turn := 0.0, tilt := 0.0)` | Every wall, slab, pier, rail and prop. Boxes with equal size and material become **one MultiMesh** at `_flush()`; keep using it, it is why thousands of boxes run fast. `turn` rotates about Y; `tilt` then leans the box about its own X (roof slopes, solar panels, open awning panes) |
 | `room_glass(lit)` | Window glass; `true` is the shared warm glass that glows at night |
 | `window(x, y, z, w, h)` | A full window: dark frame, glass (sometimes lit at night), mullions, sill |
+| `framed_window(at, w, h, normal, lit, mullions)` | The same window on any face (`normal` ±X or ±Z), plus a head over it. Use it for every new building's windows, never a bare glass box: the frame, sill and head are what make a wall read in depth like the APS front |
 | `panel(text, at, width, height, ink, board)` | A sign: a board and a shaded `Label3D`, readable at every zoom |
 | `rod(from, to, radius, color)` | Poles, branches, trusses, rails at angles |
 | `_ground(triangles, y, material)` | Flat curved ground (lawn inside a bend, patio, sidewalk rings). It does not cast shadows |
