@@ -20,6 +20,11 @@ and sidewalk on the patio side and lawn inside the bend. Walking past the tall
 block turns the camera to face the stalls, and A/D/W/S stay relative to the
 camera, so holding D walks you round the corner.
 
+West off the west road, between PGN and MGN, the middle road runs to the flagpole
+at the flag circle: two carriageways with a hedged median, a covered walkway on each
+side, trees and bannered lampposts, a zebra at the mouth and another halfway. On it
+the camera turns to look south across the road at MGN's side.
+
 The IH Gym down the east road can be walked into, through either front doorway
 or the side entrance (the back has two open doorways too). Inside, the camera is
 a low 2.5D view that faces the student's own half of the hall: the west stand
@@ -122,6 +127,7 @@ because their kernel grows with zoom.
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
 | `areas/sjh.gd` | St. Joseph Hall: the slab, its covered walkway (walk in through a railing gap), the Mary statue garden, the parking and cars |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside: the open-corridor block, the box-window wing over the entrance (walk in up to the turnstile), the open stair, the north block, the south wing with its roof tank, the raised garden. The camera turns to face it on the west road |
+| `areas/middle_road.gd` | The middle road between PGN and MGN, from the west road to the flagpole: two concrete carriageways, the hedged median, both covered walkways on terracotta pillars, the strips' trees and bannered lampposts, the zebras, the 10 KPH and SLOW DOWN signs, benches, bins, and the flagpole on its island. The camera faces south across it |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
 | `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking |
 | `npcs.gd` | The cast, their lines, the talk hint and speech bubble |
@@ -143,7 +149,7 @@ the frontage, and the gym inside (walking in through a doorway and the side entr
 writes 26 review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
-`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn`, `--pixel=auto|crisp|pixel`,
+`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn|middle`, `--pixel=auto|crisp|pixel`,
 `--walk=<seconds>`, `--hide-help`, `--capture=<absolute PNG path>`.
 
 Geometry is approximate, from the walk photos, not a survey. The far sidewalk,

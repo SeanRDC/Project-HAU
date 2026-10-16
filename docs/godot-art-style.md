@@ -110,7 +110,22 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
   lawn is always on the road's right and the buildings on its left. Everything
   asks `across()`: under 4 is the building side, 4..11 the carriageway, over 11
   the lawn. Change the road only by editing `PIECES`; the surface, kerbs,
-  sidewalks and paint follow.
+  sidewalks and paint follow. A side road opens the loop's building-side sidewalk
+  and kerb with a rect in `OPENINGS` (`Roads.opened()`).
+- **The middle road** (`areas/middle_road.gd`): a divided concrete boulevard from
+  the west road's mouth (x −62, z 58..69) straight west to the flagpole at the flag
+  circle (−179.7, 65.2), between PGN (z < 51.3) and MGN / the Main Building plot
+  (z > 75). Across it, north to south: PGN's covered walkway z 51.6..55.4, a
+  planting strip 55.4..58, the north carriageway 58..62.7, the hedged median
+  62.7..64.3, the south carriageway 64.3..69, a strip 69..71.6, the south covered
+  walkway 71.6..75. The walkways are brick-red pavers (−0.04) under a flat white
+  roof at 3 m on cream steel, with terracotta pillars every 5 m at the road side.
+  Yellow zebras cross at the mouth (in front of the median's nose, x −66.5..−69.5)
+  and at the Main Building's side (x −104..−107), through paved gaps in the strips
+  and median. The walkways and strips end at x −166; the carriageways run onto a
+  round concrete apron (radius 12) round the flag island (radius 3.2). Widths are
+  fitted to the gap between the plots, not surveyed. The banners face along z (to
+  the camera), not along the road as in the photo, so they read in the side view.
 - **Local frames:** a wing that is not aligned with the frontage is built in its
   own straight coordinates under a turned `Node3D` (see `CanteenWing` in
   `world.gd` and `canteen_local()` / `canteen_world()`). Collision for it is
@@ -489,6 +504,14 @@ before using them.
   `Mgn.CUT_X` (x −51.8, just past the road and east of SJH's terracotta end block).
   `--view=mgn` starts on the road at the entrance. Like the SJH view, wide framings show
   an empty band at the bottom where the cut removes the near lawn.
+- **Middle road zone** (`MiddleRoad.view_for`): once off the west road's sidewalk onto
+  the middle road (x < −62.5, z 50..78) the camera turns −180° to look south across it,
+  at the south walkway and MGN's north block, sliding in X with the student; wide, it
+  frames the south walkway. The chapel and MGN zones yield to it (`chapel_for` and
+  `mgn_for` multiply by `1 − view_for`). The camera stands over PGN's side, so the near
+  plane cuts everything more than `MIDDLE_CUT` (1.6 m) north of the student: PGN's
+  walkway roof, its trees and the reserved plot. `--view=middle` starts on the north
+  carriageway past the zebra; F1 has it and the flagpole end.
 - **Interiors (cutaway):** walking into a covered space like the APS hallway
   blends in a weight (`hall`, from `Hallway.hall_for`, eased at rate 3.5) that:
   1. closes the view in to `HALL_WIDTH` (8.5 m) and glides the camera to the
@@ -518,7 +541,9 @@ Three static functions in `world.gd` are the whole physics:
 - `blocked(x, z)`: true for columns, piers, the tower, rails (with a gap at the
   steps), stalls, tables, posts, the corner garden, reserved plots, the chapel,
   and anything outside `walkable_ground()` (the north road and APS front, the
-  patio, the strip, the west road, the lawn path, the chapel plaza and parking).
+  patio, the strip, the west road, the lawn path, the chapel plaza and parking,
+  the middle road's walkways, carriageways, crossings and flagpole apron).
+  The outer bounds reach x −192 for the middle road's west end.
   Canteen rules are tested in its local frame.
 - `floor_height(x, z)`: the walking height (hall 0.45, steps 0.3/0.15, kerb 0,
   road −0.19, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03,
