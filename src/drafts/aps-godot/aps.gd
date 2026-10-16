@@ -670,6 +670,7 @@ func _aim_sun(force := false) -> void:
 	var offset := _sun_offset * Vector3(1.0 - 2.0 * mgn, 1.0, 1.0)
 	var target := Vector3(22, 7, 0)
 	sun.look_at_from_position(target + Basis(Vector3.UP, turn) * offset, target)
+	edges.set_shader_parameter("sun_dir", sun.basis.z.normalized())
 
 func _set_hour(value: float) -> void:
 	hour = value
@@ -694,6 +695,8 @@ func _set_hour(value: float) -> void:
 	var grade := display.material as ShaderMaterial
 	grade.set_shader_parameter("light_tint", Color("e6eeff") if night else Color("fff6e4"))
 	grade.set_shader_parameter("shade_tint", Color("c9d6ff") if night else Color("eceef4"))
+	# Cloud shadows by day, a touch lighter in the slanting light.
+	edges.set_shader_parameter("clouds", 0.0 if night else (1.0 if noon else 0.85))
 	world.set_night(night)
 	if atmosphere:
 		atmosphere.set_hour(hour, night)
