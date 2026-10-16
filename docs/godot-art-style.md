@@ -319,7 +319,20 @@ for plants.
 ## Lighting
 
 `_set_hour()` in `aps.gd` has four presets (**T** cycles them). The sun aims at
-(22, 7, 0) from the offset below.
+(22, 7, 0) from the offset below, as seen from the APS front view.
+
+**The sun turns with the view** (`_aim_sun()`): the offset is turned about the
+vertical by the camera zone's turn, so whatever face a view looks at (SJH's
+north front, MGN's east front, the gym's front, the chapel's glass, the middle
+road's MGN side) is lit the way the APS front is: from the camera's side,
+slanting in from the left or right with the time of day. Two exceptions: the
+canteen view keeps the APS sun (it was tuned under it, and turned, the tall
+block shades the wing), and inside the gym the sun stays where the gym's front
+view puts it. Facing MGN the slant comes from the other side (its x is
+mirrored), because from the usual side SJH's slab shades most of MGN's front.
+Shadows therefore fall differently in each view; that is intended (2.5D, lit
+for the camera), not a bug. A new building's view gets this for free through
+its zone's turn.
 
 | Preset | Hour | Sun offset (x, y, z) | Sun colour | Energy | Ambient | Sky top / horizon | Grade light / shade |
 | --- | --- | --- | --- | --- | --- | --- | --- |
