@@ -18,12 +18,12 @@ frozen references.
 
 | What | How |
 | --- | --- |
-| Engine | **Godot 4.7.2 stable**, Forward+ renderer. Put the portable editor at `builds/godot-tools/4.7.2/Godot_v4.7.2-stable_win64.exe` (ignored by git), set `GODOT` to your executable, or have `godot` in PATH. Download: <https://godotengine.org/download/> |
+| Engine | **Godot 4.7.2 stable**, Forward+ renderer. Put the portable editor at `builds/godot-tools/4.7.2/Godot_v4.7.2-stable_win64.exe` (ignored by git), set `GODOT` to your executable, or have `godot` in PATH. On macOS set `GODOT` to the app's binary (`Godot.app/Contents/MacOS/Godot`) and run the same commands with it, e.g. `"$GODOT" --path src/drafts/aps-godot --headless -- --test`; macOS has no `timeout`, so run captures one at a time. Download: <https://godotengine.org/download/> |
 | Play | `tools\run-aps-godot.cmd` (Windows), or open `src/drafts/aps-godot/project.godot` in Godot and press F5 |
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
 | Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
@@ -31,6 +31,7 @@ Files:
 | File | Owns |
 | --- | --- |
 | `aps.gd` | The pixel buffer, camera, time of day, environment, UI, input, the headless checks and captures |
+| `dev_travel.gd` | **Dev tool:** the F1 fast-travel panel. Places live in `travel_places()` in `aps.gd`; when you merge a building, add its spots there (the `fast_travel` check makes sure each is walkable). `--travel` opens it for captures |
 | `world.gd` | APS, the canteen and patio, the street, the helpers, materials, procedural textures, and the collision rules and floor heights that tie every area together |
 | `campus_plan.gd` | **Generated, do not edit.** Every building's real outline and the named places from the team's plan, in Godot metres |
 | `roads.gd` | The campus loop road (centre line as straights and turns) and `across()`, the distance across the road at any point |
@@ -40,6 +41,7 @@ Files:
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
 | `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map, its covered walkway, the Mary statue garden at its west end, and two rows of parked cars (by the chapel, and in front of SJH) |
+| `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -321,7 +323,7 @@ Night lights (in `world.lamps`, visible only at night):
 - LED street lights: `SpotLight3D` from the lamp head, `#fff0d9`, energy 5.0,
   range 12, angle 68°, shadows on; the head glows `#fff3dc` (day 0.2, night 3.5).
 - Stall lights: omni `#ffd79d`, 1.6, reach 7.5.
-- Gym entrance lights: omni `#ffd79d`, 1.2, reach 6.0 (front doors); 1.0,
+- Gym entrance lights: omni `#ffd79d`, 1.2, reach 6.0 (front doors, and MGN's porch); 1.0,
   reach 6.5 (two under the side canopy). Gym wall lamps are emissive only
   (`glow(#f6f1e1, 0, 1.6)`), no light.
 - Canopy strips: omni `#ffcf92`, 0.55, reach 4.6, plus emissive strips.
@@ -427,7 +429,7 @@ before using them.
 | 7 | IH Gym (moves the student to the apron in front) | 84 |
 | 8 | Gym side (moves the student to the lane by the side entrance) | 44 |
 | 9 | SJH (moves the student to the south road by the parking) | 64 |
-| 0 | Gym inside (moves the student onto the court) | 40 |
+| 0 | Gym inside (moves the student to centre court, facing the stage) | 30 |
 
 - Three blends drive the camera from the width: `close` (22 → 8 m drops the
   target to the student's chest height), `wide` (22 → 56 m) and `campus`
@@ -448,20 +450,25 @@ before using them.
     the student's own depth so they stay in shot on the road.
   - **Gym gable** (`gable_for`): a further −90° (−180° in all), looking south
     at the north gable (z 66.8) from the lane, sliding in X.
-  - **Gym hall** (`arena_for`): inside the gym, −180° (looking south down the
-    hall at the stage), pitched down **35°** from 60 m (`ARENA_PITCH`,
-    `ARENA_DISTANCE`), following the student in X and Z; wide framings centre on
-    the hall's middle. Its weight rises across each front doorway (x 57.2 → 59)
-    and the side entrance (z 66.2 → 68.2, where it takes over from the gable),
-    so walking in **glides** the camera round and down. Walking in from a
-    framing wider than 48 m also glides the zoom to 40 (`ARENA_WIDTH`), and back
-    on the way out if it was not changed inside.
+  - **Gym inside** (`arena_for`, `face_for`): a low **2.5D** view, pitched
+    **12°** from 60 m (`ARENA_PITCH`, `ARENA_DISTANCE`), centred on the student,
+    in three zones (Sean's L / F / R sketch). In the **west half** of the hall
+    (R) it faces west, at the west stand across the court; in the **east half**
+    (L) east, at the east stand; on the **stage** and behind it (F, from x 128.5
+    in the gym's frame) south, at the stage. `face` is the quarter turns past
+    the gym's front view (0 east, 1 south, 2 west), eased at rate 3, so crossing
+    the middle line glides round through the stage's view. `arena` is 1 inside
+    the walls and rises across the last 0.8 m in front of a front doorway or the
+    side entrance (where it takes over from the gable), so walking in **glides**
+    the camera round. Walking in from a framing wider than 38 m glides the zoom
+    to 30 (`ARENA_WIDTH`, key 0) and back on the way out; inside the zoom goes
+    out to 40 m at most (`ARENA_CAP`), so the low frame's lower edge never starts
+    under the floor.
   - **Gym side view** (`perch_for`, `GymInterior.perched`): up on the stage
-    (from 1.65 m), the stands or the balcony (from 4.5 m) the hall view closes in
-    to a low side view, still looking south: pitched **10°** from 60 m
-    (`PERCH_PITCH`, `PERCH_DISTANCE`), centred on the student, the zoom gliding
-    to 16 m (`PERCH_WIDTH`) and back down after. While perched the zoom goes out
-    to 40 m at most, so the frame's lower edge never starts under the floor.
+    (from 1.65 m), the stands or the balcony (from 4.5 m) it closes in: pitched
+    **10°** (`PERCH_PITCH`), the zoom gliding to 16 m (`PERCH_WIDTH`) and back
+    down after, facing the way its zone does (on a stand, that stand, as in the
+    "middle view" photo).
   A new building gets its own zone the same way: a `*_for(x, z)` weight, a
   facing, and the plane it frames. Make sure the camera's standing spot (focus
   minus 23 m close up, up to 90 m wide) is not inside another building.
@@ -474,6 +481,14 @@ before using them.
   `1 − view_for`). Because the camera then stands north of the chapel, the near plane
   also cuts everything north of the parking (z < 97), so the chapel and its trees
   never stand in front of SJH.
+- **MGN zone** (`Mgn.view_for`): on the west road from z 66..74 down to the corner, the
+  camera turns right round (−270°, three quarter turns, through south) to look west at
+  MGN's corridor front, which faces east; the chapel zone yields to it
+  (`1 − Mgn.reach`), and at the corner it hands a quarter turn on to the SJH zone. The
+  camera then stands over the chapel lawn, so the near plane cuts everything east of
+  `Mgn.CUT_X` (x −51.8, just past the road and east of SJH's terracotta end block).
+  `--view=mgn` starts on the road at the entrance. Like the SJH view, wide framings show
+  an empty band at the bottom where the cut removes the near lawn.
 - **Interiors (cutaway):** walking into a covered space like the APS hallway
   blends in a weight (`hall`, from `Hallway.hall_for`, eased at rate 3.5) that:
   1. closes the view in to `HALL_WIDTH` (8.5 m) and glides the camera to the
@@ -558,15 +573,19 @@ Build an interior the same way:
 
 - **Open the doorways** in the outer walls (a sill up to the inside floor, a
   lintel over) and let `inside(x, z)` make the inside walkable ground.
-- **One camera view inside**, its own zone (`arena_for`), blended across the
-  doorways so walking in is a glide, not a cut.
-- **Cutaway groups.** Everything that can stand between that camera and the
-  student goes in a named group under the building's pivot (the roof, the
-  wall nearest the camera, a deck over the rooms below, each bay of the roof
-  structure). A static `hidden(group, local x, local z, level)` says when each
-  is in the way; `aps.gd` fades it out over 0.4 s and leaves it casting
-  shadows only (`SHADOWS_ONLY`), so the inside stays shaded by its roof. A wall
-  that is cut away keeps a **1.2 m stub** (`STUB`), so rooms still read as a plan.
+- **A camera zone inside** (`arena_for`, and `face_for` for which way it
+  looks), blended across the doorways so walking in is a glide, not a cut.
+- **Cutaway groups.** Everything that can stand between the camera and the
+  student goes in a named group under the building's pivot: the roof, the
+  north wall, the front and back walls (with the props on the front walk), each
+  stand's deck and rows, the walls under each stand, each side's stairs, each
+  half of each bay of the roof structure. A static
+  `hidden(group, local x, local z, level, side)` says when each is in the way,
+  side being the zone the camera is looking at ("L", "F", "R"); `aps.gd` fades it
+  out over 0.4 s and leaves it casting shadows only (`SHADOWS_ONLY`), so the
+  inside stays shaded by its roof. A wall that is cut away keeps a **1.2 m
+  stub** (`STUB`), so rooms still read as a plan. Floating plot labels hide
+  while the student is inside.
 - **Lights inside** are plain `OmniLight3D`s in their own group, on at every
   hour but only while the student is in (not in `world.lamps`, which are night
   lamps). Windows inside glow by day through `glow()`.

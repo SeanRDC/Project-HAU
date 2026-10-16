@@ -1,19 +1,32 @@
 # Project Context
 
+**MGN in Godot, 2026-10-16.** `areas/mgn.gd` builds the Mamerto G. Nepomuceno
+Building from outside on its plan plot (five storeys, ~17 m, facing east onto the west
+road): the open-corridor long block, the box-window wing over the entrance with the
+turnstile and the open stair, the north block, the south wing with its roof tank, and
+the raised garden. The student can walk in under the wing up to the turnstile. On the
+west road the camera turns right round to face it (`--view=mgn`), the chapel lawn cut
+away behind. Geometry not in the photos is listed as guesses in
+`sessions/2026-10-16-mgn-godot.md`.
+
+Dev fast travel in Godot, 2026-10-16: F1 opens a panel of 15 places (APS, hallway, canteen, chapel, gym, SJH, Mary, MGN...) and jumps there with a short fade. Add new buildings' spots to `travel_places()` in `aps.gd`. See `sessions/2026-10-16-godot-dev-fast-travel.md`.
+
 **Inside the IH Gym, 2026-10-16.** The gym can be walked into through either
 front doorway (the right one is now open, like the left) or the side entrance.
-The camera glides round to look south down the hall at the stage from 35° up,
-and the roof, the north wall, the balcony, a stand over the student or nearer
-roof bays fade away but keep their shadows. Inside: the court, bleacher rows on
-both sides, the balcony, the lobby, equipment room and corridors, closed rooms,
-the stage and backstage. Floors are now levels: `blocked()` / `floor_height()`
-take the walker's height (see "Storeys" and "Interiors and the cutaway" in
-`docs/godot-art-style.md`). Key 0 jumps onto the court. After Sean's marked-up
-screenshot: the red court runs on to a landscape practice court in front of a
-curved stage with flush corner steps, the stands' rows are one run with their
-stairs at the north ends, and on the stage or the stands the camera closes in to
-a low side view. Room layouts not in the photos are still first guesses. See
-`sessions/2026-10-16-ih-gym-interior.md`.
+Inside, the camera is a low 2.5D view in three zones from Sean's sketch: in the
+west half it faces the west stand, in the east half the east stand, on the stage
+the stage (`face_for`), gliding between them; whatever stands in front fades
+away but keeps its shadow. On the stage or a stand it closes in to a side view.
+Inside: the court (its lines filling the red surface), a landscape practice court,
+the curved stage with long stairs up its side walls and line arrays hung over
+it, curved striped end walls, bleacher rows on both sides, each stand's two
+stairs beside its exits as in the left-entrance photo (the left and right
+entrances, and two new open doorways in the back wall), the balcony, the lobby
+from its photo, the equipment room, corridors, closed rooms and backstage.
+Floors are levels: `blocked()` / `floor_height()` take the walker's height (see
+"Storeys" and "Interiors and the cutaway" in `docs/godot-art-style.md`). Key 0
+jumps to centre court. Room layouts not in the photos are still first guesses.
+See `sessions/2026-10-16-ih-gym-interior.md`.
 
 **NPCs and the boy rig in Godot, 2026-10-16.** Eight campus NPCs in the style
 reference's look, animated by the boy's rig made general
