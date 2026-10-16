@@ -1,5 +1,9 @@
 # Project Context
 
+**Facade detail, 2026-10-16.** `framed_window()` in `world.gd` puts APS's window look
+on any face; use it for every new building's windows. MGN now has framed windows
+throughout, floor bands, parapets and AC units. See `sessions/2026-10-16-facade-detail.md`.
+
 **The sun turns with the view, 2026-10-16.** The sun was fixed for APS, so north- and
 east-facing buildings (SJH, MGN) sat in shade. `_aim_sun()` in `aps.gd` now turns it
 with each camera zone, so every view's face is lit like the APS front. The exceptions
