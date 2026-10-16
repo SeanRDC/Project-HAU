@@ -23,7 +23,8 @@ public static partial class NpcRig
         public int FarX0, FarX1, FarY0, FarY1;      // the drawn far arm, taken out of the torso
         public int PackX = -1, PackY0 = 36, PackY1 = 95, PackSide;
         public int TorsoBottom, PackBottomX = -1, PackBottomY;
-        public int ApronBottom = -1;               // below the waist, only light pixels (an apron) stay on the torso
+        public int ApronBottom = -1;
+        public int ArmDarkStays = 999;             // from this row down, very dark pixels in the arm box stay on the body (a belt pouch)               // below the waist, only light pixels (an apron) stay on the torso
         public int[] Shoes;                        // outline, base, shade, light, shine, sole (null: the boy's)
         public float HipY, NearHipX, FarHipX, Thigh = 12f, Shin = 12f;
         public bool Skirt;                         // legs under a skirt: skin, socks, no hip block
@@ -62,12 +63,23 @@ public static partial class NpcRig
     static readonly int Skin = Rgb(0xdd, 0x90, 0x5e), Lash = Rgb(0x23, 0x18, 0x19), PackSide = Rgb(0x60, 0x18, 0x18);
 
     static bool InHead(int x, int y) { return y <= C.HeadBottom || (y == C.JawRow && x >= C.JawX0 && x <= C.JawX1); }
-    static bool ArmPixel(Color c)
+    static bool ArmPixel(Color c, int x, int y)
     {
         bool light = 0.3 * c.R + 0.59 * c.G + 0.11 * c.B > 95;
-        if (C.ArmMode == "box") return true;
+        // pants peeking under a hand: only where the pants really are (a dark cuff is fine)
+        if (C.ArmMode == "box") return !(x >= C.HipX0 && y >= C.HipY - 2 && PantsColour(c));
         if (C.ArmMode == "nopack") return light && !(c.R > 150 && c.B > 120 && c.R - c.G > 35) && !(c.B > c.R + 15);
         return light;
+    }
+    // close to any of the legs' colours: pants peeking in under a hand
+    static bool PantsColour(Color c)
+    {
+        foreach (int i in new[] { 0, 1, 2, 5, 6 })
+        {
+            var p = Color.FromArgb(C.Legs[i]);
+            if (Math.Abs(c.R - p.R) + Math.Abs(c.G - p.G) + Math.Abs(c.B - p.B) < 30) return true;
+        }
+        return false;
     }
     static bool IsSleeve(Color c) { return c.R >= 180 && c.G >= 150 && c.B >= 140; }
     static bool IsSkin(Color c) { return c.R >= 150 && c.B <= 135 && c.R - c.B >= 50; }
@@ -95,13 +107,70 @@ public static partial class NpcRig
                 if (v == 0) continue;
                 var c = Color.FromArgb(v);
                 if (InHead(x, y)) { head[x, y] = v; continue; }
-                bool near = ArmPixel(c) && x >= C.NearX0 && x <= (y >= C.NearHandY ? C.NearHandX1 : C.NearX1) && y >= C.NearY0 && y <= C.NearY1;
-                bool far = ArmPixel(c) && x >= C.FarX0 && x <= C.FarX1 && y >= C.FarY0 && y <= C.FarY1;
+                bool pouch = y >= C.ArmDarkStays && 0.3 * c.R + 0.59 * c.G + 0.11 * c.B < 45;
+                bool near = !pouch && ArmPixel(c, x, y) && x >= C.NearX0 && x <= (y >= C.NearHandY ? C.NearHandX1 : C.NearX1) && y >= C.NearY0 && y <= C.NearY1;
+                bool far = ArmPixel(c, x, y) && x >= C.FarX0 && x <= C.FarX1 && y >= C.FarY0 && y <= C.FarY1;
                 if (near) { (y < C.ElbowRow ? nearUpper : nearLower).Add(new[] { x, y, v }); continue; }
                 if (far) { farMask[x, y] = true; continue; } // replaced by a copy of the near arm
                 // torso: everything down to the waist (or the hem), and the backpack's bottom
                 if (y <= C.TorsoBottom || (x <= C.PackBottomX && y <= C.PackBottomY) || (y <= C.ApronBottom && 0.3 * c.R + 0.59 * c.G + 0.11 * c.B > 120)) torso[x, y] = v;
             }
+        // the arm's dark outline on the outside of the body is the arm's too, so it moves
+        // with it instead of staying behind as a line
+        {
+            var arm = new HashSet<long>();
+            foreach (var p in nearUpper) arm.Add((long)p[0] * 1000 + p[1]);
+            foreach (var p in nearLower) arm.Add((long)p[0] * 1000 + p[1]);
+            for (int y = C.NearY0; y <= C.NearY1; y++)
+                for (int x = C.NearX0 - 2; x <= C.NearHandX1 + 1; x++)
+                {
+                    if (x < 1 || x >= W - 1 || torso[x, y] == 0) continue;
+                    var c = Color.FromArgb(torso[x, y]);
+                    if (0.3 * c.R + 0.59 * c.G + 0.11 * c.B > 95) continue;
+                    bool nextToArm = false, outside = false;
+                    for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++)
+                        {
+                            if (arm.Contains((long)(x + dx) * 1000 + (y + dy))) nextToArm = true;
+                            if ((dx == 0 || dy == 0) && reference[x + dx, y + dy] == 0) outside = true;
+                        }
+                    if (!nextToArm || !outside) continue;
+                    (y < C.ElbowRow ? nearUpper : nearLower).Add(new[] { x, y, torso[x, y] });
+                    torso[x, y] = 0;
+                }
+        }
+        // the near arm is only what is joined to it: a few shirt pixels at its edge
+        // would float on their own once the arm turns (or is copied to the far side)
+        {
+            var all = new List<int[]>(nearUpper); all.AddRange(nearLower);
+            var at = new Dictionary<long, int[]>();
+            foreach (var p in all) at[(long)p[0] * 1000 + p[1]] = p;
+            var group = new Dictionary<long, int>(); int best = -1, bestSize = 0, gid = 0;
+            foreach (var p in all)
+            {
+                long key = (long)p[0] * 1000 + p[1];
+                if (group.ContainsKey(key)) continue;
+                int size = 0; var st = new Stack<long>(); st.Push(key); group[key] = gid;
+                while (st.Count > 0)
+                {
+                    long k = st.Pop(); size++;
+                    int kx = (int)(k / 1000), ky = (int)(k % 1000);
+                    for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++)
+                        {
+                            long nk = (long)(kx + dx) * 1000 + (ky + dy);
+                            if (at.ContainsKey(nk) && !group.ContainsKey(nk)) { group[nk] = gid; st.Push(nk); }
+                        }
+                }
+                if (size > bestSize) { bestSize = size; best = gid; }
+                gid++;
+            }
+            foreach (var list in new[] { nearUpper, nearLower })
+                list.RemoveAll(p =>
+                {
+                    if (group[(long)p[0] * 1000 + p[1]] == best) return false;
+                    if (p[1] <= C.TorsoBottom) torso[p[0], p[1]] = p[2];
+                    return true;
+                });
+        }
         // The far arm is mostly hidden in his drawing (a 3 px strip), so it would look
         // like a stick once it swings out. It is his near arm instead, a shade darker.
         farUpper.Clear(); farLower.Clear();
@@ -120,9 +189,16 @@ public static partial class NpcRig
                 if (touches) torso[x, y] = 0;
             }
         // behind the near arm is the side of the backpack (or the body)
+        // (a backpack, or the body to its left); with nothing behind, the gap stays open
         for (int y = C.NearY0; y <= Math.Min(C.NearY1, C.TorsoBottom); y++)
             for (int x = C.NearX0; x <= C.NearX1; x++)
-                if (torso[x, y] == 0 && reference[x, y] != 0) torso[x, y] = C.PackSide;
+            {
+                if (torso[x, y] != 0 || reference[x, y] == 0) continue;
+                bool behind = false;
+                for (int k = 1; k <= 6 && !behind; k++)
+                    if (x - k - 2 >= 0 && torso[x - k, y] != 0 && torso[x - k - 1, y] != 0 && torso[x - k - 2, y] != 0) behind = true;
+                if (behind) torso[x, y] = C.PackSide;
+            }
         if (C.PackX >= 0)
             for (int y = C.PackY0; y <= Math.Min(H - 1, C.PackY1); y++)
                 for (int x = 0; x <= C.PackX; x++)
@@ -352,6 +428,12 @@ public static partial class NpcRig
                 if (edge) v = outline;
                 // socks below the skirt
                 if (C.Socks != null && a >= C.SockFrom) v = edge ? C.Socks[0] : s < -1.2f ? C.Socks[2] : C.Socks[1];
+                if (C.Skirt)
+                {
+                    int hem = C.TorsoBottom + (int)Math.Round(hipY - C.HipY);
+                    if (y == hem + 1) v = outline;
+                    else if (y == hem + 2 && !edge) v = shade;
+                }
                 if (far && C.Socks != null && a >= C.SockFrom && !edge) v = Darken(v, 0.9);
                 // the top edge joins the hips, so it is not outlined
                 if (edge && mask[x, y + 1] && !mask[x, y - 1] && y <= hipY + 1) v = baseC;
@@ -521,6 +603,7 @@ public static partial class NpcRig
         // the near arm passes in front of everything
         Arm(o, nearUpper, nearLower, NearShoulder, NearElbow, p.NearArm, p.NearBend, p.Dy);
         lastFilled = Patch(o, (int)hipY);
+        Crumbs(o);
         return o;
     }
 
@@ -593,6 +676,32 @@ public static partial class NpcRig
             filled += fills.Count;
         }
         return filled;
+    }
+
+    // Removes pieces of 6 pixels or fewer that are not joined to the body.
+    static void Crumbs(int[,] o)
+    {
+        var id = new int[W, H]; var sizes = new List<int> { 0 };
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+            {
+                if (o[x, y] == 0 || id[x, y] != 0) continue;
+                int n = sizes.Count, size = 0; var st = new Stack<int>(); st.Push(y * W + x); id[x, y] = n;
+                while (st.Count > 0)
+                {
+                    int k = st.Pop(), kx = k % W, ky = k / W; size++;
+                    for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++)
+                        {
+                            int nx = kx + dx, ny = ky + dy;
+                            if (nx < 0 || ny < 0 || nx >= W || ny >= H || o[nx, ny] == 0 || id[nx, ny] != 0) continue;
+                            id[nx, ny] = n; st.Push(ny * W + nx);
+                        }
+                }
+                sizes.Add(size);
+            }
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+                if (o[x, y] != 0 && sizes[id[x, y]] <= 6) o[x, y] = 0;
     }
 
     static Pose Walk(int i, int n)
@@ -668,11 +777,19 @@ public static partial class NpcRig
             frames.Add(Draw(p));
             log.Append("idle " + i + " [patched " + lastFilled + "]; ");
         }
-        // talk: 4 frames, the mouth opening on every other one and the near hand gesturing
-        double[][] talk = { new double[] { 0, 0, 0 }, new double[] { 1, 7, 26 }, new double[] { 0, 10, 32 }, new double[] { 1, 4, 18 } };
+        // talk: 4 frames, the mouth opening on every other one. The arms stay as drawn:
+        // turning them a few degrees blurred the hands.
+        double[][] talk = { new double[] { 0, 0, 0 }, new double[] { 1, 0, 0 }, new double[] { 0, 0, 0 }, new double[] { 1, 0, 0 } };
         foreach (var t in talk)
         {
             var p = new Pose { NearThigh = 1, FarThigh = -1, NearArm = t[1], NearBend = t[2], FarArm = 0, FarBend = 0, MouthOpen = t[0] > 0 };
+            frames.Add(Draw(p));
+        }
+        // wave: 4 frames, the elbow out to the side and the forearm up beside the head, the hand rocking
+        double[][] wave = { new double[] { -72, -96 }, new double[] { -74, -114 }, new double[] { -72, -132 }, new double[] { -74, -114 } };
+        foreach (var t in wave)
+        {
+            var p = new Pose { NearThigh = 1, FarThigh = -1, NearArm = t[0], NearBend = t[1], FarArm = 0, FarBend = 0 };
             frames.Add(Draw(p));
         }
         // crop every frame to one box with the feet on the bottom row
@@ -688,8 +805,23 @@ public static partial class NpcRig
         Sheet(frames, 0, 12, minx, miny, fw, fh, Path.Combine(sheetDir, "walk.png"));
         Sheet(frames, 12, 24, minx, miny, fw, fh, Path.Combine(sheetDir, "idle.png"));
         Sheet(frames, 36, 4, minx, miny, fw, fh, Path.Combine(sheetDir, "talk.png"));
+        Sheet(frames, 40, 4, minx, miny, fw, fh, Path.Combine(sheetDir, "wave.png"));
+        // the bubble portrait: a 32 x 32 close-up of the face, mouth closed, open and blinking
+        int pcx = (C.NearEye[0] + C.FarEye[1]) / 2, pcy = C.NearEye[2] + 3;
+        var faces = new List<int[,]> { frames[12], frames[37], frames[12 + 9] };
+        using (var bmp = new Bitmap(32 * 3, 32, PixelFormat.Format32bppArgb))
+        {
+            for (int k = 0; k < 3; k++)
+                for (int y = 0; y < 32; y++)
+                    for (int x = 0; x < 32; x++)
+                    {
+                        int sx = pcx - 15 + x, sy = pcy - 17 + y;
+                        if (sx >= 0 && sy >= 0 && sx < W && sy < H && faces[k][sx, sy] != 0) bmp.SetPixel(k * 32 + x, y, Color.FromArgb(faces[k][sx, sy]));
+                    }
+            bmp.Save(Path.Combine(sheetDir, "portrait.png"), ImageFormat.Png);
+        }
         Directory.CreateDirectory(outDir);
-        for (int i = 0; i < frames.Count; i++) Save(frames[i], Path.Combine(outDir, string.Format("{0}-{1:00}.png", i < 12 ? "walk" : i < 36 ? "idle" : "talk", i < 12 ? i : i < 36 ? i - 12 : i - 36)));
+        for (int i = 0; i < frames.Count; i++) Save(frames[i], Path.Combine(outDir, string.Format("{0}-{1:00}.png", i < 12 ? "walk" : i < 36 ? "idle" : i < 40 ? "talk" : "wave", i < 12 ? i : i < 36 ? i - 12 : i < 40 ? i - 36 : i - 40)));
         return log.ToString();
     }
 
