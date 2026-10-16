@@ -29,6 +29,10 @@ const PIECES := [
 	{"part": ["arc", Vector2(-50.5, 102.0), 8.0, 90.0, 180.0], "walk": true},
 ]
 
+## Where the building-side sidewalk and kerb stop for a side road (world x/z rects):
+## the middle road's mouth on the west road (areas/middle_road.gd).
+const OPENINGS: Array[Rect2] = [Rect2(-64.0, 58.0, 3.0, 11.0)]
+
 static var _points := PackedVector2Array()
 static var _left := PackedVector2Array()
 static var _walk := PackedByteArray()
@@ -81,6 +85,13 @@ static func _sample() -> void:
 		var after := _points[1] if i == count - 1 else _points[i + 1]
 		var direction := (after - before).normalized()
 		_left.append(Vector2(direction.y, -direction.x))
+
+## True where a side road opens the sidewalk and kerb (see OPENINGS).
+static func opened(at: Vector2) -> bool:
+	for rect in OPENINGS:
+		if rect.has_point(at):
+			return true
+	return false
 
 ## Distance across the road, as on the straight APS frontage: under 4 is the left
 ## (building) side, 4..11 the carriageway between its kerbs, over 11 the lawn.

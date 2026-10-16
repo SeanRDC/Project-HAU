@@ -16,6 +16,7 @@ const Npcs := preload("res://npcs.gd")
 const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
+const MiddleRoad := preload("res://areas/middle_road.gd")
 const DevTravel := preload("res://dev_travel.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
@@ -53,7 +54,13 @@ const PERCH_WIDTH := 16.0
 const SJH_SPOT := Vector2(-11.0, 109.0)
 ## Where --view=mgn brings the student: the west road, in front of MGN's entrance.
 const MGN_SPOT := Vector2(-60.5, 92.0)
+## Where --view=middle brings the student: the middle road's north carriageway, past the zebra.
+const MIDDLE_SPOT := Vector2(-78.0, 60.4)
 const MAX_WIDTH := 140.0
+## Facing south on the middle road, the camera cuts away everything north of this z (the
+## APS wing and the corner garden, which would stand in front at the mouth); PGN's side of
+## the road fades instead (MiddleRoad.NORTH_GROUP), so the ground up to the plot stays.
+const MIDDLE_CUT_Z := 30.0
 ## Sprite texels per metre (85 px over 1.83 m). Auto mode renders near this density.
 const SPRITE_DENSITY := 46.4
 const PIXEL_MODES := ["auto", "crisp", "pixel"]
@@ -112,6 +119,8 @@ var _zoom_before := -1.0
 var sjh := 0.0
 ## 0..1: how far the camera has turned right round to look west at MGN from the west road.
 var mgn := 0.0
+## 0..1: how far the camera has turned to look south across the middle road (PGN to MGN).
+var middle := 0.0
 ## 0..1: how far the student is inside SJH's covered walkway (the same cutaway as the hallway).
 var walkway := 0.0
 ## 0..1: how far the student is inside the APS hallway (the cutaway and glide).
@@ -154,7 +163,7 @@ func _ready() -> void:
 	npcs.build_ui(self)
 
 	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0],
-		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "mgn": [MGN_SPOT, 56.0]}
+		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "mgn": [MGN_SPOT, 56.0], "middle": [MIDDLE_SPOT, 40.0]}
 	var start: Array = views.get(_args.get("view", ""), [Vector2(0.7, 5.3), 112.0])
 	var spot: Vector2 = start[0]
 	hour = float(_args.get("hour", "16.5"))
@@ -367,7 +376,12 @@ static func perch_for(x: float, z: float, level: float) -> float:
 	return 1.0 if GymInterior.perched(p.x, p.y, level) else 0.0
 
 static func chapel_for(x: float, z: float) -> float:
-	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z))
+	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z)) \
+		* (1.0 - MiddleRoad.view_for(x, z))
+
+## The MGN view (facing west from the west road) yields to the middle road's.
+static func mgn_for(x: float, z: float) -> float:
+	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z))
 
 func _snap_follow() -> void:
 	follow = Vector2(student.position.x - 0.15, student.position.z)
@@ -380,7 +394,8 @@ func _snap_follow() -> void:
 	perch = perch_for(student.position.x, student.position.z, student.level())
 	hall = Hallway.hall_for(student.position.x, student.position.z)
 	sjh = Sjh.view_for(student.position.x, student.position.z)
-	mgn = Mgn.view_for(student.position.x, student.position.z)
+	mgn = mgn_for(student.position.x, student.position.z)
+	middle = MiddleRoad.view_for(student.position.x, student.position.z)
 	walkway = Sjh.walkway_for(student.position.x, student.position.z)
 
 ## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
@@ -388,13 +403,14 @@ func _snap_follow() -> void:
 ## -180° south at the gym's gable from the lane or down its hall from inside, and
 ## -180° south at St. Joseph Hall (it takes over from the chapel and gym views), and
 ## -270° west at MGN from the west road (it takes over from the chapel view; at the
-## corner it hands a quarter turn on to SJH's).
+## corner it hands a quarter turn on to SJH's), and -180° south across the middle road.
 func _yaw() -> float:
 	return orbit - PI / 2.0 * _turns()
 
-## The camera's turn in quarter turns (SJH's half turn counts two, MGN's three); the controls use it too.
+## The camera's turn in quarter turns (SJH's and the middle road's half turns count two,
+## MGN's three); the controls use it too.
 func _turns() -> float:
-	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn
+	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle
 
 func _update_camera(delta: float) -> void:
 	var was_inside := hall + walkway
@@ -415,7 +431,8 @@ func _update_camera(delta: float) -> void:
 	perch = lerpf(perch, perch_for(student.position.x, student.position.z, student.level()), 1.0 - exp(-delta * 3.0))
 	face = lerpf(face, face_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	sjh = lerpf(sjh, Sjh.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
-	mgn = lerpf(mgn, Mgn.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	mgn = lerpf(mgn, mgn_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	middle = lerpf(middle, MiddleRoad.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var wide := clampf((width - 22.0) / 34.0, 0.0, 1.0)
 	var campus := clampf((width - 56.0) / 42.0, 0.0, 1.0)
 	var close := clampf((22.0 - width) / 14.0, 0.0, 1.0)
@@ -463,9 +480,14 @@ func _update_camera(delta: float) -> void:
 	var mgn_along := lerpf(lerpf(mgn_at.x, 6.0, wide), 5.0, campus)
 	var mgn_face := Mgn.world(mgn_along, lerpf(0.0, mgn_at.y, close))
 	var mgn_focus := Vector3(mgn_face.x, lerpf(target_y, target_y + 3.0, wide), roundf(mgn_face.y / pixel) * pixel)
-	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn)
+	# Facing south across the middle road it slides along it with the student; wide, it
+	# frames the south walkway and MGN's north block behind it.
+	var middle_x := roundf(follow.x / pixel) * pixel
+	var middle_z := lerpf(lerpf(follow.y, MiddleRoad.LANE_S.x + 1.0, wide), MiddleRoad.WALK_S.x, campus)
+	var middle_focus := Vector3(middle_x, lerpf(target_y, target_y + 2.0, wide), roundf(middle_z / pixel) * pixel)
+	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
-	focus += sjh_focus * sjh + mgn_focus * mgn
+	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle
 	# Inside a covered corridor (the APS hallway, SJH's walkway): glide in close and
 	# look a little down along it. Each gives the corridor's middle, how far in front
 	# of it the cut goes, and its ceiling.
@@ -502,6 +524,11 @@ func _update_camera(delta: float) -> void:
 	if mgn > 0.0:
 		var lawn_edge := (Vector3(Mgn.CUT_X, focus.y, focus.z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, lawn_edge * smoothstep(0.0, 1.0, mgn))
+	# Facing south across the middle road the camera stands over PGN's plot: everything
+	# north of it (the APS wing, the corner garden) is cut away.
+	if middle > 0.0:
+		var north_edge := (Vector3(focus.x, focus.y, MIDDLE_CUT_Z) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, north_edge * smoothstep(0.0, 1.0, middle))
 	var grade := display.material as ShaderMaterial
 	grade.set_shader_parameter("cut", inside)
 	if inside > 0.0:
@@ -680,6 +707,8 @@ static func travel_places() -> Array:
 		["Mary statue", Vector2(-48.5, 113.6), 26.0],
 		["MGN", MGN_SPOT, 56.0],
 		["MGN entrance", Mgn.world(21.0, 2.5), 18.0],
+		["Middle road (PGN-MGN)", MIDDLE_SPOT, 40.0],
+		["Flagpole end", Vector2(-170.5, 60.0), 40.0],
 	]
 
 ## Jumps the student to a fast-travel place, with every camera zone, the gym's
@@ -838,6 +867,15 @@ func _collect_cutaways() -> void:
 				items.append([node, (node as GeometryInstance3D).cast_shadow])
 			stack.append_array(node.get_children())
 		_cutaways.append({"name": group, "alpha": 1.0, "items": items})
+	# PGN's side of the middle road fades the same way while the camera faces south across it.
+	var north_items := []
+	var north_stack: Array[Node] = [scene.find_child(MiddleRoad.NORTH_GROUP, false, false)]
+	while not north_stack.is_empty():
+		var node: Node = north_stack.pop_back()
+		if node is GeometryInstance3D:
+			north_items.append([node, (node as GeometryInstance3D).cast_shadow])
+		north_stack.append_array(node.get_children())
+	_cutaways.append({"name": MiddleRoad.NORTH_GROUP, "alpha": 1.0, "items": north_items})
 
 ## Fades the groups standing between the camera and the student out (they keep casting
 ## shadows) and back in, and lights the hall while the student is in it.
@@ -846,8 +884,10 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 	var y := student.level()
 	# Which side of the hall the camera is looking at now (it glides between them).
 	var side := GymInterior.side_for(face)
+	var on_middle := MiddleRoad.view_for(student.position.x, student.position.z) > 0.5
 	for cut in _cutaways:
-		var target := 0.0 if GymInterior.hidden(cut["name"], p.x, p.y, y, side) else 1.0
+		var hidden: bool = on_middle if cut["name"] == MiddleRoad.NORTH_GROUP else GymInterior.hidden(cut["name"], p.x, p.y, y, side)
+		var target := 0.0 if hidden else 1.0
 		var alpha: float = target if immediate else move_toward(cut["alpha"], target, delta * 2.5)
 		if alpha == cut["alpha"] and not immediate:
 			continue
@@ -859,8 +899,9 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 			instance.transparency = 0.0 if alpha <= 0.0 or alpha >= 1.0 else 1.0 - alpha
 			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY if alpha <= 0.0 else cast
 	_interior_lights.visible = GymInterior.inside(p.x, p.y)
+	# The plots' labels hide inside the gym and on the middle road (PGN's would hang in front).
 	for label in _plot_labels:
-		(label as Label3D).visible = not _interior_lights.visible
+		(label as Label3D).visible = not _interior_lights.visible and not on_middle
 
 func _cut_alpha(group: String) -> float:
 	for cut in _cutaways:
@@ -1227,6 +1268,36 @@ func _verify_and_capture() -> void:
 		_set_zoom(MIN_WIDTH, true)
 		_update_camera(1.0)
 		checks.mgn_close_shows_student = _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
+		# The middle road: walkable from the west road to the flagpole, both carriageways,
+		# both covered walkways and the crossings; the strips, median, pillars and island solid.
+		var lanes := true
+		for x in range(-64, -168, -8):
+			lanes = lanes and not World.blocked(x, 60.4) and not World.blocked(x, 66.6) \
+				and is_equal_approx(World.floor_height(x, 60.4), -0.19) and is_equal_approx(World.floor_height(x, 66.6), -0.19)
+		checks.middle_road_walkable = lanes and not World.blocked(-90.0, 53.0) and not World.blocked(-90.0, 73.5) \
+			and not World.blocked(-105.5, 56.6) and not World.blocked(-105.5, 63.5) and not World.blocked(-170.5, 60.0) \
+			and is_equal_approx(World.floor_height(-90.0, 53.0), -0.04) and is_equal_approx(World.floor_height(-105.5, 63.5), -0.04)
+		var pillar: Vector2 = MiddleRoad.pillars()[0]
+		checks.middle_road_solid = World.blocked(-90.0, 63.5) and World.blocked(-90.0, 56.6) and World.blocked(-90.0, 70.3) \
+			and World.blocked(pillar.x, pillar.y) and World.blocked(MiddleRoad.FLAG.x, MiddleRoad.FLAG.y) and World.blocked(-90.0, 77.0)
+		checks.middle_road_kerbs = is_equal_approx(World.floor_height(-90.0, MiddleRoad.LANE_N.x), 0.0) \
+			and is_equal_approx(World.floor_height(-90.0, MiddleRoad.MEDIAN.y), 0.0)
+		# The west road's sidewalk and kerb open across the mouth, and stay either side of it.
+		checks.west_road_opening = Roads.opened(Vector2(-62.0, 63.5)) and is_equal_approx(World.floor_height(-62.0, 63.5), -0.19) \
+			and not Roads.opened(Vector2(-62.0, 54.0)) and is_equal_approx(World.floor_height(-62.0, 54.0), 0.0)
+		# Walking in off the west road: the camera turns to face south across the road, the
+		# PGN side behind the student is cut away, and the student stays in view.
+		student.place(-60.0, 60.4)
+		_set_zoom(36.0, true)
+		_snap_follow()
+		for i in 240:
+			student.move(Vector2(-1, 0), true, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		_update_cutaways(1.0, true)
+		checks.walk_down_middle_road = student.position.x < -75.0 and middle > 0.95 and mgn < 0.05 and chapel < 0.05 \
+			and forward.dot(Vector3.BACK) > 0.95 and _cut_alpha(MiddleRoad.NORTH_GROUP) < 0.05 \
+			and _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
 		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
 		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)
 		checks.hallway_props_block = World.blocked(-60.0, -2.4) and World.blocked(-24.0, -0.2) \
