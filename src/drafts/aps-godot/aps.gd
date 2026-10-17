@@ -1222,9 +1222,35 @@ func _verify_and_capture() -> void:
 		# The corner garden is planted, not walkable; the road turning past it is.
 		checks.left_garden_blocks = World.blocked(-58.0, 8.0) and not World.blocked(-52.0, 10.0)
 		# The shared campus plan: every building, the closed road loop, reserved plots.
-		checks.plan_loaded = CampusPlan.PLOTS.size() == 21 and CampusPlan.PLOTS["aps"]["built"]
+		checks.plan_loaded = CampusPlan.PLOTS.size() == 29 and CampusPlan.PLOTS["aps"]["built"] \
+			and not CampusPlan.PLOTS.has("corazon") and not CampusPlan.PLOTS.has("srh")
 		checks.road_loop_closed = Roads.points()[0].distance_to(Roads.points()[-1]) < 0.01
 		checks.plots_reserved = Plots.occupied(72.6, 38.8) and Plots.occupied(76.8, -7.1) and not Plots.occupied(-8.7, 58.1)
+		# The layout reference: the Student Center between the boulevard and the Main Building.
+		checks.plots_layout = Plots.occupied(-120.0, 84.0) and Plots.occupied(-120.0, 100.0) \
+			and CampusPlan.PLOTS["student"]["kind"] == "building" and CampusPlan.PLOTS["mainGate"]["kind"] == "gate" \
+			and CampusPlan.PLOTS["annex"]["short"] == "Aero Hall"
+		# No two plots overlap each other or a built building (shared edges allowed), and
+		# none covers ground the student walks on.
+		var overlap := false
+		var ids: Array = CampusPlan.PLOTS.keys()
+		for i in ids.size():
+			for j in range(i + 1, ids.size()):
+				var a: Dictionary = CampusPlan.PLOTS[ids[i]]
+				var b: Dictionary = CampusPlan.PLOTS[ids[j]]
+				if a["built"] and b["built"]:
+					continue
+				for piece in Geometry2D.intersect_polygons(PackedVector2Array(a["outline"]), PackedVector2Array(b["outline"])):
+					var area := 0.0
+					for k in piece.size():
+						area += piece[k].cross(piece[(k + 1) % piece.size()])
+					if absf(area) / 2.0 > 1.0:
+						overlap = true
+		var walked_on := false
+		for spot in [Vector2(-90.0, 57.2), Vector2(-90.0, 72.0), Vector2(-92.1, 51.9), Vector2(-92.1, 77.3), Vector2(-159.0, 61.0),
+				Vector2(-176.0, 64.6), Vector2(-58.5, 40.0), Vector2(-60.0, 90.0), MGN_SPOT, CHAPEL_SPOT, SJH_SPOT, GYM_SPOT]:
+			walked_on = walked_on or Plots.occupied(spot.x, spot.y)
+		checks.plots_clear = not overlap and not walked_on
 		# The chapel is solid; its plaza, parking and the lawn path are walkable.
 		checks.chapel_blocks = World.blocked(-8.7, 58.1) and World.blocked(-25.0, 59.5)
 		var plaza_floor := World.floor_height(CHAPEL_SPOT.x, CHAPEL_SPOT.y)

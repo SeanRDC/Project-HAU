@@ -445,6 +445,148 @@ export const BUILDINGS = {
 
 export type BuildingId = keyof typeof BUILDINGS;
 
+// --- The Godot campus layout, 2026-10-18 --------------------------------------------
+//
+// Sean's labelled layout of the whole campus, `assets/MAIN CAMPUS LAYOUT REFERENCE.jpg`
+// (1292 x 727): black = buildings, orange = covered walks and student gates, pink = car
+// gates, yellow = ground-level areas. The Godot scene reserves a plot for every
+// building, walk, gate and ground area on it that is not built yet
+// (tools/export-godot-plan.mjs writes them to campus_plan.gd). The browser game keeps
+// BUILDINGS above.
+//
+// Positions are kept in that picture's pixels, like the aerial photo above, and turned
+// into metres by a fit on things the Godot scene has already built: the angel
+// fountain, the boulevard's mouth on the west road and the lawn's kerbs round the road
+// loop (3-4 m off at worst). The picture is a slightly oblique satellite view with
+// hand-drawn roofs, so the built buildings stay on their surveyed outlines. Where OSM
+// has a building's real shape (SFJ, STL) the shape is kept and only moved to where the
+// picture puts it; it agrees with the note above that OSM is about 14 m off in the
+// west. The Main Building's north strip is the Student Center, on the boulevard.
+
+/** Layout picture pixel to Godot metres: x = a*u - b*v + x0, z = b*u + a*v + z0. */
+const LAYOUT_FIT = { a: 0.33506, b: -0.012995, x0: -281.2015, z0: -73.2941 };
+/** Godot metres are plan metres plus this (tools/export-godot-plan.mjs, OFFSET). */
+const GODOT_OFFSET = { x: 4.7, z: 58.8 };
+
+/** Godot world metres (x, z) to plan spots. */
+function inGodot(...pts: [number, number][]): Spot[] {
+  return pts.map(([x, z]) => ({ u: x - GODOT_OFFSET.x, v: z - GODOT_OFFSET.z }));
+}
+
+/** An outline traced off the layout picture, one pixel per corner. */
+function onLayout(...px: Px[]): Spot[] {
+  const { a, b, x0, z0 } = LAYOUT_FIT;
+  return inGodot(...px.map(([u, v]): [number, number] => [a * u - b * v + x0, b * u + a * v + z0]));
+}
+
+/** A round area on the layout picture: its centre and radius in pixels. */
+function roundOnLayout(centre: Px, radius: number, steps = 20): Spot[] {
+  const px: Px[] = [];
+  for (let i = 0; i < steps; i++) {
+    const t = (2 * Math.PI * i) / steps;
+    px.push([centre[0] + radius * Math.cos(t), centre[1] + radius * Math.sin(t)]);
+  }
+  return onLayout(...px);
+}
+
+/** An outline moved by du, dv metres. */
+function shift(pts: Spot[], du: number, dv: number): Spot[] {
+  return pts.map((p) => ({ u: p.u + du, v: p.v + dv }));
+}
+
+/** The part of an outline on one side of a line along the grid (Sutherland-Hodgman). */
+function clip(pts: Spot[], axis: 'u' | 'v', limit: number, keep: 'above' | 'below'): Spot[] {
+  const inside = (p: Spot) => (keep === 'above' ? p[axis] >= limit : p[axis] <= limit);
+  const kept: Spot[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    const q = pts[(i + 1) % pts.length];
+    if (inside(p)) kept.push(p);
+    if (inside(p) !== inside(q)) {
+      const t = (limit - p[axis]) / (q[axis] - p[axis]);
+      kept.push({ u: p.u + t * (q.u - p.u), v: p.v + t * (q.v - p.v) });
+    }
+  }
+  return kept;
+}
+
+export interface GodotPlot {
+  /** its number on the 2022 campus map, if it has one */
+  no?: number;
+  name: string;
+  /** what goes on the plot */
+  short: string;
+  /** a building, a covered walk, a gate for students, or a ground-level area */
+  kind: 'building' | 'walk' | 'gate' | 'ground';
+  outline: Spot[];
+  /** where its name goes, when the middle of the outline is not a good place */
+  label?: Spot;
+}
+
+/** A plan building as a Godot plot: its name, short name and outline as they are. */
+function asPlot(id: BuildingId): GodotPlot {
+  const b: Building = BUILDINGS[id];
+  return { no: b.no, name: b.name, short: b.short, kind: 'building', outline: b.outline!, label: b.label };
+}
+
+/** The Student Center and the Main Building meet here (Godot z 88.4), 8.5 m behind the boulevard. */
+const STUDENT_CENTER_BACK = 88.4 - GODOT_OFFSET.z;
+
+export const GODOT_PLOTS: Record<string, GodotPlot> = {
+  // Built in Godot (areas/*.gd); their plots are not drawn.
+  aps: asPlot('aps'),
+  chapel: asPlot('chapel'),
+  gym: asPlot('gym'),
+  sjh: asPlot('sjh'),
+  mgn: asPlot('mgn'),
+  // The west side: St. Martha as drawn; SFJ (the library) moved 7.1 m east and 20.7 m
+  // south onto the picture's outline; STL moved 12.2 m south so its pavilion lines up
+  // with PGN's face along the boulevard, as in the picture.
+  martha: {
+    no: 2, name: 'St. Martha Hall', short: 'St. Martha', kind: 'building',
+    outline: onLayout([75, 287.5], [167.5, 287.5], [167.5, 410], [115, 410], [115, 380], [52.5, 380], [52.5, 347.5], [75, 347.5]),
+  },
+  sfj: {
+    no: 3, name: 'San Francisco de Javier Building (Library)', short: 'Library - SFJ', kind: 'building',
+    outline: shift(outline('sfj')!, 7.1, 20.7),
+  },
+  stl: { ...asPlot('stl'), outline: shift(outline('stl')!, 0, 12.2) },
+  pgn: asPlot('pgn'),
+  // On the boulevard's south side: the Student Center in front of the Main Building.
+  student: {
+    name: 'Student Center', short: 'Student Center', kind: 'building',
+    outline: inGodot([-156.2, 79.9], [-84.5, 79.9], [-84.5, 88.4], [-156.2, 88.4]),
+  },
+  djdn: { ...asPlot('djdn'), outline: clip(moved('djdn')!, 'v', STUDENT_CENTER_BACK, 'above') },
+  // The north block, on the outlines already traced off the aerial photo.
+  warehouse: asPlot('warehouse'),
+  foodcourt: { ...asPlot('foodcourt'), name: 'Yellow Canteen', short: 'Yellow Canteen' },
+  // St. Gabriel and St. Raphael are one building round a courtyard; the picture calls it St. Gabriel.
+  sgh: { ...asPlot('sgh'), short: 'St. Gabriel', outline: traced(...HALL) },
+  // nudged 0.5 m west off GGN's west wing, which its trace overlapped
+  smh: { ...asPlot('smh'), outline: shift(TRACED.smh, -0.5, 0) },
+  ggn: asPlot('ggn'),
+  formation: asPlot('formation'),
+  // The east side.
+  sh: asPlot('sh'),
+  court: asPlot('court'),
+  annex: { ...asPlot('annex'), name: 'Aero Hall', short: 'Aero Hall' },
+  // Covered walks and student gates (orange), and ground-level areas (yellow).
+  coveredWalk: { name: 'Covered Walk', short: 'Covered Walk', kind: 'walk', outline: onLayout([65, 412.5], [182.5, 412.5], [182.5, 442.5], [65, 442.5]) },
+  epiphany: { name: 'Epiphany of Angels', short: 'Epiphany of Angels', kind: 'ground', outline: onLayout([42, 457], [188, 450], [190, 502], [44, 508]) },
+  mainGate: { name: 'Main Gate', short: 'Main Gate', kind: 'gate', outline: onLayout([55, 525], [187.5, 525], [187.5, 550], [55, 550]) },
+  sideGate2: { name: 'Side Gate 2', short: 'Side Gate 2', kind: 'gate', outline: onLayout([205, 242.5], [302.5, 242.5], [302.5, 255], [205, 255]) },
+  sideGate1: { name: 'Side Gate 1', short: 'Side Gate 1', kind: 'gate', outline: onLayout([225, 515], [325, 567.5], [315, 585], [215, 532.5]) },
+  gateWalk: { name: 'Side Gate Walkway', short: 'Side Gate Walk', kind: 'walk', outline: onLayout([292, 509.5], [316, 509.5], [325, 562], [262, 532]) },
+  rotonda2: { name: 'Rotonda 2 (the fountain plaza by SFJ)', short: 'Rotonda 2', kind: 'ground', outline: roundOnLayout([250, 480], 29) },
+  flagCircle: { name: 'Flag Circle', short: 'Flag Circle', kind: 'ground', outline: roundOnLayout([303.5, 490], 19) },
+  // Along the Main Building's south side to MGN (stopped at MGN's west face).
+  coveredWalkway: {
+    name: 'Covered Walkway', short: 'Covered Walkway', kind: 'walk',
+    outline: clip(onLayout([380, 617.5], [562.5, 665], [562.5, 677.5], [470, 677.5], [377.5, 627.5]), 'u', -92.0 - GODOT_OFFSET.x, 'below'),
+  },
+};
+
 /** Places that are not buildings: gates, junctions, the things you walk past. */
 export const PLACES = {
   /** centre of the chapel: (0, 0) by definition */
