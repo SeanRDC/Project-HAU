@@ -96,6 +96,7 @@ NPC checks fail.
 | R | Reset |
 | F11 | Fullscreen |
 | F1 | Fast travel (dev): a panel of places; click one (or arrows + Enter) to jump there |
+| F2 | Free cam (dev): fly anywhere to look round. Mouse looks, W/A/S/D (or arrows) fly along the view, Space/E rise, Ctrl/Q sink, Shift fast, the wheel sets the speed (3 to 96 m/s). The student waits; T, G, P, M, Tab and F11 still work. F2 or Esc lands back on the student |
 | Tab / Esc | Hide controls / close |
 
 ## Clear at every zoom

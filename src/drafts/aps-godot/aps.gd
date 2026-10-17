@@ -19,6 +19,7 @@ const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const DevTravel := preload("res://dev_travel.gd")
+const DevFreeCam := preload("res://dev_free_cam.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
 const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
@@ -90,6 +91,8 @@ var _e_talk := false
 var help: Control
 ## The F1 fast-travel panel (a dev tool).
 var travel: DevTravel
+## The F2 free cam (a dev tool).
+var free_cam: DevFreeCam
 var time_label: Label
 var view_label: Label
 
@@ -174,6 +177,9 @@ func _ready() -> void:
 		names.append(place[0])
 	travel.setup(names)
 	travel.chosen.connect(_travel_to)
+	free_cam = DevFreeCam.new()
+	free_cam.camera = camera
+	add_child(free_cam)
 	if _args.has("travel"):
 		travel.toggle.call_deferred() # --travel opens the panel, for captures
 	npcs = Npcs.new()
@@ -315,8 +321,8 @@ func _build_lighting() -> void:
 ## window's full resolution so thin rails and frames survive.
 func _choose_scale() -> int:
 	var window := Vector2(get_window().size)
-	if pixel_mode == "crisp":
-		return 1
+	if pixel_mode == "crisp" or (free_cam and free_cam.active and pixel_mode == "auto"):
+		return 1 # the free cam's perspective has no one framing width to match
 	if pixel_mode == "pixel":
 		return maxi(1, roundi(window.y / 360.0))
 	var ideal := window.y / view_metres.y / SPRITE_DENSITY
@@ -713,7 +719,7 @@ func _build_interface() -> void:
 	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    G  Rain    C  Character    M  Mute\n" + \
 		"E/Space  Talk (near someone)\n" + \
 		"Wheel or +/-  Zoom    1-9, 0  Framings    Q/E  Angle    P  Pixels\n" + \
-		"R  Reset    F11  Fullscreen    F1  Fast travel (dev)    Tab  Hide controls    Esc  Close"
+		"R  Reset    F11  Fullscreen    F1  Fast travel (dev)    F2  Free cam (dev)    Tab  Hide controls    Esc  Close"
 	controls.add_theme_font_size_override("font_size", 14)
 	controls.add_theme_color_override("font_color", Color("e7e2d6"))
 	stack.add_child(controls)
@@ -827,8 +833,33 @@ func _travel_to(index: int) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F1:
+		_leave_free_cam()
 		travel.toggle()
 		return
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F2 and not travel.is_open():
+		if free_cam.active:
+			_leave_free_cam()
+		else:
+			free_cam.enter()
+			pixel_scale = 0
+			_resize()
+		sound.select()
+		return
+	if free_cam.active:
+		if free_cam.handle(event):
+			return
+		# Flying, only the keys that change the look still work (time, rain, pixels...).
+		if not event is InputEventKey or not event.pressed or event.echo:
+			return
+		match event.physical_keycode:
+			KEY_ESCAPE:
+				_leave_free_cam()
+				sound.select()
+				return
+			KEY_T, KEY_G, KEY_M, KEY_P, KEY_TAB, KEY_F11:
+				pass
+			_:
+				return
 	if travel and travel.is_open():
 		if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
 			travel.close()
@@ -928,8 +959,20 @@ func _held(keys: Array) -> bool:
 			return true
 	return false
 
+## Lands the free cam back on the student's camera, snapped there at once.
+func _leave_free_cam() -> void:
+	if not free_cam.active:
+		return
+	free_cam.leave()
+	pixel_scale = 0
+	_resize()
+	_update_camera(1.0)
+
 func _process(delta: float) -> void:
 	delta = minf(delta, 0.05)
+	if free_cam.active:
+		_fly(delta)
+		return
 	var direction := Vector2(float(_held([KEY_D, KEY_RIGHT])) - float(_held([KEY_A, KEY_LEFT])),
 		float(_held([KEY_S, KEY_DOWN])) - float(_held([KEY_W, KEY_UP])))
 	if travel.is_open():
@@ -954,6 +997,24 @@ func _process(delta: float) -> void:
 	atmosphere.focus = student.position
 	atmosphere.view_width = width
 	atmosphere.indoor = sound.indoor
+	atmosphere.update(delta)
+	sound.rain = atmosphere.rain
+	npcs.rain = atmosphere.rain
+
+## A frame of the free cam: the student waits, the world goes on round the camera.
+func _fly(delta: float) -> void:
+	student.move(Vector2.ZERO, false, delta)
+	free_cam.fly(delta)
+	var ahead := camera.position - camera.global_basis.z * 30.0
+	sun.directional_shadow_max_distance = 160.0
+	environment.fog_depth_begin = 80.0
+	environment.fog_depth_end = 520.0
+	(display.material as ShaderMaterial).set_shader_parameter("cut", 0.0)
+	student.face(camera)
+	_update_cutaways(delta)
+	npcs.update(delta)
+	atmosphere.focus = Vector3(ahead.x, 0.0, ahead.z)
+	atmosphere.view_width = 60.0
 	atmosphere.update(delta)
 	sound.rain = atmosphere.rain
 	npcs.rain = atmosphere.rain
@@ -1025,6 +1086,7 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 			hidden = on_middle and facing_south == (cut["name"] == MiddleRoad.NORTH_GROUP)
 		else:
 			hidden = GymInterior.hidden(cut["name"], p.x, p.y, y, side)
+		hidden = hidden and not free_cam.active # flying, everything stands
 		var target := 0.0 if hidden else 1.0
 		var alpha: float = target if immediate else move_toward(cut["alpha"], target, delta * 2.5)
 		if alpha == cut["alpha"] and not immediate:
@@ -1649,6 +1711,21 @@ func _verify_and_capture() -> void:
 		_set_zoom(float(_args.get("zoom", "112")), true)
 		_update_camera(1.0)
 		_update_cutaways(0.0, true)
+		# The free cam: F2 starts it where the camera stands, looking the same way, in
+		# perspective; it flies along the view, and hands back the orthographic camera.
+		var looking := -camera.global_basis.z
+		var from := camera.position
+		free_cam.enter()
+		var same_view := camera.position.is_equal_approx(from) and (-camera.global_basis.z).dot(looking) > 0.999 			and camera.projection == Camera3D.PROJECTION_PERSPECTIVE
+		free_cam.step(1.0, Vector3(0, 0, -1))
+		var flown := absf(camera.position.distance_to(from) - free_cam.speed()) < 0.01 			and (camera.position - from).normalized().dot(looking) > 0.999
+		var low := camera.position.y
+		free_cam.step(1.0, Vector3(0, 1, 0))
+		var risen := is_equal_approx(camera.position.y, low + free_cam.speed())
+		var still := student.position
+		_fly(0.5)
+		_leave_free_cam()
+		checks.free_cam = same_view and flown and risen and student.position == still and not free_cam.active 			and camera.projection == Camera3D.PROJECTION_ORTHOGONAL and is_equal_approx(camera.far, 240.0) 			and camera.position.distance_to(from) < 0.01
 	var okay := not checks.values().has(false)
 	print(JSON.stringify({"scene": "APS 2.5D", "checks": checks, "checks_pass": okay, "boxes": world.box_count,
 		"nodes": scene.get_child_count(), "viewport": [viewport.size.x, viewport.size.y], "pixel_scale": pixel_scale,
