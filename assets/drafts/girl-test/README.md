@@ -1,6 +1,6 @@
 # Girl sprite test
 
-**This is a test, not the game's girl character.** The game still draws both students from code (`src/game/art/character.ts`). Nothing here is loaded by the game.
+**This is an early test, not the game's girl character.** Nothing here is loaded by either game. The Godot game's characters are built in `../characters/` (see [its README](../characters/README.md)) into `src/drafts/aps-godot/sprites/`; the browser prototype uses the PixelLab sheets in `src/game/sprites/`.
 
 It tries out one AI-generated image (`girl_source.png`, 256x256) as a sprite sheet with animations. All frames are the original pixels moved or lightly retouched; no new poses were drawn.
 
@@ -13,6 +13,8 @@ It tries out one AI-generated image (`girl_source.png`, 256x256) as a sprite she
 | `spr_student_girl_faces_sheet.png` | 5 x 4 frames, 72 x 200 each. Rows: neutral, happy, surprised, annoyed. Columns 0-3 talking mouth shapes, column 4 blink |
 | `spr_student_girl_talk_*.gif` | Head-and-shoulders talking loops for each expression, 5x scale |
 
-## Why it does not fit the game yet
-* The game is side view and its characters are 33 px tall. This art is front facing and about 192 px tall.
-* There is only one pose, so a side-view walk would need new art.
+## Why it was not used
+* It does not match the style reference (`../characters/style-reference.png`) the characters follow now, and it is about 192 px tall where the Godot sprites are about 85 px.
+* There is only one pose, front facing, so a three-quarter walk would need new art.
+
+Kept for reference only.
