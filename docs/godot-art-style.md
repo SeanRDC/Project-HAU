@@ -32,6 +32,7 @@ Files:
 | --- | --- |
 | `aps.gd` | The pixel buffer, camera, time of day, environment, UI, input, the headless checks and captures |
 | `dev_travel.gd` | **Dev tool:** the F1 fast-travel panel. Places live in `travel_places()` in `aps.gd`; when you merge a building, add its spots there (the `fast_travel` check makes sure each is walkable). `--travel` opens it for captures |
+| `dev_free_cam.gd` | **Dev tool:** the F2 free cam. The camera leaves the student and flies anywhere (mouse look, WASD, Space/Ctrl up and down, Shift fast, wheel speed); it turns perspective while flying, the camera zones and cutaways stop, and F2 or Esc hands it back. Not a game view: don't tune the style from it (the `free_cam` check) |
 | `world.gd` | APS, the canteen and patio, the street, the helpers, materials, procedural textures, and the collision rules and floor heights that tie every area together |
 | `campus_plan.gd` | **Generated, do not edit.** Every building's real outline and the named places from the team's plan, in Godot metres |
 | `roads.gd` | The campus loop road (centre line as straights and turns) and `across()`, the distance across the road at any point |
@@ -548,7 +549,10 @@ anything is wet or has specular other than glass.
 
 ## Camera
 
-- Orthographic. A framing is a **width in metres** of a 16:9 frame.
+- Orthographic. A framing is a **width in metres** of a 16:9 frame. (The F2 dev
+  free cam is the one exception: perspective, FOV 65, far 900, crisp pixels in
+  Auto, fog from 80 to 520 m and shadows to 160 m while flying. It is for looking
+  round, not a game view.)
   `MIN_WIDTH 5` (the student nearly fills the screen) to `MAX_WIDTH 140`.
 
 | Key | Framing | Width (m) |
