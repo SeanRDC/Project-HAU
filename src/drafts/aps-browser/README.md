@@ -1,5 +1,7 @@
 # APS browser graphics trial
 
+> **Frozen reference.** This trial led to the Godot game in [`../aps-godot/`](../aps-godot/README.md), where all 2.5D work now goes. It still runs, but it gets no new features. See `docs/godot-art-style.md`.
+
 Run `npm run dev`, then open <http://localhost:5173/aps-3d.html>.
 This separate Three.js/WebGL 2 scene explores the approved Until Then-inspired
 direction in the browser. Godot is not required to run it.
