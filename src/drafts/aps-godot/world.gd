@@ -48,6 +48,7 @@ const Gym := preload("res://areas/gym.gd")
 const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
+const MiddleRoad := preload("res://areas/middle_road.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
@@ -99,7 +100,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
-	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z):
+	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z)
 
@@ -121,7 +122,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 			return true # rear wall, end walls, and the part inside the tower
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
-	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z):
+	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -151,6 +152,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 	var gym := Gym.floor_height(x, z, level)
 	if not is_nan(gym):
 		return gym
+	var middle := MiddleRoad.floor_height(x, z)
+	if not is_nan(middle):
+		return middle
 	var across := across_road(x, z)
 	if across > 4.135 and across < 10.865:
 		return -0.19 # carriageway
@@ -174,7 +178,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 
 ## The outer bounds; blocked() shapes the walkable campus inside them.
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -68.0, 101.0), clampf(z, Hallway.BACK, 140.0))
+	return Vector2(clampf(x, -192.0, 101.0), clampf(z, Hallway.BACK, 140.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -189,6 +193,7 @@ func build(parent: Node3D) -> void:
 	Hallway.new().build(self)
 	Sjh.new().build(self)
 	Mgn.new().build(self)
+	MiddleRoad.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -613,6 +618,28 @@ func window(x: float, y: float, z: float, w := 2.05, h := 1.05) -> void:
 		box(Vector3(w + 0.09, 0.045, 0.075), Vector3(x, y + dy, z + 0.09), frame)
 	box(Vector3(w + 0.23, 0.08, 0.24), Vector3(x, y - h / 2.0 - 0.08, z + 0.11), material("stucco"))
 
+## window()'s look on any face: `normal` is the face's outward direction (±X or ±Z in
+## the current frame), `at` the middle of the opening on the wall's surface. A dark
+## frame, the glass (lit glass glows at night only), light mullions and rails, a sill
+## that stands out and a shallow head over it, so a plain wall reads in depth like
+## the APS front. `mullions` splits the glass into that many plus one panes.
+func framed_window(at: Vector3, width: float, height: float, normal: Vector3, lit := false, mullions := 1,
+		frame_color := Color("e8e6de")) -> void:
+	var across := Vector3(-normal.z, 0, normal.x).abs()
+	var piece := func(along: float, tall: float, deep: float, u: float, y: float, out: float, made: Material) -> void:
+		var size := across * along + Vector3(0, tall, 0) + normal.abs() * deep
+		box(size, at + across * u + Vector3(0, y, 0) + normal * out, made)
+	var bar := material("plain", frame_color)
+	var ledge := material("stucco", frame_color.darkened(0.06))
+	piece.call(width + 0.15, height + 0.15, 0.07, 0.0, 0.0, 0.0, material("plain", Color("333e49")))
+	piece.call(width, height, 0.035, 0.0, 0.0, 0.05, room_glass(lit))
+	for k in mullions + 2:
+		piece.call(0.04, height + 0.08, 0.05, -width / 2.0 + width * k / (mullions + 1), 0.0, 0.09, bar)
+	for dy in [-height / 2.0, height / 2.0]:
+		piece.call(width + 0.09, 0.05, 0.075, 0.0, dy, 0.09, bar)
+	piece.call(width + 0.3, 0.09, 0.26, 0.0, -height / 2.0 - 0.1, 0.12, ledge)
+	piece.call(width + 0.36, 0.11, 0.16, 0.0, height / 2.0 + 0.14, 0.07, ledge)
+
 ## A lit sign: a backing board and shaded text, readable at every zoom.
 func panel(text: String, at: Vector3, width: float, height: float, ink: Color, board := Color(0, 0, 0, 0)) -> Label3D:
 	if board.a > 0.0:
@@ -756,6 +783,8 @@ func _road_strip(near: float, far: float, y: float, made: Material, walk_only :=
 	for i in road.size() - 1:
 		if walk_only and walks[i] == 0:
 			continue
+		if Roads.opened((road[i] + road[i + 1]) / 2.0 + lefts[i] * (near + far) / 2.0):
+			continue
 		var a0 := road[i] + lefts[i] * near
 		var a1 := road[i] + lefts[i] * far
 		var b0 := road[i + 1] + lefts[i + 1] * near
@@ -775,6 +804,9 @@ func _along_road(offset: float, width: float, height: float, y: float, made: Mat
 		var step := road[i].distance_to(road[i + 1])
 		var middle := (a + b) / 2.0
 		var turn := atan2(-(b - a).y, (b - a).x)
+		if Roads.opened(middle):
+			travelled += step
+			continue
 		if dash > 0.0:
 			if fmod(travelled, period) < step:
 				box(Vector3(dash, height, width), Vector3(middle.x, y, middle.y), made, turn)

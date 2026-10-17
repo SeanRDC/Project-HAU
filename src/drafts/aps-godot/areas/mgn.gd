@@ -157,17 +157,13 @@ func _long_block() -> void:
 
 ## Rows of windows on a back (west) face at local z `face`, one per 3.6 m per floor.
 func _back_windows(along: Vector2, face: float) -> void:
-	var dark: Material = w.material("glass", Color("4b585e"))
-	var lit: Material = w.glow(Color("ffc281"), 0.0, 1.35)
-	var sill: Material = w.material("stucco", Color("e6e4dc"))
 	for k in FLOORS + 1:
 		var y := (FLOOR_Y + 1.5) if k == 0 else GROUND + (k - 1) * STOREY + 1.6
 		var x := along.x
 		while x <= along.y:
-			var glass: Material = lit if posmod(roundi(x * 3.0) + k * 5, 6) == 0 else dark
-			w.box(Vector3(2.2, 1.3, 0.06), Vector3(x, y, face - 0.03), glass)
-			w.box(Vector3(2.4, 0.1, 0.25), Vector3(x, y - 0.72, face - 0.1), sill)
+			w.framed_window(Vector3(x, y, face), 2.2, 1.3, Vector3.FORWARD, posmod(roundi(x * 3.0) + k * 5, 6) == 0)
 			x += 3.6
+	_floor_bands(Vector2(along.x - 1.5, along.y + 1.5), face, Vector3.FORWARD)
 
 ## The open corridors on the front: columns, thick balcony bands with a steel rail, the
 ## classroom fronts behind (doors, windows, some lit at night) and tube lights.
@@ -213,9 +209,7 @@ func _corridors() -> void:
 				if k == 0:
 					w.panel("MGN %02d" % (bay + 1), Vector3(x, y + 2.5, INNER + 0.16), 0.9, 0.18, Color("f6f1e6"), Color("2f5a3c"))
 			else:
-				var glass: Material = lit if posmod(bay * 7 + k * 3, 5) == 0 else dark
-				w.box(Vector3(2.5, 1.25, 0.06), Vector3(x, y + 1.65, INNER + 0.12), frame)
-				w.box(Vector3(2.35, 1.1, 0.05), Vector3(x, y + 1.65, INNER + 0.15), glass)
+				w.framed_window(Vector3(x, y + 1.65, INNER + 0.1), 2.35, 1.1, Vector3.BACK, posmod(bay * 7 + k * 3, 5) == 0, 2)
 			if bay % 2 == 0:
 				w.box(Vector3(1.2, 0.06, 0.12), Vector3(x, y + height - 0.1, -1.4), tube)
 	# A steel grille closes the top corridor's north end (photo "04_right-side").
@@ -250,7 +244,10 @@ func _wing() -> void:
 			w.box(Vector3(0.2, 2.3, 0.8), Vector3(x + side * 1.5, y + 0.05, WING_FRONT + 0.4), trim)
 		w.box(Vector3(2.8, 1.9, 0.05), Vector3(x, y + 0.05, WING_FRONT + 0.03), lit if k == 2 else dark)
 		w.box(Vector3(2.8, 0.05, 0.06), Vector3(x, y - 0.2, WING_FRONT + 0.08), w.material("plain", Color("c7cbcb")))
-		w.box(Vector3(0.7, 1.4, 0.05), Vector3(WING.y - 2.2, y + 0.1, WING_FRONT + 0.03), dark)
+		# Light mullions split the box window into three, as in the photos.
+		for dx in [-0.47, 0.47]:
+			w.box(Vector3(0.05, 1.9, 0.06), Vector3(x + dx, y + 0.05, WING_FRONT + 0.08), w.material("plain", Color("c7cbcb")))
+		w.framed_window(Vector3(WING.y - 2.2, y + 0.1, WING_FRONT), 0.7, 1.4, Vector3.BACK, k == 1, 0)
 		w.box(Vector3(length + 0.2, 0.14, 0.3), Vector3(middle, GROUND + k * STOREY - 0.05, WING_FRONT + 0.12), trim)
 	# The roof tank: a grey drum with a domed top on a plinth (approximate, from the photos).
 	_tank(Vector3(middle + 1.0, top + 0.3, -5.5), 1.7)
@@ -316,14 +313,23 @@ func _north_block() -> void:
 	var top := ROOF + 0.3
 	w.box(Vector3(length, top, PORCH_BACK - NORTH_BACK), Vector3(from + length / 2.0, top / 2.0, (PORCH_BACK + NORTH_BACK) / 2.0), white)
 	w.box(Vector3(length + 0.3, 0.3, PORCH_BACK - NORTH_BACK + 0.3), Vector3(from + length / 2.0, top + 0.15, (PORCH_BACK + NORTH_BACK) / 2.0), w.material("stucco", Color("d6d4cc")))
+	var unit: Material = w.material("metal", Color("d9dcda"))
+	var grille: Material = w.material("plain", Color("6d7476"))
 	for k in FLOORS + 1:
 		var y := (FLOOR_Y + 1.5) if k == 0 else GROUND + (k - 1) * STOREY + 1.6
 		for pair in [-13.4, -6.2]:
-			for dz in [-0.75, 0.75]:
-				w.box(Vector3(0.06, 1.4, 1.1), Vector3(NORTH_END + 0.03, y, pair + dz), lit if posmod(k + roundi(pair), 4) == 0 and dz > 0.0 else dark)
-			w.box(Vector3(0.4, 0.12, 3.0), Vector3(NORTH_END + 0.2, y - 0.8, pair), ledge)
-		w.box(Vector3(0.9, 1.6, 0.05), Vector3(34.6, y, PORCH_BACK + 0.03), dark)
+			for dz in [-0.8, 0.8]:
+				w.framed_window(Vector3(NORTH_END, y, pair + dz), 1.1, 1.4, Vector3.RIGHT, posmod(k + roundi(pair), 4) == 0 and dz > 0.0)
+			w.box(Vector3(0.4, 0.12, 3.2), Vector3(NORTH_END + 0.2, y - 0.86, pair), ledge)
+			# A split AC unit on a bracket under every other pair.
+			if k > 0 and posmod(k + roundi(pair), 2) == 0:
+				w.box(Vector3(0.36, 0.55, 0.8), Vector3(NORTH_END + 0.22, y - 1.3, pair + 1.7), unit)
+				w.box(Vector3(0.02, 0.4, 0.55), Vector3(NORTH_END + 0.41, y - 1.3, pair + 1.7), grille)
+		w.framed_window(Vector3(34.6, y, PORCH_BACK), 0.9, 1.6, Vector3.BACK, posmod(k, 3) == 1, 0)
 	_back_windows(Vector2(LONG + 1.0, NORTH_END - 1.5), NORTH_BACK)
+	_floor_bands(Vector2(NORTH_BACK, PORCH_BACK), NORTH_END, Vector3.RIGHT)
+	_floor_bands(Vector2(from, NORTH_END), PORCH_BACK, Vector3.BACK)
+	_parapet(Vector2(from, NORTH_END), Vector2(NORTH_BACK, PORCH_BACK), top)
 
 ## The south wing beside SJH: a plain block with rows of windows on its north face, and
 ## the service block at its east end rising past the roof with a tank on top (the one
@@ -344,9 +350,12 @@ func _south_wing() -> void:
 		var z := SOUTH_BACK + 2.0
 		while z < SOUTH_FRONT - 4.0:
 			if z < BACK - 0.5 or z > 0.5:
-				w.box(Vector3(0.06, 1.3, 2.0), Vector3(SOUTH_WING.y + 0.03, y, z), lit if posmod(roundi(z) + k * 3, 5) == 0 else dark)
-			w.box(Vector3(0.06, 1.3, 2.0), Vector3(SOUTH_WING.x - 0.03, y, z), dark)
+				w.framed_window(Vector3(SOUTH_WING.y, y, z), 2.0, 1.3, Vector3.RIGHT, posmod(roundi(z) + k * 3, 5) == 0)
+			w.framed_window(Vector3(SOUTH_WING.x, y, z), 2.0, 1.3, Vector3.LEFT, posmod(roundi(z) + k, 7) == 0)
 			z += 3.4
+	_floor_bands(Vector2(SOUTH_BACK, SOUTH_FRONT), SOUTH_WING.y, Vector3.RIGHT)
+	_floor_bands(Vector2(SOUTH_BACK, SOUTH_FRONT), SOUTH_WING.x, Vector3.LEFT)
+	_parapet(Vector2(SOUTH_WING.x, SOUTH_WING.y - 5.4), Vector2(SOUTH_BACK, SOUTH_FRONT), ROOF)
 	# The service block: narrower, taller, with a dark doorway and the tank.
 	var block_top := ROOF + 2.4
 	w.box(Vector3(5.2, block_top, 5.0), Vector3(SOUTH_WING.y - 2.8, block_top / 2.0, SOUTH_FRONT - 2.4), white)
@@ -355,6 +364,33 @@ func _south_wing() -> void:
 	for k in FLOORS:
 		w.box(Vector3(0.9, 1.0, 0.06), Vector3(SOUTH_WING.y - 2.8, GROUND + k * STOREY + 1.6, SOUTH_FRONT + 0.13), dark)
 	_tank(Vector3(SOUTH_WING.y - 2.8, block_top + 0.3, SOUTH_FRONT - 2.4), 1.6)
+
+## Thin white bands along a face at every floor line, standing a little proud of it, as on
+## the APS wing: `span` runs along the face (local x for a ±Z face, local z for ±X),
+## `face` is the face's plane and `normal` its outward direction.
+func _floor_bands(span: Vector2, face: float, normal: Vector3) -> void:
+	var band: Material = w.material("stucco", Color("fbfaf4"))
+	var length := span.y - span.x + 0.2
+	var middle := (span.x + span.y) / 2.0
+	for k in FLOORS:
+		var y := GROUND + k * STOREY - 0.12
+		if normal.x != 0.0:
+			w.box(Vector3(0.14, 0.2, length), Vector3(face + normal.x * 0.07, y, middle), band)
+		else:
+			w.box(Vector3(length, 0.2, 0.14), Vector3(middle, y, face + normal.z * 0.07), band)
+
+## A low parapet round a flat roof (x and z spans, local) at height `top`, with a coping.
+func _parapet(xs: Vector2, zs: Vector2, top: float) -> void:
+	var wall: Material = w.material("stucco", Color("f1f0ea"))
+	var coping: Material = w.material("stucco", Color("dcdad2"))
+	var lx := xs.y - xs.x
+	var lz := zs.y - zs.x
+	for z in [zs.x + 0.1, zs.y - 0.1]:
+		w.box(Vector3(lx, 0.7, 0.2), Vector3((xs.x + xs.y) / 2.0, top + 0.65, z), wall)
+		w.box(Vector3(lx + 0.1, 0.07, 0.3), Vector3((xs.x + xs.y) / 2.0, top + 1.03, z), coping)
+	for x in [xs.x + 0.1, xs.y - 0.1]:
+		w.box(Vector3(0.2, 0.7, lz), Vector3(x, top + 0.65, (zs.x + zs.y) / 2.0), wall)
+		w.box(Vector3(0.3, 0.07, lz + 0.1), Vector3(x, top + 1.03, (zs.x + zs.y) / 2.0), coping)
 
 ## A roof water tank: a grey drum with a domed lid on a low plinth.
 func _tank(at: Vector3, radius: float) -> void:

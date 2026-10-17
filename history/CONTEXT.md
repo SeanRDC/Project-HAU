@@ -1,5 +1,22 @@
 # Project Context
 
+**Facade detail, 2026-10-16.** `framed_window()` in `world.gd` puts APS's window look
+on any face; use it for every new building's windows. MGN now has framed windows
+throughout, floor bands, parapets and AC units. See `sessions/2026-10-16-facade-detail.md`.
+
+**The sun turns with the view, 2026-10-16.** The sun was fixed for APS, so north- and
+east-facing buildings (SJH, MGN) sat in shade. `_aim_sun()` in `aps.gd` now turns it
+with each camera zone, so every view's face is lit like the APS front. The exceptions
+are the canteen (keeps the old sun), the gym inside, and MGN (slant mirrored). See
+`sessions/2026-10-16-view-lit-sun.md`.
+
+**The middle road in Godot, 2026-10-16.** `areas/middle_road.gd`: the divided
+boulevard between PGN and MGN, from the west road's mouth (the sidewalk opens there,
+`Roads.OPENINGS`) to the flagpole at the flag circle. Two carriageways, a hedged
+median, covered walkways on terracotta pillars both sides, trees and bannered
+lampposts, zebras at the mouth and halfway. On it the camera faces south; PGN's side
+fades out (`MiddleRoadNorth`, shadows kept). See `sessions/2026-10-16-middle-road.md`.
+
 **MGN in Godot, 2026-10-16.** `areas/mgn.gd` builds the Mamerto G. Nepomuceno
 Building from outside on its plan plot (five storeys, ~17 m, facing east onto the west
 road): the open-corridor long block, the box-window wing over the entrance with the
