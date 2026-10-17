@@ -114,20 +114,43 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
   the lawn. Change the road only by editing `PIECES`; the surface, kerbs,
   sidewalks and paint follow. A side road opens the loop's building-side sidewalk
   and kerb with a rect in `OPENINGS` (`Roads.opened()`).
-- **The middle road** (`areas/middle_road.gd`): a divided concrete boulevard from
-  the west road's mouth (x −62, z 58..69) straight west to the flagpole at the flag
-  circle (−179.7, 65.2), between PGN (z < 51.3) and MGN / the Main Building plot
-  (z > 75). Across it, north to south: PGN's covered walkway z 51.6..55.4, a
-  planting strip 55.4..58, the north carriageway 58..62.7, the hedged median
-  62.7..64.3, the south carriageway 64.3..69, a strip 69..71.6, the south covered
-  walkway 71.6..75. The walkways are brick-red pavers (−0.04) under a flat white
-  roof at 3 m on cream steel, with terracotta pillars every 5 m at the road side.
-  Yellow zebras cross at the mouth (in front of the median's nose, x −66.5..−69.5)
-  and at the Main Building's side (x −104..−107), through paved gaps in the strips
-  and median. The walkways and strips end at x −166; the carriageways run onto a
-  round concrete apron (radius 12) round the flag island (radius 3.2). Widths are
-  fitted to the gap between the plots, not surveyed. The banners face along z (to
-  the camera), not along the road as in the photo, so they read in the side view.
+- **HAU Boulevard, the middle road** (`areas/middle_road.gd`), from the boulevard
+  photos and Sean's labelled aerial: a divided road from the west road's mouth
+  (x −62) straight west to the angel fountain (−165.6, 64.6), between PGN's face
+  (z 49.3) and the Main Building's and MGN's faces (z 79.9), 30.6 m apart (plan.ts
+  moves those three outlines to make room, `SHIFT_V`). It is the same on both sides
+  of the median (centre line z 64.6). North to south: planter 49.3..50.1, PGN's
+  covered walkway 50.1..53.6, concrete edging, the shrub strip 53.9..55.7, the open
+  walk 55.7..58.7, the hedge strip 58.7..60.2, the north lane 60.2..63.8 (one car;
+  traffic runs west), the grass median 63.8..65.4, the south lane 65.4..69 (east),
+  the hedge strip 69..70.5, the open walk 70.5..73.5, the shrub strip 73.5..75.3,
+  edging, the south covered walkway 75.6..79.1, planter 79.1..79.9.
+  - **Covered walkways:** cream 60 cm tiles (`slab`, floor 0) under a white roof:
+    two rows of terracotta block pillars 3.0 m apart (front at z 53.35 / 75.85,
+    back at 50.35 / 78.85), a bay of 3.2 m from x −64.9 (28 pairs), each pillar
+    five stacked blocks to 2.47 m with a white post to the beams at 2.95, white
+    rafters, close slats across, a pale ribbed sheet with a rib per bay, granite
+    benches against the back row in every other bay, a mosaic every seven bays,
+    a downlight per bay. The roof runs x −64.4..−151.8.
+  - **Open walks:** red octagon pavers (`octagon`, −0.04) with the bronze
+    lampposts every 12.8 m, 0.75 m in from the hedge: fluted base, two scrolled
+    arms with lanterns, a banner under them. In the photos the arms and banners
+    face along the road; here they face across it, so they read in the side views.
+  - **Strips:** red-tipped shrubs and shade trees (every three bays) in the shrub
+    strips, the bins at their edges; a clipped hedge 0.6 m high in the hedge
+    strips (kept low so the camera sees the walk behind it) with tall white
+    poles between the lampposts; the median has concrete urns with bougainvillea,
+    round topiary and more poles, yellow noses at x −69.6 and −155.8 with the
+    round SLOW DOWN 10 KPH signs.
+  - **Crossings** (yellow zebras, from the black marks on the aerial) at x −69..−66
+    (the mouth), −107.5..−104.5 (the courtyard gate), −131.5..−128.5 and
+    −146.5..−143.5, through paved gaps in every strip and the median, so each joins
+    the two covered walkways. East of x −69 the open walks widen into paved plazas.
+  - **The west end:** the walks end at x −157.5 with a kerb; the lanes run onto a
+    round apron (radius 11.5) round the angel fountain: a red-brick basin (radius
+    2.9) with water, a rock mound with jets, the tapered plinth with its plaque and
+    rams' heads, and the sandstone angel (wings raised, swept back) behind a girl
+    and a boy, facing east down the boulevard.
 - **Local frames:** a wing that is not aligned with the frontage is built in its
   own straight coordinates under a turned `Node3D` (see `CanteenWing` in
   `world.gd` and `canteen_local()` / `canteen_world()`). Collision for it is
@@ -223,6 +246,8 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | slate | 2.4 | `#605e5c` | grey stone tiles in staggered 16 px courses (the gym's lower walls) |
 | solar | 1.0 | `#26364f` | 16 px cells with lighter lines and a faint sheen (the gym's roof panels) |
 | ribbed | 1.6 | `#a9aeae` | roof sheeting, a lit and a dark line every 8 px |
+| octagon | 1.2 | `#9f5a45` | red octagon pavers 30 cm across in six worn tones, small dark squares where four meet, mossy joints (the boulevard's open walks, plazas and crossings) |
+| slab | 2.4 | `#ddd2bf` | cream ceramic tiles 60 cm square, light grout, faint stains (the boulevard's covered walkways) |
 
 To add a kind: add it to `TILE_METRES`, `PALETTE` and a `match` branch in
 `_texture()`. Keep grain low (2–9/255). Keep colours slightly desaturated and
@@ -582,14 +607,32 @@ anything is wet or has specular other than glass.
   `Mgn.CUT_X` (x −51.8, just past the road and east of SJH's terracotta end block).
   `--view=mgn` starts on the road at the entrance. Like the SJH view, wide framings show
   an empty band at the bottom where the cut removes the near lawn.
-- **Middle road zone** (`MiddleRoad.view_for`): once off the west road's sidewalk onto
-  the middle road (x < −62.5, z 50..78) the camera turns −180° to look south across it,
-  at the south walkway and MGN's north block, sliding in X with the student; wide, it
-  frames the south walkway. The chapel and MGN zones yield to it (`chapel_for` and
-  `mgn_for` multiply by `1 − view_for`). The camera stands over PGN's side, so the near
-  plane cuts everything more than `MIDDLE_CUT` (1.6 m) north of the student: PGN's
-  walkway roof, its trees and the reserved plot. `--view=middle` starts on the north
-  carriageway past the zebra; F1 has it and the flagpole end.
+- **Boulevard zone** (`MiddleRoad.view_for`, `MiddleRoad.south_for`): once off the
+  west road's sidewalk onto the boulevard (x < −62.5, between the two buildings' faces)
+  the camera faces **the side of the boulevard the student is on**: south of the centre
+  line it turns −180° to look south at the Main Building's side (`middle`, two quarter
+  turns); north of it, it looks north at PGN's side (`middle_north`, no turn, like the
+  APS view). Crossing the road (z 62.6..66.6) it glides round through east, looking
+  down the boulevard at the chapel. It slides in X with the student; wide, it frames
+  that side's walks. The chapel and MGN zones yield to it (`chapel_for` and `mgn_for`
+  multiply by `1 − view_for`). On the boulevard it looks down at least `MIDDLE_PITCH`
+  (16°), so the hedge along the lane does not hide the walk behind it. The side nearer
+  the camera, above the ground (its walkway's roof and pillars, trees, lampposts,
+  poles and planter palms: `MiddleRoad.NORTH_GROUP` / `SOUTH_GROUP`), fades out and
+  keeps its shadows. Facing south the near plane also cuts everything north of
+  z 30 (`MIDDLE_CUT_Z`: the APS wing, the corner garden); facing north, everything
+  south of the Main Building's face, through its ground line (MGN, the plots), so
+  wide framings show an empty band at the bottom, as the MGN view does.
+  **The controls keep the side** they started on while a direction is held
+  (`_control_turns`), so holding S walks straight across the road although the camera
+  turns round halfway; let go and press again, and they follow the new view.
+  **Under a covered walkway** (`MiddleRoad.covered_for`, `covered`) it is the hallway
+  cutaway: the zoom closes in to `HALL_WIDTH`, the camera glides to the walkway's
+  middle, the near plane cuts at `MiddleRoad.CUT_OFFSET` (0.85 m) in front of it (the
+  whole road-side pillar row falls away) and the dark bands close above the beams
+  (`MiddleRoad.CEILING` 3.05). `--view=middle` starts on the south walk,
+  `--view=middle-north` on the north walk, `--view=fountain` by the fountain; F1 has
+  them and the covered walkway.
 - **Interiors (cutaway):** walking into a covered space like the APS hallway
   blends in a weight (`hall`, from `Hallway.hall_for`, eased at rate 3.5) that:
   1. closes the view in to `HALL_WIDTH` (8.5 m) and glides the camera to the
@@ -620,8 +663,8 @@ Three static functions in `world.gd` are the whole physics:
   steps), stalls, tables, posts, the corner garden, reserved plots, the chapel,
   and anything outside `walkable_ground()` (the north road and APS front, the
   patio, the strip, the west road, the lawn path, the chapel plaza and parking,
-  the middle road's walkways, carriageways, crossings and flagpole apron).
-  The outer bounds reach x −192 for the middle road's west end.
+  the boulevard's walks, covered walkways, lanes, crossings and the fountain's apron).
+  The outer bounds reach x −192 for the boulevard's west end.
   Canteen rules are tested in its local frame.
 - `floor_height(x, z)`: the walking height (hall 0.45, steps 0.3/0.15, kerb 0,
   road −0.19, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03,
