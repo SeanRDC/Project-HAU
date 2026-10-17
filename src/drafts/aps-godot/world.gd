@@ -54,11 +54,13 @@ const MiddleRoad := preload("res://areas/middle_road.gd")
 ## the pixel density even on every face, so long walls never stretch their texels.
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
-	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0}
+	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0,
+	"octagon": 1.2, "slab": 2.4}
 const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile": "d6d1c3",
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
-	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc"}
+	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc",
+	"octagon": "9f5a45", "slab": "ddd2bf"}
 
 var root: Node3D
 var lamps: Array[Light3D] = []
@@ -336,6 +338,40 @@ func _texture(kind: String) -> Texture2D:
 			for line in range(0, 128, 16):
 				_rect(image, line, 0, 1, 128, Color("7a7064"))
 				_rect(image, 0, line, 128, 1, Color("7a7064"))
+		"octagon":
+			# The boulevard's open walks: red octagon pavers, 30 cm across, with small dark
+			# squares where four meet, worn tones and moss in the joints.
+			var reds: Array[Color] = [Color("a85a43"), Color("b26a4f"), Color("98503d"), Color("b9785d"), Color("8f4b3a"), Color("a4644f")]
+			var tones := {}
+			for y in 128:
+				for x in 128:
+					var u := absf(float(x % 32) - 15.5)
+					var v := absf(float(y % 32) - 15.5)
+					var cell := Vector2i(x / 32, y / 32)
+					if not tones.has(cell):
+						tones[cell] = reds[random.randi_range(0, reds.size() - 1)]
+					var tone: Color
+					if u + v >= 22.5:
+						tone = Color("6e4135") # the small square between four octagons
+					elif u + v > 20.5 or maxf(u, v) > 14.5:
+						tone = Color("6f6a4c") if random.randf() < 0.3 else Color("4f4136") # joint, mossy here and there
+					else:
+						tone = tones[cell]
+						if u + v > 18.5 or maxf(u, v) > 13.0:
+							tone = tone.darkened(0.12) # the paver's worn bevel
+					var noise := random.randf_range(-0.5, 0.5) * 7.0 / 255.0
+					image.set_pixel(x, y, Color(tone.r + noise, tone.g + noise, tone.b + noise))
+		"slab":
+			# The covered walkways' floor: cream ceramic tiles 60 cm square, light grout.
+			for ty in 4:
+				for tx in 4:
+					_rect(image, tx * 32, ty * 32, 32, 32, Color(1, 0.98, 0.94, random.randf_range(0.0, 0.25)))
+					if random.randf() < 0.3:
+						_rect(image, tx * 32 + random.randi_range(4, 20), ty * 32 + random.randi_range(4, 20), random.randi_range(4, 9),
+							random.randi_range(3, 6), Color(0.55, 0.5, 0.42, 0.08))
+			for line in range(0, 128, 32):
+				_rect(image, line, 0, 1, 128, Color("b4a996"))
+				_rect(image, 0, line, 128, 1, Color("b4a996"))
 		"dirt":
 			for i in 260:
 				var tone: Color = [Color("7d6a50"), Color("b19d7c"), Color("8a785c"), Color("c2b294")][i % 4]
