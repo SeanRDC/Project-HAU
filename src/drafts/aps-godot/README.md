@@ -1,17 +1,37 @@
-# APS in Godot (2.5D)
+# Project HAU in Godot (2.5D)
 
-**This is the art style everyone continues in.** Every rule and value (shadows,
-lighting, shaders, materials, pixel pipeline, camera, checks) is written down in
+**This is the game, and the art style everyone continues in.** Every rule and
+value (shadows, lighting, weather, shaders, materials, pixel pipeline, characters,
+camera, checks) is written down in
 [`docs/godot-art-style.md`](../../../docs/godot-art-style.md). Read it before changing
 anything here, and update it when you change a style value.
 
-The Archbishop Pedro Santos Building moved from the browser Three.js trial
-(`src/drafts/aps-browser/`) into Godot 4, with the art style and graphics
-polished on the way. It has the whole frontage: the long classroom wing and its
-corridors, the entrance canopy and stone piers, the taller balcony block, the
-stair tower, and the five-floor canteen wing with its open hall, three stalls,
-blue awning, brick patio, umbrellas and fire escape. It is not yet joined to
-the browser game's story or saves.
+It started as the Archbishop Pedro Santos Building, moved from the browser
+Three.js trial (`src/drafts/aps-browser/`) into Godot 4, and is now the campus.
+Everything stands on the team's campus plan (`campus_plan.gd`); a building not
+built yet is a reserved plot, and a building is merged on its plot as
+`areas/<id>.gd`. Built so far:
+
+- **APS:** the whole frontage (the long classroom wing and its corridors, the
+  entrance canopy and stone piers, the taller balcony block, the stair tower),
+  the five-floor canteen wing with its open hall, three stalls, blue awning,
+  brick patio, umbrellas and fire escape, and the ground-floor hallway you can
+  walk into.
+- **The chapel** with its plaza, oval parking and the road loop round its lawn.
+- **The IH Gym**, outside at its real size and walkable inside.
+- **St. Joseph Hall**, its covered walkway, the Mary statue garden and parking.
+- **MGN** from outside, walkable up to the turnstile, and **the middle road**
+  between PGN and MGN out to the flagpole.
+- **Eight NPCs** (Migo, Bea, Rica, Paolo, Bianca, Kuya Ben, Ate Lorna, Coach
+  Gab) who stroll or keep their posts, wave when you come near, open umbrellas
+  in the rain and talk: their lines type out with a blip in their voice, they ask
+  questions, and they remember your replies for the session.
+- **Weather and sound:** rain that comes and goes, with wet ground, puddles and
+  lamp reflections; light shafts and falling leaves; the student murmur, birds,
+  crickets, wind and footsteps, all synthesised.
+
+It is not yet joined to the browser game's story or saves; nothing is saved
+between runs.
 
 The plan is an L, as on campus: the canteen wing stands forward from the stair
 tower towards the road, with its stalls facing west onto the herringbone-brick
@@ -47,6 +67,10 @@ On macOS: `"$GODOT" --path src/drafts/aps-godot` with `GODOT` set to `Godot.app/
 Or open `project.godot` in Godot 4.7 and press F5. The portable editor lives in
 the ignored `builds/godot-tools/4.7.2/`. Other machines can
 [download Godot](https://godotengine.org/download/windows/) or set `GODOT`.
+
+After pulling new sprites, open the project in the editor once (or run Godot with
+`--headless --import`) so they are imported; otherwise they fail to load and the
+NPC checks fail.
 
 ## Controls
 
@@ -135,6 +159,8 @@ because their kernel grows with zoom.
 | `audio.gd` | Synthesised music, wind, footsteps, blips, crickets, the student murmur, birds and rain (no audio files) |
 | `atmosphere.gd` | Rain and wet ground, puddles and lamp reflections, light shafts, falling leaves |
 | `shaders/` | Edges, leaves, sky, display grade, light shafts |
+| `sprites/` | The sheets the game loads: `boy/`, `girl/` (idle, walk) and `npcs/<id>/` (idle, walk, talk, wave, portrait). Built from `assets/drafts/characters/`; don't edit them by hand |
+| `main.tscn` | One node with `aps.gd`. Keep it that way so diffs stay readable |
 
 Boxes that share a size and material are batched into MultiMeshes (about 1,470 boxes).
 
@@ -147,12 +173,12 @@ Boxes that share a size and material are batched into MultiMeshes (about 1,470 b
 Checks the canteen and signs, that the wing faces the patio, the road bend, lawn and patio, walking round the corner, the canteen view facing the stalls, the closest zoom, column/pier/stall/tower/table collisions, the
 rail gap, walking up the canteen steps, floor heights, lights per time, sheet
 switching, sprite shadows, and that the wide/whole-building framings contain
-the frontage, and the gym inside (walking in through a doorway and the side entrance, its two storeys, the stairs and bleacher rows, the stage and backstage, the cutaway and the hall view). Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
-writes 26 review shots into the ignored `builds/aps-godot-review/port/`.
+the frontage, and the gym inside (walking in through a doorway and the side entrance, its two storeys, the stairs and bleacher rows, the stage and backstage, the cutaway and the hall view), SJH, MGN and the middle road, every fast-travel place being walkable, the NPCs (spawned on walkable ground, wandering, noticing and waving, umbrellas, talking, choices, the talk closing when you walk away), the campus sounds, and rain wetting the ground and drying. Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
+writes review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
 `--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn|middle`, `--pixel=auto|crisp|pixel`,
-`--walk=<seconds>`, `--rain`, `--hide-help`, `--capture=<absolute PNG path>`.
+`--walk=<seconds>`, `--rain`, `--talk` (start a conversation with whoever is in reach), `--travel` (open the fast-travel panel), `--hide-help`, `--capture=<absolute PNG path>`.
 
 Geometry is approximate, from the walk photos, not a survey. The far sidewalk,
 verge, road markings, the bend's exact radius, drain grates, rooftop tanks/vents, AC units and the
