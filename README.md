@@ -10,29 +10,32 @@ What you can explore so far:
 * **The Chapel of the Holy Guardian Angel:** its plaza, oval parking and the lawn paths round it.
 * **The Immaculate Heart Gymnasium:** outside at its real size, and **inside**: the court with the HAU seal, the bleachers on both sides (you can climb them), the curved stage with WELCOME ANGELITES, the balcony, the lobby, the equipment room, the corridors and the backstage rooms. Walking in glides the camera inside, and whatever is in the way fades out.
 * **St. Joseph Hall:** its covered walkway, the Mary statue garden and the parking.
-* **MGN**, on its plot by the west road.
-* **Campus NPCs** who stroll, stand at their posts and talk.
+* **MGN (Mamerto G. Nepomuceno Building):** from outside on its plot by the west road, walkable up to the turnstile.
+* **The middle road** between PGN and MGN: the divided boulevard with its covered walkways, out to the flagpole.
+* **Campus NPCs:** eight students and staff who stroll, stand at their posts, wave when you come near and talk. They ask questions, and they remember your answers for the session.
+* **Weather and sound:** rain that comes and goes (wet ground, puddles, umbrellas), light shafts and falling leaves, the murmur of students, birds by day and crickets at night.
 
 Every other building is a reserved plot on the campus plan, waiting for its turn. The first browser prototype (a 2D side-view game on our own small engine) still runs, but new work goes into Godot.
 
 ## Play It
 1. Get [Godot 4.7.2](https://godotengine.org/download/) (the standard build).
 2. Either open `src/drafts/aps-godot/project.godot` in Godot and press **F5**, or run `tools\run-aps-godot.cmd` (set `GODOT` to your Godot executable first if it isn't in `builds/godot-tools/4.7.2/` or on your PATH).
-3. After pulling new work, open the project in the Godot editor once so any new images are imported.
+3. After pulling new work, open the project in the Godot editor once (or run Godot with `--headless --import`) so any new images are imported.
 
 | Key | Action |
 | --- | --- |
 | `A` / `D`, `W` / `S` (or arrows) | Walk (relative to the camera) |
 | `Shift` | Run |
-| `E`, `Space` or `Enter` | Talk to someone nearby |
+| `E`, `Space` or `Enter` | Talk to someone nearby; pick a reply with `W` / `S` and `E`, or `1`-`3` |
 | Mouse wheel, `+` / `-` | Zoom |
 | `1`-`9`, `0` | Framings: APS, building, corridor, canteen, close-up, chapel, IH Gym, gym side, St. Joseph Hall, inside the gym |
-| `Q` / `E` | Turn the camera a little |
+| `Q` / `E` | Turn the camera a little (`E` talks instead when someone is in reach) |
 | `T` | Morning, noon, afternoon, night |
+| `G` | Rain on or off |
 | `C` | Boy / girl |
 | `M` | Mute |
 | `P` | Pixel mode |
-| `F1` | Fast travel (dev) |
+| `F1` | Fast travel (dev): jump to any of 17 places |
 | `R` / `F11` / `Tab` / `Esc` | Reset / fullscreen / hide controls / close |
 
 Checks: `tools\run-aps-godot.cmd --headless -- --test` prints a JSON report; every check must be `true`.
@@ -51,9 +54,9 @@ The original 2D prototype (the Side Gate, the DJN Building and the Epiphany of A
 > This is a student project. It is not an official product of Holy Angel University, and every character in it is made up.
 
 ## Repository Navigation
-* `src/drafts/aps-godot/` - **The game in Godot** (the scene, the buildings in `areas/`, the characters, the shaders).
+* `src/drafts/aps-godot/` - **The game in Godot** (the scene, the buildings in `areas/`, the NPCs, weather and sound, the shaders, the sprites).
 * `docs/` - Game Design Document (GDD), quest outlines, campus lore, and the Godot style guide (`docs/godot-art-style.md`).
-* `assets/` - Reference photos of every building, pixel art sprites, and audio (includes a `drafts/` folder for WIP art).
+* `assets/` - Reference photos of every building, and the character sources the Godot sprites are built from (`drafts/characters/`).
 * `src/` - The code (the frozen browser prototype in `src/game/`, the Godot game in `src/drafts/aps-godot/`).
 * `tools/` - Development utilities: run the Godot game, take review captures, export the campus plan.
 * `builds/` - Playable prototypes and milestone releases.
