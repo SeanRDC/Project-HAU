@@ -10,12 +10,17 @@ with each camera zone, so every view's face is lit like the APS front. The excep
 are the canteen (keeps the old sun), the gym inside, and MGN (slant mirrored). See
 `sessions/2026-10-16-view-lit-sun.md`.
 
-**The middle road in Godot, 2026-10-16.** `areas/middle_road.gd`: the divided
-boulevard between PGN and MGN, from the west road's mouth (the sidewalk opens there,
-`Roads.OPENINGS`) to the flagpole at the flag circle. Two carriageways, a hedged
-median, covered walkways on terracotta pillars both sides, trees and bannered
-lampposts, zebras at the mouth and halfway. On it the camera faces south; PGN's side
-fades out (`MiddleRoadNorth`, shadows kept). See `sessions/2026-10-16-middle-road.md`.
+**HAU Boulevard, 2026-10-18.** `areas/middle_road.gd` is rebuilt from the boulevard
+photos: from the west road to the angel fountain (which replaces the flagpole), 30.6 m
+between PGN's face (z 49.3) and the Main Building's and MGN's (z 79.9). `plan.ts` moves
+those three outlines apart to fit (`SHIFT_V`; MGN's `areas/mgn.gd` moved with it). On
+each side: covered walkway (two rows of terracotta block pillars, slatted white roof),
+shrub strip, red octagon-paver walk with bronze lampposts, hedge strip; one lane each
+way and a grass median; four yellow zebras. The camera faces the side the student is
+on and glides round crossing the road; under a covered walkway it is the hallway
+cutaway. The controls keep their side while a key is held. Commits now go under the
+developer's own name, no AI co-author line, one per change (`CLAUDE.md`). See
+`sessions/2026-10-18-hau-boulevard.md`.
 
 **MGN in Godot, 2026-10-16.** `areas/mgn.gd` builds the Mamerto G. Nepomuceno
 Building from outside on its plan plot (five storeys, ~17 m, facing east onto the west
