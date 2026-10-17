@@ -41,6 +41,8 @@ west road the camera turns right round to face it (`--view=mgn`), the chapel law
 away behind. Geometry not in the photos is listed as guesses in
 `sessions/2026-10-16-mgn-godot.md`.
 
+**Dev free cam, 2026-10-18.** F2 (`dev_free_cam.gd`) flies the camera anywhere to look round: mouse look, WASD, Space/Ctrl up and down, Shift fast, wheel speed. Perspective while flying, zones and cutaways stop, the student waits; F2 or Esc hands back. See `sessions/2026-10-18-godot-dev-free-cam.md`.
+
 Dev fast travel in Godot, 2026-10-16: F1 opens a panel of 15 places (APS, hallway, canteen, chapel, gym, SJH, Mary, MGN...) and jumps there with a short fade. Add new buildings' spots to `travel_places()` in `aps.gd`. See `sessions/2026-10-16-godot-dev-fast-travel.md`.
 
 **Inside the IH Gym, 2026-10-16.** The gym can be walked into through either
