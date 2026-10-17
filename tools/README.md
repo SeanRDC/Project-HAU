@@ -1,38 +1,28 @@
 # Development Tools & Workflows
 
-This directory is reserved for custom scripts, build automation tools, or utility software that helps us develop Project HAU, but won't be included in the final game.
+Scripts that help us build and check Project HAU. None of them ship with the game.
 
-## Approved Software Stack
-Since we are a small 4-person team, keeping our tools standardized is crucial so we can easily share files. We are currently using:
+## Software We Use
+* **Game engine:** Godot 4.7.2 stable (the standard build, Forward+). Not committed: put the portable editor in the ignored `builds/godot-tools/4.7.2/`, have `godot` in PATH, or set `GODOT` to your executable.
+* **Character sprites:** PixelLab (redraws and walks), pxl (pixel art as code, for clean-ups), and the C# rig scripts in `assets/drafts/characters/`.
+* **Browser prototype:** Node.js 20 or newer, Vite, TypeScript.
+* **Checks that use a browser:** Google Chrome.
 
-* **Task Management / Design:** [E.g., Trello, Notion, Figma]
-* **Communication:** [E.g., Discord]
-* **Pixel Art Production:** [E.g., Aseprite, Photoshop]
-* **Game Engine:** [Engine Name]
-* **Audio Production:** [E.g., Audacity, FL Studio]
+If you bring in a new tool, tell the team first so we stay compatible.
 
-If anyone needs to introduce a new tool into the pipeline (like a specific tilemap editor or audio plugin), let the team know first so we don't run into compatibility issues.
+## Godot
+* `run-aps-godot.cmd` - runs the Godot game in `src/drafts/aps-godot/`. Uses the portable Godot in `builds/godot-tools/4.7.2/`, `GODOT` if set, or `godot` in PATH. Anything after it goes to Godot:
+  * `tools\run-aps-godot.cmd` plays the game.
+  * `tools\run-aps-godot.cmd -e` (or `--editor`) opens it in the editor.
+  * `tools\run-aps-godot.cmd --headless -- --test` runs the checks and prints a JSON report; every check must be `true`. A broken script can make it hang, so give it a timeout and read the first Parse Error.
+  * After pulling new sprites, run Godot once with `--headless --import` (or open the editor) so the new images load.
+* `capture-aps-godot.sh` - `sh tools/capture-aps-godot.sh [name ...]` takes review shots on the GPU into the ignored `builds/aps-godot-review/port/` (all of them with no names). Each shot's options are in the script.
+* `export-godot-plan.mjs` - `npm run export:godot-plan` writes `src/drafts/aps-godot/campus_plan.gd` from the campus plan (`src/game/campus/plan.ts` and `osm.ts`): every building's real outline and the named places, in Godot metres, and which ones Godot already draws (`BUILT`). Run it whenever the plan changes or a building is merged. Uses the esbuild that comes with Vite.
 
-## Custom Scripts
+## Campus Plan
+* `import-osm.mjs` - `npm run import:osm` pulls the campus buildings from OpenStreetMap into `src/game/campus/osm.ts`. Run `npm run export:godot-plan` after it.
 
-* `check-aps-browser.mjs` - checks the isolated browser 2.5D trial using Chrome.
-  Start `npm run dev`, then run `npm run check:aps-browser`. Covers full-building
-  framing, moving-shadow stability, sunlight/awning occlusion, canteen access,
-  steps, movement, pillar collision, character switching, day/night lights,
-  reset, phone control overlap, touch movement, and the separate original game.
-  `-- --capture` saves review images under ignored `builds/aps-browser-review/`.
-  `CHROME` overrides the executable; `GAME_URL` overrides the server address.
-  Use `-- --production` against `npm run preview` for the built-page smoke check.
-
-* `export-godot-plan.mjs` - writes `src/drafts/aps-godot/campus_plan.gd` from the
-  campus plan (`src/game/campus/plan.ts` and `osm.ts`): every building's real
-  outline and the named places, in Godot metres, and which ones Godot already
-  draws (`BUILT`). Run `npm run export:godot-plan` whenever the plan changes or a
-  building is merged. Uses the esbuild that comes with Vite; nothing to install.
-
-* `run-aps-godot.cmd` - opens the standalone APS 2.5D graphics trial in
-  `src/drafts/aps-godot/`. Uses the local portable Godot 4.7.2 in ignored
-  `builds/godot-tools/`, `GODOT` if set to an executable, or `godot` in PATH.
-  Append `--editor` to inspect it in the editor. The main game still runs with
-  `npm run dev`.
-* `check-links.mjs` - presses E on every hotspot in every area and checks that each way out leads somewhere real and has a way back. Start the game with `npm run dev`, then run `npm run check:links` in a second terminal. Needs Chrome; set the `CHROME` environment variable to its path if it is not found, and `GAME_URL` if the dev server is not on `http://localhost:5173`.
+## Browser Prototype (frozen)
+* `check-links.mjs` - presses E on every hotspot in every area and checks that each way out leads somewhere real and has a way back. Start the game with `npm run dev`, then run `npm run check:links` in a second terminal. Needs Chrome; set `CHROME` to its path if it is not found, and `GAME_URL` if the dev server is not on `http://localhost:5173`.
+* `check-translations.mjs` - `npm run check:translations` confirms the Tagalog is untouched and lists any line with no English yet.
+* `check-aps-browser.mjs` - checks the Three.js APS trial (`aps-3d.html`) in Chrome. Start `npm run dev`, then `npm run check:aps-browser`. `-- --capture` saves review images under ignored `builds/aps-browser-review/`; `-- --production` checks the built page against `npm run preview`. `CHROME` and `GAME_URL` work as above.
