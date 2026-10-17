@@ -17,7 +17,20 @@ var night := false
 var indoor := false
 ## Footsteps played so far, for the checks.
 var steps := 0
+## 0..1: how busy the spot is, and how hard it rains (set by the scene).
+var crowd := 0.0
+var rain := 0.0
+## The hour, for the birds: busiest in the morning.
+var hour := 16.5
+## Bird calls played so far, for the checks.
+var bird_calls := 0
 var wind := AudioStreamPlayer.new()
+## The campus around you: a murmur of students, looped.
+var murmur := AudioStreamPlayer.new()
+## Rain: a broad hiss, pulled down to a dull roar on the roof indoors (as in the browser game).
+var rainfall := AudioStreamPlayer.new()
+var _rain_filter := AudioEffectLowPassFilter.new()
+var _next_bird := 1.0
 var _music: Array[AudioStreamPlayer] = []
 var _effects: Array[AudioStreamPlayer] = []
 var _cache := {}
@@ -51,6 +64,30 @@ func _ready() -> void:
 	wind.stream = _wav(_seamless(loop, RATE / 2, 0.05 * MASTER), true)
 	add_child(wind)
 	wind.play()
+	murmur.volume_db = -60.0
+	murmur.name = "Murmur"
+	add_child(murmur)
+	var rain_bus := AudioServer.get_bus_index("Rain")
+	if rain_bus < 0:
+		rain_bus = AudioServer.bus_count
+		AudioServer.add_bus()
+		AudioServer.set_bus_name(rain_bus, "Rain")
+		AudioServer.set_bus_send(rain_bus, "Master")
+		_rain_filter.cutoff_hz = 5200.0
+		AudioServer.add_bus_effect(rain_bus, _rain_filter)
+	else:
+		_rain_filter = AudioServer.get_bus_effect(rain_bus, 0)
+	rainfall.name = "Rainfall"
+	rainfall.bus = "Rain"
+	rainfall.volume_db = -60.0
+	rainfall.stream = _wav(_seamless(_noise(RATE * 4), RATE / 2, 0.11 * MASTER), true)
+	add_child(rainfall)
+	rainfall.play()
+	# the murmur takes about a quarter of a second to render, so it is made on a
+	# worker thread and fades in when ready: no stutter at start
+	WorkerThreadPool.add_task(func() -> void: _start_loop.call_deferred(murmur, _murmur()))
+	for i in 3:
+		_warm.append(_birds.bind(i))
 	# Render the rest a little at a time so the first notes do not stutter.
 	for root in [DAY_ROOT, NIGHT_ROOT]:
 		_warm.append(_bass.bind(root))
@@ -68,13 +105,26 @@ func _player(bus: String) -> AudioStreamPlayer:
 	add_child(player)
 	return player
 
-func _play(stream: AudioStream, pool: Array[AudioStreamPlayer], delay := 0.0) -> void:
+func _start_loop(player: AudioStreamPlayer, stream: AudioStream) -> void:
+	if player.stream == null:
+		player.stream = stream
+		player.play()
+
+## Renders everything still queued at once (the checks need it all ready).
+func warm_all() -> void:
+	while not _warm.is_empty():
+		_warm.pop_front().call()
+	if murmur.stream == null:
+		_start_loop(murmur, _murmur())
+
+func _play(stream: AudioStream, pool: Array[AudioStreamPlayer], delay := 0.0, volume := 1.0) -> void:
 	var player := pool[0]
 	for candidate in pool:
 		if not candidate.playing:
 			player = candidate
 			break
 	player.stream = stream
+	player.volume_db = linear_to_db(maxf(volume, 0.0001))
 	if delay > 0.0:
 		get_tree().create_timer(delay).timeout.connect(player.play)
 	else:
@@ -97,14 +147,33 @@ func _process(delta: float) -> void:
 		if randf() < 0.3:
 			_play(_bass(root), _music)
 		_next_note = _clock + (1.4 if night else 0.9) * (2.0 if randf() < 0.3 else 1.0) + randf() * 0.5
+	# the students, quieter at night and muffled indoors (and fewer of them out in the rain)
+	_fade(murmur, crowd * (0.2 if night else 1.0) * (0.6 if indoor else 1.0) * (1.0 - 0.5 * rain), delta)
+	_fade(rainfall, rain * (0.5 if indoor else 1.0), delta)
+	_rain_filter.cutoff_hz = lerpf(_rain_filter.cutoff_hz, 700.0 if indoor else 5200.0, 1.0 - exp(-delta * 3.0))
+	if not night and not indoor and rain < 0.3 and _clock >= _next_bird:
+		_play(_birds(randi() % 3), _effects, 0.0, randf_range(0.5, 1.0))
+		bird_calls += 1
+		_next_bird = _clock + randf_range(2.0, 5.0) * (1.0 if hour < 10.0 else 2.0)
 	if night and not indoor and _clock >= _next_chirp:
 		_play(_chirp(randi() % 3), _effects)
 		_next_chirp = _clock + 0.6 + randf() * 1.6
+
+func _fade(player: AudioStreamPlayer, level: float, delta: float) -> void:
+	var want := linear_to_db(maxf(level, 0.0001))
+	player.volume_db = lerpf(player.volume_db, want, 1.0 - exp(-delta * 1.5))
 
 ## A foot landing: tiles and steps click, the road and patio thud.
 func footstep(hard: bool) -> void:
 	steps += 1
 	_play(_footstep(hard, randi() % 4), _effects)
+
+## Text blip while a line types out. Each speaker has their own pitch (Hz).
+func blip(pitch: float) -> void:
+	var k := randi() % 3
+	var f: float = pitch * [0.96, 1.0, 1.04][k]
+	_play(_cached("blip:%d:%d" % [int(pitch), k], func() -> PackedFloat32Array:
+		return _tone(PackedFloat32Array(), f, 0.0, 0.05, 0.035, "square")), _effects)
 
 func select() -> void:
 	_play(_cached("select", func() -> PackedFloat32Array:
@@ -128,6 +197,54 @@ func _footstep(hard: bool, variant: int) -> AudioStreamWAV:
 		var gain := 0.09 if hard else 0.06
 		for i in buffer.size():
 			buffer[i] *= gain * MASTER * pow(0.0001 / gain, minf(float(i) / RATE / 0.07, 1.0))
+		return buffer)
+
+## Students talking: a few voices of filtered noise shaped into syllables, looped.
+func _murmur() -> AudioStreamWAV:
+	var count := RATE * 7
+	var mix := PackedFloat32Array()
+	mix.resize(count)
+	for v in 5:
+		var low := randf_range(320.0, 700.0)
+		var voice := _filter(_noise(count), "bandpass", low, 1.6)
+		var bright := _filter(_noise(count), "bandpass", low * 2.4, 2.2)
+		var gain := randf_range(0.6, 1.0)
+		var at := randi_range(0, RATE / 2)
+		while at < count:
+			var length := int(randf_range(0.08, 0.24) * RATE)
+			for i in length:
+				if at + i >= count:
+					break
+				var t := float(i) / length
+				var env := sin(PI * t) * gain
+				mix[at + i] += (voice[at + i] + bright[at + i] * 0.5) * env
+			at += length + int(randf_range(0.04, 0.45) * RATE)
+	var peak := 0.0001
+	for x in mix:
+		peak = maxf(peak, absf(x))
+	for i in count:
+		mix[i] /= peak
+	return _wav(_seamless(mix, RATE, 0.07 * MASTER), true)
+
+## A few quick bird calls, sliding down.
+func _birds(variant: int) -> AudioStreamWAV:
+	return _cached("birds:%d" % variant, func() -> PackedFloat32Array:
+		var buffer := PackedFloat32Array()
+		var at := 0.0
+		var top := randf_range(3600.0, 4600.0)
+		for i in randi_range(2, 4):
+			var length := randf_range(0.06, 0.1)
+			var start := int(at * RATE)
+			var count := int(length * RATE)
+			if buffer.size() < start + count:
+				buffer.resize(start + count)
+			var phase := 0.0
+			for k in count:
+				var t := float(k) / count
+				var freq := lerpf(top, top * 0.68, t)
+				phase += freq / RATE
+				buffer[start + k] += sin(TAU * phase) * sin(PI * t) * 0.022 * MASTER
+			at += length + randf_range(0.04, 0.09)
 		return buffer)
 
 func _chirp(variant: int) -> AudioStreamWAV:

@@ -64,6 +64,8 @@ var root: Node3D
 var lamps: Array[Light3D] = []
 ## Emissive materials whose glow follows the time of day: [material, day energy, night energy].
 var glows: Array = []
+## Every tree built: (x, y, z) of its foot and its height, for the leaves and light shafts.
+var trees: Array[Vector4] = []
 var box_count := 0
 var _batches := {}
 var _materials := {}
@@ -830,6 +832,7 @@ func pot(x: float, z: float) -> void:
 ## leaves.gdshader), so it reads as a full canopy from the APS front and from the
 ## canteen alike, and it casts a dappled shadow of its real leaves.
 func _tree(at: Vector3, height: float, seed_value: int) -> void:
+	trees.append(Vector4(at.x, at.y, at.z, height))
 	var random := RandomNumberGenerator.new()
 	random.seed = seed_value
 	var bark := Color("645e50")

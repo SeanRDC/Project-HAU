@@ -59,8 +59,9 @@ the ignored `builds/godot-tools/4.7.2/`. Other machines can
 | 7-9, 0 | IH Gym (front), Gym side (the side entrance from the lane), SJH, Gym inside (the court) |
 | Q/E | Camera angle |
 | T | Morning, noon, afternoon, night |
+| G | Rain on or off (it also comes and goes on its own) |
 | C | Boy / girl |
-| E, Space or Enter | Talk to someone in reach (E turns the camera when nobody is near) |
+| E, Space or Enter | Talk to someone in reach, like the browser game: the line types out with a blip in their voice; press again to show it all, again for the next line (E turns the camera when nobody is near). When they ask something, pick a reply with W/S (or the arrows) and E, 1-3, or the mouse; they remember what you said |
 | M | Mute |
 | P | Pixels: Auto, Crisp, Chunky |
 | R | Reset |
@@ -129,10 +130,11 @@ because their kernel grows with zoom.
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside: the open-corridor block, the box-window wing over the entrance (walk in up to the turnstile), the open stair, the north block, the south wing with its roof tank, the raised garden. The camera turns to face it on the west road |
 | `areas/middle_road.gd` | The middle road between PGN and MGN, from the west road to the flagpole: two concrete carriageways, the hedged median, both covered walkways on terracotta pillars, the strips' trees and bannered lampposts, the zebras, the 10 KPH and SLOW DOWN signs, benches, bins, and the flagpole on its island. The camera faces south across it |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
-| `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking |
-| `npcs.gd` | The cast, their lines, the talk hint and speech bubble |
-| `audio.gd` | Synthesised music, wind, footsteps, blips and crickets (no audio files) |
-| `shaders/` | Edges, leaves, sky, display grade |
+| `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking, stopping to look at and wave to the student, an umbrella in the rain |
+| `npcs.gd` | The cast and their talk scripts (questions, replies, what they remember), the talk hint, speech bubble and reply card |
+| `audio.gd` | Synthesised music, wind, footsteps, blips, crickets, the student murmur, birds and rain (no audio files) |
+| `atmosphere.gd` | Rain and wet ground, puddles and lamp reflections, light shafts, falling leaves |
+| `shaders/` | Edges, leaves, sky, display grade, light shafts |
 
 Boxes that share a size and material are batched into MultiMeshes (about 1,470 boxes).
 
@@ -150,7 +152,7 @@ writes 26 review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
 `--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn|middle`, `--pixel=auto|crisp|pixel`,
-`--walk=<seconds>`, `--hide-help`, `--capture=<absolute PNG path>`.
+`--walk=<seconds>`, `--rain`, `--hide-help`, `--capture=<absolute PNG path>`.
 
 Geometry is approximate, from the walk photos, not a survey. The far sidewalk,
 verge, road markings, the bend's exact radius, drain grates, rooftop tanks/vents, AC units and the

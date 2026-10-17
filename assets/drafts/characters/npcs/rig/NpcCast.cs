@@ -30,7 +30,7 @@ public static partial class NpcRig
             {
                 Id = "kuya-ben", HeadBottom = 34, CrownBottom = 15,
                 // his arms are dark sleeves under the vest, so they are cut by area, not by lightness
-                ArmMode = "box", NearX0 = 18, NearX1 = 24, NearHandX1 = 24, NearHandY = 60, NearY0 = 38, NearY1 = 65, ElbowRow = 51,
+                ArmMode = "box", NearX0 = 17, NearX1 = 24, NearHandX1 = 24, NearHandY = 60, NearY0 = 38, NearY1 = 65, ElbowRow = 51,
                 NearShoulder = new PointF(21.5f, 40.5f), NearElbow = new PointF(21.5f, 51.5f), FarShoulderX = 40.5f,
                 FarX0 = 40, FarX1 = 43, FarY0 = 38, FarY1 = 64,
                 PackSide = Hex(0x7a5e24), TorsoBottom = 61,
@@ -100,7 +100,7 @@ public static partial class NpcRig
             {
                 Id = "coach-gab", HeadBottom = 33, CrownBottom = 15,
                 // green long sleeves: cut by area
-                ArmMode = "box", NearX0 = 19, NearX1 = 24, NearHandX1 = 25, NearHandY = 58, NearY0 = 38, NearY1 = 66, ElbowRow = 50,
+                ArmMode = "box", NearX0 = 17, NearX1 = 24, NearHandX1 = 25, NearHandY = 58, NearY0 = 38, NearY1 = 66, ElbowRow = 50,
                 NearShoulder = new PointF(22f, 40.5f), NearElbow = new PointF(22f, 50.5f), FarShoulderX = 41f,
                 FarX0 = 39, FarX1 = 43, FarY0 = 38, FarY1 = 66,
                 PackSide = Hex(0x245a3c), TorsoBottom = 61,

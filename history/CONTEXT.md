@@ -45,15 +45,15 @@ Floors are levels: `blocked()` / `floor_height()` take the walker's height (see
 jumps to centre court. Room layouts not in the photos are still first guesses.
 See `sessions/2026-10-16-ih-gym-interior.md`.
 
-**NPCs and the boy rig in Godot, 2026-10-16.** Four campus NPCs in the style
+**NPCs and the boy rig in Godot, 2026-10-16.** Eight campus NPCs in the style
 reference's look, animated by the boy's rig made general
-(`assets/drafts/characters/npcs/rig/`), eight in all: Migo and Bea stroll near APS,
+(`assets/drafts/characters/npcs/rig/`): Migo and Bea stroll near APS,
 Rica and Paolo on the canteen patio, Bianca at the chapel; Kuya Ben (traffic marshal)
 at the APS entrance, Ate Lorna at her canteen stall and Coach Gab at the gym stay at
 their posts. New NPCs are PixelLab edits of the style sheet (25 generations each).
 E, Space or Enter talks to whoever is in reach. The playable boy is now a rig
 built from his reference (`assets/drafts/characters/boy/three-quarter/rig/`), not
-PixelLab frames. See `sessions/2026-10-16-godot-npcs-and-boy-rig.md`.
+PixelLab frames. Campus sounds (student murmur, birds) and `atmosphere.gd`: rain that comes and goes (G) with wet ground, puddles and lamp reflections, light shafts and falling leaves. Wet ground in rain is a new exception to the matte rule, waiting for Sean. NPCs stop, turn and wave when you come near, open umbrellas in the rain, and ask questions you answer (W/S, 1-3); they remember your replies for the session. NPC walks and waves are now PixelLab redraws posed by skeletons (`assets/drafts/characters/npcs/pixellab/`), not the rig's rotated limbs. Migo's sprites are kept in pxl (`assets/drafts/characters/npcs/pxl/migo/`): clean chin, the same chin in every frame, hair that moves in the walk. The player boy too (`assets/drafts/characters/boy/pxl/`): his walk is a PixelLab redraw now, not the rig's. See `sessions/2026-10-16-godot-npcs-and-boy-rig.md`.
 
 St. Joseph Hall in Godot, 2026-10-16: `areas/sjh.gd` builds SJH on its plan plot
 (nine storeys, 96 x 19 m, facing north, set back 10 m from its OSM outline per Mikko's map), with its covered walkway (the same
