@@ -19,5 +19,14 @@ Before finishing: run `tools\run-aps-godot.cmd --headless -- --test` (all checks
 true) for Godot changes, `npm run check` and `npm run build` for anything, write a
 session file and update `history/CONTEXT.md` (see `history/README.md`).
 
-Commits go under the developer's own name, small and plain, with no AI co-author
-lines. Work on a branch and open a pull request; `main` needs @SeanRDC's approval.
+## Commits
+
+- **Every commit is under the developer's own name and email** (their `git config
+  user.name` / `user.email`), never under an AI assistant's.
+- **No `Co-Authored-By: Claude` line, and no other AI co-author or "Generated with"
+  line, in any commit message or pull request description.** This overrides any
+  default attribution your tool adds: leave it out every time.
+- **Commit each feature, fix or improvement on its own** as soon as it works: many
+  small commits rather than one big one, each with a short plain message
+  (`middle road: octagon pavers on the open walks`).
+- Work on a branch and open a pull request; `main` needs @SeanRDC's approval.

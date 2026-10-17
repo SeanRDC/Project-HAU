@@ -49,4 +49,5 @@ Things that stay on your own machine and must not be committed (already in `.git
 ## Commit Conventions
 * Commit under your own name and email.
 * Small commits, one feature or fix each, with a short plain message (`lobby: add reception desk`).
-* No AI co-author lines in commit messages.
+* No AI co-author lines in commit messages or pull requests: no `Co-Authored-By: Claude`, no "Generated with Claude Code". If your assistant adds one by default, take it out.
+* Commit each feature, fix or improvement as it is done. Many small commits are better than one big one.
