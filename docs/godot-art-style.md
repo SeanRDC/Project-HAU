@@ -36,7 +36,7 @@ Files:
 | `campus_plan.gd` | **Generated, do not edit.** Every building's real outline and the named places from the team's plan, in Godot metres |
 | `roads.gd` | The campus loop road (centre line as straights and turns) and `across()`, the distance across the road at any point |
 | `areas/chapel.gd` | The chapel, its plaza, oval parking, banners, lawn paths, trees and palms |
-| `areas/plots.gd` | Reserved plots for every building not built yet |
+| `areas/plots.gd` | Reserved plots for everything on the layout not built yet: dashed white outlines, painted names |
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane; its doorways are open |
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
@@ -162,13 +162,28 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
 
 Everyone builds on the same grid, so buildings line up when they are merged.
 
-- `campus_plan.gd` is **generated** by `npm run export:godot-plan` from the
-  plan the browser game and the campus map already use (`plan.ts` and the
-  OpenStreetMap outlines in `osm.ts`). Never edit it by hand: fix `plan.ts` and
-  regenerate.
-- Every building not drawn yet is a **reserved plot** (`areas/plots.gd`): pale
-  ground on its real footprint, a gold border, and its name standing over it.
-  The student cannot walk into a plot.
+- `campus_plan.gd` is **generated** by `npm run export:godot-plan` from
+  `plan.ts` (`GODOT_PLOTS`). Never edit it by hand: fix `plan.ts` and regenerate.
+- **The layout is Sean's labelled reference,** `assets/MAIN CAMPUS LAYOUT
+  REFERENCE.jpg` (2026-10-18): black = buildings, orange = covered walks and
+  student gates, pink = car gates, yellow = ground-level areas. `GODOT_PLOTS`
+  traces it in that picture's pixels (`onLayout`), fitted to what is built (the
+  angel fountain, the boulevard's mouth, the road loop's kerbs; 3-4 m at worst).
+  Built buildings stay on their surveyed outlines. SFJ and STL keep their OSM shapes
+  but sit where the picture puts them (SFJ 20.7 m south, STL 12.2 m, its pavilion on
+  the boulevard's face line); the Student Center is the strip between the boulevard
+  (z 79.9) and the Main Building (from z 88.4); St. Gabriel and St. Raphael are one
+  plot, "St. Gabriel"; the Gym Annex is "Aero Hall". Plaza de Corazon, outside the
+  campus line, has no plot. The browser game keeps `BUILDINGS`, unchanged.
+- Each plot has a **kind**: `building`, `walk` (a covered walk), `gate` (a student
+  gate) or `ground` (Epiphany of Angels, Rotonda 2, the Flag Circle).
+- Everything not drawn yet is a **reserved plot** (`areas/plots.gd`): a flat pad on
+  its footprint (pale ground for a building, pale paving for the rest), a **dashed
+  white outline** (1.2 m dashes, 0.8 m gaps, 0.24 m wide) and its short name
+  **painted on the pad** in white, as big as fits (along z on a long, thin plot),
+  with a small tag of its full name standing over it. No two plots overlap each
+  other or a built building, and none covers walkable ground (the `plots_clear`
+  check). The student cannot walk into a plot.
 - **To merge your building:**
   1. Build it in `areas/<id>.gd` (`<id>` as in `plan.ts`: `sh`, `court`, `gym`,
      `sjh`, `pgn`, `mgn`, `formation`...), on the plot's outline from
@@ -238,7 +253,7 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | wood | 1.5 | `#8b6b4e` | planks every 13 px |
 | metal | 2.0 | `#8c9b9e` | grain only |
 | grass | 3.0 | `#7c8a5f` | 9/255 grain, 900 vertical blade flecks; mown bands tint `#f3f5ec` |
-| dirt | 2.5 | `#9a8566` | pebbles in four browns and darker trodden patches (the picnic strip, the corner garden; reserved plots tinted `#e8e1cb`) |
+| dirt | 2.5 | `#9a8566` | pebbles in four browns and darker trodden patches (the picnic strip, the corner garden; building plots tinted `#e8e1cb`) |
 | floor | 2.4 | `#d9bfa9` | peach 30 cm ceramic tiles, light grout, the odd paler tile (the APS hallway, stair treads tinted `#eee9e2`) |
 | ledge | 1.2 | `#8a7d6a` | ledgestone: thin stacked slates in browns and greys with dark gaps (the hallway's front piers) |
 | pavers | 2.4 | `#a69b8d` | stamped concrete: 16 px slabs of slightly different tone with dark joints (the chapel plaza and parking) |

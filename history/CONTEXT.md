@@ -1,5 +1,15 @@
 # Project Context
 
+**The campus layout, 2026-10-18.** Godot's plots now follow Sean's labelled
+`assets/MAIN CAMPUS LAYOUT REFERENCE.jpg`: `GODOT_PLOTS` in `plan.ts` (traced in that
+picture's pixels, fitted to the built fountain, boulevard and road loop) lists every
+building, covered walk, student gate and ground area; the exporter writes them with a
+`kind`. Built buildings did not move. SFJ and STL moved south onto the picture, St.
+Martha is redrawn, the Student Center sits between the boulevard and the Main Building,
+St. Gabriel is one plot, the Gym Annex is Aero Hall, Plaza de Corazon is gone. Plots
+have dashed white outlines and their names painted on them. The browser game's
+`BUILDINGS` are unchanged. See `sessions/2026-10-18-campus-layout.md`.
+
 **Facade detail, 2026-10-16.** `framed_window()` in `world.gd` puts APS's window look
 on any face; use it for every new building's windows. MGN now has framed windows
 throughout, floor bands, parapets and AC units. See `sessions/2026-10-16-facade-detail.md`.
