@@ -10,17 +10,19 @@ This folder keeps everyone's local setup in sync. It records what was decided an
 Do these every time, in order:
 
 1. `git pull`
-2. `npm install` (only needed when `package.json` or `package-lock.json` changed, but it is safe to always run)
-3. `npm run dev` and open http://localhost:5173 to check the game still runs
-4. Read `history/CONTEXT.md`, then the newest file in `history/sessions/`
+2. Read `history/CONTEXT.md`, then the newest file in `history/sessions/`. For any Godot work, also `docs/godot-art-style.md` and `src/drafts/aps-godot/README.md`.
+3. Open `src/drafts/aps-godot/project.godot` in the Godot editor once (or run Godot with `--headless --import`) so new sprites are imported. Skipping this makes new images fail to load and the NPC checks fail.
+4. `tools\run-aps-godot.cmd` to check the game still runs.
+5. `npm install` (only needed when `package.json` or `package-lock.json` changed, but it is safe to always run).
 
-You need [Node.js](https://nodejs.org) 20 or newer. Nothing else has to be installed.
+You need [Godot 4.7.2](https://godotengine.org/download/) (the standard build) and [Node.js](https://nodejs.org) 20 or newer. The browser prototype (`npm run dev`, http://localhost:5173) is frozen, but it should still run.
 
 ## Before You Push
-1. `npm run check` (type check) and `npm run build` must both pass.
-2. Play through the part you changed.
-3. Add a session file (see below) and update `CONTEXT.md` if you changed a decision, the folder layout, or the list of unfinished things.
-4. Work on a branch and open a pull request. `main` is protected: only the repo owner can push to it directly, and a pull request cannot be merged until the owner (@SeanRDC) has approved it. Pushing new commits after an approval asks for a fresh one.
+1. For Godot changes, `tools\run-aps-godot.cmd --headless -- --test`: every check must be `true`. Give it a timeout; a broken script makes it hang.
+2. `npm run check` (type check) and `npm run build` must both pass, for any change.
+3. Play through the part you changed. If you changed a style value, update `docs/godot-art-style.md` in the same change.
+4. Add a session file (see below) and update `CONTEXT.md` if you changed a decision, the folder layout, or the list of unfinished things. Small README or asset-only commits don't need one.
+5. Work on a branch and open a pull request. `main` is protected: only the repo owner can push to it directly, and a pull request cannot be merged until the owner (@SeanRDC) has approved it. Pushing new commits after an approval asks for a fresh one.
 
 ## Writing a Session File
 Name it `sessions/YYYY-MM-DD-short-title.md`. Keep it short:
@@ -40,7 +42,9 @@ Start your session by telling it:
 
 That gives it the same context the last console had. At the end, ask it to write the session file and update `CONTEXT.md`.
 
-Things that stay on your own machine and must not be committed (already in `.gitignore`): `node_modules/`, `.claude/`, `.vscode/`, anything in `builds/` except its README.
+The repo-level `CLAUDE.md` already points Claude Code at these files and at the Godot style guide.
+
+Things that stay on your own machine and must not be committed (already in `.gitignore`): `node_modules/`, `.claude/`, `.vscode/`, Godot's `.godot/` cache and `*.import` files, anything in `builds/` except its README (that includes the Godot editor in `builds/godot-tools/`).
 
 ## Commit Conventions
 * Commit under your own name and email.
