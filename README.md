@@ -68,17 +68,12 @@ This is private work. Only the team and collaborators added by the repository ow
 ## The Team
 A closed 7-person project developed within the School of Computing.
 
-**Developers**
 * **Sean Rhani Dela Cruz**
 * **Mikko Brandon Panergo**
 * **Jorel Kesse Marquez**
-
-**The heart of the game: sprites, animation and story**
 * **Gil Miranda**
 * **Mclaren Ais Miranda**
 * **Cyrel Lloyd Lasola**
-
-**Documentation and organization**
 * **Bernard Rodriguez Jr.**
 
 ## Team Workflow
