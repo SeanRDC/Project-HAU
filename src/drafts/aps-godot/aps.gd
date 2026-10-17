@@ -54,7 +54,7 @@ const PERCH_WIDTH := 16.0
 ## Where the SJH framing (key 9) brings the student: the south road, by the parking.
 const SJH_SPOT := Vector2(-11.0, 109.0)
 ## Where --view=mgn brings the student: the west road, in front of MGN's entrance.
-const MGN_SPOT := Vector2(-60.5, 92.0)
+const MGN_SPOT := Vector2(-60.5, 96.8)
 ## Where --view=middle brings the student: the middle road's north carriageway, past the zebra.
 const MIDDLE_SPOT := Vector2(-78.0, 60.4)
 const MAX_WIDTH := 140.0

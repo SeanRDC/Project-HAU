@@ -18,8 +18,8 @@ const Chapel := preload("res://areas/chapel.gd")
 const Sjh := preload("res://areas/sjh.gd")
 
 ## The long block's front edge on the plot (plan outline): north and south corners.
-const EDGE_NORTH := Vector2(-67.6, 97.1)
-const EDGE_SOUTH := Vector2(-68.5, 133.0)
+const EDGE_NORTH := Vector2(-67.6, 101.9)
+const EDGE_SOUTH := Vector2(-68.5, 137.8)
 ## Storeys: a tall open ground floor, then four corridor floors (counted off the photos;
 ## heights approximate, from the photos). The roof is ~17 m; tanks stand above it.
 const GROUND := 3.6
@@ -96,7 +96,7 @@ static func in_entry(x: float, z: float) -> bool:
 ## How far the camera turns to face MGN: on the west road from beside the walkway end
 ## down to the corner, before the SJH view takes over. The chapel view yields to it.
 static func reach(x: float, z: float) -> float:
-	return smoothstep(66.0, 74.0, z) * (1.0 - smoothstep(-57.5, -53.5, x))
+	return smoothstep(70.8, 78.8, z) * (1.0 - smoothstep(-57.5, -53.5, x))
 
 static func view_for(x: float, z: float) -> float:
 	return reach(x, z) * (1.0 - Sjh.view_for(x, z))

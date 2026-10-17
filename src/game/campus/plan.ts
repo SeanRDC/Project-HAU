@@ -113,6 +113,23 @@ function outline(id: string): Spot[] | undefined {
   return OUTLINES[id]?.map(([u, v]) => ({ u, v }));
 }
 
+/**
+ * How far some OSM outlines are moved across the grid (metres along v), where the
+ * boulevard photos say OSM is off. OSM leaves 26.5 m between PGN and the Main
+ * Building, but the boulevard between them measures about 30.6 m in the
+ * photos and the aerial (the Godot middle road's bands). So PGN moves 2.0 m north,
+ * the Main Building 2.1 m south, and MGN 4.8 m south so its north face lines up with
+ * the Main Building's, as the south walkway does. Only the outlines move: `blocks`
+ * (the frozen browser scenes) stay where they were.
+ */
+const SHIFT_V: Record<string, number> = { pgn: -2.0, djdn: 2.1, mgn: 4.8 };
+
+/** A building's OSM outline, moved by SHIFT_V. */
+function moved(id: string): Spot[] | undefined {
+  const dv = SHIFT_V[id] ?? 0;
+  return outline(id)?.map((p) => ({ u: p.u, v: p.v + dv }));
+}
+
 /** An outline traced off the aerial photo, one pixel per corner. */
 function traced(...px: Px[]): Spot[] {
   return px.map(spot);
@@ -315,7 +332,7 @@ export const BUILDINGS = {
     short: 'PGN',
     // the tower, then the podium
     blocks: [part(-92, -69, -76, -8), part(-135, -92, -37, -8)],
-    outline: outline('pgn'),
+    outline: moved('pgn'),
     inside: ['OSSA - Scholarship & Grants Office', "School of Business and Accountancy Dean's Office", 'PGN Auditorium'],
     sure: true,
   },
@@ -324,7 +341,7 @@ export const BUILDINGS = {
     name: 'Don Juan D. Nepomuceno Building',
     short: 'Main Bldg.',
     blocks: [bounds('djdn')],
-    outline: outline('djdn'),
+    outline: moved('djdn'),
     inside: ["Registrar's Office", 'Finance Office', 'CKS Office'],
     sure: true,
   },
@@ -344,7 +361,7 @@ export const BUILDINGS = {
     short: 'MGN',
     // the long block beside the Main Building, then its south end
     blocks: [part(-90, -72, 16, 72), part(-96, -67, 72, 85)],
-    outline: outline('mgn'),
+    outline: moved('mgn'),
     inside: [
       "School of Nursing & Applied Medical Sciences Dean's Office",
       "College of Criminal Justice Education & Forensics Dean's Office",
