@@ -31,7 +31,7 @@ const PIECES := [
 
 ## Where the building-side sidewalk and kerb stop for a side road (world x/z rects):
 ## the middle road's mouth on the west road (areas/middle_road.gd).
-const OPENINGS: Array[Rect2] = [Rect2(-64.0, 58.0, 3.0, 11.0)]
+const OPENINGS: Array[Rect2] = [Rect2(-64.0, 59.9, 3.0, 9.4)]
 
 static var _points := PackedVector2Array()
 static var _left := PackedVector2Array()

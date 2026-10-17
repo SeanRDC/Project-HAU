@@ -55,8 +55,8 @@ const PERCH_WIDTH := 16.0
 const SJH_SPOT := Vector2(-11.0, 109.0)
 ## Where --view=mgn brings the student: the west road, in front of MGN's entrance.
 const MGN_SPOT := Vector2(-60.5, 96.8)
-## Where --view=middle brings the student: the middle road's north carriageway, past the zebra.
-const MIDDLE_SPOT := Vector2(-78.0, 60.4)
+## Where --view=middle brings the student: the boulevard's south open walk.
+const MIDDLE_SPOT := Vector2(-80.0, 72.0)
 const MAX_WIDTH := 140.0
 ## Facing south on the middle road, the camera cuts away everything north of this z (the
 ## APS wing and the corner garden, which would stand in front at the mouth); PGN's side of
@@ -750,8 +750,8 @@ static func travel_places() -> Array:
 		["Mary statue", Vector2(-48.5, 113.6), 26.0],
 		["MGN", MGN_SPOT, 56.0],
 		["MGN entrance", Mgn.world(21.0, 2.5), 18.0],
-		["Middle road (PGN-MGN)", MIDDLE_SPOT, 40.0],
-		["Flagpole end", Vector2(-170.5, 60.0), 40.0],
+		["Boulevard, Main Bldg side", MIDDLE_SPOT, 40.0],
+		["Angel fountain", Vector2(-159.0, 61.0), 40.0],
 	]
 
 ## Jumps the student to a fast-travel place, with every camera zone, the gym's
@@ -1349,26 +1349,30 @@ func _verify_and_capture() -> void:
 		_set_zoom(MIN_WIDTH, true)
 		_update_camera(1.0)
 		checks.mgn_close_shows_student = _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
-		# The middle road: walkable from the west road to the flagpole, both carriageways,
-		# both covered walkways and the crossings; the strips, median, pillars and island solid.
+		# HAU Boulevard: walkable from the west road to the fountain, both lanes, both covered
+		# walkways, both open walks and the crossings; the strips, median, planters, pillars
+		# and the fountain solid.
 		var lanes := true
-		for x in range(-64, -168, -8):
-			lanes = lanes and not World.blocked(x, 60.4) and not World.blocked(x, 66.6) \
-				and is_equal_approx(World.floor_height(x, 60.4), -0.19) and is_equal_approx(World.floor_height(x, 66.6), -0.19)
-		checks.middle_road_walkable = lanes and not World.blocked(-90.0, 53.0) and not World.blocked(-90.0, 73.5) \
-			and not World.blocked(-105.5, 56.6) and not World.blocked(-105.5, 63.5) and not World.blocked(-170.5, 60.0) \
-			and is_equal_approx(World.floor_height(-90.0, 53.0), -0.04) and is_equal_approx(World.floor_height(-105.5, 63.5), -0.04)
-		var pillar: Vector2 = MiddleRoad.pillars()[0]
-		checks.middle_road_solid = World.blocked(-90.0, 63.5) and World.blocked(-90.0, 56.6) and World.blocked(-90.0, 70.3) \
-			and World.blocked(pillar.x, pillar.y) and World.blocked(MiddleRoad.FLAG.x, MiddleRoad.FLAG.y) and World.blocked(-90.0, 77.0)
+		for x in range(-64, -158, -8):
+			lanes = lanes and not World.blocked(x, 62.0) and not World.blocked(x, 67.2) \
+				and is_equal_approx(World.floor_height(x, 62.0), -0.19) and is_equal_approx(World.floor_height(x, 67.2), -0.19)
+		checks.middle_road_walkable = lanes and not World.blocked(-92.1, 51.9) and not World.blocked(-92.1, 77.3) \
+			and not World.blocked(-90.0, 57.2) and not World.blocked(-90.0, 72.0) and not World.blocked(-106.0, 54.8) \
+			and not World.blocked(-106.0, 64.6) and not World.blocked(-159.0, 61.0) \
+			and is_equal_approx(World.floor_height(-92.1, 51.9), MiddleRoad.WALK_Y) and is_equal_approx(World.floor_height(-90.0, 57.2), -0.04) \
+			and is_equal_approx(World.floor_height(-106.0, 64.6), -0.04)
+		var pillar: Vector2 = MiddleRoad.pillars()[5]
+		checks.middle_road_solid = World.blocked(-90.0, 64.6) and World.blocked(-90.0, 59.2) and World.blocked(-90.0, 54.8) \
+			and World.blocked(-90.0, 70.0) and World.blocked(-90.0, 74.4) and World.blocked(-90.0, 49.7) and World.blocked(-90.0, 79.5) \
+			and World.blocked(pillar.x, pillar.y) and World.blocked(MiddleRoad.FOUNTAIN.x, MiddleRoad.FOUNTAIN.y)
 		checks.middle_road_kerbs = is_equal_approx(World.floor_height(-90.0, MiddleRoad.LANE_N.x), 0.0) \
 			and is_equal_approx(World.floor_height(-90.0, MiddleRoad.MEDIAN.y), 0.0)
-		# The west road's sidewalk and kerb open across the mouth, and stay either side of it.
+		# The west road's sidewalk and kerb open across the lanes, and stay either side of them.
 		checks.west_road_opening = Roads.opened(Vector2(-62.0, 63.5)) and is_equal_approx(World.floor_height(-62.0, 63.5), -0.19) \
 			and not Roads.opened(Vector2(-62.0, 54.0)) and is_equal_approx(World.floor_height(-62.0, 54.0), 0.0)
 		# Walking in off the west road: the camera turns to face south across the road, the
 		# PGN side behind the student is cut away, and the student stays in view.
-		student.place(-60.0, 60.4)
+		student.place(-60.0, 67.2)
 		_set_zoom(36.0, true)
 		_snap_follow()
 		for i in 240:
