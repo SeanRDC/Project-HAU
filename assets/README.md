@@ -1,20 +1,33 @@
 # Art, Audio, and Assets
 
-This directory holds Project HAU's media. Right now that is mostly **reference photos of the real Holy Angel University campus**. We use them to draw the game's buildings, props and sprites. The game copies the campus 1:1, so every building should look like its photo, not a generic facade.
+This directory holds Project HAU's media: **reference photos of the real Holy Angel University campus**, and the **character sources** the game's sprites are built from. The game copies the campus 1:1, so every building should look like its photo, not a generic facade.
 
-**Nothing in the game loads these pictures.** All the art you see in the game is drawn by code in `src/game/art/`. The photos are what we draw from.
+**The game does not load the photos.** The Godot game (`src/drafts/aps-godot/`) builds every building in code from them, and the frozen browser prototype draws them in `src/game/art/`. The only images the Godot game loads are its sprite sheets in `src/drafts/aps-godot/sprites/`, and those are built from `drafts/characters/` (see [its README](drafts/characters/README.md)).
 
 ## Reference Photos
-They are all in `images/`: one folder per building in `images/buildings/`, the side gate entryway in `images/sidegate entryway/`, and everything else in `images/other references/`.
+Most are in `images/`: one folder per building in `images/buildings/`, the side gate entryway in `images/sidegate entryway/`, and everything else in `images/other references/`. The walk photos from the October photo trip are in their own folders at the top of `assets/`.
+
+### Walk photos (October 2026)
+
+| Folder | What it shows | Built in Godot? |
+| --- | --- | --- |
+| `APS WALK FROM CHAPEL LAWN/` | 31 photos walking along APS from the chapel lawn: the wing, canopy, tall block, stair tower, canteen and patio | Yes, `world.gd` and `areas/hallway.gd` |
+| `CHAPEL/` | The Chapel of the Holy Guardian Angel from the front and both sides, and a layout sketch | Yes, `areas/chapel.gd` |
+| `SJH BUILDING/` | St. Joseph Hall from the front and both sides | Yes, `areas/sjh.gd` |
+| `MGN BUILDING/` | The Mamerto G. Nepomuceno Building from the front and both sides | Yes, `areas/mgn.gd` |
+
+These show people and number plates. Don't put them in a build or post them anywhere.
+
+### `images/`
 
 | Folder / file | What it shows | Drawn in the game? |
 | --- | --- | --- |
 | `images/buildings/GGN BUILDING/` | The long front of GGN: the lobby, the canopy, the floor slabs and the louvred towers | Yes, `src/game/art/ggn.ts` |
-| `images/buildings/PANERGO AND GIL APS BUILDING/` | The Archbishop Pedro Santos (APS) Building | Not yet. The APS scene (`src/game/scenes/aps.ts`) still uses a generic facade |
+| `images/buildings/PANERGO AND GIL APS BUILDING/` | The Archbishop Pedro Santos (APS) Building | Yes, in Godot (`world.gd`), with the walk photos above |
 | `images/sidegate entryway/` | The side gate entryway: the walkway, the flag plaza close up (`closer view.jpg`), its floor pattern, the steps down toward SFJ, and pans left and right from SFJ | Yes, `src/game/art/entry.ts` (scene `src/game/scenes/entry.ts`) |
-| `images/buildings/ih_gym immaculate heart/` | The Immaculate Heart Gymnasium, outside and in: the front with its two entrances, the left side entrance by the covered court, the lobby, the corridor with the equipment room and stairs, the court, the stage and the second-floor bleachers | Yes, `src/game/art/ihgym.ts` (outside) and `src/game/art/ihgymin.ts` (inside) |
+| `images/buildings/ih_gym immaculate heart/` | The Immaculate Heart Gymnasium, outside and in: the front with its two entrances, the left side entrance by the covered court, the lobby, the corridor with the equipment room and stairs, the court, the stage and the second-floor bleachers | Yes, in Godot (`areas/gym.gd` outside, `areas/gym_interior.gd` inside) and the browser (`src/game/art/ihgym.ts`, `ihgymin.ts`) |
 | `images/buildings/covered court beside IH/` | The Covered Court beside the IH Gym: its front gable, the basketball court, the bleachers, the volleyball and badminton courts, the Aero Laboratory gate and the planes inside | Yes, `src/game/art/ccourt.ts` |
-| `images/buildings/beside the main building + the main walkways/` | The student center and Cafe Juan, both covered sidewalks 1, both sidewalks 2, the road between them, MGN, the PGN side | Yes, `src/game/art/walks.ts` |
+| `images/buildings/beside the main building + the main walkways/` | The student center and Cafe Juan, both covered sidewalks 1, both sidewalks 2, the road between them, MGN, the PGN side | Yes, in the browser (`src/game/art/walks.ts`); in Godot the middle road (`areas/middle_road.gd`) |
 | `images/other references/` | Aerial shots, the campus map, eye-level photos and a few odd references, listed below | Mostly |
 
 ### `images/other references/`
@@ -40,18 +53,21 @@ They are all in `images/`: one folder per building in `images/buildings/`, the s
 * **Name the shot by what it shows** (`facing sfj`, `floor pattern`, `closer view`) if you can. Camera names like `20261013_150813.jpg` work too, but descriptive names help whoever draws from them.
 * **Get the whole building in at least one shot**, taken straight on from the road. Add close-ups of doors, windows, signs and the ground.
 * **Don't rename photos once they're in.** The notes in `plan.ts`, the art files and `docs/campus-layout.md` point to them by file name.
-* **No interiors are drawn** (other than the DJN) until the team gives the go and sends interior photos.
+* **No interiors are built** until the team gives the go and sends interior photos. So far that is the DJN (browser), the APS hallway and the IH Gym (Godot).
 
 ### Whose pictures these are
 Some of these pictures are ours. Others came from Google Earth, a Google Maps photo sphere, the university's campus map or the web. This repository is public, so they are here as references only. Don't put them in a build. If anyone who owns one asks, take it out. See "Reference images" in `docs/campus-layout.md`.
 
 ## The `drafts/` Folder
-Not sure if a sprite looks right? Drop it in `assets/drafts/`. This is our sandbox for rough sketches, WIP animations, tileset tests and temporary sound effects. Files here do not need to follow the naming rules. `drafts/girl-test/` is a sprite sheet test, and the game does not use it (see its README).
+Not sure if a sprite looks right? Drop it in `assets/drafts/`. This is our sandbox for rough sketches, WIP animations and tests. Files here do not need to follow the naming rules.
+* `drafts/characters/` - the player boy and girl and the eight NPCs: references, the rig, PixelLab redraws and pxl clean-ups, and the scripts that build the game's sheets. See [its README](drafts/characters/README.md).
+* `drafts/girl-test/` - an early sprite sheet test. The game does not use it (see its README).
 
 ## Aesthetic Goals
-* **Visual Style:** 2D pixel art seen from the **side**, with parallax layers, soft lighting and a time-of-day cycle. Characters are about 33 px tall.
-* **Environment:** The real Holy Angel University campus, laid out 1:1 and drawn from the photos above.
-* **Audio:** Upbeat, nostalgic chiptune or lofi tracks, paired with ambient campus sounds.
+* **Visual Style:** 2.5D: pixel art in a real 3D world, seen through a side-view camera that turns to face each building, with real shadows, soft lighting, weather and a time-of-day cycle. Every rule is in `docs/godot-art-style.md`.
+* **Characters:** soft, painterly pixel sprites in the look of `drafts/characters/style-reference.png`, about 46 px per metre, lit by the scene.
+* **Environment:** The real Holy Angel University campus, laid out 1:1 and built from the photos above.
+* **Audio:** Synthesised for now (`audio.gd`): a gentle melody, wind, footsteps, the student murmur, birds, crickets and rain. Recorded tracks may come later.
 
 ## Production File Naming Conventions
 Finished game assets moved out of `drafts/` follow this pattern (reference photos don't):
