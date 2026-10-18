@@ -1347,7 +1347,7 @@ func _verify_and_capture() -> void:
 		for i in 20:
 			student.move(Vector2(-1, 0), false, 0.05)
 		checks.footsteps_while_walking = sound.steps - steps_before >= 3
-		checks.ambience_playing = sound.wind.playing and AudioServer.get_bus_index("Music") >= 0
+		checks.ambience_playing = AudioServer.get_bus_index("Music") >= 0
 		# Holding D from the APS front walks round the corner onto the patio.
 		student.place(14.0, 2.5)
 		_snap_follow()

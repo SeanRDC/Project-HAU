@@ -162,7 +162,7 @@ because their kernel grows with zoom.
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
 | `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking, stopping to look at and wave to the student, an umbrella in the rain |
 | `npcs.gd` | The cast and their talk scripts (questions, replies, what they remember), the talk hint, speech bubble and reply card |
-| `audio.gd` | Synthesised music, wind, footsteps, blips, crickets, the student murmur, birds and rain (no audio files) |
+| `audio.gd` | Synthesised music, footsteps, blips, crickets, the student murmur, birds and rain (no audio files) |
 | `atmosphere.gd` | Rain and wet ground, puddles and lamp reflections, light shafts, falling leaves |
 | `shaders/` | Edges, leaves, sky, display grade, light shafts |
 | `sprites/` | The sheets the game loads: `boy/`, `girl/` (idle, walk) and `npcs/<id>/` (idle, walk, talk, wave, portrait). Built from `assets/drafts/characters/`; don't edit them by hand |
