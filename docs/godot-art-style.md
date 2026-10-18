@@ -533,7 +533,8 @@ anything is wet or has specular other than glass.
   the next talk is the first that fits what is remembered, so NPCs answer what you
   said before and pass things on (Rica's message reaches Paolo, Bea tells Ate Lorna
   about the turon). Memory lasts the session. Lines stay Taglish with a little Kapampangan.
-- `Sprite3D`: `pixel_size = 1.83 / texture height` (1.83 m tall), **shaded**,
+- `Sprite3D`: `pixel_size = 1.83 / texture height` (1.83 m tall) for everyone, the player too
+  (making him bigger made his pixels coarser than everyone else's). **Shaded**,
   `ALPHA_CUT_DISCARD` with scissor 0.35, `TEXTURE_FILTER_NEAREST_WITH_MIPMAPS`,
   double-sided, casts a double-sided shadow. Mipmaps are generated at load.
 - **Face the camera's direction, not its position** (`face()`), or the sprite
