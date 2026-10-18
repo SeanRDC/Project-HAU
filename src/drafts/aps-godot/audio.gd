@@ -1,6 +1,6 @@
 extends Node
 ## Sound, synthesised the same way as the browser game's (src/engine/audio.ts),
-## so there are still no audio files: soft wind, a slow generative melody,
+## so there are still no audio files: a slow generative melody,
 ## footsteps, a menu blip and crickets at night. GDScript is too slow to
 ## synthesise live, so each sound is rendered once into a small buffer.
 
@@ -13,7 +13,7 @@ const NIGHT_ROOT := 196.0
 
 var muted := false
 var night := false
-## Under the canteen roof: the wind drops away.
+## Indoors (canteen, hallway, walkway): the murmur and rain are muffled.
 var indoor := false
 ## Footsteps played so far, for the checks.
 var steps := 0
@@ -24,7 +24,6 @@ var rain := 0.0
 var hour := 16.5
 ## Bird calls played so far, for the checks.
 var bird_calls := 0
-var wind := AudioStreamPlayer.new()
 ## The campus around you: a murmur of students, looped.
 var murmur := AudioStreamPlayer.new()
 ## Rain: a broad hiss, pulled down to a dull roar on the roof indoors (as in the browser game).
@@ -59,11 +58,6 @@ func _ready() -> void:
 	for i in 8:
 		_music.append(_player("Music"))
 		_effects.append(_player("Master"))
-	var loop := _filter(_noise(RATE * 5), "lowpass", 420.0, 1.12)
-	wind.name = "Wind"
-	wind.stream = _wav(_seamless(loop, RATE / 2, 0.05 * MASTER), true)
-	add_child(wind)
-	wind.play()
 	murmur.volume_db = -60.0
 	murmur.name = "Murmur"
 	add_child(murmur)
@@ -138,7 +132,6 @@ func _process(delta: float) -> void:
 	if not _warm.is_empty():
 		_warm.pop_front().call()
 	_clock += delta
-	wind.volume_db = lerpf(wind.volume_db, linear_to_db(0.3 if indoor else 1.0), 1.0 - exp(-delta * 2.0))
 	if _clock >= _next_note:
 		# Wander up and down the scale in small steps, lower and sparser at night.
 		_step = clampi(_step + randi_range(-2, 2), 0, 9)

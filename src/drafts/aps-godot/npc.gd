@@ -44,6 +44,7 @@ var _open := 0.0
 var _greeted := false
 var _waving := 0.0
 var _sheets := {}
+var _frames := {} # frames per sheet (an idle standing in for a missing sheet has the idle's)
 var _target := Vector2.ZERO
 var _wait := 0.0
 var _distance := 0.0
@@ -64,9 +65,18 @@ func setup(data: Dictionary) -> void:
 func _ready() -> void:
 	name = "NPC_" + id
 	for kind in FRAMES:
-		var image := (load("res://sprites/npcs/%s/%s.png" % [id, kind]) as Texture2D).get_image()
+		var path := "res://sprites/npcs/%s/%s.png" % [id, kind]
+		if not ResourceLoader.exists(path):
+			continue
+		var image := (load(path) as Texture2D).get_image()
 		image.generate_mipmaps()
 		_sheets[kind] = ImageTexture.create_from_image(image)
+		_frames[kind] = FRAMES[kind]
+	# a character still being made may have only its idle: it stands in that for the rest
+	for kind in FRAMES:
+		if not _sheets.has(kind):
+			_sheets[kind] = _sheets["idle"]
+			_frames[kind] = FRAMES["idle"]
 	sprite.name = "LitPixelSprite"
 	sprite.shaded = true
 	sprite.double_sided = true
@@ -255,7 +265,7 @@ func stop_talk() -> void:
 	_wait = _rng.randf_range(1.5, 3.0)
 
 func _animate(kind: String, delta: float) -> void:
-	var frames: int = FRAMES[kind]
+	var frames: int = _frames[kind]
 	if kind != animation:
 		sprite.texture = _sheets[kind]
 		sprite.hframes = frames

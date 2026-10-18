@@ -15,6 +15,7 @@ const looks = {
   rica: 'schoolgirl, short black bob haircut, white short-sleeved blouse with a maroon ribbon, grey plaid pleated skirt, white socks, black school shoes',
   paolo: 'schoolboy, short black buzz cut, black glasses, white short-sleeved shirt, black pants, green backpack, dark shoes',
   'ate-lorna': 'canteen cook woman, dark brown hair in a bun under a hairnet, red short-sleeved shirt, long white apron, dark pants, dark shoes',
+  'boy-new': 'slim schoolboy, wavy medium-brown hair, cream white short-sleeved polo shirt, black pants, dark red backpack, brown school shoes',
   boy: 'schoolboy, fluffy messy brown hair, white short-sleeved polo shirt, black pants, dark red backpack, brown school shoes',
   'coach-gab':'sports coach, short black hair, dark green tracksuit jacket with a whistle on a cord, navy track pants, white sneakers',
 };

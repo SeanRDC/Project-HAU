@@ -1,5 +1,12 @@
 # Project Context
 
+**The opening, 2026-10-19 (test).** A plain launch now plays `opening.gd` first: a
+black-and-white manga memory of the campus in Tagalog, page by page, ending on the
+title and fading into the game (paused behind it). Panels use drawn pictures from
+`opening/panels/`, else campus photos inked by `shaders/manga.gdshader`, else grey cards
+naming what to draw; `opening/README.md` lists the 16 pictures. Any run with arguments
+skips it (`--opening` forces it). See `sessions/2026-10-19-opening-cutscene.md`.
+
 **The campus layout, 2026-10-18.** Godot's plots now follow Sean's labelled
 `assets/MAIN CAMPUS LAYOUT REFERENCE.jpg`: `GODOT_PLOTS` in `plan.ts` (traced in that
 picture's pixels, fitted to the built fountain, boulevard and road loop) lists every

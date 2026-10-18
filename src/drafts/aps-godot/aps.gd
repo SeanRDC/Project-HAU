@@ -20,6 +20,7 @@ const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
+const Opening := preload("res://opening.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
 const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
@@ -228,6 +229,21 @@ func _ready() -> void:
 	_update_cutaways(0.0, true)
 	if _args.has("test") or _args.has("capture"):
 		_verify_and_capture.call_deferred()
+	elif Opening.wanted(_args):
+		_play_opening()
+
+## The opening plays over the game, which waits paused behind it (the music keeps playing).
+func _play_opening() -> void:
+	var opening := Opening.new()
+	opening.sound = sound
+	opening.args = _args
+	add_child(opening)
+	get_tree().paused = true
+	sound.process_mode = Node.PROCESS_MODE_ALWAYS
+	opening.finished.connect(func() -> void:
+		get_tree().paused = false
+		sound.process_mode = Node.PROCESS_MODE_INHERIT
+		opening.queue_free())
 
 # --- Rendering setup --------------------------------------------------------
 
@@ -1347,7 +1363,8 @@ func _verify_and_capture() -> void:
 		for i in 20:
 			student.move(Vector2(-1, 0), false, 0.05)
 		checks.footsteps_while_walking = sound.steps - steps_before >= 3
-		checks.ambience_playing = sound.wind.playing and AudioServer.get_bus_index("Music") >= 0
+		checks.ambience_playing = AudioServer.get_bus_index("Music") >= 0
+		checks.opening_panels = Opening.panels_ready() and not Opening.wanted(_args)
 		# Holding D from the APS front walks round the corner onto the patio.
 		student.place(14.0, 2.5)
 		_snap_follow()
