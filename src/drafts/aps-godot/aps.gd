@@ -1600,6 +1600,49 @@ func _verify_and_capture() -> void:
 			student.move(-away, false, 1.0 / 30.0, 0.0)
 			_update_camera(1.0 / 30.0)
 		checks.walk_out_of_covered_walkway = covered < 0.05 and student.position.z > MiddleRoad.PAVE_N.x and absf(shown_width - 36.0) < 0.2
+		# The Student Center: its floor, the openings through both planters from the
+		# boulevard's south walkway, and the brick apron past its west end are walkable; the
+		# planters and rail, the tables and chairs, the ATM, the back wall and the lawn at
+		# its east end are solid.
+		checks.student_center_walkable = not World.blocked(-121.0, 83.4) and not World.blocked(-140.0, 82.0) \
+			and not World.blocked(-106.0, 79.5) and not World.blocked(-106.0, 80.4) and not World.blocked(-145.0, 81.0) \
+			and not World.blocked(-158.0, 84.0) and not World.blocked(-162.0, 77.5) \
+			and is_equal_approx(World.floor_height(-121.0, 83.4), StudentCenter.FLOOR_Y) \
+			and is_equal_approx(World.floor_height(-106.0, 79.5), MiddleRoad.WALK_Y) \
+			and is_equal_approx(World.floor_height(-158.0, 84.0), -0.04)
+		checks.student_center_solid = World.blocked(-120.0, 80.3) and World.blocked(-120.0, 81.1) and World.blocked(-120.0, 79.5) \
+			and World.blocked(-130.0, StudentCenter.TABLE_Z) and World.blocked(-130.0, StudentCenter.CHAIR_Z) \
+			and World.blocked(-153.5, 87.5) and World.blocked(-120.0, 88.1) and World.blocked(-87.0, 84.0) \
+			and World.blocked(-120.0, 92.0)
+		# From the boulevard's south walkway through the courtyard crossing's openings into
+		# the arcade: the camera keeps facing south, glides into the cutaway, and the posts,
+		# rail and planter in front of the student are cut away.
+		student.place(-106.0, 77.3)
+		_set_zoom(36.0, true)
+		_snap_follow()
+		for i in 150:
+			var turn := -PI / 2.0 * _turns()
+			var away := Vector2(-sin(turn), -cos(turn))
+			student.move(away, false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		var post_cut := (Vector3(student.position.x, 1.0, StudentCenter.POST_Z) - camera.position).dot(forward) < camera.near
+		checks.walk_into_student_center = student.position.z > StudentCenter.INNER + 1.0 and arcade > 0.95 and middle > 0.95 \
+			and shown_width < HALL_WIDTH + 0.2 and forward.dot(Vector3.BACK) > 0.9 and post_cut \
+			and _all_visible([student.position.x], [StudentCenter.FLOOR_Y + 0.3, StudentCenter.FLOOR_Y + 1.9], [student.position.z])
+		for i in 150:
+			var turn := -PI / 2.0 * _turns()
+			var away := Vector2(-sin(turn), -cos(turn))
+			student.move(-away, false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		checks.walk_out_of_student_center = arcade < 0.05 and student.position.z < StudentCenter.FACE - 1.0 and middle > 0.95
+		# Past the west end, on the brick apron, the camera still faces south (the chapel
+		# view, which would otherwise take any spot this far south, stays off).
+		student.place(-158.0, 84.0)
+		_snap_follow()
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		checks.student_center_west_end = middle > 0.95 and chapel < 0.05 and arcade < 0.05
 		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
 		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)
 		checks.hallway_props_block = World.blocked(-60.0, -2.4) and World.blocked(-24.0, -0.2) \
