@@ -23,7 +23,7 @@ frozen references.
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn\|middle\|middle-north\|fountain\|student-center`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
 | Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
@@ -43,6 +43,7 @@ Files:
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
 | `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map, its covered walkway, the Mary statue garden at its west end, and two rows of parked cars (by the chapel, and in front of SJH) |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
+| `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
 | `shaders/leaves.gdshader` | Foliage cards |
@@ -152,6 +153,28 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
     2.9) with water, a rock mound with jets, the tapered plinth with its plaque and
     rams' heads, and the sandstone angel (wings raised, swept back) behind a girl
     and a boy, facing east down the boulevard.
+- **The Student Center** (`areas/student_center.gd`, from `assets/images/buildings/student
+  center/`): the open arcade on its plot between the boulevard's south face (z 79.9) and
+  the Main Building's (z 88.4), x −156.2..−89.6 (the last 5 m of the plot, to MGN, are a
+  lawn with a tree). Across it: a red tiled planter of lady palms 79.9..80.6 with a steel
+  rail on its inner edge, open at the boulevard's three western crossings (the
+  boulevard's own south planter opens there too, tiled through); slim cream double posts
+  on z 80.75 every 6.4 m (orange and cream downpipes on every other pair); the floor
+  (`circles`, 0.12, one low step up from the walkway's tiles) to the back wall's face at
+  z 88.0; a flat roof whose ceiling (3.3) is white 60 cm tiles with fans, light panels and
+  three dark grey beams (one carries a TV). Along the back wall, the Main Building's
+  ground floor in cream (`#f4e6bf`) over a maroon dado: from the west, the BDO ATM and a
+  water dispenser, Cafe Juan's seven tall windows in warm glass (`#a3825f`, glowing at
+  night) between cream piers under a dark corrugated fascia sloping up to the ceiling,
+  its doorway at x −119.5..−115.1 under the carved sign with potted arecas beside it,
+  the courtyard gate at −107.1..−104.1 (where the courtyard crossing comes in), then
+  office windows behind iron grilles, grey lockers and stacked black chairs. White study
+  tables with dividers run along the wall (z 86.6, chairs at 85.8), leaving a 4 m walk
+  by the planter; the drinking fountain and the steel sink stand by the rail; iron cafe
+  tables and red-based benches at the west end. Past the west end a herringbone-brick
+  apron (−0.04) runs to x −166 and down beside the walks' end to the fountain's round
+  apron, cut round it with a kerb on the arc, hedged on its outer edges, with a granite
+  bench and a shade tree. Cafe Juan is a facade only.
 - **Local frames:** a wing that is not aligned with the frontage is built in its
   own straight coordinates under a turned `Node3D` (see `CanteenWing` in
   `world.gd` and `canteen_local()` / `canteen_world()`). Collision for it is
@@ -173,7 +196,7 @@ Everyone builds on the same grid, so buildings line up when they are merged.
   Built buildings stay on their surveyed outlines. SFJ and STL keep their OSM shapes
   but sit where the picture puts them (SFJ 20.7 m south, STL 12.2 m, its pavilion on
   the boulevard's face line); the Student Center is the strip between the boulevard
-  (z 79.9) and the Main Building (from z 88.4); St. Gabriel and St. Raphael are one
+  (z 79.9) and the Main Building (from z 88.4), built now (`areas/student_center.gd`); St. Gabriel and St. Raphael are one
   plot, "St. Gabriel"; the Gym Annex is "Aero Hall". Plaza de Corazon, outside the
   campus line, has no plot. The browser game keeps `BUILDINGS`, unchanged.
 - Each plot has a **kind**: `building`, `walk` (a covered walk), `gate` (a student
@@ -263,7 +286,8 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | solar | 1.0 | `#26364f` | 16 px cells with lighter lines and a faint sheen (the gym's roof panels) |
 | ribbed | 1.6 | `#a9aeae` | roof sheeting, a lit and a dark line every 8 px |
 | octagon | 1.2 | `#9f5a45` | red octagon pavers 30 cm across in six worn tones, small dark squares where four meet, mossy joints (the boulevard's open walks, plazas and crossings) |
-| slab | 2.4 | `#ddd2bf` | cream ceramic tiles 60 cm square, light grout, faint stains (the boulevard's covered walkways) |
+| slab | 2.4 | `#ddd2bf` | cream ceramic tiles 60 cm square, light grout, faint stains (the boulevard's covered walkways; tinted `#f6f4ec`, the Student Center's ceiling) |
+| circles | 1.8 | `#a4523b` | small terracotta tiles in rows of overlapping circles 0.9 m across (each three bands, dark, light, dark, every row half a circle over the last), grout every 11 cm (the Student Center's floor) |
 
 To add a kind: add it to `TILE_METRES`, `PALETTE` and a `match` branch in
 `_texture()`. Keep grain low (2–9/255). Keep colours slightly desaturated and
@@ -398,7 +422,10 @@ Night lights (in `world.lamps`, visible only at night):
 - Gym entrance lights: omni `#ffd79d`, 1.2, reach 6.0 (front doors, and MGN's porch); 1.0,
   reach 6.5 (two under the side canopy). Gym wall lamps are emissive only
   (`glow(#f6f1e1, 0, 1.6)`), no light.
-- Canopy strips: omni `#ffcf92`, 0.55, reach 4.6, plus emissive strips.
+- Canopy strips: omni `#ffcf92`, 0.55, reach 4.6, plus emissive strips (also the
+  Student Center's ceiling, one at every other light panel).
+- Student Center daylight fill, on at every hour while the student is under its roof:
+  omni `#fff1dc`, 0.8, reach 7, attenuation 1.2 (the gym's inside lights).
 - Omni attenuation is 1.4 everywhere.
 
 New areas use these presets as they are. Add new light types to this table
@@ -652,6 +679,18 @@ anything is wet or has specular other than glass.
   (`MiddleRoad.CEILING` 3.05). `--view=middle` starts on the south walk,
   `--view=middle-north` on the north walk, `--view=fountain` by the fountain; F1 has
   them and the covered walkway.
+- **Student Center** (`StudentCenter.view_for`, `covered_for`): the boulevard's
+  south-facing view carries on across the arcade and the brick apron past its west end
+  (`MiddleRoad.view_for` takes the larger of the two, so the chapel and MGN zones keep
+  yielding). Under its roof it is the covered walkway's cutaway again (`arcade`, eased
+  like `covered`): the near plane cuts at `StudentCenter.CUT_OFFSET` in front of the
+  arcade's middle (z 81.3 at chest height, so the posts, rail and planter fall away), the
+  ceiling is 3.3, and the top band closes at the back wall (`BAND_BACK`), not just behind
+  the middle, so the whole wall shows. The roof is a fade group (`StudentCenterRoof`):
+  inside it fades out and keeps its shadow, and the daylight fill (`StudentCenterLights`)
+  comes on. Walking through an opening from the boulevard's walkway, the corridor's
+  middle, cut, ceiling and band blend by the two weights, so the camera glides across.
+  `--view=student-center` starts by Cafe Juan's door; F1 has it and the west end.
 - **Interiors (cutaway):** walking into a covered space like the APS hallway
   blends in a weight (`hall`, from `Hallway.hall_for`, eased at rate 3.5) that:
   1. closes the view in to `HALL_WIDTH` (8.5 m) and glides the camera to the
