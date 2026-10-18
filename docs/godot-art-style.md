@@ -480,6 +480,26 @@ anything is wet or has specular other than glass.
 | `sky.gdshader` | An orthographic camera sees one direction, so the sky grades over the screen instead; fixed 2-px stars at night. Lighting probes use a direction-based gradient | `top_color`, `horizon_color`, `ground_color`, `stars` (set by `_set_hour`) | |
 | `shaft.gdshader` | Light shafts under trees and the lamp reflections on wet ground: an additive card, brightest in the middle, fading at its edges and ends | `color`, `strength` (0.08) | Unshaded, no fog, never writes depth |
 | `display.gdshader` | Final grade on the enlarged image: shade towards `shade_tint`, light towards `light_tint`, soft vignette | `warmth 0.06`, `vignette 0.22`, tints from `_set_hour` | Keep this the only colour grade |
+| `manga.gdshader` | The opening's panels only (a canvas shader, not the world). A stand-in photo becomes pen and ink: Sobel edges as ink lines, deep shadow black, shadow diagonal hatching, mid-tones screentone dots, the rest paper | `ink` 1 (photos) or 0 (drawn panels: greyed onto the paper only), `paper #f4f1ea`, `pen #1c1b19`, `tone 4.0` px | Tone and hatching are in screen pixels, like real screentone. Keep it mostly paper: light lines, few blacks |
+
+---
+
+## The opening (cutscenes)
+
+`opening.gd` plays before the game on a plain launch, the game paused behind it: a
+black-and-white manga memory of the campus, page by page, in Tagalog. The look:
+
+- Paper `#f4f1ea`, pen `#1c1b19`, 3 px panel borders, pages inside 5% / 7% margins.
+  Blank "remembered" pages have no border and scattered pencil specks.
+- Panels fade in one at a time (0.9 s) and drift across a 10% slack over 14 s.
+- The lettering font is Comic Sans (`Opening.lettering()`, a system font with Comic Neue
+  and Chalkboard SE as fallbacks). The NPCs' talk uses it too: the hint, the speech
+  bubble, the name tag and the replies (`npcs.gd`).
+- Narration: upper-case, the lettering font, 3.3% of the page height,
+  paper outline 16, in a narrow column in a panel corner; types at 32 characters a
+  second with a 260 Hz blip, then holds 1.4 s plus 0.04 s a character.
+- Pictures are drawn panels (`opening/panels/<id>.png`), else inked campus photos, else a
+  grey card naming the picture to make. What to draw: `opening/README.md`.
 
 ---
 

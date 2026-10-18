@@ -17,7 +17,7 @@ config/custom_user_dir_name="Project HAU APS Prototype"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [display]
-    
+
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/window_width_override=1600

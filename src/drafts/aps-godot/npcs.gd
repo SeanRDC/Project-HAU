@@ -6,6 +6,7 @@ extends Node3D
 
 const Npc := preload("res://npc.gd")
 const World := preload("res://world.gd")
+const Opening := preload("res://opening.gd")
 ## How close the student must be to talk, in metres.
 const REACH := 1.8
 
@@ -203,6 +204,11 @@ func build_ui(parent: Node) -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "Talk"
 	parent.add_child(layer)
+	# the opening's lettering font for everything said (the hint, the bubble, the replies)
+	var lettering := Theme.new()
+	lettering.default_font = Opening.lettering()
+	for control: Control in [hint, bubble, choice_panel]:
+		control.theme = lettering
 	# "E  Kausapin si ..." over whoever is in reach
 	hint.add_theme_stylebox_override("panel", _box(Color(22 / 255.0, 16 / 255.0, 34 / 255.0, 0.78), 16, 5))
 	var row := HBoxContainer.new()

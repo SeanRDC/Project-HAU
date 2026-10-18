@@ -164,6 +164,8 @@ because their kernel grows with zoom.
 | `npcs.gd` | The cast and their talk scripts (questions, replies, what they remember), the talk hint, speech bubble and reply card |
 | `audio.gd` | Synthesised music, footsteps, blips, crickets, the student murmur, birds and rain (no audio files) |
 | `atmosphere.gd` | Rain and wet ground, puddles and lamp reflections, light shafts, falling leaves |
+| `opening.gd` | The opening on a plain launch: a manga-style memory of the campus in Tagalog, page by page (`opening/README.md`) |
+| `opening/` | The opening's pictures: `panels/` (drawn), `photos/` (campus photos standing in until drawn) |
 | `shaders/` | Edges, leaves, sky, display grade, light shafts |
 | `sprites/` | The sheets the game loads: `boy/`, `girl/` (idle, walk) and `npcs/<id>/` (idle, walk, talk, wave, portrait). Built from `assets/drafts/characters/`; don't edit them by hand |
 | `main.tscn` | One node with `aps.gd`. Keep it that way so diffs stay readable |
