@@ -99,6 +99,10 @@ const CAST := [
 			]},
 		]},
 	]},
+	# characters still being made, standing in front of APS 104-105 to see them in the game:
+	# idle only, nothing to say yet (no prompt shows over them)
+	{"id": "gf", "name": "GF (prototype)", "home": Vector2(-33.5, 5.2), "roam": 0.0, "facing": 1.0, "talks": []},
+	{"id": "blonde", "name": "Blonde short hair", "home": Vector2(-28.5, 5.4), "roam": 0.0, "facing": -1.0, "umbrella": Color("c98a3a"), "talks": []},
 	{"id": "coach-gab", "name": "Coach Gab", "home": Vector2(53.0, 90.5), "roam": 2.0, "umbrella": Color("245a3c"), "talks": [
 		{"when": ["gab.joined"], "say": ["O, nandito ka na! Tatlong ikot muna sa court bago laro. Walang reklamo!"]},
 		{"when": ["met.coach-gab"], "say": ["Bukas pa rin ang slot sa team. Isip-isip ka."]},
@@ -170,7 +174,9 @@ func _ready() -> void:
 		npc.setup(entry)
 		add_child(npc)
 		cast.append(npc)
-		_portraits[npc.id] = load("res://sprites/npcs/%s/portrait.png" % npc.id)
+		var portrait_path := "res://sprites/npcs/%s/portrait.png" % npc.id
+		if ResourceLoader.exists(portrait_path):
+			_portraits[npc.id] = load(portrait_path)
 
 ## The nearest walkable spot to a wished-for one, searching outwards.
 static func free_spot(wish: Vector2) -> Vector2:
@@ -275,6 +281,8 @@ func in_reach() -> Npc:
 	var best: Npc = null
 	var best_d := REACH
 	for npc in cast:
+		if npc.talks.is_empty():
+			continue # nothing to say yet
 		var d := npc.ground().distance_to(_student_ground())
 		if d < best_d:
 			best = npc
