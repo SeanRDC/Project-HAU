@@ -1,5 +1,16 @@
 # Project Context
 
+**The Student Center, 2026-10-19.** `areas/student_center.gd` builds it on its plot
+from `assets/images/buildings/student center/`: the open arcade between the boulevard's
+south covered walkway and the Main Building (still a plot), with the planter of lady
+palms and its rail (open, with the boulevard's south planter, at the three western
+crossings), cream posts, a tiled ceiling with fans, the terracotta `circles` floor,
+Cafe Juan's windows and doorway (facade only), the courtyard gate, offices, study
+tables, the BDO ATM, and a brick apron past the west end out to the fountain. The
+boulevard's south view carries on inside; under the roof it is the walkway's cutaway,
+with the roof faded and daylight fill lights. `--view=student-center`. See
+`sessions/2026-10-19-student-center.md`.
+
 **The opening, 2026-10-19 (test).** A plain launch now plays `opening.gd` first: a
 black-and-white manga memory of the campus in Tagalog, page by page, ending on the
 title and fading into the game (paused behind it). Panels use drawn pictures from

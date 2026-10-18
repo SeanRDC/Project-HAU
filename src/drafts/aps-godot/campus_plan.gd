@@ -40,7 +40,7 @@ const PLOTS := {
 	"pgn": {"name": "Peter G. Nepomuceno Building", "short": "PGN", "no": 11, "kind": "building", "built": false,
 		"label": Vector2(-90.4, 23.8),
 		"outline": [Vector2(-64.4, -19.4), Vector2(-64.1, 49.3), Vector2(-130.1, 49.1), Vector2(-130.2, 19.8), Vector2(-86.7, 19.9), Vector2(-86.8, -19.5)]},
-	"student": {"name": "Student Center", "short": "Student Center", "no": 0, "kind": "building", "built": false,
+	"student": {"name": "Student Center", "short": "Student Center", "no": 0, "kind": "building", "built": true,
 		"label": Vector2(-120.3, 84.2),
 		"outline": [Vector2(-156.2, 79.9), Vector2(-84.5, 79.9), Vector2(-84.5, 88.4), Vector2(-156.2, 88.4)]},
 	"djdn": {"name": "Don Juan D. Nepomuceno Building", "short": "Main Bldg.", "no": 12, "kind": "building", "built": false,

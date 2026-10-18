@@ -22,6 +22,9 @@ built yet is a reserved plot, and a building is merged on its plot as
 - **St. Joseph Hall**, its covered walkway, the Mary statue garden and parking.
 - **MGN** from outside, walkable up to the turnstile, and **HAU Boulevard** (the
   middle road) between PGN and the Main Building out to the angel fountain.
+- **The Student Center**, the open arcade along the Main Building beside the
+  boulevard: Cafe Juan's front, the courtyard gate, study tables, the BDO ATM, and
+  a brick apron at its west end out to the fountain.
 - **Eight NPCs** (Migo, Bea, Rica, Paolo, Bianca, Kuya Ben, Ate Lorna, Coach
   Gab) who stroll or keep their posts, wave when you come near, open umbrellas
   in the rain and talk: their lines type out with a blip in their voice, they ask
@@ -49,6 +52,13 @@ slatted roof, granite benches). Four yellow zebras cross it. The camera faces th
 side the student is on (PGN's from the north half, the Main Building's from the south
 half) and glides round as they cross; under a covered walkway it closes in and cuts
 the road away, as in the APS hallway.
+
+On the Main Building's side, behind the covered walkway, the Student Center runs the
+length of the building: step in through the planter where the three western zebras
+lead, or from the brick apron at the west end by the fountain. Inside, the camera
+closes in the same way, the roof fades so you see the whole back wall (Cafe Juan's
+tall windows and doorway, the courtyard gate, the offices), and the posts and planter
+in front are cut away (`--view=student-center`).
 
 The IH Gym down the east road can be walked into, through either front doorway
 or the side entrance (the back has two open doorways too). Inside, the camera is
@@ -158,6 +168,7 @@ because their kernel grows with zoom.
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
 | `areas/sjh.gd` | St. Joseph Hall: the slab, its covered walkway (walk in through a railing gap), the Mary statue garden, the parking and cars |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside: the open-corridor block, the box-window wing over the entrance (walk in up to the turnstile), the open stair, the north block, the south wing with its roof tank, the raised garden. The camera turns to face it on the west road |
+| `areas/student_center.gd` | The Student Center, the open arcade between the boulevard and the Main Building: the planter and rail (open at the crossings), the cream posts and the roof (it fades while you are under it), Cafe Juan's windows and doorway, the courtyard gate, the offices, the study tables, the ATM and cafe tables at the west end, the brick apron out to the fountain, the lawn at the east end. Its camera weights |
 | `areas/middle_road.gd` | HAU Boulevard between PGN and the Main Building, from the west road to the angel fountain: the lanes and grass median, the hedge strips and poles, the octagon-paver walks and bronze lampposts, the shrub strips and trees, both covered walkways (pillars, slatted roofs, benches), the zebras, signs, bins and urns, and the fountain. Its camera weights (which side it faces, the covered walkway cutaway) |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
 | `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking, stopping to look at and wave to the student, an umbrella in the rain |
@@ -185,7 +196,7 @@ the frontage, and the gym inside (walking in through a doorway and the side entr
 writes review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
-`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn|middle|middle-north|fountain`, `--pixel=auto|crisp|pixel`,
+`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn|middle|middle-north|fountain|student-center`, `--pixel=auto|crisp|pixel`,
 `--walk=<seconds>`, `--rain`, `--talk` (start a conversation with whoever is in reach), `--travel` (open the fast-travel panel), `--hide-help`, `--capture=<absolute PNG path>`.
 
 Geometry is approximate, from the walk photos, not a survey. The far sidewalk,

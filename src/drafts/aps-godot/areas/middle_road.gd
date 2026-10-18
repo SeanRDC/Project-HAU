@@ -22,6 +22,7 @@ extends RefCounted
 ## between PGN's and the Main Building's faces; plan.ts moves those plots to make room.
 
 const Chapel := preload("res://areas/chapel.gd")
+const StudentCenter := preload("res://areas/student_center.gd")
 
 ## Where the boulevard's surfaces meet the loop's carriageway (its west kerb face is at
 ## x -62); east of EAST_X is the loop's own sidewalk, opened across the lanes (roads.gd).
@@ -144,7 +145,8 @@ static func benches() -> Array[Vector2]:
 	for k in range(0, PILLARS - 1, 2):
 		var x := PILLAR_EAST - (k + 0.5) * BAY
 		at.append(Vector2(x, BACK_N + 0.48))
-		at.append(Vector2(x, BACK_S - 0.48))
+		if not StudentCenter.in_opening(x - 0.9) and not StudentCenter.in_opening(x + 0.9):
+			at.append(Vector2(x, BACK_S - 0.48))
 	return at
 
 static func lamps() -> Array[Vector2]:
@@ -164,8 +166,8 @@ static func blocked(x: float, z: float) -> bool:
 		return true
 	if x < END_X or x > EAST_X:
 		return false
-	if z < WALK_N.x or z > WALK_S.y:
-		return true # the planters at the buildings
+	if z < WALK_N.x or z > WALK_S.y and not StudentCenter.in_opening(x):
+		return true # the planters at the buildings (the south one open into the Student Center)
 	var open := in_crossing(x)
 	if not open and x < PLAZA_X:
 		if x > SHRUB_WEST and (z > SHRUB_N.x and z < SHRUB_N.y or z > SHRUB_S.x and z < SHRUB_S.y):
@@ -197,6 +199,8 @@ static func floor_height(x: float, z: float) -> float:
 		return -0.19 # the apron, and the lanes across the west road's sidewalk
 	if (_in(z, WALK_N) or _in(z, WALK_S)) and x >= ROOF_WEST:
 		return WALK_Y # the covered walkways' tiles
+	if z > WALK_S.y and StudentCenter.in_opening(x):
+		return WALK_Y # tiled through the south planter's openings
 	# The kerb lines: along both lanes' outer edges, and round the median.
 	if absf(z - LANE_N.x) < KERB or absf(z - LANE_S.y) < KERB:
 		return 0.0
@@ -211,8 +215,8 @@ static func floor_height(x: float, z: float) -> float:
 ## How far the camera's boulevard view is on: 1 once off the west road's sidewalk onto
 ## the boulevard, between the two buildings, out to the fountain; 0 on the loop.
 static func view_for(x: float, z: float) -> float:
-	return (1.0 - smoothstep(-66.0, -62.5, x)) * smoothstep(FACE_N - 1.5, FACE_N + 0.5, z) \
-		* (1.0 - smoothstep(FACE_S - 0.5, FACE_S + 1.5, z)) * smoothstep(-194.0, -192.0, x)
+	return maxf(StudentCenter.view_for(x, z), (1.0 - smoothstep(-66.0, -62.5, x)) * smoothstep(FACE_N - 1.5, FACE_N + 0.5, z) \
+		* (1.0 - smoothstep(FACE_S - 0.5, FACE_S + 1.5, z)) * smoothstep(-194.0, -192.0, x))
 
 ## Which side the camera faces: 0 north, at PGN's side (the student north of the centre
 ## line), 1 south, at the Main Building's; crossing the median glides it round.
@@ -474,10 +478,18 @@ func _shrub_beds() -> void:
 func _planters() -> void:
 	var soil: Material = w.material("dirt", Color("a8926f"))
 	var kerb: Material = w.material("concrete", Color("c9c8c0"))
-	for band in [Vector2(FACE_N, WALK_N.x), Vector2(WALK_S.y, FACE_S)]:
-		_slab(EAST_X, END_X, band.x, band.y, 0.1, 0.3, soil)
-		var walk_side: float = band.y if band.x == FACE_N else band.x
-		w.box(Vector3(EAST_X - END_X, 0.3, 0.12), Vector3((EAST_X + END_X) / 2.0, 0.0, walk_side), kerb)
+	_slab(EAST_X, END_X, FACE_N, WALK_N.x, 0.1, 0.3, soil)
+	w.box(Vector3(EAST_X - END_X, 0.3, 0.12), Vector3((EAST_X + END_X) / 2.0, 0.0, WALK_N.x), kerb)
+	# The south planter stops at the Student Center's openings, tiled through like the walkway.
+	for run in StudentCenter.runs(EAST_X, END_X):
+		var east: float = run[0]
+		var west: float = run[1]
+		_slab(east, west, WALK_S.y, FACE_S, 0.1, 0.3, soil)
+		w.box(Vector3(east - west, 0.3, 0.12), Vector3((east + west) / 2.0, 0.0, WALK_S.y), kerb)
+		for end in [east, west]:
+			w.box(Vector3(0.12, 0.3, FACE_S - WALK_S.y), Vector3(end, 0.0, (WALK_S.y + FACE_S) / 2.0), kerb)
+	for opening in StudentCenter.OPENINGS:
+		_slab(opening.x, opening.y, WALK_S.y, FACE_S, WALK_Y, 0.2, w.material("slab"))
 
 # --- The covered walkways ---------------------------------------------------------------------
 
@@ -823,6 +835,10 @@ func _planter_planting(north: bool) -> void:
 	var x := EAST_X - 2.0
 	var n := 0
 	while x > END_X + 1.0:
+		if not north and (StudentCenter.in_opening(x - 0.7) or StudentCenter.in_opening(x + 0.7)):
+			x -= 4.1
+			n += 1
+			continue
 		if n % 3 == 0:
 			palms._palm(Vector3(x, 0.1, middle), 2.4 + fmod(n * 0.7, 0.9), 2000 + n + roundi(middle))
 		else:

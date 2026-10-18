@@ -49,18 +49,19 @@ const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
+const StudentCenter := preload("res://areas/student_center.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
 	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0,
-	"octagon": 1.2, "slab": 2.4}
+	"octagon": 1.2, "slab": 2.4, "circles": 1.8}
 const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile": "d6d1c3",
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
 	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc",
-	"octagon": "9f5a45", "slab": "ddd2bf"}
+	"octagon": "9f5a45", "slab": "ddd2bf", "circles": "a4523b"}
 
 var root: Node3D
 var lamps: Array[Light3D] = []
@@ -104,7 +105,8 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
-	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z):
+	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
+			or StudentCenter.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z)
 
@@ -126,7 +128,8 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 			return true # rear wall, end walls, and the part inside the tower
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
-	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z):
+	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
+			or StudentCenter.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -159,6 +162,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 	var middle := MiddleRoad.floor_height(x, z)
 	if not is_nan(middle):
 		return middle
+	var arcade := StudentCenter.floor_height(x, z)
+	if not is_nan(arcade):
+		return arcade
 	var across := across_road(x, z)
 	if across > 4.135 and across < 10.865:
 		return -0.19 # carriageway
@@ -198,6 +204,7 @@ func build(parent: Node3D) -> void:
 	Sjh.new().build(self)
 	Mgn.new().build(self)
 	MiddleRoad.new().build(self)
+	StudentCenter.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -372,6 +379,28 @@ func _texture(kind: String) -> Texture2D:
 			for line in range(0, 128, 32):
 				_rect(image, line, 0, 1, 128, Color("b4a996"))
 				_rect(image, 0, line, 128, 1, Color("b4a996"))
+		"circles":
+			# The Student Center's floor: small terracotta tiles laid in rows of overlapping
+			# circles (a fish-scale run), each circle rings of dark and light tiles round a dark
+			# centre (three bands), 0.9 m across, every row half a circle over the last; grout every
+			# 8 px (11 cm).
+			var rings: Array[Color] = [Color("8e4532"), Color("cf8d6a"), Color("8a4130")]
+			for row in range(-1, 5):
+				for col in range(-1, 3):
+					var cx := col * 64 + (32 if posmod(row, 2) == 1 else 0)
+					var cy := row * 32
+					for dy in range(-30, 31):
+						for dx in range(-30, 31):
+							var d := sqrt(float(dx * dx + dy * dy))
+							if d <= 29.5:
+								image.set_pixel(posmod(cx + dx, 128), posmod(cy + dy, 128), rings[mini(int(d / 10.0), 2)])
+			for y in 128:
+				for x in 128:
+					var noise := random.randf_range(-0.5, 0.5) * 6.0 / 255.0
+					var tone := image.get_pixel(x, y)
+					if x % 8 == 0 or y % 8 == 0:
+						tone = tone.darkened(0.08)
+					image.set_pixel(x, y, Color(tone.r + noise, tone.g + noise, tone.b + noise))
 		"dirt":
 			for i in 260:
 				var tone: Color = [Color("7d6a50"), Color("b19d7c"), Color("8a785c"), Color("c2b294")][i % 4]
