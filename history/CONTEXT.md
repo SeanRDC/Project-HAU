@@ -1,5 +1,16 @@
 # Project Context
 
+**The Student Center, 2026-10-19.** `areas/student_center.gd` builds it on its plot
+from `assets/images/buildings/student center/`: the open arcade between the boulevard's
+south covered walkway and the Main Building (still a plot), with the planter of lady
+palms and its rail (open, with the boulevard's south planter, at the three western
+crossings), cream posts, a tiled ceiling with fans, the terracotta `circles` floor,
+Cafe Juan's windows and doorway (facade only), the courtyard gate, offices, study
+tables, the BDO ATM, and a brick apron past the west end out to the fountain. The
+boulevard's south view carries on inside; under the roof it is the walkway's cutaway,
+with the roof faded and daylight fill lights. `--view=student-center`. See
+`sessions/2026-10-19-student-center.md`.
+
 **The campus layout, 2026-10-18.** Godot's plots now follow Sean's labelled
 `assets/MAIN CAMPUS LAYOUT REFERENCE.jpg`: `GODOT_PLOTS` in `plan.ts` (traced in that
 picture's pixels, fitted to the built fountain, boulevard and road loop) lists every
