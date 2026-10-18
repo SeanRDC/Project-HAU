@@ -105,7 +105,8 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
-	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z):
+	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
+			or StudentCenter.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z)
 
@@ -127,7 +128,8 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 			return true # rear wall, end walls, and the part inside the tower
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
-	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z):
+	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
+			or StudentCenter.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -160,6 +162,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 	var middle := MiddleRoad.floor_height(x, z)
 	if not is_nan(middle):
 		return middle
+	var arcade := StudentCenter.floor_height(x, z)
+	if not is_nan(arcade):
+		return arcade
 	var across := across_road(x, z)
 	if across > 4.135 and across < 10.865:
 		return -0.19 # carriageway
@@ -199,6 +204,7 @@ func build(parent: Node3D) -> void:
 	Sjh.new().build(self)
 	Mgn.new().build(self)
 	MiddleRoad.new().build(self)
+	StudentCenter.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()

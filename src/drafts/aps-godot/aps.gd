@@ -1288,10 +1288,11 @@ func _verify_and_capture() -> void:
 			and not CampusPlan.PLOTS.has("corazon") and not CampusPlan.PLOTS.has("srh")
 		checks.road_loop_closed = Roads.points()[0].distance_to(Roads.points()[-1]) < 0.01
 		checks.plots_reserved = Plots.occupied(72.6, 38.8) and Plots.occupied(76.8, -7.1) and not Plots.occupied(-8.7, 58.1)
-		# The layout reference: the Student Center between the boulevard and the Main
-		# Building, and every plot painted with its name and outlined in dashes.
-		checks.plots_layout = Plots.occupied(-120.0, 84.0) and Plots.occupied(-120.0, 100.0) \
-			and CampusPlan.PLOTS["student"]["kind"] == "building" and CampusPlan.PLOTS["mainGate"]["kind"] == "gate" \
+		# The layout reference: the Student Center (built now, so no longer a plot) between
+		# the boulevard and the Main Building, and every plot painted with its name and
+		# outlined in dashes.
+		checks.plots_layout = not Plots.occupied(-120.0, 84.0) and Plots.occupied(-120.0, 100.0) \
+			and CampusPlan.PLOTS["student"]["built"] and CampusPlan.PLOTS["mainGate"]["kind"] == "gate" \
 			and CampusPlan.PLOTS["annex"]["short"] == "Aero Hall"
 		var painted := scene.find_children("Ground *", "Label3D", false, false).size()
 		checks.plots_named = painted == Plots.shapes().size()
