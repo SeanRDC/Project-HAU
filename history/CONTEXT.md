@@ -1,5 +1,11 @@
 # Project Context
 
+**The night sky, 2026-10-21.** `shaders/sky.gdshader`: varied, tinted, slowly twinkling
+stars (the brightest with a pixel cross), a faint Milky Way band and the moon with a
+glow where the night light comes from; rain hides them. In the F2 free cam the sky is laid
+out by direction (`free_look`), so it stays put as the camera turns. `--free-cam=<yaw>,<pitch>`
+for captures. See `sessions/2026-10-21-night-sky.md`.
+
 **SJH's ground floor, 2026-10-20.** `areas/sjh.gd`: the cars park at road level and the
 ground floor is raised 0.9 m (`WALK_Y`) on a plinth behind an unbroken railing; along
 the whole front grass, shrubs and bamboo (0.5 m) with the brown paver sidewalk winding
