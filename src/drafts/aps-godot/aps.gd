@@ -1602,7 +1602,7 @@ func _verify_and_capture() -> void:
 		checks.walk_into_sjh_walkway = inside_local.y < -1.0 and walkway > 0.95 and shown_width < HALL_WIDTH + 0.2 \
 			and camera.near > 5.0 and is_equal_approx(student.level(), Sjh.WALK_Y) 			and _all_visible([student.position.x], [student.position.y + 0.3, student.position.y + 1.9], [student.position.z])
 		# SJH's raised ground floor: the lobby and the passage are on the walkway's floor, the
-		# steps and the ramp climb to it, the shrub bed, the piers, the tables and the lift
+		# steps and the ramp climb to it, the planter terrace, the piers, the tables and the lift
 		# wall stop the walk, the yard and the lane at the west end are open, and walking
 		# from the yard up the west steps leads into the corridor.
 		var deck := func(u: float, v: float) -> bool:

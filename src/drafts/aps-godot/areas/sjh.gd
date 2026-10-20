@@ -12,7 +12,8 @@ extends RefCounted
 ##
 ## The ground floor, from the SJH ground floor photos (assets/images/buildings/SJH
 ## BUILDING/ground floor/): the cars park at road level and the walkway stands raised on
-## a cream plinth behind a shrub bed, up steps at the railing gaps. Square clad piers
+## a cream plinth over a planter terrace behind a low stone wall, up steps at the
+## railing gaps. Square clad piers
 ## stand along it, with bar tables and wooden chairs and the three bins; the floor is
 ## cream tiles in grey and maroon diamonds, the inner wall has the room doors, notice
 ## boards and high windows. In the centre tower the elevator lobby opens between two
@@ -51,13 +52,17 @@ const CEILING := 3.55
 ## Openings in the railing (local x), where steps lead down to the sidewalk.
 const GAPS: Array[float] = [-33.6, -16.8, 16.8, 33.6]
 const GAP_HALF := 1.0
-## The raised floor: the plinth's face, the shrub bed in front of it to BED_Z, and the
-## steps (STEPS risers of RISER, TREAD deep).
+## The raised floor: the plinth's face, and in front of it the planter terrace (grass and
+## shrubs TERRACE_Y up, behind a low stone retaining wall out at TERRACE_Z); the steps
+## (STEPS risers of RISER; TREAD deep, GAP_TREAD at the railing gaps, where they run down
+## through the terrace).
 const PLINTH_Z := 0.3
-const BED_Z := 1.9
+const TERRACE_Z := 2.6
+const TERRACE_Y := 0.45
 const RISER := 0.15
 const TREAD := 0.3
 const STEPS := 6
+const GAP_TREAD := (TERRACE_Z - PLINTH_Z) / STEPS
 ## The square clad piers along the walkway (local |x|) and the depth they stand in.
 const PIERS: Array[float] = [12.6, 21.0, 29.4, 37.8]
 const PIER_Z := Vector2(-0.9, -0.1)
@@ -67,11 +72,14 @@ const TABLES: Array[float] = [14.4, 23.2, 27.2, 31.2]
 const TABLE_Z := -1.45
 const BINS := Vector2(-19.9, -1.25)
 ## The elevator lobby in the centre tower: open between its grey pillars (LOBBY either
-## side of the middle) back to the inner wall, with wide steps in front.
+## side of the middle) back to the inner wall, with wide steps in front, across the
+## pillars' width, and a raised planter box past the west pillar (local x range).
 const LOBBY := 7.6
 const TOWER_FRONT := 1.0
 const LOBBY_TREAD := 0.33
-const LOBBY_STEPS := 5.5
+const LOBBY_STEPS := TOWER
+const LOBBY_BOX := Vector2(9.5, 12.1)
+const LOBBY_RAILS: Array[float] = [-7.0, 7.0]
 ## The west end (local +x): the passage through the terracotta block (z range), its
 ## steps down the block's west face, the ramp along its front (z range) from its foot up
 ## to a landing at the walkway's end, the yard at the foot, and the lane south between
@@ -141,8 +149,8 @@ static func _deck(u: float, v: float) -> bool:
 ## The height on a flight of steps or the ramp (local x, z), or NAN off them.
 static func _stair(u: float, v: float) -> float:
 	for gap in GAPS:
-		if absf(u - gap) < GAP_HALF and v >= PLINTH_Z and v < PLINTH_Z + STEPS * TREAD:
-			return _down((v - PLINTH_Z) / TREAD)
+		if absf(u - gap) < GAP_HALF and v >= PLINTH_Z and v < TERRACE_Z:
+			return _down((v - PLINTH_Z) / GAP_TREAD)
 	if absf(u) < LOBBY_STEPS and v >= TOWER_FRONT and v < TOWER_FRONT + STEPS * LOBBY_TREAD:
 		return _down((v - TOWER_FRONT) / LOBBY_TREAD)
 	if v > PASSAGE.x and v < PASSAGE.y and u >= PINK_FACE and u < PINK_FACE + STEPS * TREAD:
@@ -190,10 +198,10 @@ static func on_parking(x: float, z: float) -> bool:
 	return PARKING.has_point(Vector2(x, z)) or FRONT_ROW.has_point(Vector2(x, z))
 
 ## The paved ground between the road's sidewalk and SJH's front: the front car row and
-## the walk up to the shrub bed (at the ends, up to the terracotta blocks and the ramp).
+## the walk up to the planter terrace (at the ends, up to the terracotta blocks and the ramp).
 static func in_front(x: float, z: float) -> bool:
 	var at := local(x, z)
-	var edge := BED_Z if absf(at.x) < WALK_END else (RAMP.y + 0.1 if at.x > 0.0 else 0.6)
+	var edge := TERRACE_Z if absf(at.x) < WALK_END else (RAMP.y + 0.1 if at.x > 0.0 else 0.6)
 	return absf(at.x) < YARD_END and at.y >= edge and at.y < SETBACK + 6.0 and Roads.across(x, z) < 4.0
 
 static func walkable(x: float, z: float) -> bool:
@@ -210,8 +218,14 @@ static func blocked(x: float, z: float) -> bool:
 	var footprint := absf(u) < HALF + 2.0 and v > -DEPTH - 0.5 and v < (TOWER_FRONT if absf(u) < TOWER else PLINTH_Z)
 	if footprint and not on_deck and is_nan(_stair(u, v)) and not _yard(u, v):
 		return true # the building, its end towers, the tower's pillars
-	if absf(u) < WALK_END and v >= PLINTH_Z and v < BED_Z and not on_deck and is_nan(_stair(u, v)):
-		return true # the shrub bed
+	if absf(u) < WALK_END and v >= PLINTH_Z and v < TERRACE_Z and not on_deck and is_nan(_stair(u, v)):
+		return true # the planter terrace
+	if not is_nan(_stair(u, v)):
+		for rail in LOBBY_RAILS:
+			if absf(u - rail) < 0.08 and v > TOWER_FRONT:
+				return true # the lobby steps' handrails
+	if u > LOBBY_BOX.x and u < LOBBY_BOX.y and v > TOWER_FRONT and v < TOWER_FRONT + STEPS * LOBBY_TREAD + 0.05:
+		return true # the lobby's planter box
 	if on_deck:
 		var side := absf(u)
 		if absf(v - RAIL_Z) < 0.2 and side > TOWER and side < WALK_END and u <= LANDING:
@@ -446,14 +460,19 @@ func _centre() -> void:
 	var run := STEPS * LOBBY_TREAD
 	for k in STEPS:
 		var height := _down(k) + 0.04
-		var depth := run - k * LOBBY_TREAD
-		w.box(Vector3(2.0 * LOBBY_STEPS, height, depth), Vector3(0, height / 2.0 - 0.04, TOWER_FRONT + k * LOBBY_TREAD + depth / 2.0), tread)
-		w.box(Vector3(2.0 * LOBBY_STEPS, 0.03, 0.05), Vector3(0, height - 0.04, TOWER_FRONT + k * LOBBY_TREAD + 0.03), nosing)
-	for x in [-LOBBY_STEPS + 0.15, LOBBY_STEPS - 0.15]:
-		w.rod(Vector3(x, 0.9, TOWER_FRONT + run), Vector3(x, WALK_Y + 0.9, TOWER_FRONT), 0.03, Color("c9ccca"))
-		for z in [TOWER_FRONT + 0.2, TOWER_FRONT + run - 0.2]:
+		var depth := (k + 1) * LOBBY_TREAD
+		w.box(Vector3(2.0 * LOBBY_STEPS, height, depth), Vector3(0, height / 2.0 - 0.04, TOWER_FRONT + depth / 2.0), tread)
+		w.box(Vector3(2.0 * LOBBY_STEPS, 0.03, 0.05), Vector3(0, height - 0.04, TOWER_FRONT + depth - 0.025), nosing)
+	# The handrails stand on the steps, in line with the lifts' outer edges.
+	for x in LOBBY_RAILS:
+		w.rod(Vector3(x, 0.9, TOWER_FRONT + run - 0.15), Vector3(x, WALK_Y + 0.9, TOWER_FRONT), 0.03, Color("c9ccca"))
+		for z in [TOWER_FRONT + 0.15, TOWER_FRONT + run - 0.15]:
 			var foot := _down((z - TOWER_FRONT) / LOBBY_TREAD)
 			w.rod(Vector3(x, foot, z), Vector3(x, foot + 0.9, z), 0.025, Color("7d6a58"))
+	# The raised planter box past the west pillar, with a palm and shrubs in it.
+	var box_x := (LOBBY_BOX.x + LOBBY_BOX.y) / 2.0
+	w.box(Vector3(LOBBY_BOX.y - LOBBY_BOX.x, 0.95, run), Vector3(box_x, 0.475 - 0.04, TOWER_FRONT + run / 2.0), w.material("stucco", Color("ece6d6")))
+	w.box(Vector3(LOBBY_BOX.y - LOBBY_BOX.x - 0.3, 0.04, run - 0.3), Vector3(box_x, 0.93, TOWER_FRONT + run / 2.0), w.material("dirt", Color("8a7660")))
 
 # --- Facade details (the polish pass) --------------------------------------------------
 
@@ -606,8 +625,8 @@ func _walkway() -> void:
 	# The lobby's floor runs out to the tower's front.
 	w.box(Vector3(2.0 * TOWER, WALK_Y - 0.03, TOWER_FRONT - PLINTH_Z), Vector3(0, (WALK_Y - 0.03) / 2.0, (TOWER_FRONT + PLINTH_Z) / 2.0), plinth)
 	w.box(Vector3(2.0 * LOBBY, 0.03, TOWER_FRONT - PLINTH_Z), Vector3(0, WALK_Y - 0.015, (TOWER_FRONT + PLINTH_Z) / 2.0), floor_tile)
-	# A darker band at the plinth's foot, where the shrub bed's soil meets it.
-	w.box(Vector3(2.0 * WALK_END, 0.18, 0.04), Vector3(0, 0.05, PLINTH_Z + 0.02), w.material("stucco", Color("cbc3b0")))
+	# A darker band at the plinth's foot, where the terrace's soil meets it.
+	w.box(Vector3(2.0 * WALK_END, 0.18, 0.04), Vector3(0, TERRACE_Y + 0.05, PLINTH_Z + 0.02), w.material("stucco", Color("cbc3b0")))
 	for side in [-1.0, 1.0]:
 		var length := WALK_END + 0.2 - TOWER
 		var x0: float = side * (TOWER + length / 2.0)
@@ -631,7 +650,7 @@ func _walkway() -> void:
 			w._omni(Vector3(x, CEILING - 0.4, -1.6), Color("f3f1ea"), 1.1, 6.0)
 		x += 6.0
 	_gap_stairs()
-	_bed()
+	_terrace()
 
 ## Which railing gap x is in (its index), or -1.
 func _gap_at(x: float) -> int:
@@ -680,41 +699,53 @@ func _railing() -> void:
 				post += 1.0
 			w.box(Vector3(0.04, 1.0, 0.04), Vector3(side * run.y, WALK_Y + 0.5, RAIL_Z), bar)
 
-## Steps down from each railing gap through the shrub bed to the walk in front.
+## Steps down from each railing gap through the planter terrace to the walk in front.
 func _gap_stairs() -> void:
 	var tread: Material = w.material("slab", Color("efe9dc"))
 	var nosing: Material = w.material("plain", Color("4a4440"))
-	var run := STEPS * TREAD
+	var run := STEPS * GAP_TREAD
 	for gap in GAPS:
 		for k in STEPS:
 			var height := _down(k) + 0.04
-			var depth := run - k * TREAD
-			w.box(Vector3(2.0 * GAP_HALF, height, depth), Vector3(gap, height / 2.0 - 0.04, PLINTH_Z + k * TREAD + depth / 2.0), tread)
-			w.box(Vector3(2.0 * GAP_HALF, 0.03, 0.05), Vector3(gap, height - 0.04, PLINTH_Z + k * TREAD + 0.03), nosing)
+			var depth := (k + 1) * GAP_TREAD
+			w.box(Vector3(2.0 * GAP_HALF, height, depth), Vector3(gap, height / 2.0 - 0.04, PLINTH_Z + depth / 2.0), tread)
+			w.box(Vector3(2.0 * GAP_HALF, 0.03, 0.05), Vector3(gap, height - 0.04, PLINTH_Z + depth - 0.025), nosing)
 		for dx in [-GAP_HALF + 0.05, GAP_HALF - 0.05]:
-			w.rod(Vector3(gap + dx, 0.9, PLINTH_Z + run), Vector3(gap + dx, WALK_Y + 0.9, PLINTH_Z), 0.03, Color("c9ccca"))
+			w.rod(Vector3(gap + dx, 0.9, PLINTH_Z + run - 0.15), Vector3(gap + dx, WALK_Y + 0.9, PLINTH_Z), 0.03, Color("c9ccca"))
 			for z in [PLINTH_Z + 0.15, PLINTH_Z + run - 0.15]:
-				var foot := _down((z - PLINTH_Z) / TREAD)
+				var foot := _down((z - PLINTH_Z) / GAP_TREAD)
 				w.rod(Vector3(gap + dx, foot, z), Vector3(gap + dx, foot + 0.9, z), 0.025, Color("7d6a58"))
 
-## The shrub bed in front of the plinth: soil and grass behind a low kerb, packed with
-## trimmed shrubs (left open at the steps).
-func _bed() -> void:
-	var soil: Material = w.material("grass", Color("8f9a6a"))
-	var kerb: Material = w.material("stucco", Color("d8d2c2"))
-	var depth := BED_Z - PLINTH_Z
-	w.box(Vector3(2.0 * WALK_END, 0.12, depth), Vector3(0, -0.08, (PLINTH_Z + BED_Z) / 2.0), soil)
-	var x := -WALK_END
-	while x < WALK_END:
-		var open := _gap_at(x + 0.5) >= 0 or (absf(x + 0.5) < LOBBY_STEPS + 0.1) or (x + 0.5 > LANDING - 0.1)
-		if not open:
-			w.box(Vector3(1.0, 0.28, 0.14), Vector3(x + 0.5, -0.04, BED_Z - 0.07), kerb)
-		x += 1.0
+## The planter terrace in front of the plinth, as in the photos: a low grey stone
+## retaining wall along the walk, grass on top packed with trimmed shrubs, broken where
+## the steps come down (the lobby's steps stand out past it).
+func _terrace() -> void:
+	var stone: Material = w.material("stone", Color("aaa79d"))
+	var cap: Material = w.material("stucco", Color("d8d2c2"))
+	var grass: Material = w.material("grass", Color("8f9a6a"))
+	var depth := TERRACE_Z - PLINTH_Z
+	# The terrace runs from the east end to the ramp's landing, in pieces between the steps.
+	var stops: Array[Vector2] = [Vector2(-LOBBY_STEPS, LOBBY_STEPS)]
+	for gap in GAPS:
+		stops.append(Vector2(gap - GAP_HALF, gap + GAP_HALF))
+	stops.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	var pieces: Array[Vector2] = []
+	var from := -WALK_END
+	for stop in stops:
+		pieces.append(Vector2(from, stop.x))
+		from = stop.y
+	pieces.append(Vector2(from, LANDING))
+	for piece in pieces:
+		var length := piece.y - piece.x
+		var x := (piece.x + piece.y) / 2.0
+		w.box(Vector3(length, TERRACE_Y + 0.12, depth), Vector3(x, (TERRACE_Y - 0.12) / 2.0, (PLINTH_Z + TERRACE_Z) / 2.0), stone)
+		w.box(Vector3(length, 0.04, depth - 0.3), Vector3(x, TERRACE_Y + 0.02, (PLINTH_Z + TERRACE_Z - 0.3) / 2.0), grass)
+		w.box(Vector3(length, 0.06, 0.32), Vector3(x, TERRACE_Y + 0.03, TERRACE_Z - 0.16), cap)
 	var seed_value := 900
-	x = -WALK_END + 1.2
+	var x := -WALK_END + 1.2
 	while x < LANDING - 1.0:
-		if _gap_at(x) < 0 and absf(x) > LOBBY_STEPS + 0.8:
-			w._shrub(Vector3(x, -0.02, 1.15 + 0.25 * sin(x * 1.7)), 0.85 + 0.25 * absf(sin(x * 0.9)), seed_value,
+		if _gap_at(x) < 0 and absf(x) > LOBBY_BOX.y + 0.6:
+			w._shrub(Vector3(x, TERRACE_Y, 1.25 + 0.3 * sin(x * 1.7)), 0.85 + 0.25 * absf(sin(x * 0.9)), seed_value,
 				w.HEDGE_COLORS if seed_value % 3 == 0 else w.SHRUB_COLORS)
 			seed_value += 1
 		x += 2.3
@@ -860,9 +891,9 @@ func _west_end() -> void:
 	var run := STEPS * TREAD
 	for k in STEPS:
 		var height := _down(k) + 0.04
-		var depth := run - k * TREAD
-		w.box(Vector3(depth, height, width + 0.4), Vector3(PINK_FACE + k * TREAD + depth / 2.0, height / 2.0 - 0.04, middle), tread)
-		w.box(Vector3(0.05, 0.03, width + 0.4), Vector3(PINK_FACE + k * TREAD + 0.03, height - 0.04, middle), nosing)
+		var depth := (k + 1) * TREAD
+		w.box(Vector3(depth, height, width + 0.4), Vector3(PINK_FACE + depth / 2.0, height / 2.0 - 0.04, middle), tread)
+		w.box(Vector3(0.05, 0.03, width + 0.4), Vector3(PINK_FACE + depth - 0.025, height - 0.04, middle), nosing)
 	for z in [PASSAGE.x - 0.1, PASSAGE.y + 0.1]:
 		w.rod(Vector3(PINK_FACE + run, 0.9, z), Vector3(PINK_FACE, WALK_Y + 0.9, z), 0.03, Color("c9ccca"))
 		for x in [PINK_FACE + 0.15, PINK_FACE + run - 0.15]:
@@ -1166,10 +1197,14 @@ func _planting() -> void:
 	palms.w = w
 	for lx in [14.6, 27.0, -14.0]:
 		var at := world(lx, 1.2)
-		palms._palm(Vector3(at.x, 0.0, at.y), 7.0 + absf(lx) * 0.05, 770 + roundi(lx))
+		palms._palm(Vector3(at.x, TERRACE_Y, at.y), 7.0 + absf(lx) * 0.05, 770 + roundi(lx))
 	for lx in [-22.0, 30.5]:
 		var at := world(lx, 1.1)
-		w._bamboo(Vector3(at.x, 0.0, at.y), 0.7, 12, 780 + roundi(lx))
+		w._bamboo(Vector3(at.x, TERRACE_Y, at.y), 0.7, 12, 780 + roundi(lx))
 	for lx in [-40.0, -31.0, -26.0, 12.0, 22.0, 31.0]:
 		var at := world(lx, 0.8)
-		w._shrub(Vector3(at.x, 0.0, at.y), 1.2, 790 + roundi(lx))
+		w._shrub(Vector3(at.x, TERRACE_Y, at.y), 1.2, 790 + roundi(lx))
+	# The lobby's planter box: a palm over trimmed shrubs.
+	var box := world((LOBBY_BOX.x + LOBBY_BOX.y) / 2.0, TOWER_FRONT + 1.0)
+	palms._palm(Vector3(box.x, 0.93, box.y), 4.2, 777)
+	w._shrub(Vector3(box.x, 0.93, box.y), 1.0, 778, w.HEDGE_COLORS)
