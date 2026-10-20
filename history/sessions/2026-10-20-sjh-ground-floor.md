@@ -48,6 +48,16 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
   ramp's slope (1:10), the lane's far wall, the bridge's span and roof, where along the
   walkway the tables stand.
 
+- **After Mikko tried it:** the steps showed as one flat block (each tread was built
+  from the top step out to the bottom one, so the tallest hid the rest); each tread's
+  block now runs only from the floor's edge to its own front, nosing on that front.
+  Mikko marked "a layer" along the front: it is a **raised planter terrace** (as in
+  RIGHT SIDE.JPG), grass and shrubs at 0.45 m (`TERRACE_Y`) behind a low grey stone
+  wall 2.6 m out (`TERRACE_Z`), the planting on it; the gap steps run down through it
+  (0.38 m treads). The **lobby steps** now run the tower's full width, in front of both
+  pillars, the handrails standing on them (x ±7), with a raised planter box and a palm
+  past the west pillar (from MIDDLE ELEVATOR.JPG).
+
 ## What changed
 
 - `areas/sjh.gd`: the constants, `_deck`, `_stair`, `_yard`, `walkway_for`, `view_for`,

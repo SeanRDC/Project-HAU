@@ -1,7 +1,8 @@
 # Project Context
 
 **SJH's ground floor, 2026-10-20.** `areas/sjh.gd`: the cars park at road level and the
-ground floor is raised 0.9 m (`WALK_Y`) on a plinth behind a shrub bed, up steps at the
+ground floor is raised 0.9 m (`WALK_Y`) on a plinth over a planter terrace (0.45 m, a low
+stone wall in front), up steps at the
 railing gaps (now ±16.8, ±33.6): clad piers, bar tables, bins, a diamond-tiled floor
 (`diamond` in world.gd). The centre tower opens into the elevator lobby up wide steps.
 At the west end a passage through the terracotta block leads to steps, a ramp, a yard
