@@ -1,8 +1,9 @@
 extends CanvasLayer
 ## The opening: a quiet memory of HAU before the game starts, told like a manga page by
 ## page. Panels fade in one at a time and drift slowly; the narration types out beside
-## them in Tagalog. Any key or click moves on; holding Space (or Esc) skips the rest. The
-## game waits paused behind it (aps.gd).
+## them in Tagalog. Any key or click moves on. The first time it plays it cannot be skipped;
+## once it has been watched to the end, holding Space (or Esc) skips the rest. The game
+## waits paused behind it (aps.gd).
 ##
 ## Each panel's picture is res://opening/panels/<id>.png when it has been drawn (see
 ## opening/README.md for what to draw), else res://opening/photos/<id>.jpg (a campus
@@ -24,6 +25,9 @@ const DRIFT_TIME := 14.0
 const SLACK := 1.1
 ## How long Space is held to skip; a tap still moves on like any key.
 const HOLD := 0.9
+## Remembers on this computer that the opening has been watched to the end (Godot's user
+## data folder), which is what lets it be skipped from then on.
+const SEEN_FILE := "user://opening.cfg"
 
 ## Pages in order. Each panel: id (its picture; "" for none), rect [x, y, w, h] in the page,
 ## lines [[text, where]] with where one of L, R (top corners), BL, BR (bottom corners), C.
@@ -44,41 +48,52 @@ const PAGES := [
 	]},
 	{"panels": [
 		{"id": "walkway", "rect": [0.0, 0.0, 1.0, 0.46],
-			"lines": [["Mahahaba ang mga walkway sa boulevard...", "R"], ["...at laging may sumisilong kapag umuulan.", "L"]]},
+			"lines": [["Mahahaba ang mga walkway sa boulevard...", "R"], ["...kung saan madami nagmamadali dahil sa init.", "L"]]},
 		{"id": "chapel", "rect": [0.0, 0.50, 0.49, 0.50], "lines": [["Sa dulo ng daan, ang kapilya.", "L"]]},
-		{"id": "aps", "rect": [0.51, 0.50, 0.49, 0.50], "lines": [["At sa tabi ng kalsada...", "R"], ["...ang APS.", "BL"]]},
+		{"id": "klase", "rect": [0.51, 0.50, 0.49, 0.50], "lines": [["Eto naman classroom namin, tahimik pag walang tao.", "L"]]},
 	]},
+	# going down from class to the canteen
 	{"panels": [
-		{"id": "hallway", "rect": [0.0, 0.0, 0.38, 1.0],
+		{"id": "corridor", "rect": [0.0, 0.0, 0.29, 1.0], "lines": [["Sa ikalimang palapag ang una kong klase.", "BL"]]},
+		{"id": "stairs", "rect": [0.31, 0.0, 0.29, 1.0], "lines": [["Matarik ang hagdan paakyat.", "R"]]},
+		{"id": "hallway", "rect": [0.62, 0.0, 0.38, 1.0],
 			"lines": [["Sa pasilyo ng APS...", "L"], ["...laging may nagmamadali papuntang canteen.", "BR"]]},
-		{"id": "stairs", "rect": [0.40, 0.0, 0.29, 1.0], "lines": [["Matarik ang hagdan paakyat.", "R"]]},
-		{"id": "corridor", "rect": [0.71, 0.0, 0.29, 1.0], "lines": [["Sa ikalawang palapag ang una kong klase.", "BL"]]},
 	]},
 	{"panels": [
-		{"id": "canteen", "rect": [0.0, 0.0, 1.0, 0.48],
-			"lines": [["Sa canteen, si Ate Lorna...", "R"], ["...laging may turon pagsapit ng alas-tres.", "L"]]},
+		{"id": "kantina", "rect": [0.0, 0.0, 1.0, 0.48],
+			"lines": [["Sa canteen, sa kabilang mesa ka lagi nakaupo.", "R"], ["Hindi ako lumilipat.", "L"]]},
 		{"id": "gym", "rect": [0.0, 0.52, 1.0, 0.48],
-			"lines": [["Sa gym kita unang nakilala.", "R"], ["Mainit noon. Amoy goma ang sahig.", "BL"]]},
+			"lines": [["Sa gym kita unang nakilala.", "R"], ["Mainit noon. Amoy pawis.", "BL"]]},
 	]},
+	# from here, what he missed: the Student Center tables, a bench alone under the walkway
 	{"panels": [
-		{"id": "kaibigan", "rect": [0.0, 0.0, 1.0, 0.48], "draw": "Close-up: ang kaibigan, nakangiti, pawisan, sa gym",
-			"lines": [["\"Mayap a abak!\" ang lagi mong bati...", "R"], ["...kahit hapon na.", "L"]]},
-		{"id": "ako", "rect": [0.0, 0.52, 1.0, 0.48], "draw": "Close-up: ang bida, nakatungo, hindi makatingin",
-			"lines": [["Ako naman...", "L"], ["...hindi ko alam ang isasagot.", "R"]]},
+		{"id": "tawanan", "rect": [0.0, 0.0, 1.0, 0.48],
+			"lines": [["\"Okay lang ako,\" sabi mo.", "R"], ["Hindi naman kita tinanong.", "L"]]},
+		{"id": "bangko", "rect": [0.0, 0.52, 1.0, 0.48],
+			"lines": [["2:14 AM. \"Gising ka pa?\"", "L"], ["Nakita ko kinaumagahan.", "R"]]},
 	]},
+	# students walking together by the Main Building; then the boulevard in the rain
 	{"panels": [
-		{"id": "litrato", "rect": [0.0, 0.0, 1.0, 0.56], "draw": "Selfie ng dalawa sa harap ng angel fountain, sa cellphone",
-			"lines": [["May kumuha ng litrato natin sa fountain.", "L"], ["Nasa cellphone ko pa rin hanggang ngayon.", "R"]]},
-		{"id": "ulan", "rect": [0.0, 0.60, 1.0, 0.40], "draw": "Ulan sa boulevard, walang tao sa ilalim ng walkway",
-			"lines": [["Tapos dumating ang tag-ulan...", "C"]]},
+		{"id": "lakad", "rect": [0.0, 0.0, 1.0, 0.56],
+			"lines": [["Binigay mo sa'kin ang paborito mong ballpen.", "L"], ["Nawala ko sa loob ng isang linggo.", "R"]]},
+		{"id": "tagulan", "rect": [0.0, 0.60, 1.0, 0.40],
+			"lines": [["Pagdating ng tag-ulan...", "C"], ["...ikaw na lang ang hindi sumisilong.", "BR"]]},
 	]},
+	# the date, and every "sana", smaller and smaller; the last line is the game's hidden truth
 	{"panels": [
 		{"id": "", "rect": [0.0, 0.0, 1.0, 1.0], "frame": false, "marks": true,
-			"lines": [["Bakit ka umalis noon?", "L"], ["Iniisip ko pa rin...", "R"]]},
+			"lines": [["Nobyembre 11.", "C"], ["Sana nagtanong ako.", "L"], ["Sana nakinig ako.", "R"],
+				["Sana hindi kita iniwan mag-isa.", "BL"], ["...sana sinagot ko.", "BR"]]},
 	]},
 	{"panels": [
 		{"id": "mata", "rect": [0.0, 0.1, 1.0, 0.8], "dark": true, "draw": "Close-up ng mga mata ng bida, may luha sa gilid",
-			"lines": [["Pero sigurado ako...", "L"], ["...nakita kita.", "R"]]},
+			"lines": [["Kung pwede lang bumalik...", "L"], ["...hindi na kita pababayaan.", "R"]]},
+	]},
+	# he wakes in the classroom, and the game starts there in June 2026
+	{"panels": [
+		{"id": "klase", "rect": [0.0, 0.0, 1.0, 0.48]},
+		{"id": "gising", "rect": [0.0, 0.52, 1.0, 0.48], "draw": "Ang bida, inaangat ang ulo mula sa mesa, dumidilat",
+			"lines": [["...Huy. Gising na. Late ka na naman.", "R"], ["Hunyo.", "BL"]]},
 	]},
 ]
 
@@ -94,6 +109,18 @@ var _holding := false
 var _hold := 0.0
 var _hint := Label.new()
 var _fill := ColorRect.new()
+## False the first time through: no skip hint, and Space and Esc only move on.
+var _can_skip := false
+var _pages: Array = PAGES
+## Has the opening been watched to the end on this computer before?
+static func seen() -> bool:
+	var config := ConfigFile.new()
+	return config.load(SEEN_FILE) == OK and config.get_value("opening", "seen", false)
+
+static func mark_seen() -> void:
+	var config := ConfigFile.new()
+	config.set_value("opening", "seen", true)
+	config.save(SEEN_FILE)
 
 ## The lettering font: the opening's narration and the NPCs' talk (npcs.gd).
 static func lettering() -> SystemFont:
@@ -102,7 +129,8 @@ static func lettering() -> SystemFont:
 	return font
 
 ## Plain launches get the opening; --opening forces it, --opening-capture=<png> with
-## --opening-page=<n> saves one finished page (n = PAGES.size() is the title) and quits.
+## --opening-page=<n> saves one finished page (n = PAGES.size() is the title) and quits;
+## --opening-page=all saves every screen into the folder --opening-capture names.
 static func wanted(launch: Dictionary) -> bool:
 	return launch.is_empty() or launch.has("opening") or launch.has("opening-capture")
 
@@ -138,6 +166,8 @@ func _ready() -> void:
 	_page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_page.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_page)
+	# --opening-first plays it as if for the first time (unskippable), to test that
+	_can_skip = seen() and not args.has("opening-first")
 	if args.has("opening-capture"):
 		_capture.call_deferred(int(args.get("opening-page", "0")), String(args["opening-capture"]))
 	else:
@@ -146,7 +176,7 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	var click := event as InputEventMouseButton
-	if key != null and key.keycode == KEY_SPACE:
+	if key != null and key.keycode == KEY_SPACE and _can_skip:
 		if not key.echo:
 			_holding = key.pressed
 			if not key.pressed and _hold < 1.0:
@@ -155,7 +185,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if not ((key != null and key.pressed and not key.echo) or (click != null and click.pressed)):
 		return
-	if key != null and key.keycode == KEY_ESCAPE:
+	if key != null and key.keycode == KEY_ESCAPE and _can_skip:
 		_skipping = true
 	_advance = true
 	get_viewport().set_input_as_handled()
@@ -175,27 +205,35 @@ func _process(delta: float) -> void:
 		_advance = true
 
 func _play() -> void:
-	_skip_hint()
-	for page in PAGES:
+	if _can_skip:
+		_skip_hint()
+	for page in _pages:
 		if _skipping:
 			break
 		await _show_page(page)
 	await _title()
+	mark_seen()
 	var out := create_tween()
 	out.tween_property(_root, "modulate:a", 0.0, 1.2)
 	await out.finished
 	finished.emit()
 
+## Saves one finished page and quits; --opening-page=all saves every screen, the title
+## last, as screen-01.png, screen-02.png... into the folder the capture names (the
+## preview, tools\preview-opening.cmd).
 func _capture(index: int, path: String) -> void:
 	_instant = true
-	if index < PAGES.size():
-		await _show_page(PAGES[index])
-	else:
-		await _title()
-	for i in 8:
-		await get_tree().process_frame
-	var saved := get_viewport().get_texture().get_image().save_png(path)
-	print("opening capture: ", path, " ", "ok" if saved == OK else "failed")
+	var pages: Array = range(_pages.size() + 1) if String(args.get("opening-page", "")) == "all" else [index]
+	for page in pages:
+		if page < _pages.size():
+			await _show_page(_pages[page])
+		else:
+			await _title()
+		for i in 8:
+			await get_tree().process_frame
+		var file := path.path_join("screen-%02d.png" % (page + 1)) if pages.size() > 1 else path
+		var saved := get_viewport().get_texture().get_image().save_png(file)
+		print("opening capture: ", file, " ", "ok" if saved == OK else "failed")
 	get_tree().quit()
 
 # --- Pages ------------------------------------------------------------------------
