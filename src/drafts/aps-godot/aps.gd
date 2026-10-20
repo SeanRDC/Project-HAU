@@ -1616,7 +1616,7 @@ func _verify_and_capture() -> void:
 			return World.floor_height(at.x, at.y)
 		var up := func(u: float, v: float, low: float, high: float) -> bool:
 			return height.call(u, v) > low and height.call(u, v) < high
-		var climbs: bool = is_equal_approx(height.call(25.0, 3.0), Sjh.LANDING_Y) and up.call(-38.0, 2.5, -0.04, Sjh.LANDING_Y) and solid.call(25.0, 4.5) and is_equal_approx(height.call(8.3, 5.0), Sjh.LANDING_Y) and not solid.call(8.3, 5.0) and is_equal_approx(height.call(25.0, 2.0), Sjh.LANDING_Y) 			and up.call(0.0, 1.5, Sjh.LANDING_Y, Sjh.WALK_Y) and is_equal_approx(height.call(0.0, 3.5), Sjh.LANDING_Y) 			and up.call(0.0, 5.0, 0.0, Sjh.LANDING_Y) and height.call(44.0, 1.5) > height.call(48.0, 1.5) 			and height.call(48.0, 1.5) > 0.0 and not solid.call(25.0, 2.0)
+		var climbs: bool = is_equal_approx(height.call(25.0, Sjh._walk_middle(25.0)), Sjh.LANDING_Y) and up.call(-38.0, Sjh._walk_middle(-38.0), -0.04, Sjh.LANDING_Y) and solid.call(25.0, Sjh.KERB_Z - 0.1) and solid.call(25.0, Sjh._walk_middle(25.0) - 1.3) and solid.call(8.3, 5.0) 			and up.call(0.0, 1.5, Sjh.LANDING_Y, Sjh.WALK_Y) and is_equal_approx(height.call(0.0, 3.5), Sjh.LANDING_Y) 			and up.call(0.0, 5.0, 0.0, Sjh.LANDING_Y) and height.call(44.0, 1.5) > height.call(48.0, 1.5) 			and height.call(48.0, 1.5) > 0.0 and not solid.call(25.0, Sjh._walk_middle(25.0))
 		var west := Sjh.world(48.6, -0.8)
 		student.place(west.x, west.y)
 		_snap_follow()

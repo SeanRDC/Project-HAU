@@ -51,20 +51,22 @@ const WALL_Z := -3.6
 const RAIL_Z := 0.05
 const WALK_Y := 0.9
 const CEILING := 3.55
-## The front, from the walkway out to the cars (as in RIGHT SIDE.JPG): a raised planter
-## against the plinth out to PLANTER_Z; the brown paver sidewalk at LANDING_Y out to
-## WALK_EDGE, sloping down to the ground over END_SLOPE at both ends; beside it at the same
-## height a grass and bamboo strip, held up by a low stone wall at the kerb (KERB_Z) by
-## the parked cars. At the lobby
-## the long stair runs out to the kerb. Risers RISER, treads TREAD (the passage's steps
-## at the west end PASSAGE_TREAD).
+## The front, from the walkway out to the cars (as in RIGHT SIDE.JPG and the walkway
+## photo): grass at LANDING_Y from the plinth to a low stone wall at the kerb (KERB_Z) by
+## the parked cars, with shrubs and bamboo, and through it the brown paver sidewalk,
+## 2 * WALK_HALF wide, winding either side of WALK_MIDDLE (WALK_SWAY, one curve every
+## WALK_WAVE metres) and sloping down to the ground over END_SLOPE at both ends. At the
+## lobby the long stair runs out to the kerb. Risers RISER, treads TREAD (the passage's
+## steps at the west end PASSAGE_TREAD).
 const PLINTH_Z := 0.3
 const RISER := 0.1
 const TREAD := 0.33
 const LANDING_Y := 0.5
 const FLIGHT_STEPS := 5
-const PLANTER_Z := 1.6
-const WALK_EDGE := 3.6
+const WALK_MIDDLE := 3.65
+const WALK_HALF := 1.0
+const WALK_SWAY := 0.9
+const WALK_WAVE := 14.0
 const END_SLOPE := 6.0
 const PASSAGE_TREAD := 0.3
 const PASSAGE_STEPS := 9
@@ -92,7 +94,7 @@ const LOBBY_FOOT := LOBBY_FLIGHT + FLIGHT_STEPS * TREAD
 const KERB_Z := LOBBY_FOOT
 const LOBBY_BOX := Vector2(9.5, 12.1)
 ## The flight down from the landing is LOWER_HALF either side of the middle, its handrails
-## at its edges; either side of it the pavers run on at the landing's height to the kerb.
+## at its edges; either side of it, grass and shrubs out to the kerb.
 const LOWER_HALF := 7.0
 const LOBBY_RAILS: Array[float] = [-6.9, 6.9]
 ## The west end (local +x): the passage through the terracotta block (z range), its
@@ -164,16 +166,22 @@ static func _stair(u: float, v: float) -> float:
 	if absf(u) < LOBBY_STEPS and v >= TOWER_FRONT and v < LOBBY_FOOT:
 		if v < UPPER_END:
 			return _down(WALK_Y, (v - TOWER_FRONT) / TREAD)
-		if v < LOBBY_FLIGHT or absf(u) >= LOWER_HALF:
-			return LANDING_Y # the landing, and the pavers either side of the flight
-		return _down(LANDING_Y, (v - LOBBY_FLIGHT) / TREAD)
-	if absf(u) >= LOBBY_STEPS and u > -WALK_END and u < LANDING and v >= PLANTER_Z and v < WALK_EDGE:
+		if v < LOBBY_FLIGHT:
+			return LANDING_Y
+		if absf(u) < LOWER_HALF:
+			return _down(LANDING_Y, (v - LOBBY_FLIGHT) / TREAD)
+	elif u > -WALK_END and u < LANDING and absf(v - _walk_middle(u)) < WALK_HALF:
 		return _sidewalk(u)
 	if v > PASSAGE.x and v < PASSAGE.y and u >= PINK_FACE and u < PINK_FACE + PASSAGE_STEPS * PASSAGE_TREAD:
 		return _down(WALK_Y, (u - PINK_FACE) / PASSAGE_TREAD)
 	if v > RAMP.x and v < RAMP.y and u >= WALK_END and u < RAMP_FOOT:
 		return lerpf(WALK_Y, -0.04, (u - WALK_END) / (RAMP_FOOT - WALK_END))
 	return NAN
+
+## The middle of the brown sidewalk at local x: it leaves the lobby's landing straight out
+## and winds from side to side along the front.
+static func _walk_middle(u: float) -> float:
+	return WALK_MIDDLE + WALK_SWAY * sin((absf(u) - LOBBY_STEPS) * TAU / WALK_WAVE)
 
 ## The brown sidewalk's height along the front: level at the landing, sloping down to the
 ## ground at the east end and at the ramp's landing.
@@ -247,7 +255,7 @@ static func blocked(x: float, z: float) -> bool:
 	if footprint and not on_deck and is_nan(_stair(u, v)) and not _yard(u, v):
 		return true # the building, its end towers, the tower's pillars
 	if absf(u) < WALK_END and v >= PLINTH_Z and v < KERB_Z and not on_deck and is_nan(_stair(u, v)):
-		return true # the planter, the low wall and the grass strip
+		return true # the grass, its shrubs and bamboo, the low wall
 	if not is_nan(_stair(u, v)):
 		for rail in LOBBY_RAILS:
 			if absf(u - rail) < 0.08 and v > TOWER_FRONT:
@@ -298,6 +306,12 @@ static func floor_height(x: float, z: float) -> float:
 
 static var _cars: Array[Vector3] = []
 
+## The front row parks with its tail up against the kerb (it follows the building's slant):
+## the world z of a car's middle at world x.
+static func _front_row_z(x: float) -> float:
+	var u := local(x, FRONT_ROW.get_center().y).x
+	return world(u, KERB_Z + 0.14 + 0.3 + 2.2).y
+
 ## The parked cars: x, z (world), colour index. The chapel-side row is nosed in to the
 ## grass by the chapel walk, the front row to the road: both face north. Seeded, so
 ## every machine parks the same cars.
@@ -315,7 +329,7 @@ static func cars() -> Array[Vector3]:
 	while x < FRONT_ROW.end.x - 1.0:
 		var at_steps := x > ENTRANCE_GAP.x and x < ENTRANCE_GAP.y
 		if not at_steps and random.randf() < 0.72:
-			_cars.append(Vector3(x, FRONT_ROW.position.y + 2.5, random.randi_range(0, 7)))
+			_cars.append(Vector3(x, _front_row_z(x), random.randi_range(0, 7)))
 		x += 2.6
 	return _cars
 
@@ -629,8 +643,8 @@ func _walkway() -> void:
 	# The lobby's floor runs out to the tower's front.
 	w.box(Vector3(2.0 * TOWER, WALK_Y - 0.03, TOWER_FRONT - PLINTH_Z), Vector3(0, (WALK_Y - 0.03) / 2.0, (TOWER_FRONT + PLINTH_Z) / 2.0), plinth)
 	w.box(Vector3(2.0 * LOBBY, 0.03, TOWER_FRONT - PLINTH_Z), Vector3(0, WALK_Y - 0.015, (TOWER_FRONT + PLINTH_Z) / 2.0), floor_tile)
-	# A darker band at the plinth's foot, where the planter's soil meets it.
-	w.box(Vector3(2.0 * WALK_END, 0.18, 0.04), Vector3(0, LANDING_Y + 0.22, PLINTH_Z + 0.02), w.material("stucco", Color("cbc3b0")))
+	# A darker band at the plinth's foot, where the grass meets it.
+	w.box(Vector3(2.0 * WALK_END, 0.18, 0.04), Vector3(0, LANDING_Y + 0.09, PLINTH_Z + 0.02), w.material("stucco", Color("cbc3b0")))
 	for side in [-1.0, 1.0]:
 		var length := WALK_END + 0.2 - TOWER
 		var x0: float = side * (TOWER + length / 2.0)
@@ -683,50 +697,52 @@ func _railing() -> void:
 				post += 1.0
 			w.box(Vector3(0.04, 1.0, 0.04), Vector3(side * run.y, WALK_Y + 0.5, RAIL_Z), bar)
 
-## The front, as in the photos: along the whole building a raised planter of grass and
-## trimmed shrubs against the plinth, the brown paver sidewalk and a grass strip with
-## bamboo beside it at the same height, a low stone wall at the kerb by the cars. At the
-## lobby the long stair: the steps up to the floor across the tower's width, the brown
-## landing (joining the sidewalk), the flight down to the kerb between its handrails with
-## the pavers running on either side of it, and the planter box beside the upper steps.
+## The front, as in the photos: grass along the whole building from the plinth to a low
+## stone wall at the kerb by the cars, with trimmed shrubs and bamboo, and the brown paver
+## sidewalk winding through it. At the lobby the long stair: the steps up to the floor
+## across the tower's width, the brown landing (where the sidewalk meets it), the flight
+## down to the kerb between its handrails with grass and shrubs either side, and the
+## planter box beside the upper steps. Each layer sits a little above the one under it
+## (stone, grass, pavers), never flush, so they do not flicker as the camera moves.
 func _front() -> void:
 	var tread: Material = w.material("slab", Color("efe9dc"))
 	var nosing: Material = w.material("plain", Color("4a4440"))
 	var base: Material = w.material("stone", Color("aaa79d"))
 	var pavers: Material = w.material("brick", Color("c4876f"))
 	var grass: Material = w.material("grass", Color("8f9a6a"))
-	var kerb: Material = w.material("stucco", Color("d8d2c2"))
 	var white: Material = w.material("stucco", Color("e9e6dd"))
+	var slice := 0.5
 	for piece in [Vector2(-WALK_END, -LOBBY_STEPS), Vector2(LOBBY_STEPS, LANDING)]:
 		var length: float = piece.y - piece.x
 		var x: float = (piece.x + piece.y) / 2.0
-		# The planter: a cream box of soil and grass against the plinth.
-		w.box(Vector3(length, LANDING_Y + 0.3, PLANTER_Z - PLINTH_Z), Vector3(x, (LANDING_Y + 0.3) / 2.0 - 0.04, (PLINTH_Z + PLANTER_Z) / 2.0), kerb)
-		w.box(Vector3(length - 0.1, 0.04, PLANTER_Z - PLINTH_Z - 0.2), Vector3(x, LANDING_Y + 0.25, (PLINTH_Z + PLANTER_Z) / 2.0), grass)
-		# The sidewalk and the grass strip beside it at the same height, on a stone base, the
-		# low stone wall at the kerb holding them up, a metre at a time so they follow the
-		# sidewalk's slope at the ends.
+		# Half a metre at a time, so the path winds and the ends follow its slope.
 		var at: float = piece.x
 		while at < piece.y - 0.01:
-			var step := minf(1.0, piece.y - at)
-			var top := _sidewalk(at + step / 2.0)
+			var step := minf(slice, piece.y - at)
 			var middle: float = at + step / 2.0
-			w.box(Vector3(step, top + 0.04, KERB_Z - PLANTER_Z), Vector3(middle, (top - 0.04) / 2.0, (PLANTER_Z + KERB_Z) / 2.0), base)
-			w.box(Vector3(step, 0.03, WALK_EDGE - PLANTER_Z), Vector3(middle, top - 0.015, (PLANTER_Z + WALK_EDGE) / 2.0), pavers)
-			w.box(Vector3(step, 0.04, KERB_Z - WALK_EDGE - 0.25), Vector3(middle, top, (WALK_EDGE + KERB_Z - 0.25) / 2.0), grass)
+			var top := _sidewalk(middle)
+			w.box(Vector3(step, top + 0.01, KERB_Z - PLINTH_Z), Vector3(middle, (top - 0.07) / 2.0, (PLINTH_Z + KERB_Z) / 2.0), base)
+			w.box(Vector3(step, 0.03, KERB_Z - PLINTH_Z - 0.25), Vector3(middle, top - 0.015, (PLINTH_Z + KERB_Z - 0.25) / 2.0), grass)
+			w.box(Vector3(step, 0.03, 2.0 * WALK_HALF), Vector3(middle, top + 0.005, _walk_middle(middle)), pavers)
 			w.box(Vector3(step, top + 0.12, 0.25), Vector3(middle, (top + 0.12) / 2.0 - 0.04, KERB_Z - 0.125), base)
 			at += step
 		w.box(Vector3(length, 0.16, 0.14), Vector3(x, 0.04, KERB_Z + 0.07), white)
-	# The lobby's stairs: the landing's mass and its brown pavers, run on either side of the
-	# flight down to the kerb; the steps up to the floor; the flight down between the rails.
-	w.box(Vector3(2.0 * LOBBY_STEPS, LANDING_Y + 0.04, LOBBY_FLIGHT - TOWER_FRONT), Vector3(0, (LANDING_Y - 0.04) / 2.0, (TOWER_FRONT + LOBBY_FLIGHT) / 2.0), base)
-	w.box(Vector3(2.0 * LOBBY_STEPS, 0.03, LOBBY_FLIGHT - UPPER_END), Vector3(0, LANDING_Y - 0.015, (UPPER_END + LOBBY_FLIGHT) / 2.0), pavers)
+	# The lobby's stairs: the landing's mass and its pavers, the steps up to the floor, the
+	# flight down between the rails, grass either side of it out to the kerb.
+	var landing := LOBBY_FLIGHT - UPPER_END
+	w.box(Vector3(2.0 * LOBBY_STEPS, LANDING_Y + 0.01, landing), Vector3(0, (LANDING_Y - 0.07) / 2.0, (UPPER_END + LOBBY_FLIGHT) / 2.0), base)
+	w.box(Vector3(2.0 * LOBBY_STEPS, 0.03, landing), Vector3(0, LANDING_Y - 0.015, (UPPER_END + LOBBY_FLIGHT) / 2.0), pavers)
 	for side in [-1.0, 1.0]:
 		var wing := LOBBY_STEPS - LOWER_HALF
 		var wing_x: float = side * (LOWER_HALF + wing / 2.0)
-		w.box(Vector3(wing, LANDING_Y + 0.04, KERB_Z - LOBBY_FLIGHT), Vector3(wing_x, (LANDING_Y - 0.04) / 2.0, (LOBBY_FLIGHT + KERB_Z) / 2.0), base)
-		w.box(Vector3(wing, 0.03, KERB_Z - LOBBY_FLIGHT), Vector3(wing_x, LANDING_Y - 0.015, (LOBBY_FLIGHT + KERB_Z) / 2.0), pavers)
+		var out := KERB_Z - LOBBY_FLIGHT
+		w.box(Vector3(wing, LANDING_Y + 0.01, out), Vector3(wing_x, (LANDING_Y - 0.07) / 2.0, (LOBBY_FLIGHT + KERB_Z) / 2.0), base)
+		w.box(Vector3(wing, 0.03, out - 0.25), Vector3(wing_x, LANDING_Y - 0.015, (LOBBY_FLIGHT + KERB_Z - 0.25) / 2.0), grass)
+		w.box(Vector3(wing, LANDING_Y + 0.12, 0.25), Vector3(wing_x, (LANDING_Y + 0.12) / 2.0 - 0.04, KERB_Z - 0.125), base)
 		w.box(Vector3(wing, 0.16, 0.14), Vector3(wing_x, 0.04, KERB_Z + 0.07), white)
+		for k in 2:
+			w._shrub(Vector3(wing_x + side * 0.3 * (k - 0.5), LANDING_Y, LOBBY_FLIGHT + 0.6 + k * 0.8), 0.8, 960 + k + (2 if side > 0.0 else 0),
+				w.HEDGE_COLORS if k == 0 else w.SHRUB_COLORS)
 	_flight(Vector2(-LOBBY_STEPS, LOBBY_STEPS), TOWER_FRONT, WALK_Y, UPPER_STEPS, tread, nosing)
 	_flight(Vector2(-LOWER_HALF, LOWER_HALF), LOBBY_FLIGHT, LANDING_Y, FLIGHT_STEPS, tread, nosing)
 	for x in LOBBY_RAILS:
@@ -742,33 +758,40 @@ func _front() -> void:
 	var box_depth := UPPER_END - TOWER_FRONT
 	w.box(Vector3(LOBBY_BOX.y - LOBBY_BOX.x, WALK_Y + 0.1, box_depth), Vector3(box_x, (WALK_Y + 0.1) / 2.0, TOWER_FRONT + box_depth / 2.0), w.material("stucco", Color("ece6d6")))
 	w.box(Vector3(LOBBY_BOX.y - LOBBY_BOX.x - 0.3, 0.04, box_depth - 0.3), Vector3(box_x, WALK_Y + 0.08, TOWER_FRONT + box_depth / 2.0), w.material("dirt", Color("8a7660")))
-	# Shrubs in the planter, clear of the planter box, and more along the grass strip.
+	# Trimmed shrubs along the plinth, clear of the planter box, and more out in the grass
+	# on whichever side of the path has room.
 	var seed_value := 900
 	var x := -WALK_END + 1.2
 	while x < LANDING - 1.0:
 		if absf(x) > LOBBY_BOX.y + 0.6:
-			w._shrub(Vector3(x, LANDING_Y + 0.27, 0.95 + 0.1 * sin(x * 1.7)), 0.8 + 0.25 * absf(sin(x * 0.9)), seed_value,
+			w._shrub(Vector3(x, _sidewalk(x), 0.95 + 0.1 * sin(x * 1.7)), 0.8 + 0.25 * absf(sin(x * 0.9)), seed_value,
 				w.HEDGE_COLORS if seed_value % 3 == 0 else w.SHRUB_COLORS)
 			seed_value += 1
 		x += 2.3
 	x = -WALK_END + 2.5
 	while x < LANDING - 1.0:
 		if absf(x) > LOBBY_STEPS + 1.0:
-			w._shrub(Vector3(x, _sidewalk(x) + 0.04, (WALK_EDGE + KERB_Z) / 2.0 + 0.2 * sin(x)), 0.7 + 0.2 * absf(cos(x)), seed_value, w.SHRUB_COLORS)
+			w._shrub(Vector3(x, _sidewalk(x), _green_beside(x)), 0.7 + 0.2 * absf(cos(x)), seed_value, w.SHRUB_COLORS)
 			seed_value += 1
 		x += 5.1
 
+## A spot in the grass beside the path at local x: on the road side where the path swings
+## in, on the building side where it swings out.
+func _green_beside(u: float) -> float:
+	var middle := _walk_middle(u)
+	return (middle + WALK_HALF + KERB_Z - 0.25) / 2.0 if middle < WALK_MIDDLE else (middle - WALK_HALF + 1.4) / 2.0 + 0.3
+
 ## A flight of `count` steps across local x `span`, from a floor at `top` whose edge is at
-## `from` (local z) going down towards the road: each tread's block runs from that edge
-## to its own front, where its dark nosing is.
+## `from` (local z) going down towards the road: one block per tread, each from the ground
+## to its own top, with its dark nosing standing just proud of its front.
 func _flight(span: Vector2, from: float, top: float, count: int, tread: Material, nosing: Material) -> void:
 	var width := span.y - span.x
 	var x := (span.x + span.y) / 2.0
 	for k in count:
-		var height := _down(top, k) + 0.04
-		var depth := (k + 1) * TREAD
-		w.box(Vector3(width, height, depth), Vector3(x, height / 2.0 - 0.04, from + depth / 2.0), tread)
-		w.box(Vector3(width, 0.03, 0.05), Vector3(x, height - 0.04, from + depth - 0.025), nosing)
+		var step_top := _down(top, k)
+		var near := from + k * TREAD
+		w.box(Vector3(width, step_top + 0.04, TREAD), Vector3(x, (step_top - 0.04) / 2.0, near + TREAD / 2.0), tread)
+		w.box(Vector3(width - 0.02, 0.03, 0.05), Vector3(x, step_top - 0.005, near + TREAD - 0.02), nosing)
 
 ## The ground floor's inner wall: room doors, dark windows, notice boards and fire
 ## alarms, with a row of high wooden windows over them and a brown skirting.
@@ -910,10 +933,10 @@ func _west_end() -> void:
 	# Its steps down the west face, with a handrail each side.
 	var run := PASSAGE_STEPS * PASSAGE_TREAD
 	for k in PASSAGE_STEPS:
-		var height := _down(WALK_Y, k) + 0.04
-		var depth := (k + 1) * PASSAGE_TREAD
-		w.box(Vector3(depth, height, width + 0.4), Vector3(PINK_FACE + depth / 2.0, height / 2.0 - 0.04, middle), tread)
-		w.box(Vector3(0.05, 0.03, width + 0.4), Vector3(PINK_FACE + depth - 0.025, height - 0.04, middle), nosing)
+		var top := _down(WALK_Y, k)
+		var near := PINK_FACE + k * PASSAGE_TREAD
+		w.box(Vector3(PASSAGE_TREAD, top + 0.04, width + 0.4), Vector3(near + PASSAGE_TREAD / 2.0, (top - 0.04) / 2.0, middle), tread)
+		w.box(Vector3(0.05, 0.03, width + 0.38), Vector3(near + PASSAGE_TREAD - 0.02, top - 0.005, middle), nosing)
 	for z in [PASSAGE.x - 0.1, PASSAGE.y + 0.1]:
 		w.rod(Vector3(PINK_FACE + run - 0.15, 0.9, z), Vector3(PINK_FACE, WALK_Y + 0.9, z), 0.03, Color("c9ccca"))
 		for x in [PINK_FACE + 0.15, PINK_FACE + run - 0.15]:
@@ -980,7 +1003,7 @@ func _parking() -> void:
 	x = FRONT_ROW.position.x + 0.1
 	while x <= FRONT_ROW.end.x:
 		if x < ENTRANCE_GAP.x or x > ENTRANCE_GAP.y:
-			w.box(Vector3(0.08, 0.012, 5.0), Vector3(x, -0.035, FRONT_ROW.position.y + 2.5), paint)
+			w.box(Vector3(0.08, 0.012, 5.0), Vector3(x, -0.035, _front_row_z(x)), paint)
 		x += 2.6
 	var colours: Array[Color] = [Color("1c2128"), Color("e9e9e6"), Color("8a8e92"), Color("6b1f22"), Color("b8b2a4"),
 		Color("2e3f5a"), Color("c44a2c"), Color("43484c")]
@@ -1190,14 +1213,14 @@ func _planting() -> void:
 	var palms := Chapel.new()
 	palms.w = w
 	for lx in [14.6, 27.0, -14.0]:
-		var at := world(lx, 1.0)
-		palms._palm(Vector3(at.x, LANDING_Y + 0.27, at.y), 7.0 + absf(lx) * 0.05, 770 + roundi(lx))
+		var at := world(lx, 0.95)
+		palms._palm(Vector3(at.x, _sidewalk(lx), at.y), 7.0 + absf(lx) * 0.05, 770 + roundi(lx))
 	for lx in [-36.0, -22.0, -13.5, 17.0, 30.5, 36.0]:
-		var at := world(lx, (WALK_EDGE + KERB_Z) / 2.0)
-		w._bamboo(Vector3(at.x, _sidewalk(lx) + 0.04, at.y), 0.7, 12, 780 + roundi(lx))
+		var at := world(lx, _green_beside(lx))
+		w._bamboo(Vector3(at.x, _sidewalk(lx), at.y), 0.7, 12, 780 + roundi(lx))
 	for lx in [-40.0, -31.0, -26.0, 12.0, 22.0, 31.0]:
 		var at := world(lx, 0.8)
-		w._shrub(Vector3(at.x, LANDING_Y + 0.27, at.y), 1.2, 790 + roundi(lx))
+		w._shrub(Vector3(at.x, _sidewalk(lx), at.y), 1.2, 790 + roundi(lx))
 	# The lobby's planter box: a palm over trimmed shrubs.
 	var box := world((LOBBY_BOX.x + LOBBY_BOX.y) / 2.0, (TOWER_FRONT + UPPER_END) / 2.0)
 	palms._palm(Vector3(box.x, WALK_Y + 0.08, box.y), 4.2, 777)

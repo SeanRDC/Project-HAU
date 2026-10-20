@@ -41,7 +41,7 @@ Files:
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane; its doorways are open |
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
-| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 12 m (`SETBACK`) from its OSM outline to match the team's map and leave room for its front; its raised ground floor (the walkway on a plinth; in front, along the whole building, a raised planter, the brown paver sidewalk at 0.5 m sloping to the ground at both ends and a grass strip with bamboo at the same height, held up by a low stone wall at the kerb by the cars; at the centre tower the long stair out to the kerb: the steps up to the elevator lobby across the tower, a deep brown landing joining the sidewalk, the flight down between its handrails with the pavers running on either side of it, and a planter box; clad piers, bar tables and bins, the diamond-tiled floor), the west end (the passage through the terracotta block and its steps, the ramp, the yard, the lane to MGN under the bridge), the Mary statue garden, and two rows of parked cars (by the chapel, and in front of SJH) |
+| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 12 m (`SETBACK`) from its OSM outline to match the team's map and leave room for its front; its raised ground floor (the walkway on a plinth; in front, along the whole building, grass with shrubs and bamboo at 0.5 m from the plinth to a low stone wall at the kerb (the front row of cars parks against it), and through it the brown paver sidewalk winding from side to side and sloping to the ground at both ends; at the centre tower the long stair out to the kerb: the steps up to the elevator lobby across the tower, a deep brown landing where the sidewalk meets it, the flight down between its handrails with grass and shrubs either side, and a planter box; clad piers, bar tables and bins, the diamond-tiled floor), the west end (the passage through the terracotta block and its steps, the ramp, the yard, the lane to MGN under the bridge), the Mary statue garden, and two rows of parked cars (by the chapel, and in front of SJH) |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
 | `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
@@ -356,6 +356,11 @@ Rules:
 - Keep the camera's sightlines clear: anything between the camera and the
   subject (lawn trees, for example) renders in front of it. At the Canteen
   framing the camera sits ~30 m back over the lawn; keep tall props out of that strip.
+
+**No flush faces.** Two faces at exactly the same depth flicker as the camera moves
+(z-fighting). Stack layers a little apart (SJH's front: stone base 0.03 under the grass,
+pavers 0.02 over it), build a flight of steps one block per tread rather than nested
+boxes (their sides would coincide), and stand nosings just proud of the step's front.
 
 ---
 
