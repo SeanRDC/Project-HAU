@@ -442,6 +442,8 @@ Night lights (in `world.lamps`, visible only at night):
 - Gym entrance lights: omni `#ffd79d`, 1.2, reach 6.0 (front doors, and MGN's porch); 1.0,
   reach 6.5 (two under the side canopy). Gym wall lamps are emissive only
   (`glow(#f6f1e1, 0, 1.6)`), no light.
+- Path bollards (the chapel's south walk): emissive only (`glow(#f2d38c, 0.15, 1.8)`),
+  no light, so a row of them costs nothing.
 - Canopy strips: omni `#ffcf92`, 0.55, reach 4.6, plus emissive strips (also the
   Student Center's ceiling, one at every other light panel).
 - Student Center daylight fill, on at every hour while the student is under its roof:
