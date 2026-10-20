@@ -57,6 +57,10 @@ const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
 	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0,
 	"octagon": 1.2, "slab": 2.4, "circles": 1.8}
+## Wall kinds that weather: drawn a second time with shaders/weathering.gdshader, a
+## grime band at their foot and faint paint patches over them.
+const WEATHERED := ["stucco", "concrete", "brick", "stone", "ledge"]
+const WEATHERING_SHADER := preload("res://shaders/weathering.gdshader")
 const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile": "d6d1c3",
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
@@ -74,6 +78,8 @@ var _batches := {}
 var _materials := {}
 var _textures := {}
 var _room_glass: StandardMaterial3D
+var _streaks: Array[StandardMaterial3D] = []
+var _weathering: ShaderMaterial
 var _grass: ShaderMaterial
 var _card_meshes := {}
 
@@ -245,6 +251,11 @@ func material(kind: String, tint := Color.WHITE) -> StandardMaterial3D:
 		made.uv1_world_triplanar = true
 		made.uv1_triplanar_sharpness = 40.0
 		made.uv1_scale = Vector3.ONE / float(TILE_METRES[kind])
+	if kind in WEATHERED:
+		if _weathering == null:
+			_weathering = ShaderMaterial.new()
+			_weathering.shader = WEATHERING_SHADER
+		made.next_pass = _weathering
 	_materials[key] = made
 	return made
 
@@ -684,6 +695,7 @@ func window(x: float, y: float, z: float, w := 2.05, h := 1.05) -> void:
 	for dy in [-h / 2.0, h / 2.0]:
 		box(Vector3(w + 0.09, 0.045, 0.075), Vector3(x, y + dy, z + 0.09), frame)
 	box(Vector3(w + 0.23, 0.08, 0.24), Vector3(x, y - h / 2.0 - 0.08, z + 0.11), material("stucco"))
+	streak(Vector3(x, y - h / 2.0 - 0.12, z), w, Vector3.BACK)
 
 ## window()'s look on any face: `normal` is the face's outward direction (±X or ±Z in
 ## the current frame), `at` the middle of the opening on the wall's surface. A dark
@@ -706,6 +718,49 @@ func framed_window(at: Vector3, width: float, height: float, normal: Vector3, li
 		piece.call(width + 0.09, 0.05, 0.075, 0.0, dy, 0.09, bar)
 	piece.call(width + 0.3, 0.09, 0.26, 0.0, -height / 2.0 - 0.1, 0.12, ledge)
 	piece.call(width + 0.36, 0.11, 0.16, 0.0, height / 2.0 + 0.14, 0.07, ledge)
+	streak(at + Vector3(0, -height / 2.0 - 0.15, 0), width, normal)
+
+## Rain streaks running down a wall from under a sill or ledge: `top` is the middle of
+## the streak's top edge on the wall's surface, `normal` the wall's outward direction.
+## A multiplied card, so it darkens whatever wall colour is under it. Two patterns,
+## picked by position, so a row of windows does not repeat.
+func streak(top: Vector3, width: float, normal: Vector3, length := 0.8) -> void:
+	if _streaks.is_empty():
+		for pattern in 2:
+			var made := StandardMaterial3D.new()
+			made.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			made.blend_mode = BaseMaterial3D.BLEND_MODE_MUL
+			made.albedo_texture = _streak_texture(7 + pattern * 13)
+			made.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			made.texture_repeat = false
+			made.uv1_scale = Vector3(3, 2, 1) # the whole pattern on every face of the card
+			made.disable_fog = true
+			made.disable_receive_shadows = true
+			_streaks.append(made)
+	var across := Vector3(-normal.z, 0, normal.x).abs()
+	var size := across * (width + 0.1) + Vector3(0, length, 0) + normal.abs() * 0.004
+	var pick := posmod(roundi(top.x * 3.0 + top.z * 5.0 + top.y * 2.0), 2)
+	box(size, top + Vector3(0, -length / 2.0, 0) + normal * 0.012, _streaks[pick])
+
+## A streak pattern: white is clean wall (the card multiplies), a soft wash right under
+## the sill and drips of random length that fade in hard steps.
+static func _streak_texture(seed_value: int) -> ImageTexture:
+	var image := Image.create(24, 32, false, Image.FORMAT_RGB8)
+	image.fill(Color.WHITE)
+	var random := RandomNumberGenerator.new()
+	random.seed = 9120 + seed_value
+	for x in range(2, 22):
+		var wash := 0.93 if x > 2 and x < 21 else 0.97
+		for y in 3:
+			image.set_pixel(x, y, Color(wash, wash, wash - 0.01))
+		if random.randf() < 0.45:
+			var drip := random.randi_range(6, 31)
+			var dark := random.randf_range(0.8, 0.88)
+			for y in range(1, drip):
+				var fade := float(y) / drip
+				var shade := minf(1.0, dark + ceilf(fade * 3.0) / 3.0 * (1.0 - dark) * 0.85)
+				image.set_pixel(x, y, Color(shade, shade, shade - 0.015))
+	return ImageTexture.create_from_image(image)
 
 ## A lit sign: a backing board and shaded text, readable at every zoom.
 func panel(text: String, at: Vector3, width: float, height: float, ink: Color, board := Color(0, 0, 0, 0)) -> Label3D:

@@ -139,7 +139,11 @@ the buffer size.
   camera's direction, not its position, so neither it nor its shadow twists while walking.
 - `shaders/edges.gdshader`: one-pixel dark lines where an object sits in front
   of something farther away, plus a faint highlight on convex corners. It is
-  read from depth and normals and multiplied over the image.
+  read from depth and normals and multiplied over the image. It also lays cloud
+  shadows that drift across the campus by day.
+- `shaders/weathering.gdshader`: a second pass on every wall material, a stepped
+  grime band at the foot of the walls and faint paint patches. Windows also get
+  rain streaks under their sills (`streak()` in `world.gd`).
 - `shaders/leaves.gdshader`: pixel foliage that sways a little (shadows follow)
   and glows when backlit.
 - `shaders/sky.gdshader`: a screen gradient for the orthographic camera, with

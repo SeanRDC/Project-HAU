@@ -45,7 +45,8 @@ Files:
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
 | `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
-| `shaders/edges.gdshader` | Pixel outlines and crease highlights over the 3D world |
+| `shaders/edges.gdshader` | Pixel outlines, crease highlights and drifting cloud shadows over the 3D world |
+| `shaders/weathering.gdshader` | The grime band and paint patches on every wall material (a second pass) |
 | `shaders/leaves.gdshader` | Foliage cards |
 | `shaders/sky.gdshader` | Screen-graded sky with night stars |
 | `shaders/display.gdshader` | Final colour grade and vignette |
@@ -293,6 +294,16 @@ To add a kind: add it to `TILE_METRES`, `PALETTE` and a `match` branch in
 `_texture()`. Keep grain low (2–9/255). Keep colours slightly desaturated and
 warm; the grade adds the final warmth.
 
+**Weathering.** The wall kinds in `WEATHERED` (stucco, concrete, brick, stone, ledge)
+get `shaders/weathering.gdshader` as a `next_pass`, multiplied over the wall: a grime
+band at the foot of every vertical face (`grime 0.22`, mean height `grime_height 1.15`
+m above world 0, wavering along the wall, in three hard steps) and faint paint patches
+(`patches 0.06`). It needs nothing from a building: use those kinds for walls and the
+weathering comes free. Under every `window()` and `framed_window()` sill, `streak()`
+lays a multiplied rain-streak card (two procedural 24×32 patterns, nearest filtered, 0.8
+m long); call `streak(top, width, normal)` yourself under other ledges, AC units or
+slabs.
+
 **Emissive** materials come from `glow(color, day, night)`, which registers the
 day and night energy so `set_night()` switches them. Lit windows use one shared
 warm glass (`#ffc281`, night energy 1.35) on about one window in four, chosen
@@ -317,6 +328,7 @@ Helpers in `world.gd`:
 | `box(size, at, material, turn := 0.0, tilt := 0.0)` | Every wall, slab, pier, rail and prop. Boxes with equal size and material become **one MultiMesh** at `_flush()`; keep using it, it is why thousands of boxes run fast. `turn` rotates about Y; `tilt` then leans the box about its own X (roof slopes, solar panels, open awning panes) |
 | `room_glass(lit)` | Window glass; `true` is the shared warm glass that glows at night |
 | `window(x, y, z, w, h)` | A full window: dark frame, glass (sometimes lit at night), mullions, sill |
+| `streak(top, width, normal, length)` | A rain-streak card down a wall from under a sill or ledge; `window()` and `framed_window()` add one each |
 | `framed_window(at, w, h, normal, lit, mullions)` | The same window on any face (`normal` ±X or ±Z), plus a head over it. Use it for every new building's windows, never a bare glass box: the frame, sill and head are what make a wall read in depth like the APS front |
 | `panel(text, at, width, height, ink, board)` | A sign: a board and a shaded `Label3D`, readable at every zoom |
 | `rod(from, to, radius, color)` | Poles, branches, trusses, rails at angles |
@@ -405,12 +417,20 @@ its zone's turn.
 | Preset | Hour | Sun offset (x, y, z) | Sun colour | Energy | Ambient | Sky top / horizon | Grade light / shade |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Morning | 8:00 | (55, 44, 60) | `#ffce96` | 1.08 | `#b8bec6` × 0.42 | `#5d8aaf` / `#edd3ae` | `#fff6e4` / `#eceef4` |
-| Noon | 12:00 | (−55, 95, 18) | `#fff4de` | 1.0 | `#bcc3c8` × 0.42 | `#5d8aaf` / `#c7d9dc` | `#fff6e4` / `#eceef4` |
+| Noon | 12:00 | (−55, 80, 34) | `#fff4de` | 1.42 | `#a9bdd8` × 0.32 | `#3f86d0` / `#bfdcf0` | `#fff6e4` / `#eceef4` |
 | Afternoon (default) | 16:30 | (−55, 44, 60) | `#ffce96` | 1.08 | `#b8bec6` × 0.42 | `#5d8aaf` / `#edd3ae` | `#fff6e4` / `#eceef4` |
 | Night | 21:00 | (55, 58, 60) | `#a7bee5` | 0.2 | `#6f86c2` × 0.3 | `#101c39` / `#364566` + stars | `#e6eeff` / `#c9d6ff` |
 
 Glow: intensity 0.25 by day (HDR threshold 1.6), 0.9 at night (threshold
-0.85). Fog colour follows the horizon colour.
+0.85). Fog colour follows the horizon colour. Noon is a clear, sunny Philippine
+midday: fog density 0.1 (0.6 at other hours), saturation 1.18 and contrast 1.08
+(1.05 and 1.04 otherwise), so it never reads flat or hazy.
+
+Cloud shadows (in `edges.gdshader`): `clouds` 0.5 at noon (a clear day), 0.85 morning and afternoon,
+0 at night. Each pixel follows the ray towards the sun (`sun_dir`, set by `_aim_sun()`)
+up to a cloud deck at 70 m, samples a 3-octave noise 48 m across drifting with `wind`
+(1.1, 0.45) m/s, and darkens in two hard steps (0.1 past 0.55 cover, 0.09 more past
+0.62), so the shadows read as pixel shapes and slide across roofs and roads.
 
 Night lights (in `world.lamps`, visible only at night):
 
@@ -502,7 +522,8 @@ anything is wet or has specular other than glass.
 
 | Shader | What it does | Parameters (defaults) | Rules |
 | --- | --- | --- | --- |
-| `edges.gdshader` | A full-screen quad on the camera (render priority 127) reads depth and normals. It draws a dark line where something sits in front of a farther surface and lightens convex creases by one pixel. It is **multiplied** over the image, so lighting, fog and glow stay intact | `line_dark 0.32`, `crease_light 0.16`, `depth_gap 0.45`, `strength` 1.0 when the pixel scale > 1, 0.7 at native resolution | The sky gets no lines. Don't add per-object outlines; this handles everything |
+| `edges.gdshader` | A full-screen quad on the camera (render priority 127) reads depth and normals. It draws a dark line where something sits in front of a farther surface and lightens convex creases by one pixel, and lays the drifting cloud shadows (see Lighting). It is **multiplied** over the image, so lighting, fog and glow stay intact | `line_dark 0.32`, `crease_light 0.16`, `depth_gap 0.45`, `strength` 1.0 when the pixel scale > 1, 0.7 at native resolution; `clouds`, `sun_dir`, `wind` | The sky gets no lines. Don't add per-object outlines; this handles everything |
+| `weathering.gdshader` | A multiplied second pass (`next_pass`) on the `WEATHERED` wall materials: a stepped grime band at the foot of vertical faces and faint paint patches, in world space | `grime 0.22`, `grime_height 1.15`, `patches 0.06` | Don't paint dirt into the wall colours; this keeps every wall consistent |
 | `leaves.gdshader` | Alpha-cut foliage cards (leaves, grass, vines) that sway (shadows follow), are lit as a round volume and glow when backlit; edge-on cards fade out | `sway 0.045` (grass 0.03), `phase` per tree, `center` (crown middle; far below for grass), `roundness` (1.0 trees, 0.9 grass), scissor 0.4, backlight 0.45 × leaf colour | Leaf images are procedural (`_leaf_material(seed, center)`), five greens from `#3a5650` to `#a8ab70`. Round normals are per pixel |
 | `sky.gdshader` | An orthographic camera sees one direction, so the sky grades over the screen instead; fixed 2-px stars at night. Lighting probes use a direction-based gradient | `top_color`, `horizon_color`, `ground_color`, `stars` (set by `_set_hour`) | |
 | `shaft.gdshader` | Light shafts under trees and the lamp reflections on wet ground: an additive card, brightest in the middle, fading at its edges and ends | `color`, `strength` (0.08) | Unshaded, no fog, never writes depth |

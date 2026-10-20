@@ -670,22 +670,28 @@ func _aim_sun(force := false) -> void:
 	var offset := _sun_offset * Vector3(1.0 - 2.0 * mgn, 1.0, 1.0)
 	var target := Vector3(22, 7, 0)
 	sun.look_at_from_position(target + Basis(Vector3.UP, turn) * offset, target)
+	edges.set_shader_parameter("sun_dir", sun.basis.z.normalized())
 
 func _set_hour(value: float) -> void:
 	hour = value
 	var night := hour >= 19.0 or hour < 6.0
 	var noon := hour >= 10.0 and hour < 15.0
 	var morning := hour < 10.0 and not night
-	_sun_offset = Vector3(55 if night or morning else -55, 58 if night else (95 if noon else 44), 18 if noon else 60)
+	# Noon is a clear, sunny Philippine midday: a strong white sun a little off overhead
+	# so the shadows still read, a blue sky fill in the shade, almost no haze.
+	_sun_offset = Vector3(55 if night or morning else -55, 58 if night else (80 if noon else 44), 34 if noon else 60)
 	_aim_sun(true)
 	sun.light_color = Color("a7bee5") if night else (Color("fff4de") if noon else Color("ffce96"))
-	sun.light_energy = 0.2 if night else (1.0 if noon else 1.08)
-	environment.ambient_light_color = Color("6f86c2") if night else (Color("bcc3c8") if noon else Color("b8bec6"))
-	environment.ambient_light_energy = 0.3 if night else 0.42
+	sun.light_energy = 0.2 if night else (1.42 if noon else 1.08)
+	environment.ambient_light_color = Color("6f86c2") if night else (Color("a9bdd8") if noon else Color("b8bec6"))
+	environment.ambient_light_energy = 0.3 if night else (0.32 if noon else 0.42)
+	environment.fog_density = 0.1 if noon else 0.6
+	environment.adjustment_saturation = 1.18 if noon else 1.05
+	environment.adjustment_contrast = 1.08 if noon else 1.04
 	environment.glow_intensity = 0.9 if night else 0.25
 	environment.glow_hdr_threshold = 0.85 if night else 1.6
-	var top := Color("101c39") if night else Color("5d8aaf")
-	var horizon := Color("364566") if night else (Color("c7d9dc") if noon else Color("edd3ae"))
+	var top := Color("101c39") if night else (Color("3f86d0") if noon else Color("5d8aaf"))
+	var horizon := Color("364566") if night else (Color("bfdcf0") if noon else Color("edd3ae"))
 	sky_material.set_shader_parameter("top_color", top)
 	sky_material.set_shader_parameter("horizon_color", horizon)
 	sky_material.set_shader_parameter("ground_color", Color("2a3040") if night else Color("8a8a7c"))
@@ -694,6 +700,8 @@ func _set_hour(value: float) -> void:
 	var grade := display.material as ShaderMaterial
 	grade.set_shader_parameter("light_tint", Color("e6eeff") if night else Color("fff6e4"))
 	grade.set_shader_parameter("shade_tint", Color("c9d6ff") if night else Color("eceef4"))
+	# Cloud shadows by day, a touch lighter in the slanting light; few at a clear noon.
+	edges.set_shader_parameter("clouds", 0.0 if night else (0.5 if noon else 0.85))
 	world.set_night(night)
 	if atmosphere:
 		atmosphere.set_hour(hour, night)
