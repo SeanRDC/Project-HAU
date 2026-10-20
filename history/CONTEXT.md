@@ -2,11 +2,11 @@
 
 **SJH's ground floor, 2026-10-20.** `areas/sjh.gd`: the cars park at road level and the
 ground floor is raised 0.9 m (`WALK_Y`) on a plinth behind an unbroken railing; along
-the whole front a planter, the brown paver sidewalk (0.5 m), a low wall and a grass and
-bamboo strip down to the kerb by the cars. SJH now stands 12 m back (`SETBACK`, was 10).
+the whole front a planter, the brown paver sidewalk and a grass and bamboo strip beside
+it (both 0.5 m), a low wall at the kerb by the cars. SJH now stands 12 m back (`SETBACK`, was 10).
 Clad piers, bar tables, bins, a diamond-tiled floor (`diamond` in world.gd). The centre
-tower opens into the elevator lobby up a long stair from the kerb: 5 steps, a 2 m
-landing, 4 steps.
+tower opens into the elevator lobby up a long stair from the kerb: 5 steps (between the
+handrails, pavers either side), a 2 m landing, 4 steps.
 At the west end a passage through the terracotta block leads to steps, a ramp, a yard
 and the lane to MGN under the bridge (scenery). `--view=sjh-walkway`, `sjh-lobby`,
 `sjh-west`, `sjh-steps`. See `sessions/2026-10-20-sjh-ground-floor.md`.

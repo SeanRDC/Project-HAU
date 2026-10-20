@@ -81,6 +81,12 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
   MGN is 2 m shorter to stay clear of MGN's south wing (`LANE`, `LANE_BACK`). The
   sidewalk uses the `brick` texture tinted brown, standing in for the zigzag pavers.
 
+- **Fourth round:** the grass strip is level with the brown sidewalk (0.5 m), not
+  sloping; the low stone wall stands at the kerb and holds both up. At the lobby the
+  bottom flight runs only between the handrails (`LOWER_HALF` 7, the rails moved to its
+  edges at ±6.9); either side of it the brown pavers run on at the landing's height out
+  to the kerb, and the landing itself is brown pavers too.
+
 ## What changed
 
 - `areas/sjh.gd`: the constants, `_deck`, `_stair`, `_yard`, `walkway_for`, `view_for`,
