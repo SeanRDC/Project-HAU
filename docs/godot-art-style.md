@@ -41,7 +41,7 @@ Files:
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane; its doorways are open |
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
-| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map, its covered walkway, the Mary statue garden at its west end, and two rows of parked cars (by the chapel, and in front of SJH) |
+| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map, its covered walkway, the Mary statue garden at its west end, and two rows of parked cars (by the chapel, and in front of SJH); the back from the rear photos (`assets/SJH BUILDING/rear/`) and the lane behind it, reached round the east end |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
 | `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
@@ -719,6 +719,12 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   `1 − view_for`). Because the camera then stands north of the chapel, the near plane
   also cuts everything north of the parking (z < 97), so the chapel and its trees
   never stand in front of SJH.
+- **SJH back lane** (`Sjh.rear_for`): behind SJH (local z under its back, x within the
+  building ± 2..6 m) the camera keeps the plain north view, like the APS front, and the
+  SJH, gym, chapel and MGN zones yield to it (`1 − rear_for`). The near plane cuts
+  everything past the lane's far kerb (the perimeter wall, the poles), but never nearer
+  than 0.5 m in front of the back's nearest top corner: turned and pitched, the slab's
+  top corners stand nearer than the kerb, and a deeper cut slices the facade.
 - **MGN zone** (`Mgn.view_for`): on the west road from z 66..74 down to the corner, the
   camera turns right round (−270°, three quarter turns, through south) to look west at
   MGN's corridor front, which faces east; the chapel zone yields to it
@@ -800,7 +806,8 @@ Three static functions in `world.gd` are the whole physics:
   and anything outside `walkable_ground()` (the north road and APS front, the
   patio, the strip, the west road, the lawn path, the chapel plaza and parking,
   the boulevard's walks, covered walkways, lanes, crossings and the fountain's apron).
-  The outer bounds reach x −192 for the boulevard's west end.
+  The outer bounds reach x −192 for the boulevard's west end and z 162 for the lane
+  behind SJH (its perimeter wall at z ≈ 157..161).
   Canteen rules are tested in its local frame.
 - `floor_height(x, z)`: the walking height (hall 0.45, steps 0.3/0.15, kerb 0,
   road −0.19, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03,
