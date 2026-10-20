@@ -220,7 +220,9 @@ func _ready() -> void:
 	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0],
 		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "mgn": [MGN_SPOT, 56.0], "middle": [MIDDLE_SPOT, 40.0],
 		"middle-north": [MIDDLE_NORTH_SPOT, 40.0], "fountain": [Vector2(-159.0, 61.0), 40.0],
-		"student-center": [STUDENT_CENTER_SPOT, 22.0]}
+		"student-center": [STUDENT_CENTER_SPOT, 22.0], "sjh-walkway": [Sjh.world(25.0, -1.8), 22.0],
+		"sjh-lobby": [Sjh.world(0.0, -1.5), 22.0], "sjh-west": [Sjh.world(48.6, -0.8), 22.0],
+		"sjh-steps": [Sjh.world(6.0, 4.0), 30.0]}
 	var start: Array = views.get(_args.get("view", ""), [Vector2(0.7, 5.3), 112.0])
 	var spot: Vector2 = start[0]
 	hour = float(_args.get("hour", "16.5"))
@@ -883,6 +885,8 @@ static func travel_places() -> Array:
 		["IH Gym inside", GYM_IN_SPOT, ARENA_WIDTH],
 		["St. Joseph Hall", SJH_SPOT, 64.0],
 		["SJH walkway", Sjh.world(25.0, -1.8), 22.0],
+		["SJH lobby", Sjh.world(0.0, -1.5), 22.0],
+		["SJH west entrance", Sjh.world(48.6, -0.8), 22.0],
 		["Mary statue", Vector2(-48.5, 113.6), 26.0],
 		["MGN", MGN_SPOT, 56.0],
 		["MGN entrance", Mgn.world(21.0, 2.5), 18.0],
@@ -1584,8 +1588,8 @@ func _verify_and_capture() -> void:
 		_update_camera(1.0)
 		checks.sjh_view_faces_front = sjh > 0.99 and (-camera.global_basis.z).dot(Vector3.BACK) > 0.95 \
 			and _all_visible([Sjh.world(0, 1).x], [0.0, 20.0], [Sjh.world(0, 1).y])
-		# Walking into SJH's covered walkway through a railing gap: the cutaway again.
-		var sjh_gap := Sjh.world(20.0, 2.5)
+		# Walking into SJH's covered walkway up the steps at a railing gap: the cutaway again.
+		var sjh_gap := Sjh.world(Sjh.GAPS[2], 2.6)
 		student.place(sjh_gap.x, sjh_gap.y)
 		_set_zoom(36.0, true)
 		_snap_follow()
@@ -1596,7 +1600,30 @@ func _verify_and_capture() -> void:
 			_update_camera(1.0 / 30.0)
 		var inside_local := Sjh.local(student.position.x, student.position.z)
 		checks.walk_into_sjh_walkway = inside_local.y < -1.0 and walkway > 0.95 and shown_width < HALL_WIDTH + 0.2 \
-			and camera.near > 5.0 and _all_visible([student.position.x], [0.3, 1.9], [student.position.z])
+			and camera.near > 5.0 and is_equal_approx(student.level(), Sjh.WALK_Y) 			and _all_visible([student.position.x], [student.position.y + 0.3, student.position.y + 1.9], [student.position.z])
+		# SJH's raised ground floor: the lobby and the passage are on the walkway's floor, the
+		# steps and the ramp climb to it, the shrub bed, the piers, the tables and the lift
+		# wall stop the walk, the yard and the lane at the west end are open, and walking
+		# from the yard up the west steps leads into the corridor.
+		var deck := func(u: float, v: float) -> bool:
+			var at := Sjh.world(u, v)
+			return not World.blocked(at.x, at.y) and is_equal_approx(World.floor_height(at.x, at.y), Sjh.WALK_Y)
+		var solid := func(u: float, v: float) -> bool:
+			var at := Sjh.world(u, v)
+			return World.blocked(at.x, at.y)
+		var height := func(u: float, v: float) -> float:
+			var at := Sjh.world(u, v)
+			return World.floor_height(at.x, at.y)
+		var climbs: bool = height.call(Sjh.GAPS[1], 1.25) < Sjh.WALK_Y and height.call(Sjh.GAPS[1], 1.25) > 0.0 			and height.call(0.0, 2.0) < height.call(0.0, 1.2) and height.call(44.0, 1.5) > height.call(48.0, 1.5) 			and height.call(48.0, 1.5) > 0.0
+		var west := Sjh.world(48.6, -0.8)
+		student.place(west.x, west.y)
+		_snap_follow()
+		var east := Sjh.world(-1.0, -0.8) - Sjh.world(0.0, -0.8)
+		for i in 200:
+			student.move(east, false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		var up_the_west_steps := Sjh.local(student.position.x, student.position.z).x < Sjh.WALK_END - 2.0 			and is_equal_approx(student.level(), Sjh.WALK_Y)
+		checks.sjh_ground_floor = deck.call(0.0, -1.5) and deck.call(0.0, 0.6) and deck.call(43.0, -0.8) and deck.call(39.5, 1.5) 			and climbs and solid.call(25.0, 1.1) and solid.call(Sjh.PIERS[1], -0.5) and solid.call(Sjh.TABLES[1], Sjh.TABLE_Z) 			and solid.call(0.0, Sjh.WALL_Z) and solid.call(8.5, 0.5) and solid.call(25.0, Sjh.RAIL_Z) 			and not solid.call(48.6, -0.8) and not solid.call(51.2, -8.0) and not solid.call(49.4, -17.0) 			and is_equal_approx(height.call(51.2, -8.0), -0.04) and up_the_west_steps
 		# MGN: built on its plot facing the west road, solid, its garden planted, the entry
 		# walk under the wing open up to the turnstile, the road beside it walkable.
 		var mgn_node := scene.find_child("MGN", false, false) as Node3D

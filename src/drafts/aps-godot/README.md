@@ -19,7 +19,7 @@ built yet is a reserved plot, and a building is merged on its plot as
   walk into.
 - **The chapel** with its plaza, oval parking and the road loop round its lawn.
 - **The IH Gym**, outside at its real size and walkable inside.
-- **St. Joseph Hall**, its covered walkway, the Mary statue garden and parking.
+- **St. Joseph Hall**, its raised ground floor (the walkway, the elevator lobby, the west side entrance and ramp, the lane to MGN), the Mary statue garden and parking.
 - **MGN** from outside, walkable up to the turnstile, and **HAU Boulevard** (the
   middle road) between PGN and the Main Building out to the angel fountain.
 - **The Student Center**, the open arcade along the Main Building beside the
@@ -171,7 +171,7 @@ because their kernel grows with zoom.
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both open doorways, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
 | `areas/gym_interior.gd` | Inside the gym, walkable everywhere a student could go: the court with the seal, the bleachers upstairs on both sides, the balcony, the lobby, equipment room and corridors, the stage and backstage, the roof structure; its storeys, collision and cutaway groups |
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
-| `areas/sjh.gd` | St. Joseph Hall: the slab, its covered walkway (walk in through a railing gap), the Mary statue garden, the parking and cars |
+| `areas/sjh.gd` | St. Joseph Hall: the slab, its raised ground floor (the walkway up steps at the railing gaps, the elevator lobby up the wide steps in the middle, the side entrance and ramp at the west end, the lane to MGN under the bridge), the Mary statue garden, the parking and cars |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside: the open-corridor block, the box-window wing over the entrance (walk in up to the turnstile), the open stair, the north block, the south wing with its roof tank, the raised garden. The camera turns to face it on the west road |
 | `areas/student_center.gd` | The Student Center, the open arcade between the boulevard and the Main Building: the planter and rail (open at the crossings), the cream posts and the roof (it fades while you are under it), Cafe Juan's windows and doorway, the courtyard gate, the offices, the study tables, the ATM and cafe tables at the west end, the brick apron out to the fountain, the lawn at the east end. Its camera weights |
 | `areas/middle_road.gd` | HAU Boulevard between PGN and the Main Building, from the west road to the angel fountain: the lanes and grass median, the hedge strips and poles, the octagon-paver walks and bronze lampposts, the shrub strips and trees, both covered walkways (pillars, slatted roofs, benches), the zebras, signs, bins and urns, and the fountain. Its camera weights (which side it faces, the covered walkway cutaway) |

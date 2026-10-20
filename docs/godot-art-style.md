@@ -41,7 +41,7 @@ Files:
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane; its doorways are open |
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
-| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map, its covered walkway, the Mary statue garden at its west end, and two rows of parked cars (by the chapel, and in front of SJH) |
+| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map; its raised ground floor (the walkway on a plinth behind a shrub bed, steps at the railing gaps, clad piers, bar tables and bins, the diamond-tiled floor, the elevator lobby up wide steps in the centre tower), the west end (the passage through the terracotta block and its steps, the ramp, the yard, the lane to MGN under the bridge), the Mary statue garden, and two rows of parked cars (by the chapel, and in front of SJH) |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
 | `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
@@ -102,7 +102,8 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
 - **Ground levels:** lawn −0.2 (the base under everything), road −0.19, kerb
   top 0.0, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03, patio
   −0.05, canteen hall floor 0.45, chapel floor 0.9, gym hall floor 0.75 (the
-  stands' deck and the balcony 4.95, bleacher rows +0.4 each, the stage 1.95).
+  stands' deck and the balcony 4.95, bleacher rows +0.4 each, the stage 1.95), SJH's
+  raised ground floor 0.9 (`Sjh.WALK_Y`: the cars park at road level, steps of 0.15).
 - **Storeys:** APS wing 3.05 m, tall block 3.0 m, canteen 3.05 m over a
   ~5.3 m open hall.
 - **Plan:** APS is an L. The canteen wing stands forward from the stair tower,
@@ -718,7 +719,12 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   over from the chapel and gym zones (their weights are multiplied by
   `1 − view_for`). Because the camera then stands north of the chapel, the near plane
   also cuts everything north of the parking (z < 97), so the chapel and its trees
-  never stand in front of SJH.
+  never stand in front of SJH. South of the road it also covers SJH's west end (the
+  yard, the side entrance's steps, the lane to MGN: z > 119.5, x −66..−50), so the MGN
+  view yields there and the camera keeps facing SJH. Inside, the walkway's cutaway
+  (`Sjh.walkway_for`) covers the elevator lobby and the passage through the west
+  terracotta block too. `--view=sjh-walkway`, `sjh-lobby`, `sjh-west` and `sjh-steps`
+  start there; F1 has the walkway, the lobby and the west entrance.
 - **MGN zone** (`Mgn.view_for`): on the west road from z 66..74 down to the corner, the
   camera turns right round (−270°, three quarter turns, through south) to look west at
   MGN's corridor front, which faces east; the chapel zone yields to it
