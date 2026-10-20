@@ -107,6 +107,10 @@ var hour := 16.5
 var _sun_offset := Vector3(-55, 44, 60)
 var _sun_turn := INF
 var orbit := 0.12
+## Holding the right mouse button and dragging turns the angle, like Q/E (radians per pixel).
+const DRAG_TURN := 0.0015
+var _dragging := false
+var _drag_from := Vector2.ZERO
 var width := 112.0
 var target_width := 112.0
 var follow := Vector2.ZERO
@@ -582,6 +586,14 @@ func _update_camera(delta: float) -> void:
 	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
 	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle + north_focus * middle_north
+	# Every framing, the wide ones too, keeps the student in the middle across the screen:
+	# the focus slides sideways onto them and keeps the depth its view frames.
+	var yaw := _yaw()
+	var across := Vector2(cos(yaw), -sin(yaw))
+	var flat := Vector2(focus.x, focus.z)
+	flat += across * (roundf(follow.dot(across) / pixel) * pixel - flat.dot(across))
+	focus.x = flat.x
+	focus.z = flat.y
 	# Inside a covered corridor (the APS hallway, SJH's walkway, the boulevard's covered
 	# walkways, the Student Center): glide in close and look a little down along it. Each
 	# gives the corridor's middle, how far in front of it the cut goes, and its ceiling.
@@ -608,7 +620,6 @@ func _update_camera(delta: float) -> void:
 	focus = focus.lerp(corridor, inside)
 	distance = lerpf(distance, 20.0, inside)
 	lift = lerpf(lift, 5.0, inside)
-	var yaw := _yaw()
 	var toward := Vector3(sin(yaw), 0.0, cos(yaw))
 	camera.position = focus + Vector3(sin(yaw) * distance, lift, cos(yaw) * distance)
 	camera.look_at(focus)
@@ -618,6 +629,7 @@ func _update_camera(delta: float) -> void:
 	var cut := corridor + toward * absf(cut_offset)
 	var cut_depth := (Vector3(cut.x, focus.y, cut.z) - camera.position).dot(forward)
 	camera.near = maxf(0.1, cut_depth * inside)
+	var inside_near := camera.near
 	# Facing St. Joseph Hall the camera stands north of the chapel: everything north of
 	# the parking (the chapel, its trees) is cut away the same way as it turns round.
 	if sjh > 0.0:
@@ -649,6 +661,18 @@ func _update_camera(delta: float) -> void:
 		# stands above it)
 		var south_edge := (Vector3(focus.x, 0.0, MiddleRoad.FACE_S - 0.2) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, south_edge * smoothstep(0.0, 1.0, middle_north))
+	# Those cuts take the near ground away too; zoomed out, the frame would reach past the
+	# cut's edge and show an empty band at the bottom. Raise the frame (straight up the
+	# screen, so the cut stays where it is) until the edge sits on its bottom.
+	if camera.near > inside_near + 0.01:
+		var up := camera.global_basis.y
+		var level := Vector3(forward.x, 0.0, forward.z).normalized()
+		var below := -0.2 - camera.position.y
+		var ahead := (camera.near - below * forward.y) / level.dot(forward)
+		var edge := ahead * level.dot(up) + below * up.y
+		var raise := ceilf((edge + view_metres.y / 2.0) / pixel) * pixel
+		if raise > 0.0:
+			camera.position += up * raise
 	var grade := display.material as ShaderMaterial
 	grade.set_shader_parameter("cut", inside)
 	if inside > 0.0:
@@ -773,7 +797,7 @@ func _build_interface() -> void:
 	var controls := Label.new()
 	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    G  Rain    C  Character    M  Mute\n" + \
 		"E/Space  Talk (near someone)\n" + \
-		"Wheel or +/-  Zoom    1-9, 0  Framings    Q/E  Angle    P  Pixels\n" + \
+		"Wheel or +/-  Zoom    1-9, 0  Framings    Q/E or right-drag  Angle    P  Pixels\n" + \
 		"R  Reset    F11  Fullscreen    F1  Fast travel (dev)    F2  Free cam (dev)    Tab  Hide controls    Esc  Close"
 	controls.add_theme_font_size_override("font_size", 14)
 	controls.add_theme_color_override("font_color", Color("e7e2d6"))
@@ -890,8 +914,32 @@ func _travel_to(index: int) -> void:
 	_update_camera(1.0)
 	sound.select()
 
+## Right-drag turns the angle: the cursor hides while the button is held and comes back
+## where it was. Mouse right looks right, as Q/E do with E.
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
+		if event.pressed and not free_cam.active and not (travel and travel.is_open()):
+			_dragging = true
+			_drag_from = event.position
+			if DisplayServer.get_name() != "headless":
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		elif not event.pressed:
+			_end_drag()
+	elif event is InputEventMouseMotion and _dragging:
+		orbit = clampf(orbit - event.relative.x * DRAG_TURN, -0.25, 0.25)
+		get_viewport().set_input_as_handled()
+
+func _end_drag() -> void:
+	if not _dragging:
+		return
+	_dragging = false
+	if DisplayServer.get_name() != "headless":
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		Input.warp_mouse(_drag_from)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F1:
+		_end_drag()
 		_leave_free_cam()
 		travel.toggle()
 		return
@@ -899,6 +947,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if free_cam.active:
 			_leave_free_cam()
 		else:
+			_end_drag()
 			free_cam.enter()
 			pixel_scale = 0
 			_resize()
@@ -1048,6 +1097,9 @@ func _process(delta: float) -> void:
 	_listen()
 	if not _held([KEY_E]):
 		_e_talk = false
+	if _dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+		_end_drag() # released while the window was not listening
+
 	orbit = clampf(orbit + (float(_held([KEY_E]) and not _e_talk) - float(_held([KEY_Q]))) * delta * 0.25, -0.25, 0.25)
 	_glide_zoom()
 	_update_camera(delta)
@@ -1462,11 +1514,14 @@ func _verify_and_capture() -> void:
 			_update_camera(1.0 / 30.0)
 		checks.parking_to_chapel_walk = student.position.z < ChapelSouth.PATH[4].y
 		student.position = saved
+		# The wide framings follow the student: from the middle of the L (where the 112 m
+		# frame used to stay) the whole APS and the canteen fit.
+		student.place(-7.85, 5.3)
 		_set_zoom(112.0, true)
 		_snap_follow()
 		_update_camera(1.0)
 		checks.wide_shows_l = _all_visible([-62.5, 43.3], [0.0, 13.4], [-3.4, 0.3]) and _all_visible([33.0, 43.3], [0.0, 18.4], [24.9])
-		student.place(0.7, 5.3)
+		student.place(5.72, 5.3)
 		_set_zoom(56.0, true)
 		_snap_follow()
 		_update_camera(1.0)
@@ -1581,7 +1636,9 @@ func _verify_and_capture() -> void:
 		var lawn_cut := (Vector3(Chapel.NOSE.x, 1.0, Chapel.NOSE.y) - camera.position).dot(forward) < camera.near
 		checks.walk_past_mgn = student.position.z > 85.0 and mgn > 0.95 and forward.dot(Vector3.LEFT) > 0.9 \
 			and camera.position.x > Mgn.CUT_X and camera.near > (Vector3(Mgn.CUT_X, 0, student.position.z) - camera.position).dot(forward) - 1.0
-		student.place(MGN_SPOT.x, MGN_SPOT.y)
+		# from the middle of its front, on the road (the frame follows the student)
+		var mgn_middle := Mgn.world(6.0, Mgn.local(MGN_SPOT.x, MGN_SPOT.y).y)
+		student.position = Vector3(mgn_middle.x, student.position.y, mgn_middle.y)
 		_was_perched = false # left over from the gym checks, it would cap the zoom
 		_set_zoom(56.0, true)
 		_snap_follow()
@@ -1867,6 +1924,26 @@ func _verify_and_capture() -> void:
 		_fly(0.5)
 		_leave_free_cam()
 		checks.free_cam = same_view and flown and risen and student.position == still and not free_cam.active 			and camera.projection == Camera3D.PROJECTION_ORTHOGONAL and is_equal_approx(camera.far, 240.0) 			and camera.position.distance_to(from) < 0.01
+		# Right-drag turns the angle while the button is held, within the Q/E range.
+		var saved_orbit := orbit
+		orbit = 0.12
+		var right := InputEventMouseButton.new()
+		right.button_index = MOUSE_BUTTON_RIGHT
+		right.pressed = true
+		_input(right)
+		var drag := InputEventMouseMotion.new()
+		drag.relative = Vector2(20, 0)
+		_input(drag)
+		var turned := is_equal_approx(orbit, 0.12 - 20.0 * DRAG_TURN)
+		drag.relative = Vector2(-1000, 0)
+		_input(drag)
+		var clamped := is_equal_approx(orbit, 0.25)
+		right.pressed = false
+		_input(right)
+		_input(drag)
+		checks.drag_angle = turned and clamped and not _dragging and is_equal_approx(orbit, 0.25)
+		orbit = saved_orbit
+		_update_camera(1.0)
 	var okay := not checks.values().has(false)
 	print(JSON.stringify({"scene": "APS 2.5D", "checks": checks, "checks_pass": okay, "boxes": world.box_count,
 		"nodes": scene.get_child_count(), "viewport": [viewport.size.x, viewport.size.y], "pixel_scale": pixel_scale,
