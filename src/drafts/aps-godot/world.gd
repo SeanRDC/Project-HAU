@@ -43,6 +43,7 @@ const LAWN_SHEDS: Array[Vector2] = [Vector2(-14.0, 15.4), Vector2(-7.8, 17.6), V
 const LEAVES_SHADER := preload("res://shaders/leaves.gdshader")
 const Roads := preload("res://roads.gd")
 const Chapel := preload("res://areas/chapel.gd")
+const ChapelSouth := preload("res://areas/chapel_south.gd")
 const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
 const Hallway := preload("res://areas/hallway.gd")
@@ -100,9 +101,9 @@ static func in_garden(x: float, z: float) -> bool:
 
 ## Where the student may walk outside the buildings: the north road and the APS
 ## front, the patio and canteen, the road past the canteen's tip, the strip by the
-## Covered Court, the west road, the lawn path, the chapel's plaza and parking, and
-## the east road down past the gym with its apron and lane. The south road waits for
-## SJH (its view needs that building).
+## Covered Court, the west road, the lawn path, the chapel's plaza and parking, the walk
+## along the chapel's south side, and the east road down past the gym with its apron
+## and lane. The south road waits for SJH (its view needs that building).
 static func walkable_ground(x: float, z: float) -> bool:
 	var across := across_road(x, z)
 	if across >= 2.2 and across <= 10.6:
@@ -114,7 +115,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
 			or StudentCenter.walkable(x, z):
 		return true
-	return Chapel.walkable(x, z)
+	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
 static func in_canteen(x: float, z: float) -> bool:
 	var local := canteen_local(x, z)
@@ -134,7 +135,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 			return true # rear wall, end walls, and the part inside the tower
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
-	elif Chapel.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
+	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
 			or StudentCenter.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
@@ -188,6 +189,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 	var plaza := Chapel.floor_height(x, z)
 	if not is_nan(plaza):
 		return plaza
+	var walk := ChapelSouth.floor_height(x, z)
+	if not is_nan(walk):
+		return walk
 	if absf(x) < 8.75 and z < 3.85:
 		return 0.03 # canopy tile
 	return -0.04 if across < 4.0 else -0.2
@@ -206,6 +210,7 @@ func build(parent: Node3D) -> void:
 	_yard()
 	_left_garden()
 	Chapel.new().build(self)
+	ChapelSouth.new().build(self)
 	Hallway.new().build(self)
 	Sjh.new().build(self)
 	Mgn.new().build(self)
@@ -1208,6 +1213,11 @@ func _grasses() -> void:
 				return false # worn dirt under the picnic sheds
 		if absf(z - 33.6) < 1.3 and x > -34.8 and x < 13.8:
 			return false # the jogging path
+		if ChapelSouth.walkable(x, z):
+			if ChapelSouth.from_path(x, z) < ChapelSouth.WIDTH / 2.0 + 0.25:
+				return false # the path along the chapel's south side
+			if not ChapelSouth.grassy(x, z) and random.randf() > 0.25:
+				return false # only thin grass on the dirt under the trees
 		var at := Vector2(x, z)
 		if not Geometry2D.is_point_in_polygon(at, inner) or Chapel.walkable(x, z) or Sjh.on_parking(x, z):
 			return false
