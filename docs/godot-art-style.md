@@ -770,7 +770,10 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   `*_for(x, z)` weight, a corridor middle, a cut offset and a ceiling.
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
   away/towards, rotated by the zone's turn, so holding D walks you round the corner.
-- **Q/E** orbit ±0.25 rad. Default orbit 0.12. Smooth zoom (rate 10). **R** resets.
+- **Q/E** orbit ±0.25 rad. Default orbit 0.12. **Holding the right mouse button and
+  dragging** turns the same orbit (`DRAG_TURN` 0.004 rad per pixel, mouse right looks
+  right), within the same range; the cursor hides while held and comes back where it
+  was (the `drag_angle` check). Smooth zoom (rate 10). **R** resets.
 
 ---
 

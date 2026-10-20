@@ -96,7 +96,7 @@ NPC checks fail.
 | Mouse wheel, +/- | Zoom (smooth), in to about the student's own height |
 | 1-6 | APS + canteen, Whole building, Corridor, Canteen (patio), Close-up, Chapel (plaza) |
 | 7-9, 0 | IH Gym (front), Gym side (the side entrance from the lane), SJH, Gym inside (the court) |
-| Q/E | Camera angle |
+| Q/E, or right-drag | Camera angle (hold the right mouse button and drag) |
 | T | Morning, noon, afternoon, night |
 | G | Rain on or off (it also comes and goes on its own) |
 | C | Boy / girl |
