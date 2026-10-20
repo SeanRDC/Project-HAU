@@ -808,8 +808,12 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   they ease out over 0.1 rad, and instead everything but the ground nearer to the camera
   than the student (from 5 m nearer, gone by 1.5 m nearer) dithers out: Godot's
   pixel-dither distance fade on the StandardMaterials (`World.set_occluder_fade`,
-  `GROUND_KINDS` never fade), the same by hand in `leaves.gdshader` (`eye`, `fade`), and
-  no grime on fading walls in `weathering.gdshader`. It measures straight-line distance,
+  `GROUND_KINDS` never fade), the same by hand in `leaves.gdshader`, and no grime on
+  fading walls in `weathering.gdshader`; the shaders read the global uniforms
+  `occluder_eye` and `occluder_fade` (`World.add_fade_globals`). **The fade mode stays on**
+  (off is a 1 mm fade): switching it on and off rebuilt every material and stalled a frame
+  each time the turn crossed ±0.25, and the distances are only rewritten when they move
+  by 0.25 m. **The turn eases** after where it was dragged (`orbit_goal`, rate 16). It measures straight-line distance,
   so the high parts of a tall wall behind the student can dither too. Inside a corridor's
   cutaway the turn is held to ±0.25 (`_orbit()`). **Holding the right mouse button and
   dragging** turns the same orbit (`DRAG_TURN` 0.0015 rad per pixel, mouse right looks

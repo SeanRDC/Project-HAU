@@ -78,12 +78,11 @@ var trees: Array[Vector4] = []
 var box_count := 0
 var _batches := {}
 var _materials := {}
-## Every tree's foliage material, for the occluder fade.
-var foliage: Array[ShaderMaterial] = []
 ## Kinds that are the ground: they never fade, so the floor stays under the student.
 const GROUND_KINDS := ["grass", "lawn", "road", "pavers", "octagon", "floor", "slab", "circles", "diamond",
 	"dirt", "concrete", "tile", "stripes"]
 var _fading := false
+var _span := Vector2(-1.0, -1.0)
 var _textures := {}
 var _room_glass: StandardMaterial3D
 var _streaks: Array[StandardMaterial3D] = []
@@ -263,6 +262,12 @@ func material(kind: String, tint := Color.WHITE) -> StandardMaterial3D:
 		made.uv1_world_triplanar = true
 		made.uv1_triplanar_sharpness = 40.0
 		made.uv1_scale = Vector3.ONE / float(TILE_METRES[kind])
+	if not kind in GROUND_KINDS:
+		# The occluder fade stays on, so turning it on and off never rebuilds the material
+		# (that stalled a frame); off, it only fades the first millimetre.
+		made.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER
+		made.distance_fade_min_distance = 0.0
+		made.distance_fade_max_distance = 0.001
 	if kind in WEATHERED:
 		if _weathering == null:
 			_weathering = ShaderMaterial.new()
@@ -281,36 +286,32 @@ func glow(color: Color, day: float, night: float) -> StandardMaterial3D:
 
 ## The occluder fade, for camera angles turned past what a view's cut-aways were made for:
 ## everything but the ground nearer to the camera at `eye` than `near` metres is gone, and
-## it dithers back in by `far`. Off, nothing fades. (Switching it on the first time
-## compiles the dithered variant of each material, a short hitch.)
+## it dithers back in by `far`. Off, nothing fades. The shaders read it from two global
+## uniforms, one write a frame; the StandardMaterials are only touched when the distances
+## really move (the camera's turn does not move them).
 func set_occluder_fade(on: bool, eye: Vector3, near: float, far: float) -> void:
-	if on != _fading:
-		_fading = on
-		var mode := BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER if on else BaseMaterial3D.DISTANCE_FADE_DISABLED
-		for made in _fade_materials():
-			made.distance_fade_mode = mode
-	var span := Vector2(near, far) if on else Vector2(-2.0, -1.0)
-	if on:
-		for made in _fade_materials():
-			made.distance_fade_min_distance = near
-			made.distance_fade_max_distance = far
-	elif not _fading and span.x < 0.0 and foliage.size() > 0 and foliage[0].get_shader_parameter("fade") == span:
-		return # already off everywhere
-	for made in foliage:
-		made.set_shader_parameter("eye", eye)
-		made.set_shader_parameter("fade", span)
-	if _weathering != null:
-		_weathering.set_shader_parameter("eye", eye)
-		_weathering.set_shader_parameter("fade", span)
-
-func _fade_materials() -> Array[StandardMaterial3D]:
-	var list: Array[StandardMaterial3D] = []
+	RenderingServer.global_shader_parameter_set("occluder_eye", eye)
+	RenderingServer.global_shader_parameter_set("occluder_fade", Vector2(near, far) if on else Vector2(-2.0, -1.0))
+	var span := Vector2(near, far) if on else Vector2(0.0, 0.001)
+	if on == _fading and span.distance_to(_span) < 0.25:
+		return
+	_fading = on
+	_span = span
 	for key in _materials:
 		if not (str(key).get_slice(":", 0) in GROUND_KINDS):
-			list.append(_materials[key])
+			(_materials[key] as StandardMaterial3D).distance_fade_min_distance = span.x
+			(_materials[key] as StandardMaterial3D).distance_fade_max_distance = span.y
 	for entry in glows:
-		list.append(entry[0])
-	return list
+		(entry[0] as StandardMaterial3D).distance_fade_min_distance = span.x
+		(entry[0] as StandardMaterial3D).distance_fade_max_distance = span.y
+
+## The global shader uniforms the fade uses; added once, before anything is drawn.
+static var _globals_added := false
+static func add_fade_globals() -> void:
+	if not _globals_added:
+		_globals_added = true
+		RenderingServer.global_shader_parameter_add("occluder_eye", RenderingServer.GLOBAL_VAR_TYPE_VEC3, Vector3.ZERO)
+		RenderingServer.global_shader_parameter_add("occluder_fade", RenderingServer.GLOBAL_VAR_TYPE_VEC2, Vector2(-2.0, -1.0))
 
 func set_night(night: bool) -> void:
 	for entry in glows:
@@ -633,7 +634,6 @@ func _foliage(image: Image, seed_value: int, center: Vector3) -> ShaderMaterial:
 	# Fully round: the normal depends only on position, so crossed cards meet without
 	# a seam and the outline shader does not trace a grid through the crown.
 	made.set_shader_parameter("roundness", 1.0)
-	foliage.append(made)
 	return made
 
 ## Grass blades for every tuft on campus: one shared material, lit like the lawn.

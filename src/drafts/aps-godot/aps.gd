@@ -107,6 +107,9 @@ var hour := 16.5
 var _sun_offset := Vector3(-55, 44, 60)
 var _sun_turn := INF
 var orbit := 0.12
+## Where the player has turned the camera to (Q/E, right-drag); `orbit` eases after it, so
+## the turn glides rather than stepping with each mouse event.
+var orbit_goal := 0.12
 ## The camera turns ORBIT_MAX either way (Q/E, right-drag). The views' cut-aways were made
 ## for ORBIT_CUT either way: past it they ease out, and anything nearer the camera than
 ## the student fades instead (world.gd set_occluder_fade). In a corridor's cutaway the
@@ -184,6 +187,7 @@ func _ready() -> void:
 		_args[parts[0]] = parts[1] if parts.size() > 1 else "true"
 	_build_display()
 	_build_lighting()
+	World.add_fade_globals()
 	world.build(scene)
 	_collect_cutaways()
 	student = Student.new()
@@ -238,6 +242,7 @@ func _ready() -> void:
 		hour = 16.5
 	pixel_mode = _args.get("pixel", "auto") if PIXEL_MODES.has(_args.get("pixel", "auto")) else "auto"
 	orbit = clampf(float(_args.get("angle", "0.12")), -ORBIT_MAX, ORBIT_MAX)
+	orbit_goal = orbit
 	if _args.has("girl"):
 		student.set_character("girl")
 	# --level= starts the student on an upper storey inside the gym (the stands, the stage).
@@ -898,6 +903,7 @@ func _choose_framing(index: int) -> void:
 func _reset() -> void:
 	student.place(0.7, 5.3)
 	orbit = 0.12
+	orbit_goal = orbit
 	_snap_follow()
 	_set_hour(16.5)
 	_set_zoom(112.0)
@@ -965,7 +971,7 @@ func _input(event: InputEvent) -> void:
 		elif not event.pressed:
 			_end_drag()
 	elif event is InputEventMouseMotion and _dragging:
-		orbit = clampf(orbit - event.relative.x * DRAG_TURN, -ORBIT_MAX, ORBIT_MAX)
+		orbit_goal = clampf(orbit_goal - event.relative.x * DRAG_TURN, -ORBIT_MAX, ORBIT_MAX)
 		get_viewport().set_input_as_handled()
 
 func _end_drag() -> void:
@@ -1153,7 +1159,8 @@ func _process(delta: float) -> void:
 	if _dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 		_end_drag() # released while the window was not listening
 
-	orbit = clampf(orbit + (float(_held([KEY_E]) and not _e_talk) - float(_held([KEY_Q]))) * delta * 0.25, -ORBIT_MAX, ORBIT_MAX)
+	orbit_goal = clampf(orbit_goal + (float(_held([KEY_E]) and not _e_talk) - float(_held([KEY_Q]))) * delta * 0.25, -ORBIT_MAX, ORBIT_MAX)
+	orbit = lerpf(orbit, orbit_goal, 1.0 - exp(-delta * 16.0))
 	_glide_zoom()
 	_update_camera(delta)
 	_update_cutaways(delta)
@@ -2004,7 +2011,7 @@ func _verify_and_capture() -> void:
 		checks.free_cam = same_view and flown and risen and student.position == still and not free_cam.active 			and camera.projection == Camera3D.PROJECTION_ORTHOGONAL and is_equal_approx(camera.far, 240.0) 			and camera.position.distance_to(from) < 0.01
 		# Right-drag turns the angle while the button is held, within the Q/E range.
 		var saved_orbit := orbit
-		orbit = 0.12
+		orbit_goal = 0.12
 		var right := InputEventMouseButton.new()
 		right.button_index = MOUSE_BUTTON_RIGHT
 		right.pressed = true
@@ -2012,15 +2019,16 @@ func _verify_and_capture() -> void:
 		var drag := InputEventMouseMotion.new()
 		drag.relative = Vector2(20, 0)
 		_input(drag)
-		var turned := is_equal_approx(orbit, 0.12 - 20.0 * DRAG_TURN)
+		var turned := is_equal_approx(orbit_goal, 0.12 - 20.0 * DRAG_TURN)
 		drag.relative = Vector2(-1000, 0)
 		_input(drag)
-		var clamped := is_equal_approx(orbit, ORBIT_MAX)
+		var clamped := is_equal_approx(orbit_goal, ORBIT_MAX)
 		right.pressed = false
 		_input(right)
 		_input(drag)
-		checks.drag_angle = turned and clamped and not _dragging and is_equal_approx(orbit, ORBIT_MAX)
+		checks.drag_angle = turned and clamped and not _dragging and is_equal_approx(orbit_goal, ORBIT_MAX)
 		orbit = saved_orbit
+		orbit_goal = saved_orbit
 		_update_camera(1.0)
 	var okay := not checks.values().has(false)
 	print(JSON.stringify({"scene": "APS 2.5D", "checks": checks, "checks_pass": okay, "boxes": world.box_count,
