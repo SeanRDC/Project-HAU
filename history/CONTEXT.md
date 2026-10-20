@@ -1,5 +1,16 @@
 # Project Context
 
+**Sunny noon and rain glints, 2026-10-20.** Noon is a clear, sunny midday (strong
+white sun, crisp shadows, little haze); the other hours are unchanged. Wet-ground
+glints at night are only under outdoor lampposts. See
+`sessions/2026-10-20-sunny-noon-and-rain-glints.md`.
+
+**Weathering and atmosphere, 2026-10-17.** Every wall material weathers on its own
+(`shaders/weathering.gdshader`: grime at the foot, paint patches), windows get rain
+streaks (`streak()`), and cloud shadows drift over the campus by day (`edges.gdshader`).
+The flag and warmer middle road lamps from that session were left out: the middle road
+is the team's HAU Boulevard as it is. See `sessions/2026-10-17-weathering.md`.
+
 **The Student Center, 2026-10-19.** `areas/student_center.gd` builds it on its plot
 from `assets/images/buildings/student center/`: the open arcade between the boulevard's
 south covered walkway and the Main Building (still a plot), with the planter of lady
