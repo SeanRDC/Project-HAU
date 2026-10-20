@@ -1,5 +1,13 @@
 # Project Context
 
+**SJH's ground floor, 2026-10-20.** `areas/sjh.gd`: the cars park at road level and the
+ground floor is raised 0.9 m (`WALK_Y`) on a plinth behind a shrub bed, up steps at the
+railing gaps (now ±16.8, ±33.6): clad piers, bar tables, bins, a diamond-tiled floor
+(`diamond` in world.gd). The centre tower opens into the elevator lobby up wide steps.
+At the west end a passage through the terracotta block leads to steps, a ramp, a yard
+and the lane to MGN under the bridge (scenery). `--view=sjh-walkway`, `sjh-lobby`,
+`sjh-west`, `sjh-steps`. See `sessions/2026-10-20-sjh-ground-floor.md`.
+
 **Right-drag camera angle, 2026-10-20.** Holding the right mouse button and dragging
 turns the camera angle like Q/E (same ±0.25 rad orbit, `DRAG_TURN` in `aps.gd`), the
 cursor hidden while held. Not a full 360° turn: the zones' cuts assume their facing.
