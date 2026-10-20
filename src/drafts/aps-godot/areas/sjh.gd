@@ -46,6 +46,10 @@ const CUT_OFFSET := 1.2
 ## front of SJH (world). The chapel-side row parks nose to the grass, the front row
 ## nose to the road.
 const PARKING := Rect2(-44.0, 97.6, 72.0, 8.6)
+## The chapel-side row parks at a slant (radians off straight), nose to the north-west,
+## as in the photos; its bays are wider apart for it.
+const SLANT := 0.44
+const SLANT_BAY := 2.9
 const FRONT_ROW := Rect2(-48.0, 115.2, 82.0, 5.4)
 ## The gap in the front row at the entrance steps (world x).
 const ENTRANCE_GAP := Vector2(-18.5, -4.5)
@@ -114,9 +118,17 @@ static func blocked(x: float, z: float) -> bool:
 					return false
 			return true # the railing
 	for car in cars():
-		if absf(x - car.x) < 1.05 and absf(z - car.y) < 2.3:
+		# In the car's own frame: the chapel-side row is turned by SLANT.
+		var turn := slant_for(car.y)
+		var d := Vector2(x - car.x, z - car.y)
+		var along := Vector2(d.x * cos(turn) - d.y * sin(turn), d.x * sin(turn) + d.y * cos(turn))
+		if absf(along.x) < 0.98 and absf(along.y) < 2.2:
 			return true
 	return false
+
+## The turn of a car parked at world z: the chapel-side row slants, the front row not.
+static func slant_for(z: float) -> float:
+	return SLANT if z < PARKING.end.y else 0.0
 
 static func floor_height(x: float, z: float) -> float:
 	if in_walkway(x, z):
@@ -139,7 +151,7 @@ static func cars() -> Array[Vector3]:
 	while x < PARKING.end.x - 1.0:
 		if random.randf() < 0.78:
 			_cars.append(Vector3(x, PARKING.position.y + 4.6, random.randi_range(0, 7)))
-		x += 2.6
+		x += SLANT_BAY
 	x = FRONT_ROW.position.x + 1.4
 	while x < FRONT_ROW.end.x - 1.0:
 		var at_steps := x > ENTRANCE_GAP.x and x < ENTRANCE_GAP.y
@@ -504,10 +516,11 @@ func _parking() -> void:
 	var lot: Material = w.material("concrete", Color("c9c7c0"))
 	w.box(Vector3(PARKING.size.x, 0.12, PARKING.size.y), Vector3(PARKING.get_center().x, -0.1, PARKING.get_center().y), lot)
 	var paint: Material = w.material("plain", Color("e8e6dc"))
-	var x := PARKING.position.x + 0.1
+	# The chapel-side row's slanted bay lines, between the cars.
+	var x := PARKING.position.x + 1.4 - SLANT_BAY / 2.0
 	while x <= PARKING.end.x:
-		w.box(Vector3(0.08, 0.012, 5.0), Vector3(x, -0.035, PARKING.position.y + 4.5), paint)
-		x += 2.6
+		w.box(Vector3(0.08, 0.012, 5.0), Vector3(x, -0.035, PARKING.position.y + 4.5), paint, SLANT)
+		x += SLANT_BAY
 	# The front row's pad, from the sidewalk to the building.
 	var front := Rect2(FRONT_ROW.position.x, FRONT_ROW.position.y, FRONT_ROW.size.x, EDGE_EAST.y - FRONT_ROW.position.y)
 	w.box(Vector3(front.size.x, 0.1, front.size.y), Vector3(front.get_center().x, -0.09, front.get_center().y), lot)
@@ -519,15 +532,17 @@ func _parking() -> void:
 	var colours: Array[Color] = [Color("1c2128"), Color("e9e9e6"), Color("8a8e92"), Color("6b1f22"), Color("b8b2a4"),
 		Color("2e3f5a"), Color("c44a2c"), Color("43484c")]
 	for car in cars():
-		_car(Vector3(car.x, -0.04, car.y), colours[int(car.z)], -1.0)
+		_car(Vector3(car.x, -0.04, car.y), colours[int(car.z)], -1.0, slant_for(car.y))
 
-## A parked car: body, cabin glass, wheels and lights; `nose` +1 faces +z, -1 faces -z.
-func _car(at: Vector3, colour: Color, nose := 1.0) -> void:
+## A parked car: body, cabin glass, wheels and lights; `nose` +1 faces +z, -1 faces -z,
+## then the whole car turned by `turn` about the vertical.
+func _car(at: Vector3, colour: Color, nose := 1.0, turn := 0.0) -> void:
+	var spin := Basis(Vector3.UP, turn)
 	var paint: Material = w.material("plain", colour)
 	var glass: Material = w.material("glass", Color("2d3a42"))
-	w.box(Vector3(1.78, 0.62, 4.3), at + Vector3(0, 0.62, 0), paint)
-	w.box(Vector3(1.6, 0.52, 2.2), at + Vector3(0, 1.18, -0.25 * nose), glass)
-	w.box(Vector3(1.5, 0.08, 2.0), at + Vector3(0, 1.47, -0.25 * nose), paint)
+	w.box(Vector3(1.78, 0.62, 4.3), at + spin * Vector3(0, 0.62, 0), paint, turn)
+	w.box(Vector3(1.6, 0.52, 2.2), at + spin * Vector3(0, 1.18, -0.25 * nose), glass, turn)
+	w.box(Vector3(1.5, 0.08, 2.0), at + spin * Vector3(0, 1.47, -0.25 * nose), paint, turn)
 	var wheel := CylinderMesh.new()
 	wheel.top_radius = 0.33
 	wheel.bottom_radius = 0.33
@@ -535,11 +550,11 @@ func _car(at: Vector3, colour: Color, nose := 1.0) -> void:
 	wheel.radial_segments = 10
 	for dx in [-0.82, 0.82]:
 		for dz in [-1.35, 1.35]:
-			var tyre: MeshInstance3D = w._mesh(wheel, at + Vector3(dx, 0.33, dz), w.material("plain", Color("1b1b1b")))
-			tyre.rotation.z = PI / 2.0
+			var tyre: MeshInstance3D = w._mesh(wheel, at + spin * Vector3(dx, 0.33, dz), w.material("plain", Color("1b1b1b")))
+			tyre.rotation = Vector3(0, turn, PI / 2.0)
 	for dx in [-0.6, 0.6]:
-		w.box(Vector3(0.36, 0.12, 0.04), at + Vector3(dx, 0.78, 2.16 * nose), w.glow(Color("f2efe2"), 0.2, 1.0))
-		w.box(Vector3(0.36, 0.12, 0.04), at + Vector3(dx, 0.78, -2.16 * nose), w.material("plain", Color("a3262a")))
+		w.box(Vector3(0.36, 0.12, 0.04), at + spin * Vector3(dx, 0.78, 2.16 * nose), w.glow(Color("f2efe2"), 0.2, 1.0), turn)
+		w.box(Vector3(0.36, 0.12, 0.04), at + spin * Vector3(dx, 0.78, -2.16 * nose), w.material("plain", Color("a3262a")), turn)
 
 # --- The Mary statue garden ------------------------------------------------------------
 
