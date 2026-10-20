@@ -1,5 +1,18 @@
 # Project Context
 
+**The opening's story, 2026-10-21.** The opening now tells the game's story (draft in
+`src/drafts/aps-godot/opening/STORY.md`): Lance remembers the campus and Ysha, the girl he
+lost on November 11, 2026, and wakes in his old classroom in June 2026. Ten pages, campus
+photos standing in for drawn panels; `opening/SCRIPT.md` has every line. Contains
+depression and suicide themes (nothing shown; content warning and help line required).
+`tools\preview-opening.cmd` shows every screen on one sheet. See
+`sessions/2026-10-21-opening-story.md`.
+
+**The opening can't be skipped the first time, 2026-10-21.** Space and Esc only move on
+until the opening has been watched to the end once on that computer (`user://opening.cfg`);
+after that, hold Space (or Esc) skips it as below. `--opening-first` replays the first
+time. See `sessions/2026-10-21-opening-first-time.md`.
+
 **Hold Space to skip the opening, 2026-10-20.** Holding Space for 0.9 s skips the
 opening (a tap still moves on; Esc still skips at once), with a "HOLD SPACE TO SKIP"
 hint and a filling pen line in the page's bottom-right margin. See
@@ -49,6 +62,12 @@ tables, the BDO ATM, and a brick apron past the west end out to the fountain. Th
 boulevard's south view carries on inside; under the roof it is the walkway's cutaway,
 with the roof faded and daylight fill lights. `--view=student-center`. See
 `sessions/2026-10-19-student-center.md`.
+
+**The friend, 2026-10-19.** The player's friend from the opening is in the game as
+"Kaibigan" (no name yet) in front of APS 104-105: drawn in pxl over the redesigned boy
+(black curtain hair, black hoodie, navy bag), idle and portrait only, with a short talk.
+Sources in `assets/drafts/characters/npcs/pxl/friend/`. See
+`sessions/2026-10-19-friend-character.md`.
 
 **The opening, 2026-10-19 (test).** A plain launch now plays `opening.gd` first: a
 black-and-white manga memory of the campus in Tagalog, page by page, ending on the
