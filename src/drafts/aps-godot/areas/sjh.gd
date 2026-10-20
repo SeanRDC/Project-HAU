@@ -52,8 +52,9 @@ const WALK_Y := 0.9
 const CEILING := 3.55
 ## The front, from the walkway out to the cars (as in RIGHT SIDE.JPG): a raised planter
 ## against the plinth out to PLANTER_Z; the brown paver sidewalk at LANDING_Y out to
-## WALK_EDGE, sloping down to the ground over END_SLOPE at both ends; a low stone wall;
-## a grass and bamboo strip down to the kerb at KERB_Z by the parked cars. At the lobby
+## WALK_EDGE, sloping down to the ground over END_SLOPE at both ends; beside it at the same
+## height a grass and bamboo strip, held up by a low stone wall at the kerb (KERB_Z) by
+## the parked cars. At the lobby
 ## the long stair runs out to the kerb. Risers RISER, treads TREAD (the passage's steps
 ## at the west end PASSAGE_TREAD).
 const PLINTH_Z := 0.3
@@ -89,7 +90,10 @@ const LOBBY_FLIGHT := UPPER_END + LOBBY_LANDING
 const LOBBY_FOOT := LOBBY_FLIGHT + FLIGHT_STEPS * TREAD
 const KERB_Z := LOBBY_FOOT
 const LOBBY_BOX := Vector2(9.5, 12.1)
-const LOBBY_RAILS: Array[float] = [-7.0, 7.0]
+## The flight down from the landing is LOWER_HALF either side of the middle, its handrails
+## at its edges; either side of it the pavers run on at the landing's height to the kerb.
+const LOWER_HALF := 7.0
+const LOBBY_RAILS: Array[float] = [-6.9, 6.9]
 ## The west end (local +x): the passage through the terracotta block (z range), its
 ## steps down the block's west face, the ramp along its front (z range) from its foot up
 ## to a landing at the walkway's end, the yard at the foot, and the lane south between
@@ -162,8 +166,8 @@ static func _stair(u: float, v: float) -> float:
 	if absf(u) < LOBBY_STEPS and v >= TOWER_FRONT and v < LOBBY_FOOT:
 		if v < UPPER_END:
 			return _down(WALK_Y, (v - TOWER_FRONT) / TREAD)
-		if v < LOBBY_FLIGHT:
-			return LANDING_Y
+		if v < LOBBY_FLIGHT or absf(u) >= LOWER_HALF:
+			return LANDING_Y # the landing, and the pavers either side of the flight
 		return _down(LANDING_Y, (v - LOBBY_FLIGHT) / TREAD)
 	if absf(u) >= LOBBY_STEPS and u > -WALK_END and u < LANDING and v >= PLANTER_Z and v < WALK_EDGE:
 		return _sidewalk(u)
@@ -682,15 +686,15 @@ func _railing() -> void:
 			w.box(Vector3(0.04, 1.0, 0.04), Vector3(side * run.y, WALK_Y + 0.5, RAIL_Z), bar)
 
 ## The front, as in the photos: along the whole building a raised planter of grass and
-## trimmed shrubs against the plinth, the brown paver sidewalk, a low stone wall and a
-## grass strip with bamboo down to the kerb by the cars. At the lobby the long stair runs
-## the tower's width out to the kerb: the flight, the landing (joining the sidewalk) and
-## the steps up to the floor, with the handrails on them and the planter box beside them.
+## trimmed shrubs against the plinth, the brown paver sidewalk and a grass strip with
+## bamboo beside it at the same height, a low stone wall at the kerb by the cars. At the
+## lobby the long stair: the steps up to the floor across the tower's width, the brown
+## landing (joining the sidewalk), the flight down to the kerb between its handrails with
+## the pavers running on either side of it, and the planter box beside the upper steps.
 func _front() -> void:
 	var tread: Material = w.material("slab", Color("efe9dc"))
 	var nosing: Material = w.material("plain", Color("4a4440"))
 	var base: Material = w.material("stone", Color("aaa79d"))
-	var paving: Material = w.material("slab", Color("e2dccd"))
 	var pavers: Material = w.material("brick", Color("c4876f"))
 	var grass: Material = w.material("grass", Color("8f9a6a"))
 	var kerb: Material = w.material("stucco", Color("d8d2c2"))
@@ -701,25 +705,32 @@ func _front() -> void:
 		# The planter: a cream box of soil and grass against the plinth.
 		w.box(Vector3(length, LANDING_Y + 0.3, PLANTER_Z - PLINTH_Z), Vector3(x, (LANDING_Y + 0.3) / 2.0 - 0.04, (PLINTH_Z + PLANTER_Z) / 2.0), kerb)
 		w.box(Vector3(length - 0.1, 0.04, PLANTER_Z - PLINTH_Z - 0.2), Vector3(x, LANDING_Y + 0.25, (PLINTH_Z + PLANTER_Z) / 2.0), grass)
-		# The sidewalk and the low wall under its edge, a metre at a time so they follow its
-		# slope at the ends.
+		# The sidewalk and the grass strip beside it at the same height, on a stone base, the
+		# low stone wall at the kerb holding them up, a metre at a time so they follow the
+		# sidewalk's slope at the ends.
 		var at: float = piece.x
 		while at < piece.y - 0.01:
 			var step := minf(1.0, piece.y - at)
 			var top := _sidewalk(at + step / 2.0)
-			w.box(Vector3(step, top + 0.04, WALK_EDGE - PLANTER_Z), Vector3(at + step / 2.0, (top - 0.04) / 2.0, (PLANTER_Z + WALK_EDGE) / 2.0), base)
-			w.box(Vector3(step, 0.03, WALK_EDGE - PLANTER_Z), Vector3(at + step / 2.0, top - 0.015, (PLANTER_Z + WALK_EDGE) / 2.0), pavers)
-			w.box(Vector3(step, top + 0.12, 0.25), Vector3(at + step / 2.0, (top + 0.12) / 2.0 - 0.04, WALK_EDGE + 0.125), base)
+			var middle: float = at + step / 2.0
+			w.box(Vector3(step, top + 0.04, KERB_Z - PLANTER_Z), Vector3(middle, (top - 0.04) / 2.0, (PLANTER_Z + KERB_Z) / 2.0), base)
+			w.box(Vector3(step, 0.03, WALK_EDGE - PLANTER_Z), Vector3(middle, top - 0.015, (PLANTER_Z + WALK_EDGE) / 2.0), pavers)
+			w.box(Vector3(step, 0.04, KERB_Z - WALK_EDGE - 0.25), Vector3(middle, top, (WALK_EDGE + KERB_Z - 0.25) / 2.0), grass)
+			w.box(Vector3(step, top + 0.12, 0.25), Vector3(middle, (top + 0.12) / 2.0 - 0.04, KERB_Z - 0.125), base)
 			at += step
-		# The grass strip, sloping from the wall's foot down to the white kerb.
-		var strip := KERB_Z - WALK_EDGE - 0.25
-		w.box(Vector3(length, 0.06, strip / cos(0.08)), Vector3(x, 0.08, WALK_EDGE + 0.25 + strip / 2.0), grass, 0.0, 0.08)
-		w.box(Vector3(length, 0.16, 0.14), Vector3(x, 0.04, KERB_Z - 0.07), white)
-	# The lobby's stairs: the landing's mass, the steps up to the floor, the flight down.
+		w.box(Vector3(length, 0.16, 0.14), Vector3(x, 0.04, KERB_Z + 0.07), white)
+	# The lobby's stairs: the landing's mass and its brown pavers, run on either side of the
+	# flight down to the kerb; the steps up to the floor; the flight down between the rails.
 	w.box(Vector3(2.0 * LOBBY_STEPS, LANDING_Y + 0.04, LOBBY_FLIGHT - TOWER_FRONT), Vector3(0, (LANDING_Y - 0.04) / 2.0, (TOWER_FRONT + LOBBY_FLIGHT) / 2.0), base)
-	w.box(Vector3(2.0 * LOBBY_STEPS, 0.03, LOBBY_FLIGHT - UPPER_END), Vector3(0, LANDING_Y - 0.015, (UPPER_END + LOBBY_FLIGHT) / 2.0), paving)
+	w.box(Vector3(2.0 * LOBBY_STEPS, 0.03, LOBBY_FLIGHT - UPPER_END), Vector3(0, LANDING_Y - 0.015, (UPPER_END + LOBBY_FLIGHT) / 2.0), pavers)
+	for side in [-1.0, 1.0]:
+		var wing := LOBBY_STEPS - LOWER_HALF
+		var wing_x: float = side * (LOWER_HALF + wing / 2.0)
+		w.box(Vector3(wing, LANDING_Y + 0.04, KERB_Z - LOBBY_FLIGHT), Vector3(wing_x, (LANDING_Y - 0.04) / 2.0, (LOBBY_FLIGHT + KERB_Z) / 2.0), base)
+		w.box(Vector3(wing, 0.03, KERB_Z - LOBBY_FLIGHT), Vector3(wing_x, LANDING_Y - 0.015, (LOBBY_FLIGHT + KERB_Z) / 2.0), pavers)
+		w.box(Vector3(wing, 0.16, 0.14), Vector3(wing_x, 0.04, KERB_Z + 0.07), white)
 	_flight(Vector2(-LOBBY_STEPS, LOBBY_STEPS), TOWER_FRONT, WALK_Y, UPPER_STEPS, tread, nosing)
-	_flight(Vector2(-LOBBY_STEPS, LOBBY_STEPS), LOBBY_FLIGHT, LANDING_Y, FLIGHT_STEPS, tread, nosing)
+	_flight(Vector2(-LOWER_HALF, LOWER_HALF), LOBBY_FLIGHT, LANDING_Y, FLIGHT_STEPS, tread, nosing)
 	for x in LOBBY_RAILS:
 		var bends: Array[Vector3] = [Vector3(x, WALK_Y + 0.9, TOWER_FRONT), Vector3(x, LANDING_Y + 0.9, UPPER_END),
 			Vector3(x, LANDING_Y + 0.9, LOBBY_FLIGHT), Vector3(x, 0.9, LOBBY_FOOT - 0.15)]
@@ -745,7 +756,7 @@ func _front() -> void:
 	x = -WALK_END + 2.5
 	while x < LANDING - 1.0:
 		if absf(x) > LOBBY_STEPS + 1.0:
-			w._shrub(Vector3(x, 0.1, (WALK_EDGE + KERB_Z) / 2.0 + 0.2 * sin(x)), 0.7 + 0.2 * absf(cos(x)), seed_value, w.SHRUB_COLORS)
+			w._shrub(Vector3(x, _sidewalk(x) + 0.04, (WALK_EDGE + KERB_Z) / 2.0 + 0.2 * sin(x)), 0.7 + 0.2 * absf(cos(x)), seed_value, w.SHRUB_COLORS)
 			seed_value += 1
 		x += 5.1
 
@@ -1211,7 +1222,7 @@ func _planting() -> void:
 		palms._palm(Vector3(at.x, LANDING_Y + 0.27, at.y), 7.0 + absf(lx) * 0.05, 770 + roundi(lx))
 	for lx in [-36.0, -22.0, -13.5, 17.0, 30.5, 36.0]:
 		var at := world(lx, (WALK_EDGE + KERB_Z) / 2.0)
-		w._bamboo(Vector3(at.x, 0.1, at.y), 0.7, 12, 780 + roundi(lx))
+		w._bamboo(Vector3(at.x, _sidewalk(lx) + 0.04, at.y), 0.7, 12, 780 + roundi(lx))
 	for lx in [-40.0, -31.0, -26.0, 12.0, 22.0, 31.0]:
 		var at := world(lx, 0.8)
 		w._shrub(Vector3(at.x, LANDING_Y + 0.27, at.y), 1.2, 790 + roundi(lx))
