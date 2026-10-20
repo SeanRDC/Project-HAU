@@ -64,6 +64,9 @@ const BACK := -DEPTH
 const LANE_EDGE := BACK - 10.6
 const BOUNDARY := BACK - 13.2
 const LANE_EAST := HALF + 10.0
+## The gate pillar across the lane from the east corner (local x), where the perimeter wall
+## turns from grey to maroon (photo 2).
+const GATE := -49.2
 ## The lane round SJH's east end, from the south road's corner to the back (world): between
 ## the building and Aero Hall's reserved plot (x 44.5), where photo 3 has the road bending in.
 const ACCESS := Rect2(37.0, 112.0, 7.4, 37.0)
@@ -219,6 +222,8 @@ static func cars() -> Array[Vector3]:
 	return _cars
 
 var w: RefCounted
+## The cut-branch piles by the gate pillar (local), planted with the world's shrubs.
+var _pile_at := []
 
 func build(world_builder: RefCounted) -> void:
 	w = world_builder
@@ -593,11 +598,36 @@ func _rear_ground() -> void:
 	w.box(Vector3(length, 0.012, 0.3), Vector3(middle, -0.035, BACK - 5.6), w.material("brick", Color("c0745c")))
 	w.box(Vector3(length, 0.012, 0.4), Vector3(middle, -0.035, LANE_EDGE + 0.25), dark)
 	w.box(Vector3(length, 0.1, LANE_EDGE - BOUNDARY), Vector3(middle, -0.12, (LANE_EDGE + BOUNDARY) / 2.0), w.material("dirt"))
-	w.box(Vector3(length + 1.0, 2.6, 0.3), Vector3(middle, 1.1, BOUNDARY), w.material("stucco", Color("aeaba1")))
+	# The perimeter wall: grey west of the gate pillar, maroon with a white iron railing on
+	# top east of it (photo 2).
+	var grey := HALF + 0.5 - GATE
+	w.box(Vector3(grey, 2.6, 0.3), Vector3(GATE + grey / 2.0, 1.1, BOUNDARY), w.material("stucco", Color("aeaba1")))
+	var maroon := GATE + LANE_EAST + 0.5
+	w.box(Vector3(maroon, 2.2, 0.3), Vector3(GATE - maroon / 2.0, 0.9, BOUNDARY), w.material("stucco", Color("6e2a35")))
+	var iron: Material = w.material("plain", Color("e6e4dc"))
+	for y in [2.05, 2.75]:
+		w.box(Vector3(maroon, 0.05, 0.05), Vector3(GATE - maroon / 2.0, y, BOUNDARY), iron)
+	var bar := GATE - 0.2
+	while bar > -LANE_EAST - 0.5:
+		w.box(Vector3(0.03, 0.7, 0.03), Vector3(bar, 2.4, BOUNDARY), iron)
+		w.box(Vector3(0.12, 0.03, 0.03), Vector3(bar, 2.55 + 0.1 * posmod(roundi(bar * 5.0), 2), BOUNDARY), iron)
+		bar -= 0.2
 	w.box(Vector3(0.3, 2.6, BACK - BOUNDARY), Vector3(HALF + 0.3, 1.1, (BACK + BOUNDARY) / 2.0), w.material("stucco", Color("aeaba1")))
-	# The palm strip at the east corner.
-	w.box(Vector3(7.9, 0.12, 2.4), Vector3(-43.95, -0.1, BACK - 1.2), w.material("grass"))
-	w.box(Vector3(7.9, 0.2, 0.15), Vector3(-43.95, 0.0, BACK - 2.4), w.material("stucco", Color("cfc9b8")))
+	# The palm strip at the east corner (photo 2): grass inside a rounded concrete kerb
+	# that turns in to the wall at the ramp, a garden hose across it, and the wet
+	# stain the hose leaves down the lane's edge of the kerb.
+	var kerb: Material = w.material("stucco", Color("cfc9b8"))
+	w.box(Vector3(9.3, 0.12, 2.4), Vector3(-43.25, -0.1, BACK - 1.2), w.material("grass"))
+	w.box(Vector3(8.6, 0.22, 0.2), Vector3(-43.6, 0.0, BACK - 2.45), kerb)
+	w.box(Vector3(1.2, 0.22, 0.2), Vector3(-38.95, 0.0, BACK - 2.1), kerb, PI / 4.0)
+	w.box(Vector3(0.2, 0.22, 1.6), Vector3(-38.6, 0.0, BACK - 0.9), kerb)
+	var hose := [Vector3(-46.8, 0.03, BACK - 0.3), Vector3(-45.2, 0.03, BACK - 1.6), Vector3(-42.5, 0.03, BACK - 2.1),
+		Vector3(-41.6, 0.14, BACK - 2.5), Vector3(-41.0, -0.03, BACK - 2.75), Vector3(-38.0, -0.03, BACK - 3.0)]
+	for i in hose.size() - 1:
+		w.rod(hose[i], hose[i + 1], 0.012, Color("ecebe4"))
+	var wet: Material = w.material("plain", Color("4f5352"))
+	for stain in [Vector3(-46.0, 3.2, 0.5), Vector3(-43.0, 2.6, 0.7), Vector3(-40.6, 2.0, 0.9), Vector3(-37.4, 1.4, 0.6)]:
+		w.box(Vector3(stain.y, 0.006, stain.z), Vector3(stain.x, -0.034, BACK - 2.55 - stain.z / 2.0), wet)
 	# The basement ramp: low walls, a dark mouth, the grate, the rusty pergola and its screens.
 	# shortcut: the ramp only dips 0.15 m (the lawn under the scene sits at -0.2); cut a real pit if one is ever walked into.
 	w.box(Vector3(5.0, 0.02, 6.0), Vector3(-35.7, -0.03, BACK - 3.0), w.material("concrete", Color("8f9089")), 0.0, -0.025)
@@ -666,15 +696,36 @@ func _rear_ground() -> void:
 			_van(at, Color(car[2]), car[1] == 2)
 	# Power poles along the wall, two transformers on the east one, the wires between.
 	var tops: Array[Vector3] = []
-	for px in [-50.0, -8.0, 30.0]:
+	for px in [-50.2, -8.0, 30.0]:
 		var foot := Vector3(px, 0.0, LANE_EDGE - 0.9)
 		w.rod(foot, foot + Vector3(0, 9.5, 0), 0.14, Color("9a9a94"))
 		tops.append(foot + Vector3(0, 9.2, 0))
-	for dx in [-0.45, 0.45]:
-		w.box(Vector3(0.6, 0.9, 0.6), tops[0] + Vector3(dx, -1.6, 0), w.material("metal", Color("b4b8b8")))
+	# At the east pole (photo 2): two grey transformers hung on brackets, one above the
+	# other; the gate pillar beside it with the yellow meter box at its foot, and a pile of
+	# cut branches on the dirt.
+	var drum := CylinderMesh.new()
+	drum.top_radius = 0.34
+	drum.bottom_radius = 0.34
+	drum.height = 0.85
+	drum.radial_segments = 12
+	var grey_metal: Material = w.material("metal", Color("b4b8b8"))
+	for hang in [Vector3(-0.5, -1.0, 0.0), Vector3(0.45, -2.3, 0.1)]:
+		w._mesh(drum, tops[0] + hang, grey_metal)
+		w.box(Vector3(0.72, 0.06, 0.72), tops[0] + hang + Vector3(0, 0.45, 0), grey_metal)
+		w.box(Vector3(0.5, 0.08, 0.08), tops[0] + hang * Vector3(0.5, 1, 1) + Vector3(0, 0.3, 0), grey_metal)
+	var pillar := Vector3(GATE, 0.0, LANE_EDGE - 0.7)
+	w.box(Vector3(0.75, 4.2, 0.75), pillar + Vector3(0, 2.1, 0), w.material("concrete", Color("b8b6ae")))
+	w.box(Vector3(0.55, 1.0, 0.35), pillar + Vector3(-0.1, 0.5, 0.58), w.material("plain", Color("e3b32e")))
+	var cut: Array[Color] = [Color("3d5a2a"), Color("56763a"), Color("7a8c48"), Color("a39a5c"), Color("6a6a40")]
+	for heap in [Vector2(-1.6, 0.9), Vector2(-2.6, 0.8), Vector2(-3.4, 0.7)]:
+		_pile_at.append([pillar + Vector3(heap.x, 0.0, -0.6), heap.y, cut])
+	w.rod(pillar + Vector3(-3.6, 0.15, -0.2), pillar + Vector3(-0.8, 0.05, 0.4), 0.03, Color("b9a06a"))
+	# The wires: three runs along the wall, two drops from the east pole to the corner.
 	for i in tops.size() - 1:
-		for dy in [0.0, 0.4]:
-			w.rod(tops[i] + Vector3(0, dy, 0), tops[i + 1] + Vector3(0, dy, 0), 0.015, Color("26282a"))
+		for dy in [0.0, 0.4, -0.5]:
+			w.rod(tops[i] + Vector3(0, dy, 0), tops[i + 1] + Vector3(0, dy - 0.3, 0), 0.015, Color("26282a"))
+	for dy in [0.2, -0.3]:
+		w.rod(tops[0] + Vector3(0, dy, 0), Vector3(-HALF + 0.3, 8.6 + dy, BACK - 0.1), 0.015, Color("26282a"))
 
 ## A van or a pickup nosed out from the wall (-z): a tall body with the vans' brown and
 ## orange stripe, or a cab and an open bed; a dark windscreen, wheels and lights.
@@ -709,9 +760,17 @@ func _rear_planting() -> void:
 	palms.w = w
 	var palm := world(-44.5, BACK - 1.2)
 	palms._palm(Vector3(palm.x, 0.0, palm.y), 6.5, 801)
-	for spot in [Vector2(-46.8, -1.0), Vector2(-42.2, -1.4), Vector2(-40.9, -0.9)]:
-		var at := world(spot.x, BACK + spot.y)
-		w._shrub(Vector3(at.x, 0.0, at.y), 1.3, 802 + roundi(spot.x))
+	# Along the strip as in photo 2: a big clipped ficus by the corner, a golden bush, small
+	# dark round ones, another ficus by the ramp.
+	var ficus: Array[Color] = [Color("6f9a2e"), Color("8fb83a"), Color("a9cc4a"), Color("c3dc6a"), Color("7fa832")]
+	var golden: Array[Color] = [Color("8a9a3a"), Color("aab448"), Color("c8c45a"), Color("9aa83e"), Color("dcd47a")]
+	for bush in [[-46.6, -1.1, 1.8, ficus], [-44.9, -0.7, 1.0, w.HEDGE_COLORS], [-43.3, -1.3, 1.5, golden],
+			[-41.9, -1.6, 1.0, w.HEDGE_COLORS], [-40.6, -0.9, 1.1, w.HEDGE_COLORS], [-39.6, -1.0, 1.2, ficus]]:
+		var at := world(bush[0], BACK + bush[1])
+		w._shrub(Vector3(at.x, 0.05, at.y), bush[2], 802 + roundi(bush[0] * 10.0), bush[3])
+	for pile in _pile_at:
+		var at := world(pile[0].x, pile[0].z)
+		w._shrub(Vector3(at.x, -0.25, at.y), pile[1], 830 + roundi(pile[0].x * 10.0), pile[2])
 
 # --- The covered walkway -------------------------------------------------------------
 
