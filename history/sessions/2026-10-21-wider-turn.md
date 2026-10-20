@@ -26,6 +26,14 @@ and to fade whatever ends up between the camera and the student.
   behind the student (and the near end of a building seen at a slant) can dither too.
   A fade measured on the ground plane would need every material to be a shader.
 
+- **Polish after Mikko tried it ("lagging when dragging right and left"):** a probe
+  sweeping the turn printed 50 ms frames every time it crossed ±0.25: switching the
+  fade's mode on and off rebuilt every material. Now the fade mode stays on (off is a
+  1 mm fade), the shaders read two global uniforms (one write a frame instead of one per
+  tree), and the StandardMaterials are rewritten only when the distances move. The sweep
+  then held 60 fps at SJH and on the boulevard. The turn also eases after the mouse
+  (`orbit_goal`, rate 16), so it glides instead of stepping with each mouse event.
+
 ## What changed
 
 - `aps.gd`: `ORBIT_MAX`, `ORBIT_CUT`, `_orbit()`, `_cuts_hold()`; the cuts scaled by it;
@@ -36,5 +44,6 @@ and to fade whatever ends up between the camera and the student.
 
 ## Checks
 
-`toolsun-aps-godot.cmd --headless -- --test`: all true. `npm run check`, `npm run build`
+`tools
+un-aps-godot.cmd --headless -- --test`: all true. `npm run check`, `npm run build`
 pass. Captures turned 40° at SJH, the boulevard and APS checked.
