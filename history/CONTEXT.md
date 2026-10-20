@@ -1,5 +1,10 @@
 # Project Context
 
+**Hold Space to skip the opening, 2026-10-20.** Holding Space for 0.9 s skips the
+opening (a tap still moves on; Esc still skips at once), with a "HOLD SPACE TO SKIP"
+hint and a filling pen line in the page's bottom-right margin. See
+`sessions/2026-10-20-opening-hold-skip.md`.
+
 **The SJH–MGN bridge, 2026-10-20.** A covered bridge joins MGN's south wing (the service
 block) to SJH's west face at the third floor (`_bridge()` in `areas/mgn.gd`): concrete
 deck, parapets, steel rail, ribbed tin roof. Scenery only, and hidden from the game

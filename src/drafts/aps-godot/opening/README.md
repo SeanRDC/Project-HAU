@@ -2,7 +2,7 @@
 
 A quiet memory of HAU before the game starts, told like a black-and-white manga page by
 page (`opening.gd`). Panels fade in one by one and drift slowly; the narration types out
-in Tagalog beside them. Any key or click moves on, Esc skips. It plays on a plain launch
+in Tagalog beside them. Any key or click moves on; holding Space (or Esc) skips. It plays on a plain launch
 (no arguments, e.g. F5 in the editor); `--opening` forces it after other arguments.
 
 To look at one page without playing it all:
