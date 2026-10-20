@@ -7,6 +7,9 @@ render_mode unshaded, blend_mul, depth_draw_never, cull_back, fog_disabled, shad
 uniform float grime = 0.22;
 uniform float grime_height = 1.15;
 uniform float patches = 0.06;
+// The occluder fade (world.gd set_occluder_fade): no grime on walls that are fading out.
+uniform vec3 eye = vec3(0.0);
+uniform vec2 fade = vec2(-2.0, -1.0);
 
 varying vec3 world;
 varying vec3 world_normal;
@@ -29,7 +32,7 @@ float noise(vec2 p) {
 
 void fragment() {
 	float factor = 1.0;
-	if (abs(world_normal.y) < 0.35) {
+	if (abs(world_normal.y) < 0.35 && distance(world, eye) > fade.y) {
 		float along = abs(world_normal.x) > abs(world_normal.z) ? world.z : world.x;
 		float height = grime_height * (0.6 + 0.8 * noise(vec2(along * 0.7, 3.1)));
 		float band = clamp(1.0 - world.y / height, 0.0, 1.0);

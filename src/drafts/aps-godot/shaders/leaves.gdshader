@@ -12,6 +12,10 @@ uniform float phase = 0.0;
 // The volume's middle. Grass puts it far below, so its normals point up like the lawn.
 uniform vec3 center = vec3(0.0, -1000.0, 0.0);
 uniform float roundness = 0.75;
+// The occluder fade (world.gd set_occluder_fade): leaves nearer to `eye` than fade.x are
+// gone, back in by fade.y. Measured in the world, so the shadow pass keeps them.
+uniform vec3 eye = vec3(0.0);
+uniform vec2 fade = vec2(-2.0, -1.0);
 
 // World position per pixel: the round normal must be worked out per pixel, or
 // crossing cards interpolate different normals and meet with a visible seam.
@@ -32,7 +36,7 @@ void fragment() {
 	vec3 card = FRONT_FACING ? NORMAL : -NORMAL;
 	// A card seen edge-on would draw as a thin straight line of leaves through the
 	// crown; the crossed cards around it already fill that view, so it fades out.
-	ALPHA = leaf.a * smoothstep(0.1, 0.3, abs(dot(card, VIEW)));
+	ALPHA = leaf.a * smoothstep(0.1, 0.3, abs(dot(card, VIEW))) * smoothstep(fade.x, fade.y, distance(world_position, eye));
 	ALPHA_SCISSOR_THRESHOLD = 0.4;
 	vec3 round_normal = (VIEW_MATRIX * vec4(normalize(world_position - center), 0.0)).xyz;
 	NORMAL = normalize(mix(card, round_normal, roundness));
