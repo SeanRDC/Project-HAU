@@ -140,6 +140,7 @@ func _weather(delta: float) -> void:
 	environment.fog_light_color = (_base.fog_color as Color).lerp(grey, 0.6 * rain)
 	sky.set_shader_parameter("top_color", (_base.top as Color).lerp(grey.darkened(0.25), 0.7 * rain))
 	sky.set_shader_parameter("horizon_color", (_base.horizon as Color).lerp(grey, 0.7 * rain))
+	sky.set_shader_parameter("overcast", rain) # the clouds hide the stars and the moon
 	_wet(rain)
 	# the streaks and splashes follow the view; denser as the shower builds
 	rain_fx.emitting = rain > 0.02

@@ -198,6 +198,8 @@ func _ready() -> void:
 	add_child(free_cam)
 	if _args.has("travel"):
 		travel.toggle.call_deferred() # --travel opens the panel, for captures
+	if _args.has("free-cam"):
+		_look_freely.call_deferred(str(_args["free-cam"])) # --free-cam=<yaw>,<pitch>: a free cam capture
 	npcs = Npcs.new()
 	npcs.camera = camera
 	npcs.student = student
@@ -713,6 +715,8 @@ func _aim_sun(force := false) -> void:
 	var target := Vector3(22, 7, 0)
 	sun.look_at_from_position(target + Basis(Vector3.UP, turn) * offset, target)
 	edges.set_shader_parameter("sun_dir", sun.basis.z.normalized())
+	# At night the light is the moon's: the sky draws the moon where it comes from.
+	sky_material.set_shader_parameter("moon_dir", sun.basis.z.normalized())
 
 func _set_hour(value: float) -> void:
 	hour = value
@@ -953,6 +957,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_end_drag()
 			free_cam.enter()
+			sky_material.set_shader_parameter("free_look", true) # the stars by direction, staying put as it turns
 			pixel_scale = 0
 			_resize()
 		sound.select()
@@ -1071,11 +1076,24 @@ func _held(keys: Array) -> bool:
 			return true
 	return false
 
+## --free-cam=<yaw>,<pitch> (degrees): starts in the free cam looking that way from where
+## the camera stands, for captures of the sky.
+func _look_freely(angles: String) -> void:
+	var parts := angles.split(",")
+	free_cam.enter()
+	free_cam.yaw = deg_to_rad(float(parts[0]))
+	free_cam.pitch = deg_to_rad(float(parts[1]) if parts.size() > 1 else 20.0)
+	free_cam._aim()
+	sky_material.set_shader_parameter("free_look", true)
+	pixel_scale = 0
+	_resize()
+
 ## Lands the free cam back on the student's camera, snapped there at once.
 func _leave_free_cam() -> void:
 	if not free_cam.active:
 		return
 	free_cam.leave()
+	sky_material.set_shader_parameter("free_look", false)
 	pixel_scale = 0
 	_resize()
 	_update_camera(1.0)
