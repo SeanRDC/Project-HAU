@@ -2,16 +2,15 @@ extends RefCounted
 ## The walk along the chapel's south side, from Mikko's CHAPEL RIGHTSIDE SIDEWALK photos
 ## (2026-10-19): a narrow black asphalt path with white kerbs leaves the oval plaza's
 ## south end, runs straight along the chapel between the parking and the trees, then
-## curves north-east past low bollard lamps to the east road. North of it, bare dirt
-## under thin shade trees and bamboo, up to the chapel's glass hall and the EVACUATION
-## SITE 3 sign; south of it, a grass strip with red-tipped shrubs and young trees, then
-## the parked cars nosed in to it. Green picnic sheds stand on the dirt in the corner
-## by the east road.
+## curves north-east past low bollard lamps to the east road. North of it, lawn worn to
+## dirt under thin shade trees and bamboo, up to the chapel's glass hall and the
+## EVACUATION SITE 3 sign; south of it, a grass strip with red-tipped shrubs and young
+## trees, then the parked cars nosed in to it. Green picnic sheds stand on worn lawn in
+## the corner by the east road.
 ##
 ## World coordinates (metres, Y up). Built with world.gd's helpers, like every area.
 
 const Chapel := preload("res://areas/chapel.gd")
-const CampusPlan := preload("res://campus_plan.gd")
 
 ## The path's centre line, west to east: the plaza's south end, the straight run along
 ## the chapel, the curve past the picnic corner, into the east road.
@@ -22,13 +21,11 @@ const PATH: Array[Vector2] = [Vector2(-35.3, 80.5), Vector2(-31.6, 86.4), Vector
 const WIDTH := 1.5
 ## Where the parking starts (Sjh.PARKING's north edge), with its white kerb.
 const PARKING_Z := 97.6
-## The walkable ground round the path: the dirt up to the chapel and the grass down
-## into the parking, all along it from where it starts by the oval (the chapel, the
-## Formation Center's plot and every prop still block).
+## The walkable ground round the path: the lawn up to the chapel and down into the
+## parking, all along it from where it starts by the oval (the chapel, the Formation
+## Center's plot and every prop still block).
 const GROUND := Rect2(-44.0, 76.0, 81.0, PARKING_Z + 0.3 - 76.0)
-## The grass band along the path's chapel side, before the dirt starts (metres past the kerb).
-const VERGE := 1.4
-## Thin shade trees on the dirt: x, z, height.
+## Thin shade trees, each over its worn patch: x, z, height.
 const TREES: Array[Vector3] = [Vector3(-24.0, 87.0, 7.6), Vector3(-19.5, 84.6, 6.8), Vector3(-15.0, 87.8, 7.2),
 	Vector3(-10.5, 83.6, 6.6), Vector3(-6.0, 88.2, 7.8), Vector3(-1.5, 84.8, 7.0), Vector3(2.8, 88.6, 6.6),
 	Vector3(7.5, 85.0, 7.4), Vector3(11.8, 88.4, 7.0), Vector3(16.0, 85.6, 7.8), Vector3(20.2, 88.0, 6.8),
@@ -132,21 +129,44 @@ static func floor_height(x: float, z: float) -> float:
 		return -0.18
 	return NAN
 
-## The path's z at this x along its straight run (the dirt is north of it, the grass south).
-static func line_z(x: float) -> float:
-	return PATH[3].y if x < PATH[4].x else PATH[4].y - (x - PATH[4].x) * 0.8
+static var _patches: Array[Vector3] = []
 
-## Where grass grows: the strip south of the path, the verge along its chapel side and
-## the picnic corner's lawn; only thinly on the dirt and not under the sheds.
+## The worn dirt patches on the lawn, each x, z, radius: under every tree, in front of
+## the glass hall's steps where people walk, and under the picnic sheds. Kept clear of
+## the path (a decal there would stain the asphalt).
+static func patches() -> Array[Vector3]:
+	if not _patches.is_empty():
+		return _patches
+	var wanted: Array[Vector3] = []
+	for tree in TREES:
+		wanted.append(Vector3(tree.x, tree.y, tree.z * 0.27))
+	for bay in Chapel.south_bays():
+		var out := Chapel.outward(bay[0], bay[1])
+		var front: Vector2 = (bay[0] + bay[1]) / 2.0 + out * 3.6
+		wanted.append(Vector3(front.x, front.y, 2.6))
+	for shed in SHEDS:
+		wanted.append(Vector3(shed.x, shed.y, 2.4))
+	for patch in wanted:
+		var room := from_path(patch.x, patch.y) - WIDTH / 2.0 - 0.35
+		if room > 0.8:
+			_patches.append(Vector3(patch.x, patch.y, minf(patch.z, room)))
+	return _patches
+
+## How worn the ground is here: 1 in a dirt patch's middle, fading to 0 at its edge.
+static func dirt(x: float, z: float) -> float:
+	var worn := 0.0
+	for patch in patches():
+		worn = maxf(worn, smoothstep(1.0, 0.45, Vector2(x, z).distance_to(Vector2(patch.x, patch.y)) / patch.z))
+	return worn
+
+## Where grass grows: everywhere on the walk but the path and the dirt patches' worn
+## middles, so it thins out into them rather than stopping at an edge.
 static func grassy(x: float, z: float) -> bool:
 	if not walkable(x, z):
 		return true
 	if from_path(x, z) < WIDTH / 2.0 + 0.3:
 		return false
-	for shed in SHEDS:
-		if absf(x - shed.x) < 2.2 and absf(z - shed.y) < 1.8:
-			return false # worn dirt under the sheds
-	return z > line_z(x) or from_path(x, z) < WIDTH / 2.0 + VERGE or x > 27.0
+	return dirt(x, z) < 0.5
 
 ## 1 on the walk (the camera then cuts away the parking and SJH behind it).
 static func view_for(x: float, z: float) -> float:
@@ -167,33 +187,62 @@ func build(world: RefCounted) -> void:
 
 ## Bare dirt from the chapel down to the path, clear of the chapel and the Formation
 ## Center's plot (its own pad is drawn there).
+## The walk's ground is the lawn, worn to dirt in soft patches (decals with ragged,
+## fading edges, so the grass blends into them), with faint lighter and darker drifts
+## over the grass so it does not read as one freshly mown carpet.
 func _dirt() -> void:
-	# Its south edge follows the path a grass verge's width away (the path's chapel side).
-	var points := line()
-	var shape := PackedVector2Array([Vector2(-29.0, 76.0), Vector2(27.0, 76.0)])
-	for i in range(points.size() - 2, -1, -1):
-		var p := points[i]
-		var across := Vector2(points[i].y - points[i + 1].y, points[i + 1].x - points[i].x).normalized()
-		if across.y > 0.0:
-			across = -across # towards the chapel
-		p += across * (WIDTH / 2.0 + VERGE)
-		if p.x > -29.0 and p.x < 27.0:
-			shape.append(p)
-	var pieces := Geometry2D.clip_polygons(shape, Chapel.outline())
-	var plot := PackedVector2Array()
-	for p in CampusPlan.PLOTS["formation"]["outline"]:
-		plot.append(p)
-	var dirt: Material = w.material("dirt", Color("e4e6ee")) # pale, greyish, not orange
-	for piece in pieces:
-		for part in Geometry2D.clip_polygons(piece, plot):
-			var triangles := PackedVector2Array()
-			var index := Geometry2D.triangulate_polygon(part)
-			for k in index:
-				triangles.append(part[k])
-			w._ground(triangles, -0.18, dirt)
-	# The picnic corner is lawn, worn to dirt under each shed.
-	for shed in SHEDS:
-		w.box(Vector3(4.4, 0.04, 3.6), Vector3(shed.x, -0.19, shed.y), dirt)
+	var worn: Array[Texture2D] = []
+	for k in 3:
+		worn.append(_patch_texture(5100 + k, [Color("b3a184"), Color("a08c6d"), Color("c2b496"), Color("8f7d61")], 0.95))
+	for i in patches().size():
+		var patch := patches()[i]
+		_decal(Vector2(patch.x, patch.y), Vector2(patch.z, patch.z * 0.85) * 2.4, worn[i % 3], i * 1.3)
+	var random := RandomNumberGenerator.new()
+	random.seed = 5200
+	var drifts: Array[Texture2D] = [
+		_patch_texture(5210, [Color("6e8a4c"), Color("63804a"), Color("7a9356")], 0.32),
+		_patch_texture(5211, [Color("9caf63"), Color("a9b86e"), Color("8fa65e")], 0.28)]
+	var placed := 0
+	var tries := 0
+	while placed < 26 and tries < 400:
+		tries += 1
+		var at := Vector2(random.randf_range(GROUND.position.x + 14.0, GROUND.end.x - 1.0), random.randf_range(78.0, PARKING_Z - 0.5))
+		var size := random.randf_range(2.5, 5.0)
+		if from_path(at.x, at.y) - WIDTH / 2.0 - 0.3 < size / 2.0 or not walkable(at.x, at.y):
+			continue
+		_decal(at, Vector2(size, size * random.randf_range(0.5, 0.9)), drifts[placed % 2], random.randf() * PI)
+		placed += 1
+
+## A soft-edged ground patch as a pixel image: speckled in `colors`, its alpha falling
+## off from the middle with a ragged, noisy rim in stepped levels (no smooth airbrush).
+func _patch_texture(seed_value: int, colors: Array, strength: float) -> Texture2D:
+	var random := RandomNumberGenerator.new()
+	random.seed = seed_value
+	var noise := FastNoiseLite.new()
+	noise.seed = seed_value
+	noise.frequency = 0.09
+	var image := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	for y in 64:
+		for x in 64:
+			var d := Vector2((x - 31.5) / 31.5, (y - 31.5) / 31.5).length()
+			var edge := 1.0 - d + noise.get_noise_2d(x, y) * 0.45
+			var alpha := snappedf(clampf(edge * 2.2, 0.0, 1.0), 0.25) * strength
+			if random.randf() < 0.15:
+				alpha *= 0.6
+			var tone: Color = colors[random.randi_range(0, colors.size() - 1)]
+			image.set_pixel(x, y, Color(tone, alpha))
+	return ImageTexture.create_from_image(image)
+
+func _decal(at: Vector2, size: Vector2, texture: Texture2D, turn: float) -> void:
+	var decal := Decal.new()
+	decal.texture_albedo = texture
+	decal.size = Vector3(size.x, 0.6, size.y)
+	decal.position = Vector3(at.x, -0.2, at.y)
+	decal.rotation.y = turn
+	decal.upper_fade = 0.2
+	decal.lower_fade = 0.2
+	decal.normal_fade = 0.6 # only the ground, not trunks or kerbs
+	w.root.add_child(decal)
 
 func _path() -> void:
 	var asphalt: Material = w.material("road", Color("5f6468"))

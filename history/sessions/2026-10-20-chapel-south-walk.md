@@ -49,6 +49,13 @@ sheds by the east road. Copy the photos into the repo, but not the ones with car
   carpet of small clumps between the tufts, and a lawn floor with soft lighter and
   darker patches. About 6 500 tufts in all (the style guide's limit is now 10 000).
 
+- **Green under the trees, blended dirt** (Mikko: "add some green here", and how to
+  blend the mown-looking green). The bare dirt block on the chapel side is gone: the
+  walk is lawn, worn to dirt only in soft patches (decals with ragged, stepped-alpha
+  edges) under each tree, in front of the glass hall's steps and under the sheds. Grass
+  thins out into each patch (`ChapelSouth.dirt()`), so there are no hard edges. Faint
+  lighter and darker drifts over the lawn break up the flat, freshly-mown carpet look.
+
 ## What changed
 
 - `areas/chapel_south.gd` (new), `areas/chapel.gd` (south bays, steps solid, its south
