@@ -26,7 +26,7 @@ const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
-const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
+const HOURS: Array[float] = [5.75, 8.0, 12.0, 16.5, 17.75, 18.5, 21.0]
 const FRAMINGS := [[112.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"], [32.0, "Chapel"],
 	[84.0, "IH Gym"], [44.0, "Gym side"], [64.0, "SJH"], [30.0, "Gym inside"]]
 ## Down to about the student and an arm's length around them.
@@ -186,6 +186,7 @@ func _ready() -> void:
 		_args[parts[0]] = parts[1] if parts.size() > 1 else "true"
 	_build_display()
 	_build_lighting()
+	Atmosphere.add_wind()
 	world.build(scene)
 	_collect_cutaways()
 	student = Student.new()
@@ -229,10 +230,14 @@ func _ready() -> void:
 	atmosphere.sun = sun
 	atmosphere.environment = environment
 	atmosphere.sky = sky_material
+	atmosphere.sound = sound
 	scene.add_child(atmosphere)
 	atmosphere.build()
 	if _args.has("rain"):
 		atmosphere.start_raining() # --rain starts in a shower, for captures
+	if Atmosphere.WEATHER.has(_args.get("weather", "")):
+		atmosphere.auto_weather = false # --weather=clear|overcast|rain|storm|fog|windy, for captures
+		atmosphere.set_weather(_args["weather"], true)
 
 	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0],
 		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "mgn": [MGN_SPOT, 56.0], "middle": [MIDDLE_SPOT, 40.0],
@@ -745,44 +750,89 @@ func _aim_sun(force := false) -> void:
 	# At night the light is the moon's: the sky draws the moon where it comes from.
 	sky_material.set_shader_parameter("moon_dir", sun.basis.z.normalized())
 
+## The time-of-day presets (T steps through them): the sun's offset as seen from the APS
+## front (`_aim_sun` turns it with the view), its colour and strength, the ambient fill,
+## haze, grade, glow, sky, the display's light and shade tints, cloud shadows, whether the
+## lamps and lit windows are on, stars, the crickets, the light shafts' strength and the
+## dawn mist.
+const PRESETS := {
+	5.75: {"label": "Dawn · 5:45 AM", "sun_offset": Vector3(60, 16, 60), "sun": "ffb39a", "energy": 0.5,
+		"ambient": "9aa4c8", "ambient_energy": 0.42, "fog": 1.0, "saturation": 0.96, "contrast": 1.02,
+		"glow": 0.55, "glow_threshold": 1.1, "top": "3f527f", "horizon": "f1b5a3", "ground": "5e6371",
+		"light_tint": "ffe9e4", "shade_tint": "d4daf2", "clouds": 0.35, "lamps": true, "stars": 0.3,
+		"crickets": false, "shafts": 0.06, "shaft_colour": "ffc9b0", "mist": 0.7},
+	8.0: {"label": "Morning · 8:00 AM", "sun_offset": Vector3(55, 44, 60), "sun": "ffce96", "energy": 1.08,
+		"ambient": "b8bec6", "ambient_energy": 0.42, "fog": 0.6, "saturation": 1.05, "contrast": 1.04,
+		"glow": 0.25, "glow_threshold": 1.6, "top": "5d8aaf", "horizon": "edd3ae", "ground": "8a8a7c",
+		"light_tint": "fff6e4", "shade_tint": "eceef4", "clouds": 0.85, "lamps": false, "stars": 0.0,
+		"crickets": false, "shafts": 0.085, "shaft_colour": "ffd59a", "mist": 0.15},
+	# Noon is a clear, sunny Philippine midday: a strong white sun a little off overhead so
+	# the shadows still read, a blue sky fill in the shade, almost no haze.
+	12.0: {"label": "Noon · 12:00 PM", "sun_offset": Vector3(-55, 80, 34), "sun": "fff4de", "energy": 1.42,
+		"ambient": "a9bdd8", "ambient_energy": 0.32, "fog": 0.1, "saturation": 1.18, "contrast": 1.08,
+		"glow": 0.25, "glow_threshold": 1.6, "top": "3f86d0", "horizon": "bfdcf0", "ground": "8a8a7c",
+		"light_tint": "fff6e4", "shade_tint": "eceef4", "clouds": 0.5, "lamps": false, "stars": 0.0,
+		"crickets": false, "shafts": 0.045, "shaft_colour": "fff1d6", "mist": 0.0},
+	16.5: {"label": "Afternoon · 4:30 PM", "sun_offset": Vector3(-55, 44, 60), "sun": "ffce96", "energy": 1.08,
+		"ambient": "b8bec6", "ambient_energy": 0.42, "fog": 0.6, "saturation": 1.05, "contrast": 1.04,
+		"glow": 0.25, "glow_threshold": 1.6, "top": "5d8aaf", "horizon": "edd3ae", "ground": "8a8a7c",
+		"light_tint": "fff6e4", "shade_tint": "eceef4", "clouds": 0.85, "lamps": false, "stars": 0.0,
+		"crickets": false, "shafts": 0.085, "shaft_colour": "ffd59a", "mist": 0.0},
+	# Golden hour: the sun low in the west, deep warm light, long shadows, glowing edges,
+	# strong shafts and dust in them.
+	17.75: {"label": "Golden hour · 5:45 PM", "sun_offset": Vector3(-62, 17, 50), "sun": "ffa257", "energy": 1.2,
+		"ambient": "d6b08c", "ambient_energy": 0.36, "fog": 0.75, "saturation": 1.16, "contrast": 1.07,
+		"glow": 0.5, "glow_threshold": 1.15, "top": "6a84b6", "horizon": "ffbd76", "ground": "8a7862",
+		"light_tint": "fff0d6", "shade_tint": "e6d8d6", "clouds": 0.6, "lamps": false, "stars": 0.0,
+		"crickets": false, "shafts": 0.16, "shaft_colour": "ffb866", "mist": 0.0},
+	# Dusk: the sun just under the horizon, the sky orange to deep blue, the lamps and
+	# windows coming on, the first stars.
+	18.5: {"label": "Dusk · 6:30 PM", "sun_offset": Vector3(-62, 9, 50), "sun": "ff8e6e", "energy": 0.32,
+		"ambient": "7c86b6", "ambient_energy": 0.42, "fog": 0.8, "saturation": 1.0, "contrast": 1.04,
+		"glow": 0.8, "glow_threshold": 0.9, "top": "1f2d5c", "horizon": "e2896a", "ground": "3a3c4a",
+		"light_tint": "f4e4ea", "shade_tint": "cfd6f4", "clouds": 0.25, "lamps": true, "stars": 0.45,
+		"crickets": true, "shafts": 0.0, "shaft_colour": "ff9a70", "mist": 0.2},
+	21.0: {"label": "Night · 9:00 PM", "sun_offset": Vector3(55, 58, 60), "sun": "a7bee5", "energy": 0.2,
+		"ambient": "6f86c2", "ambient_energy": 0.3, "fog": 0.6, "saturation": 1.05, "contrast": 1.04,
+		"glow": 0.9, "glow_threshold": 0.85, "top": "101c39", "horizon": "364566", "ground": "2a3040",
+		"light_tint": "e6eeff", "shade_tint": "c9d6ff", "clouds": 0.0, "lamps": true, "stars": 1.0,
+		"crickets": true, "shafts": 0.0, "shaft_colour": "ffd59a", "mist": 0.0},
+}
+
 func _set_hour(value: float) -> void:
-	hour = value
-	var night := hour >= 19.0 or hour < 6.0
-	var noon := hour >= 10.0 and hour < 15.0
-	var morning := hour < 10.0 and not night
-	# Noon is a clear, sunny Philippine midday: a strong white sun a little off overhead
-	# so the shadows still read, a blue sky fill in the shade, almost no haze.
-	_sun_offset = Vector3(55 if night or morning else -55, 58 if night else (80 if noon else 44), 34 if noon else 60)
+	hour = value if PRESETS.has(value) else 16.5
+	var p: Dictionary = PRESETS[hour]
+	var lamps: bool = p.lamps
+	_sun_offset = p.sun_offset
 	_aim_sun(true)
-	sun.light_color = Color("a7bee5") if night else (Color("fff4de") if noon else Color("ffce96"))
-	sun.light_energy = 0.2 if night else (1.42 if noon else 1.08)
-	environment.ambient_light_color = Color("6f86c2") if night else (Color("a9bdd8") if noon else Color("b8bec6"))
-	environment.ambient_light_energy = 0.3 if night else (0.32 if noon else 0.42)
-	environment.fog_density = 0.1 if noon else 0.6
-	environment.adjustment_saturation = 1.18 if noon else 1.05
-	environment.adjustment_contrast = 1.08 if noon else 1.04
-	environment.glow_intensity = 0.9 if night else 0.25
-	environment.glow_hdr_threshold = 0.85 if night else 1.6
-	var top := Color("101c39") if night else (Color("3f86d0") if noon else Color("5d8aaf"))
-	var horizon := Color("364566") if night else (Color("bfdcf0") if noon else Color("edd3ae"))
-	sky_material.set_shader_parameter("top_color", top)
+	sun.light_color = Color(p.sun)
+	sun.light_energy = p.energy
+	environment.ambient_light_color = Color(p.ambient)
+	environment.ambient_light_energy = p.ambient_energy
+	environment.fog_density = p.fog
+	environment.adjustment_saturation = p.saturation
+	environment.adjustment_contrast = p.contrast
+	environment.glow_intensity = p.glow
+	environment.glow_hdr_threshold = p.glow_threshold
+	var horizon := Color(p.horizon)
+	sky_material.set_shader_parameter("top_color", Color(p.top))
 	sky_material.set_shader_parameter("horizon_color", horizon)
-	sky_material.set_shader_parameter("ground_color", Color("2a3040") if night else Color("8a8a7c"))
-	sky_material.set_shader_parameter("stars", 1.0 if night else 0.0)
+	sky_material.set_shader_parameter("ground_color", Color(p.ground))
+	sky_material.set_shader_parameter("stars", p.stars)
 	environment.fog_light_color = horizon
 	var grade := display.material as ShaderMaterial
-	grade.set_shader_parameter("light_tint", Color("e6eeff") if night else Color("fff6e4"))
-	grade.set_shader_parameter("shade_tint", Color("c9d6ff") if night else Color("eceef4"))
+	grade.set_shader_parameter("light_tint", Color(p.light_tint))
+	grade.set_shader_parameter("shade_tint", Color(p.shade_tint))
 	# Cloud shadows by day, a touch lighter in the slanting light; few at a clear noon.
-	edges.set_shader_parameter("clouds", 0.0 if night else (0.5 if noon else 0.85))
-	world.set_night(night)
+	edges.set_shader_parameter("clouds", p.clouds)
+	world.set_night(lamps)
 	if atmosphere:
-		atmosphere.set_hour(hour, night)
+		atmosphere.set_hour(hour, lamps, p)
 	if sound:
-		sound.night = night
+		sound.night = p.crickets
 		sound.hour = hour
 	if time_label:
-		time_label.text = "Night · 9:00 PM" if night else ("Noon · 12:00 PM" if noon else ("Morning · 8:00 AM" if morning else "Afternoon · 4:30 PM"))
+		time_label.text = p.label
 
 # --- Interface -----------------------------------------------------------------
 
@@ -828,7 +878,7 @@ func _build_interface() -> void:
 	title.add_theme_constant_override("shadow_offset_y", 2)
 	stack.add_child(title)
 	var controls := Label.new()
-	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    G  Rain    C  Character    M  Mute\n" + \
+	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    G  Weather    C  Character    M  Mute\n" + \
 		"E/Space  Talk (near someone)\n" + \
 		"Wheel or +/-  Zoom    1-9, 0  Framings    Q/E or right-drag  Angle    P  Pixels\n" + \
 		"R  Reset    F11  Fullscreen    F1  Fast travel (dev)    F2  Free cam (dev)    Tab  Hide controls    Esc  Close"
@@ -1170,6 +1220,17 @@ func _process(delta: float) -> void:
 	sound.rain = atmosphere.rain
 	npcs.rain = atmosphere.rain
 	npcs.hour = hour
+	_show_weather()
+
+## The time badge also names the weather when it is not clear.
+func _show_weather() -> void:
+	if time_label == null or not PRESETS.has(hour):
+		return
+	var text: String = PRESETS[hour].label
+	if atmosphere.weather != "clear":
+		text += " · " + {"overcast": "Overcast", "rain": "Rain", "storm": "Thunderstorm", "fog": "Fog", "windy": "Windy"}[atmosphere.weather]
+	if time_label.text != text:
+		time_label.text = text
 
 ## A frame of the free cam: the student waits, the world goes on round the camera.
 func _fly(delta: float) -> void:
@@ -2028,6 +2089,28 @@ func _verify_and_capture() -> void:
 		atmosphere.update(0.1)
 		sound.rain = 0.0
 		checks.rain_wets_then_dries = raining and atmosphere.wet_count() == 0 and not atmosphere.puddles[0].visible
+		# The weathers: a storm flashes lightning and blows hard, fog lies low on the ground,
+		# overcast dims the sun; G steps through them; then clear again.
+		atmosphere.set_weather("clear", true)
+		atmosphere.update(0.1)
+		var sun_before := sun.light_energy
+		atmosphere.set_weather("storm", true)
+		for i in 200:
+			atmosphere.update(0.1)
+		var stormy: bool = atmosphere.strikes > 0 and atmosphere.rain > 0.99 and atmosphere.wind > 0.75
+		atmosphere.set_weather("fog", true)
+		atmosphere.update(0.1)
+		var foggy := environment.fog_height_density > 0.2
+		atmosphere.set_weather("overcast", true)
+		atmosphere.update(0.1)
+		var dull := sun.light_energy < sun_before * 0.6
+		var stepped := Atmosphere.WEATHERS.size() == 6
+		atmosphere.toggle_rain()
+		stepped = stepped and atmosphere.weather == "rain"
+		atmosphere.set_weather("clear", true)
+		atmosphere.update(0.1)
+		var hours_ok := HOURS.all(func(h: float) -> bool: return PRESETS.has(h))
+		checks.weather_and_light = stormy and foggy and dull and stepped and hours_ok and environment.fog_height_density < 0.05
 		# light: every tree drops leaves and (by day) casts shafts
 		checks.leaves_and_shafts = world.trees.size() > 10 and atmosphere.leaves.size() == world.trees.size() 			and (night_now() or atmosphere.shafts.get_child_count() >= world.trees.size())
 		checks.campus_sounds = sound.murmur.playing and sound.crowd > 0.9 and (sound.night or sound.bird_calls > calls)

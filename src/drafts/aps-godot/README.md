@@ -98,8 +98,8 @@ NPC checks fail.
 | 1-6 | APS + canteen, Whole building, Corridor, Canteen (patio), Close-up, Chapel (plaza) |
 | 7-9, 0 | IH Gym (front), Gym side (the side entrance from the lane), SJH, Gym inside (the court) |
 | Q/E, or right-drag | Camera angle (hold the right mouse button and drag) |
-| T | Morning, noon, afternoon, night |
-| G | Rain on or off (it also comes and goes on its own) |
+| T | Dawn, morning, noon, afternoon, golden hour, dusk, night |
+| G | Weather: clear, overcast, rain, thunderstorm, fog, windy (it also changes on its own) |
 | C | Boy / girl |
 | E, Space or Enter | Talk to someone in reach, like the browser game: the line types out with a blip in their voice; press again to show it all, again for the next line (E turns the camera when nobody is near). When they ask something, pick a reply with W/S (or the arrows) and E, 1-3, or the mouse; they remember what you said |
 | M | Mute |
@@ -202,7 +202,7 @@ switching, sprite shadows, and that the wide/whole-building framings contain
 the frontage, and the gym inside (walking in through a doorway and the side entrance, its two storeys, the stairs and bleacher rows, the stage and backstage, the cutaway and the hall view), SJH, MGN, the middle road and the walk along the chapel's south side, every fast-travel place being walkable, the NPCs (spawned on walkable ground, wandering, noticing and waving, umbrellas, talking, choices, the talk closing when you walk away), the campus sounds, and rain wetting the ground and drying. Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
 writes review shots into the ignored `builds/aps-godot-review/port/`.
 
-Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
+Optional arguments after `--`: `--hour=5.75|8|12|16.5|17.75|18.5|21`, `--weather=clear|overcast|rain|storm|fog|windy`, `--girl`, `--x=`, `--z=`,
 `--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn|middle|middle-north|fountain|student-center`, `--pixel=auto|crisp|pixel`,
 `--walk=<seconds>`, `--rain`, `--talk` (start a conversation with whoever is in reach), `--travel` (open the fast-travel panel), `--hide-help`, `--capture=<absolute PNG path>`.
 

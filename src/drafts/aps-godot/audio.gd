@@ -194,6 +194,22 @@ func purr() -> void:
 			rough[k] *= (0.5 + 0.5 * sin(TAU * 25.0 * float(k) / RATE)) * sin(PI * t) * 0.9 * MASTER
 		return rough), _effects)
 
+## Thunder: a deep rumble that cracks, swells and rolls away over three seconds, under
+## the rain.
+func thunder() -> void:
+	_play(_cached("thunder:%d" % (randi() % 2), func() -> PackedFloat32Array:
+		var count := int(RATE * 3.2)
+		var low := _filter(_noise(count), "lowpass", 120.0, 0.7)
+		var mid := _filter(_noise(count), "lowpass", 420.0, 0.7)
+		var buffer := PackedFloat32Array()
+		buffer.resize(count)
+		for k in count:
+			var t := float(k) / count
+			var crack := exp(-t * 18.0)
+			var roll := (1.0 - exp(-t * 6.0)) * exp(-t * 1.6) * (0.75 + 0.25 * sin(t * 23.0))
+			buffer[k] = (low[k] * 3.2 * roll + mid[k] * 1.4 * crack) * 0.55 * MASTER
+		return buffer), _effects)
+
 ## A flock taking off: a quick flutter of wingbeats.
 func flutter() -> void:
 	_play(_cached("flutter:%d" % (randi() % 2), func() -> PackedFloat32Array:

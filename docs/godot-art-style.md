@@ -23,7 +23,7 @@ frozen references.
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn\|middle\|middle-north\|fountain\|student-center`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--free-cam=<yaw>,<pitch>` (degrees: start in the free cam looking that way, e.g. `--hour=21 --free-cam=200,30` for the night sky), `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Preview flags | `--hour=5.75\|8\|12\|16.5\|17.75\|18.5\|21`, `--weather=clear\|overcast\|rain\|storm\|fog\|windy`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn\|middle\|middle-north\|fountain\|student-center`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--free-cam=<yaw>,<pitch>` (degrees: start in the free cam looking that way, e.g. `--hour=21 --free-cam=200,30` for the night sky), `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
 | Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
@@ -441,13 +441,20 @@ its zone's turn.
 
 | Preset | Hour | Sun offset (x, y, z) | Sun colour | Energy | Ambient | Sky top / horizon | Grade light / shade |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| Dawn | 5:45 | (60, 16, 60) | `#ffb39a` | 0.5 | `#9aa4c8` × 0.42 | `#3f527f` / `#f1b5a3` + faint stars | `#ffe9e4` / `#d4daf2` |
 | Morning | 8:00 | (55, 44, 60) | `#ffce96` | 1.08 | `#b8bec6` × 0.42 | `#5d8aaf` / `#edd3ae` | `#fff6e4` / `#eceef4` |
 | Noon | 12:00 | (−55, 80, 34) | `#fff4de` | 1.42 | `#a9bdd8` × 0.32 | `#3f86d0` / `#bfdcf0` | `#fff6e4` / `#eceef4` |
 | Afternoon (default) | 16:30 | (−55, 44, 60) | `#ffce96` | 1.08 | `#b8bec6` × 0.42 | `#5d8aaf` / `#edd3ae` | `#fff6e4` / `#eceef4` |
+| Golden hour | 17:45 | (−62, 17, 50) | `#ffa257` | 1.2 | `#d6b08c` × 0.36 | `#6a84b6` / `#ffbd76` | `#fff0d6` / `#e6d8d6` |
+| Dusk | 18:30 | (−62, 9, 50) | `#ff8e6e` | 0.32 | `#7c86b6` × 0.42 | `#1f2d5c` / `#e2896a` + stars 0.45 | `#f4e4ea` / `#cfd6f4` |
 | Night | 21:00 | (55, 58, 60) | `#a7bee5` | 0.2 | `#6f86c2` × 0.3 | `#101c39` / `#364566` + stars | `#e6eeff` / `#c9d6ff` |
 
-Glow: intensity 0.25 by day (HDR threshold 1.6), 0.9 at night (threshold
-0.85). Fog colour follows the horizon colour. Noon is a clear, sunny Philippine
+All the values are in `PRESETS` in `aps.gd` (T steps through them). Lamps and lit
+windows are on at dawn, dusk and night; the crickets at dusk and night. Light shafts:
+0.085 morning and afternoon, 0.045 noon, **0.16 at golden hour** (`#ffb866`), with drifting
+dust specks round the student in the low clear sun. Dawn has a low mist (`mist` 0.7).
+Glow: intensity 0.25 by day (HDR threshold 1.6), 0.5 at golden hour (1.15), 0.55 at dawn,
+0.8 at dusk, 0.9 at night (threshold 0.85). Fog colour follows the horizon colour. Noon is a clear, sunny Philippine
 midday: fog density 0.1 (0.6 at other hours), saturation 1.18 and contrast 1.08
 (1.05 and 1.04 otherwise), so it never reads flat or hazy.
 
@@ -486,8 +493,19 @@ before using them.
 2026-10-16 at Mclaren's request; Sean, please confirm.** Rain is the only time
 anything is wet or has specular other than glass.
 
-- **Rain** comes and goes on its own (dry spells of 80-160 s, showers of
-  50-90 s); **G** starts or stops it, `--rain` starts it at once. It
+- **Weather** (`WEATHER` in `atmosphere.gd`): clear, overcast, rain, thunderstorm, fog and
+  windy come and go on their own (clear spells 80-160 s, others 50-100 s, by
+  `WEATHER_ODDS`); **G** steps through them, `--weather=<name>` starts in one, `--rain` in
+  rain. Each sets rain, **gloom** (overcast's flat light: the sun down to 20%, ambient up
+  and grey, contrast down, so shadows soften away), **fog** (thicker grey haze and low height
+  fog, `fog_height` up to 1.4 m: the orthographic camera sees everything at about the same
+  depth, so the fog's body is height fog, kept low so the student stays clear) and
+  **wind** (the global shader value `wind`, 1 to 3.6, makes the foliage sway harder and
+  lean; falling leaves come down thicker and blow sideways). A **thunderstorm** is rain
+  with wind and lightning every 5-14 s: a double flash that lifts the ambient light and
+  whitens the sky, and the thunder (`audio.gd` `thunder`) 0.6-2.2 s later. The time badge
+  names the weather when it is not clear.
+- **Rain** fades in and out over about 6 s. It
   fades in and out over about 6 s. Streaks are `QuadMesh` 0.03 x 0.55 at alpha
   0.24 (4000 at full rain), splashes 0.1 x 0.035 at alpha 0.28 (320). Both
   follow the student.
