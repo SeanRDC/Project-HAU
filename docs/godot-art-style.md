@@ -629,6 +629,19 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   umbrella (an eight-sided matte canopy in their own colour, a steel rim and shaft,
   springing open over a quarter second) unless they stand under a roof (floor 0.45 m
   or higher, as in the canteen hall).
+- **Ambient life** (`critters.gd`): cats and maya birds, small enough that their sheets
+  are **drawn in code** at the characters' density (85 px for 1.83 m: a cat about 26 x 18
+  px, a bird 10 x 8), facing right and flipped, every filled pixel next to an empty one
+  edged in a darker tone of its own colour (as the cast: no black outline), lit and
+  shadowed like the cast. Three cats (`CATS`: Mingming orange tabby at APS, Kiko tuxedo by
+  the canteen, Tisay calico at the chapel plaza): sit with a tail flick, stroll within
+  5 m of home, curl up asleep (more at noon, at night and in the rain), walk over to a
+  student standing still within 4.5 m, dash off from a running one, and sit to be petted
+  (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). Flocks
+  (`FLOCKS`: six spots, 4-6 birds) hop and peck on open ground from 6:00 to 18:00 when
+  it is not raining, and the whole flock flutters up and away when the student comes
+  within 2.4 m (4.5 m running), landing again 10-20 s later once the student is 7 m off.
+  Sounds (`audio.gd`): `meow`, `purr`, `flutter`.
 - **Talks are scripts** in `npcs.gd` `CAST`: lines, and questions with two or three
   replies the student picks (W/S or arrows and E, 1-3, or the mouse) on a dark card at
   the bottom of the screen, the picked one in maroon. A reply can be remembered, and

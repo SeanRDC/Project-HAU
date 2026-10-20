@@ -14,6 +14,7 @@ const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
 const GymInterior := preload("res://areas/gym_interior.gd")
 const Npcs := preload("res://npcs.gd")
+const Critters := preload("res://critters.gd")
 const Atmosphere := preload("res://atmosphere.gd")
 const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
@@ -90,6 +91,7 @@ var edges := ShaderMaterial.new()
 var student: Student
 var sound: Sound
 var npcs: Npcs
+var critters: Critters
 var atmosphere: Atmosphere
 ## E was just used to talk, so holding it does not also turn the camera.
 var _e_talk := false
@@ -213,6 +215,13 @@ func _ready() -> void:
 	npcs.sound = sound
 	scene.add_child(npcs)
 	npcs.build_ui(self)
+	critters = Critters.new()
+	critters.camera = camera
+	critters.student = student
+	critters.to_screen = _to_screen
+	critters.sound = sound
+	scene.add_child(critters)
+	critters.build_ui(self)
 	# weather and atmosphere: rain, falling leaves, light shafts
 	atmosphere = Atmosphere.new()
 	atmosphere.world = world
@@ -1039,9 +1048,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			if npcs.interact():
 				_e_talk = true
 				sound.select()
+			elif critters.pet():
+				_e_talk = true
 		KEY_SPACE, KEY_ENTER, KEY_KP_ENTER:
 			if npcs.interact():
 				sound.select()
+			else:
+				critters.pet()
 		KEY_P:
 			pixel_mode = PIXEL_MODES[(PIXEL_MODES.find(pixel_mode) + 1) % PIXEL_MODES.size()]
 			pixel_scale = 0
@@ -1147,6 +1160,9 @@ func _process(delta: float) -> void:
 	_update_camera(delta)
 	_update_cutaways(delta)
 	npcs.update(delta)
+	critters.hour = hour
+	critters.rain = atmosphere.rain
+	critters.update(delta, direction == Vector2.ZERO, direction != Vector2.ZERO and _held([KEY_SHIFT]), npcs.talking_to != null, npcs.in_reach() != null)
 	atmosphere.focus = student.position
 	atmosphere.view_width = width
 	atmosphere.indoor = sound.indoor
@@ -1167,6 +1183,7 @@ func _fly(delta: float) -> void:
 	student.face(camera)
 	_update_cutaways(delta)
 	npcs.update(delta)
+	critters.update(delta, true, false, false, false)
 	atmosphere.focus = Vector3(ahead.x, 0.0, ahead.z)
 	atmosphere.view_width = 60.0
 	atmosphere.update(delta)
@@ -1941,6 +1958,24 @@ func _verify_and_capture() -> void:
 		by_ben = ben.ground() - side * 4.5
 		student.position = Vector3(by_ben.x, ben.position.y, by_ben.y)
 		npcs.update(1.0 / 30.0)
+		# Ambient life: the cats and the flocks are there; a flock takes off when the student
+		# comes close and lands again later; a cat can be petted.
+		critters.hour = 12.0
+		critters.rain = 0.0
+		var flock: Dictionary = critters.flocks[0]
+		var first: Dictionary = flock.birds[0]
+		var by_bird: Vector2 = first.at + Vector2(1.0, 0.0)
+		student.position = Vector3(by_bird.x, 0.0, by_bird.y)
+		critters.update(1.0 / 30.0, true, false, false, false)
+		var took_off: bool = flock.state == "flying" and critters.takeoffs >= 1
+		for i in 120:
+			critters.update(1.0 / 30.0, true, false, false, false)
+		var flew_away: bool = flock.state == "away" and not (first.node as Node3D).visible
+		var tisay: Dictionary = critters.cats[2]
+		var by_cat: Vector2 = tisay.at + Vector2(0.6, 0.0)
+		student.position = Vector3(by_cat.x, World.floor_height(by_cat.x, by_cat.y), by_cat.y)
+		var petted: bool = critters.pet() and tisay.state == "petted" and critters.pets == 1
+		checks.cats_and_birds = critters.cats.size() == 3 and critters.flocks.size() == 6 and took_off and flew_away and petted 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
 		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0

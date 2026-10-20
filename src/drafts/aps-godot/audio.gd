@@ -168,6 +168,45 @@ func blip(pitch: float) -> void:
 	_play(_cached("blip:%d:%d" % [int(pitch), k], func() -> PackedFloat32Array:
 		return _tone(PackedFloat32Array(), f, 0.0, 0.05, 0.035, "square")), _effects)
 
+## A cat's meow: a nasal tone that rises and falls ("mi-aow"), one of three.
+func meow() -> void:
+	_play(_cached("meow:%d" % (randi() % 3), func() -> PackedFloat32Array:
+		var count := int(RATE * randf_range(0.42, 0.6))
+		var top := randf_range(620.0, 820.0)
+		var buffer := PackedFloat32Array()
+		buffer.resize(count)
+		var phase := 0.0
+		for k in count:
+			var t := float(k) / count
+			var freq := lerpf(top * 0.7, top, sin(PI * minf(t * 1.6, 1.0))) * (1.0 - 0.25 * t)
+			phase += freq / RATE
+			var tone := sin(TAU * phase) * 0.6 + sin(TAU * phase * 2.0) * 0.3 + sin(TAU * phase * 3.0) * 0.12
+			buffer[k] = tone * sin(PI * t) * 0.05 * MASTER
+		return buffer), _effects)
+
+## A cat purring while petted: a low rough rumble pulsing about 25 times a second.
+func purr() -> void:
+	_play(_cached("purr", func() -> PackedFloat32Array:
+		var count := int(RATE * 1.6)
+		var rough := _filter(_noise(count), "lowpass", 180.0, 0.8)
+		for k in count:
+			var t := float(k) / count
+			rough[k] *= (0.5 + 0.5 * sin(TAU * 25.0 * float(k) / RATE)) * sin(PI * t) * 0.9 * MASTER
+		return rough), _effects)
+
+## A flock taking off: a quick flutter of wingbeats.
+func flutter() -> void:
+	_play(_cached("flutter:%d" % (randi() % 2), func() -> PackedFloat32Array:
+		var buffer := PackedFloat32Array()
+		for i in randi_range(6, 9):
+			var beat := _filter(_noise(int(RATE * 0.03)), "bandpass", randf_range(900.0, 1500.0), 0.9)
+			var start := int(i * randf_range(0.035, 0.05) * RATE)
+			if buffer.size() < start + beat.size():
+				buffer.resize(start + beat.size())
+			for k in beat.size():
+				buffer[start + k] += beat[k] * sin(PI * float(k) / beat.size()) * 0.12 * MASTER * (1.0 - i * 0.08)
+		return buffer), _effects)
+
 func select() -> void:
 	_play(_cached("select", func() -> PackedFloat32Array:
 		return _tone(PackedFloat32Array(), 660.0, 0.0, 0.08, 0.05, "triangle")), _effects)
