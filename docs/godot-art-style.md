@@ -417,14 +417,16 @@ its zone's turn.
 | Preset | Hour | Sun offset (x, y, z) | Sun colour | Energy | Ambient | Sky top / horizon | Grade light / shade |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Morning | 8:00 | (55, 44, 60) | `#ffce96` | 1.08 | `#b8bec6` × 0.42 | `#5d8aaf` / `#edd3ae` | `#fff6e4` / `#eceef4` |
-| Noon | 12:00 | (−55, 95, 18) | `#fff4de` | 1.0 | `#bcc3c8` × 0.42 | `#5d8aaf` / `#c7d9dc` | `#fff6e4` / `#eceef4` |
+| Noon | 12:00 | (−55, 80, 34) | `#fff4de` | 1.42 | `#a9bdd8` × 0.32 | `#3f86d0` / `#bfdcf0` | `#fff6e4` / `#eceef4` |
 | Afternoon (default) | 16:30 | (−55, 44, 60) | `#ffce96` | 1.08 | `#b8bec6` × 0.42 | `#5d8aaf` / `#edd3ae` | `#fff6e4` / `#eceef4` |
 | Night | 21:00 | (55, 58, 60) | `#a7bee5` | 0.2 | `#6f86c2` × 0.3 | `#101c39` / `#364566` + stars | `#e6eeff` / `#c9d6ff` |
 
 Glow: intensity 0.25 by day (HDR threshold 1.6), 0.9 at night (threshold
-0.85). Fog colour follows the horizon colour.
+0.85). Fog colour follows the horizon colour. Noon is a clear, sunny Philippine
+midday: fog density 0.1 (0.6 at other hours), saturation 1.18 and contrast 1.08
+(1.05 and 1.04 otherwise), so it never reads flat or hazy.
 
-Cloud shadows (in `edges.gdshader`): `clouds` 1.0 at noon, 0.85 morning and afternoon,
+Cloud shadows (in `edges.gdshader`): `clouds` 0.5 at noon (a clear day), 0.85 morning and afternoon,
 0 at night. Each pixel follows the ray towards the sun (`sun_dir`, set by `_aim_sun()`)
 up to a cloud deck at 70 m, samples a 3-octave noise 48 m across drifting with `wind`
 (1.1, 0.45) m/s, and darkens in two hard steps (0.1 past 0.55 cover, 0.09 more past
