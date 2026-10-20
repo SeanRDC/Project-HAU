@@ -1968,15 +1968,33 @@ func _verify_and_capture() -> void:
 		student.position = Vector3(by_bird.x, 0.0, by_bird.y)
 		critters.update(1.0 / 30.0, true, false, false, false)
 		var took_off: bool = flock.state == "flying" and critters.takeoffs >= 1
-		for i in 120:
+		# it flies off the screen before it is gone (never vanishing in view), and lands again
+		# gliding in to the ground
+		var vanished_in_view := false
+		for i in 600:
+			var was: bool = (first.node as Node3D).visible
 			critters.update(1.0 / 30.0, true, false, false, false)
-		var flew_away: bool = flock.state == "away" and not (first.node as Node3D).visible
+			if was and not (first.node as Node3D).visible and camera.is_position_in_frustum((first.node as Node3D).position):
+				vanished_in_view = true
+			if flock.state == "away":
+				break
+		var flew_away: bool = flock.state == "away" and not (first.node as Node3D).visible and not vanished_in_view
+		student.position = Vector3(by_bird.x + 40.0, 0.0, by_bird.y)
+		flock.timer = 0.0
+		for i in 150:
+			critters.update(1.0 / 30.0, true, false, false, false)
+		var landed: bool = flock.state == "feeding" and (first.node as Node3D).visible 			and absf((first.node as Node3D).position.y - World.floor_height((first.at as Vector2).x, (first.at as Vector2).y)) < 0.2
 		var tisay: Dictionary = critters.cats[2]
 		var by_cat: Vector2 = tisay.at + Vector2(0.6, 0.0)
 		student.position = Vector3(by_cat.x, World.floor_height(by_cat.x, by_cat.y), by_cat.y)
 		var petted: bool = critters.pet() and tisay.state == "petted" and critters.pets == 1
-		var flying_over: bool = not critters.flyers.is_empty() and (critters.flyers[0].birds[0].node as Node3D).position.y > 4.0
-		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and petted 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
+		# birds flying over cross between the camera and the student, above the ground
+		var screen_right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
+		critters._launch(Vector2(student.position.x, student.position.z), screen_right)
+		critters.update(1.0 / 30.0, true, false, false, false)
+		var over: Node3D = critters.flyers[-1].birds[0].node
+		var flying_over: bool = over != null and over.position.y > World.floor_height(over.position.x, over.position.z) + 2.0 			and (over.position - student.position).dot(camera.global_transform.basis.z) > 1.0
+		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and landed and petted 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
 		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0

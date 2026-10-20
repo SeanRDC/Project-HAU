@@ -651,9 +651,14 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). Flocks
   (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop and peck on open ground from 6:00 to 18:00 when
   it is not raining, and the whole flock flutters up and away when the student comes
-  within 2.4 m (4.5 m running), landing again 10-20 s later once the student is 7 m off.
+  within 2.4 m (4.5 m running): up, across the screen away from the student and towards the
+  camera (the open side of every view), each bird hidden only once it is off the screen
+  (`is_position_in_frustum`); 10-20 s later, once the student is 7 m off, the birds glide back
+  in from off the screen (`_land`, 2.4 s) to their spots.
   **Birds fly over** by day: every 3-8 s (at most four groups) 2-5 maya in a loose V cross the
-  view above the student at 5-14 m, 6-9 m/s, bobbing, their shadows on the ground (`flyers`).
+  view straight along the screen, 2.5-7 m in front of the student (towards the camera, so
+  never through the building the view looks at) and 3-8 m up, 6-9 m/s, bobbing, from off
+  the screen to off the screen, their shadows on the ground (`flyers`).
   Sounds (`audio.gd`): `meow`, `purr`, `flutter`.
 - **Talks are scripts** in `npcs.gd` `CAST`: lines, and questions with two or three
   replies the student picks (W/S or arrows and E, 1-3, or the mouse) on a dark card at

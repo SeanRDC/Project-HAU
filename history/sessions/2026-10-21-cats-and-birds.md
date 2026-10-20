@@ -60,6 +60,15 @@ Ambient life: cats and birds.
   By day small groups of maya fly over the view in a loose V (`flyers`). In a capture
   Tisay walked over to the student standing on the chapel steps and sat for a pet.
 
+- **Fixed (Mikko: "the birds after flying are just disappearing, and they seem to fly in
+  the buildings").** A flock that took off was hidden after 2.5 s wherever it was, often in
+  view; now it flies up, across and towards the camera and each bird is hidden only off the
+  screen, and it lands again by gliding in from off the screen. The groups flying over
+  crossed at the student's depth, through whatever building stood there; now they cross
+  on the view's open side, in front of the student, from off the screen to off the screen.
+  The check `cats_and_birds` now fails if a bird vanishes in view, and checks the landing
+  and that flyers pass between the camera and the student.
+
 ## What changed
 
 - `critters.gd` (new); `aps.gd`: created with the NPCs, updated each frame (and in the

@@ -311,14 +311,23 @@ func _update_flock(flock: Dictionary, delta: float, at: Vector2, running: bool, 
 			for bird in flock.birds:
 				_feed(bird, delta, flock.spot, right)
 		"flying":
-			flock.timer -= delta
+			# up, across and towards the camera (the open side of every view), until each is
+			# off the screen; only then gone
+			flock.timer += delta
+			var all_gone := true
 			for bird in flock.birds:
-				bird.vel.y += delta * 1.2
-				var p: Vector3 = bird.node.position + bird.vel * delta
-				bird.node.position = p
+				var node: Node3D = bird.node
+				if not node.visible:
+					continue
+				bird.vel.y += delta * 0.8
+				node.position += bird.vel * delta
 				_show(bird.sprite, _birds().fly, int(flock.timer * 14.0 + bird.peck * 7.0))
 				bird.sprite.flip_h = bird.facing < 0.0
-			if flock.timer <= 0.0:
+				if flock.timer > 0.5 and not camera.is_position_in_frustum(node.position + Vector3(0, 0.3, 0)):
+					node.visible = false
+				else:
+					all_gone = false
+			if all_gone or flock.timer > 14.0:
 				flock.state = "away"
 				flock.timer = _rng.randf_range(10.0, 20.0)
 				for bird in flock.birds:
@@ -326,27 +335,72 @@ func _update_flock(flock: Dictionary, delta: float, at: Vector2, running: bool, 
 		"away":
 			flock.timer -= delta
 			if flock.timer <= 0.0 and day and (flock.spot as Vector2).distance_to(at) > 7.0:
+				_land(flock, right)
+		"landing":
+			# gliding in from off the screen to their spots, then feeding
+			flock.timer += delta
+			var t := clampf(flock.timer / 2.4, 0.0, 1.0)
+			var ease := 1.0 - (1.0 - t) * (1.0 - t)
+			for bird in flock.birds:
+				var ground := Vector3(bird.at.x, World.floor_height(bird.at.x, bird.at.y) + 0.015, bird.at.y)
+				(bird.node as Node3D).position = (bird.from3 as Vector3).lerp(ground, ease)
+				_show(bird.sprite, _birds().fly, int(flock.timer * 14.0 + bird.peck * 7.0))
+				bird.sprite.flip_h = bird.facing < 0.0
+			if t >= 1.0:
 				flock.state = "feeding"
 				for bird in flock.birds:
-					bird.node.visible = true
-					bird.at = _clear_spot(flock.spot, flock.spot + Vector2(_rng.randf_range(-1.6, 1.6), _rng.randf_range(-1.0, 1.0)))
 					bird.to = bird.at
 					bird.hop = 1.0
 					_place(bird.node, bird.at, 0.0)
 
+## The camera's flat directions: across the screen, and from the view towards the camera.
+func _screen() -> Array:
+	var b := camera.global_transform.basis
+	return [Vector2(b.x.x, b.x.z).normalized(), Vector2(b.z.x, b.z.z).normalized()]
+
 func _take_off(flock: Dictionary, from: Vector2) -> void:
 	flock.state = "flying"
-	flock.timer = 2.5
+	flock.timer = 0.0
 	takeoffs += 1
 	var near := false
+	var dirs := _screen()
+	var across: Vector2 = dirs[0]
+	var toward: Vector2 = dirs[1]
+	# the whole flock goes the same way across the screen, away from the student
+	var side := signf((flock.spot - from).dot(across))
+	if side == 0.0:
+		side = 1.0
 	for bird in flock.birds:
-		var away: Vector2 = (bird.at - from).normalized() if (bird.at as Vector2).distance_to(from) > 0.01 else Vector2.RIGHT
-		away = away.rotated(_rng.randf_range(-0.5, 0.5))
-		bird.vel = Vector3(away.x * 4.5, _rng.randf_range(2.2, 3.4), away.y * 4.5)
+		var away: Vector2 = (across * side * _rng.randf_range(3.5, 5.0) + toward * _rng.randf_range(1.0, 2.5)).rotated(_rng.randf_range(-0.15, 0.15))
+		bird.vel = Vector3(away.x, _rng.randf_range(2.6, 3.6), away.y)
+		bird.facing = side
 		bird.peck = _rng.randf()
 		near = near or (bird.at as Vector2).distance_to(from) < 8.0
 	if near and sound != null:
 		sound.flutter()
+
+## Back to the spot: each bird starts off the screen, up and to one side, and glides down.
+func _land(flock: Dictionary, right: Vector2) -> void:
+	flock.state = "landing"
+	flock.timer = 0.0
+	var dirs := _screen()
+	var side := 1.0 if _rng.randf() < 0.5 else -1.0
+	for bird in flock.birds:
+		var node: Node3D = bird.node
+		bird.at = _clear_spot(flock.spot, flock.spot + Vector2(_rng.randf_range(-1.6, 1.6), _rng.randf_range(-1.0, 1.0)))
+		var ground := Vector3(bird.at.x, World.floor_height(bird.at.x, bird.at.y), bird.at.y)
+		var out := Vector3((dirs[0] as Vector2).x * side, 0.45, (dirs[0] as Vector2).y * side).normalized()
+		bird.from3 = _off_screen(ground + Vector3(0, 1.0, 0), out)
+		bird.facing = -side
+		node.position = bird.from3
+		node.visible = true
+
+## The first point along `dir` from `from` that the camera does not see (searching to 250 m).
+func _off_screen(from: Vector3, dir: Vector3) -> Vector3:
+	var d := 4.0
+	while d < 250.0 and camera.is_position_in_frustum(from + dir * d):
+		d += 4.0
+	return from + dir * (d + 4.0)
 
 ## A feeding bird: pecks, now and then hops a little way, a small arc off the ground.
 func _feed(bird: Dictionary, delta: float, spot: Vector2, right: Vector2) -> void:
@@ -401,13 +455,17 @@ func _update_flyers(delta: float, at: Vector2, right: Vector2) -> void:
 			flyers.erase(group)
 
 func _launch(at: Vector2, right: Vector2) -> void:
-	# across the view (along the camera's right), a little slanted, passing near the student
+	# straight across the view on its open side, between the camera and the student (the
+	# views look across open ground at a building), from off the screen to off the screen
 	var side := 1.0 if _rng.randf() < 0.5 else -1.0
-	var dir := right.rotated(_rng.randf_range(-0.5, 0.5)) * side
-	var length := _rng.randf_range(80.0, 110.0)
-	var start := at - dir * length * 0.5 + Vector2(-dir.y, dir.x) * _rng.randf_range(-12.0, 12.0)
-	var group := {"start": start, "dir": dir, "length": length, "travelled": 0.0, "phase": _rng.randf() * 4.0,
-		"speed": _rng.randf_range(6.0, 9.0), "height": _rng.randf_range(5.0, 14.0), "birds": []}
+	var dir := right * side
+	var toward: Vector2 = _screen()[1]
+	var line := at + toward * _rng.randf_range(2.5, 7.0)
+	var height := _rng.randf_range(3.0, 8.0)
+	var floor_y := World.floor_height(at.x, at.y)
+	var half := (_off_screen(Vector3(line.x, floor_y + height, line.y), Vector3(-dir.x, 0, -dir.y)) - Vector3(line.x, floor_y + height, line.y)).length()
+	var group := {"start": line - dir * half, "dir": dir, "length": half * 2.0 + 6.0, "travelled": 0.0, "phase": _rng.randf() * 4.0,
+		"speed": _rng.randf_range(6.0, 9.0), "height": floor_y + height, "birds": []}
 	for i in _rng.randi_range(2, 5):
 		var node := Node3D.new()
 		node.name = "Flying"
