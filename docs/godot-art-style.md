@@ -701,6 +701,12 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   zone below says a wide framing "frames" or "centres on" a building, that is now its
   depth and height; to see the whole building, stand at its middle. The checks
   `wide_shows_l`, `whole_building_visible` and `mgn_view_faces_front` stand there.
+  **No empty band under a cut:** the outdoor cuts (SJH, MGN, the boulevard, the chapel
+  south walk) take the near ground away with everything else, so zoomed out the frame
+  would show the empty background below the cut's edge. When one is in force the camera
+  moves straight up the screen (whole render pixels; the cut stays put) until the edge,
+  on the ground at y −0.2, sits on the frame's bottom. The student stands past the cut,
+  so they stay in frame, lower down. The interiors' cutaways keep their dark bands.
   A new building gets its own zone the same way: a `*_for(x, z)` weight, a
   facing, and the plane it frames. Make sure the camera's standing spot (focus
   minus 23 m close up, up to 90 m wide) is not inside another building.
@@ -719,8 +725,9 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   (`1 − Mgn.reach`), and at the corner it hands a quarter turn on to the SJH zone. The
   camera then stands over the chapel lawn, so the near plane cuts everything east of
   `Mgn.CUT_X` (x −51.8, just past the road and east of SJH's terracotta end block).
-  `--view=mgn` starts on the road at the entrance. Like the SJH view, wide framings show
-  an empty band at the bottom where the cut removes the near lawn.
+  `--view=mgn` starts on the road at the entrance. Wide, the cut takes the near lawn
+  away too, so the frame is raised until the cut's edge sits on its bottom (see the end
+  of this list).
 - **Boulevard zone** (`MiddleRoad.view_for`, `MiddleRoad.south_for`): once off the
   west road's sidewalk onto the boulevard (x < −62.5, between the two buildings' faces)
   the camera faces **the side of the boulevard the student is on**: south of the centre
@@ -735,8 +742,8 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   poles and planter palms: `MiddleRoad.NORTH_GROUP` / `SOUTH_GROUP`), fades out and
   keeps its shadows. Facing south the near plane also cuts everything north of
   z 30 (`MIDDLE_CUT_Z`: the APS wing, the corner garden); facing north, everything
-  south of the Main Building's face, through its ground line (MGN, the plots), so
-  wide framings show an empty band at the bottom, as the MGN view does.
+  south of the Main Building's face, through its ground line (MGN, the plots); wide, the
+  frame is raised over the cut's edge as in the MGN view.
   **The controls keep the side** they started on while a direction is held
   (`_control_turns`), so holding S walks straight across the road although the camera
   turns round halfway; let go and press again, and they follow the new view.

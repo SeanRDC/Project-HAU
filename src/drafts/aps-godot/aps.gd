@@ -629,6 +629,7 @@ func _update_camera(delta: float) -> void:
 	var cut := corridor + toward * absf(cut_offset)
 	var cut_depth := (Vector3(cut.x, focus.y, cut.z) - camera.position).dot(forward)
 	camera.near = maxf(0.1, cut_depth * inside)
+	var inside_near := camera.near
 	# Facing St. Joseph Hall the camera stands north of the chapel: everything north of
 	# the parking (the chapel, its trees) is cut away the same way as it turns round.
 	if sjh > 0.0:
@@ -660,6 +661,18 @@ func _update_camera(delta: float) -> void:
 		# stands above it)
 		var south_edge := (Vector3(focus.x, 0.0, MiddleRoad.FACE_S - 0.2) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, south_edge * smoothstep(0.0, 1.0, middle_north))
+	# Those cuts take the near ground away too; zoomed out, the frame would reach past the
+	# cut's edge and show an empty band at the bottom. Raise the frame (straight up the
+	# screen, so the cut stays where it is) until the edge sits on its bottom.
+	if camera.near > inside_near + 0.01:
+		var up := camera.global_basis.y
+		var level := Vector3(forward.x, 0.0, forward.z).normalized()
+		var below := -0.2 - camera.position.y
+		var ahead := (camera.near - below * forward.y) / level.dot(forward)
+		var edge := ahead * level.dot(up) + below * up.y
+		var raise := ceilf((edge + view_metres.y / 2.0) / pixel) * pixel
+		if raise > 0.0:
+			camera.position += up * raise
 	var grade := display.material as ShaderMaterial
 	grade.set_shader_parameter("cut", inside)
 	if inside > 0.0:
