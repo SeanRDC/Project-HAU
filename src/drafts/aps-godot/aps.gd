@@ -1228,7 +1228,7 @@ func _show_weather() -> void:
 		return
 	var text: String = PRESETS[hour].label
 	if atmosphere.weather != "clear":
-		text += " · " + {"overcast": "Overcast", "rain": "Rain", "storm": "Thunderstorm", "fog": "Fog", "windy": "Windy"}[atmosphere.weather]
+		text += " · " + {"overcast": "Overcast", "rain": "Rain", "storm": "Thunderstorm", "windy": "Windy"}[atmosphere.weather]
 	if time_label.text != text:
 		time_label.text = text
 
@@ -2089,8 +2089,8 @@ func _verify_and_capture() -> void:
 		atmosphere.update(0.1)
 		sound.rain = 0.0
 		checks.rain_wets_then_dries = raining and atmosphere.wet_count() == 0 and not atmosphere.puddles[0].visible
-		# The weathers: a storm flashes lightning and blows hard, fog lies low on the ground,
-		# overcast dims the sun; G steps through them; then clear again.
+		# The weathers: a storm flashes lightning and blows hard, overcast dims the sun; G
+		# steps through them; then clear again.
 		atmosphere.set_weather("clear", true)
 		atmosphere.update(0.1)
 		var sun_before := sun.light_energy
@@ -2098,19 +2098,16 @@ func _verify_and_capture() -> void:
 		for i in 200:
 			atmosphere.update(0.1)
 		var stormy: bool = atmosphere.strikes > 0 and atmosphere.rain > 0.99 and atmosphere.wind > 0.75
-		atmosphere.set_weather("fog", true)
-		atmosphere.update(0.1)
-		var foggy := environment.fog_height_density > 0.2
 		atmosphere.set_weather("overcast", true)
 		atmosphere.update(0.1)
 		var dull := sun.light_energy < sun_before * 0.6
-		var stepped := Atmosphere.WEATHERS.size() == 6
+		var stepped := Atmosphere.WEATHERS.size() == 5 and not Atmosphere.WEATHER.has("fog")
 		atmosphere.toggle_rain()
 		stepped = stepped and atmosphere.weather == "rain"
 		atmosphere.set_weather("clear", true)
 		atmosphere.update(0.1)
 		var hours_ok := HOURS.all(func(h: float) -> bool: return PRESETS.has(h))
-		checks.weather_and_light = stormy and foggy and dull and stepped and hours_ok and environment.fog_height_density < 0.05
+		checks.weather_and_light = stormy and dull and stepped and hours_ok and environment.fog_height_density < 0.05
 		# light: every tree drops leaves and (by day) casts shafts
 		checks.leaves_and_shafts = world.trees.size() > 10 and atmosphere.leaves.size() == world.trees.size() 			and (night_now() or atmosphere.shafts.get_child_count() >= world.trees.size())
 		checks.campus_sounds = sound.murmur.playing and sound.crowd > 0.9 and (sound.night or sound.bird_calls > calls)

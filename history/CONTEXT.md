@@ -2,8 +2,7 @@
 
 **Atmosphere, 2026-10-21.** T now steps through dawn, morning, noon, afternoon, golden hour,
 dusk and night (`PRESETS` in `aps.gd`); windows and lamps light at dusk and dawn. G steps
-through the weather (clear, overcast, rain, thunderstorm with lightning and thunder, low fog,
-windy), which also changes on its own. Golden-hour shafts and dust. See
+through the weather (clear, overcast, rain, thunderstorm with lightning and thunder, windy), which also changes on its own. Golden-hour shafts and dust. See
 `sessions/2026-10-21-atmosphere.md`.
 
 **Chapel parking from the road, 2026-10-21.** The lawn between the west road and the chapel's

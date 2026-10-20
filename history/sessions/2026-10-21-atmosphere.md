@@ -30,6 +30,9 @@ steps through fixed presets.)
   hour); dust specks drift round the student in the low clear sun.
 - The time badge names the weather when it is not clear; the help line says "G Weather".
 
+- **Fog taken out (Mikko: "remove fog on weather").** The fog weather is gone, and the
+  overcast, rain and storm weathers no longer add any low mist. Dawn keeps its own mist.
+
 ## What changed
 
 - `aps.gd`: `PRESETS`, `HOURS`, `_set_hour`, `--weather`, `_show_weather`, `wind` added
@@ -40,5 +43,6 @@ steps through fixed presets.)
 
 ## Checks
 
-`toolsun-aps-godot.cmd --headless -- --test`: all true. `npm run check`, `npm run build`
+`tools
+un-aps-godot.cmd --headless -- --test`: all true. `npm run check`, `npm run build`
 pass. Captures of dawn, golden hour, dusk, overcast, fog and the storm checked.

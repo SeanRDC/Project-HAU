@@ -23,7 +23,7 @@ frozen references.
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=5.75\|8\|12\|16.5\|17.75\|18.5\|21`, `--weather=clear\|overcast\|rain\|storm\|fog\|windy`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn\|middle\|middle-north\|fountain\|student-center`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--free-cam=<yaw>,<pitch>` (degrees: start in the free cam looking that way, e.g. `--hour=21 --free-cam=200,30` for the night sky), `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Preview flags | `--hour=5.75\|8\|12\|16.5\|17.75\|18.5\|21`, `--weather=clear\|overcast\|rain\|storm\|windy`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn\|middle\|middle-north\|fountain\|student-center`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--free-cam=<yaw>,<pitch>` (degrees: start in the free cam looking that way, e.g. `--hour=21 --free-cam=200,30` for the night sky), `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
 | Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
@@ -493,18 +493,17 @@ before using them.
 2026-10-16 at Mclaren's request; Sean, please confirm.** Rain is the only time
 anything is wet or has specular other than glass.
 
-- **Weather** (`WEATHER` in `atmosphere.gd`): clear, overcast, rain, thunderstorm, fog and
-  windy come and go on their own (clear spells 80-160 s, others 50-100 s, by
-  `WEATHER_ODDS`); **G** steps through them, `--weather=<name>` starts in one, `--rain` in
-  rain. Each sets rain, **gloom** (overcast's flat light: the sun down to 20%, ambient up
-  and grey, contrast down, so shadows soften away), **fog** (thicker grey haze and low height
-  fog, `fog_height` up to 1.4 m: the orthographic camera sees everything at about the same
-  depth, so the fog's body is height fog, kept low so the student stays clear) and
-  **wind** (the global shader value `wind`, 1 to 3.6, makes the foliage sway harder and
-  lean; falling leaves come down thicker and blow sideways). A **thunderstorm** is rain
-  with wind and lightning every 5-14 s: a double flash that lifts the ambient light and
-  whitens the sky, and the thunder (`audio.gd` `thunder`) 0.6-2.2 s later. The time badge
-  names the weather when it is not clear.
+- **Weather** (`WEATHER` in `atmosphere.gd`): clear, overcast, rain, thunderstorm and windy
+  come and go on their own (clear spells 80-160 s, others 50-100 s, by `WEATHER_ODDS`);
+  **G** steps through them, `--weather=<name>` starts in one, `--rain` in rain. Each sets
+  rain, **gloom** (overcast's flat light: the sun down to 20%, ambient up and grey, contrast
+  down, so shadows soften away) and **wind** (the global shader value `wind`, 1 to 3.6,
+  makes the foliage sway harder and lean; falling leaves come down thicker and blow
+  sideways). A fog weather was tried and taken out (2026-10-21); only dawn keeps its low
+  mist (height fog, `mist` in the preset). A **thunderstorm** is rain with wind and
+  lightning every 5-14 s: a double flash that lifts the ambient light and whitens the sky,
+  and the thunder (`audio.gd` `thunder`) 0.6-2.2 s later. The time badge names the weather
+  when it is not clear.
 - **Rain** fades in and out over about 6 s. It
   fades in and out over about 6 s. Streaks are `QuadMesh` 0.03 x 0.55 at alpha
   0.24 (4000 at full rain), splashes 0.1 x 0.035 at alpha 0.28 (320). Both

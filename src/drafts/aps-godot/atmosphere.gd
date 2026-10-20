@@ -1,6 +1,6 @@
 extends Node3D
 ## Weather and atmosphere, after Until Then: the weather (clear, overcast, rain, a
-## thunderstorm, fog, a windy day) comes and goes, G steps through it; the ground is wet and
+## thunderstorm, a windy day) comes and goes, G steps through it; the ground is wet and
 ## reflective only while it rains; leaves fall from the trees (and blow about in the wind),
 ## light shafts slant under them, dust drifts in the low sun, and mist lies on the lawns at
 ## dawn.
@@ -23,17 +23,16 @@ var night := false
 var hour := 16.5
 ## The weathers G steps through, and what each sets: rain, gloom (an overcast sky's flat
 ## grey light), fog, wind, and thunder and lightning.
-const WEATHERS := ["clear", "overcast", "rain", "storm", "fog", "windy"]
+const WEATHERS := ["clear", "overcast", "rain", "storm", "windy"]
 const WEATHER := {
 	"clear": {"rain": 0.0, "gloom": 0.0, "fog": 0.0, "wind": 0.0, "storm": false},
-	"overcast": {"rain": 0.0, "gloom": 0.75, "fog": 0.15, "wind": 0.2, "storm": false},
-	"rain": {"rain": 1.0, "gloom": 1.0, "fog": 0.2, "wind": 0.3, "storm": false},
-	"storm": {"rain": 1.0, "gloom": 1.0, "fog": 0.25, "wind": 0.8, "storm": true},
-	"fog": {"rain": 0.0, "gloom": 0.55, "fog": 1.0, "wind": 0.0, "storm": false},
+	"overcast": {"rain": 0.0, "gloom": 0.75, "fog": 0.0, "wind": 0.2, "storm": false},
+	"rain": {"rain": 1.0, "gloom": 1.0, "fog": 0.0, "wind": 0.3, "storm": false},
+	"storm": {"rain": 1.0, "gloom": 1.0, "fog": 0.0, "wind": 0.8, "storm": true},
 	"windy": {"rain": 0.0, "gloom": 0.15, "fog": 0.0, "wind": 1.0, "storm": false},
 }
 ## How often each comes up by itself (clear and overcast spells most).
-const WEATHER_ODDS := {"clear": 4.0, "overcast": 2.0, "rain": 2.0, "storm": 0.7, "fog": 0.8, "windy": 1.2}
+const WEATHER_ODDS := {"clear": 4.0, "overcast": 2.0, "rain": 2.0, "storm": 0.7, "windy": 1.2}
 var weather := "clear"
 ## 0..1 now, easing towards the weather's: how hard it is raining, gloom, fog, wind.
 var rain := 0.0
