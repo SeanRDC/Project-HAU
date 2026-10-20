@@ -57,3 +57,12 @@ behind it needs it.
 Headless `--test`: all true, `checks_pass` true. `npm run check` and `npm run build` pass.
 Captures looked at: the lane at 22, 40, 64 and 112 m, at angles 0.12 and −0.25, at morning,
 noon, afternoon and night, and the lane round the east end.
+
+## Also: the crash on quit
+
+Every run on macOS ended in `libc++abi: ... recursive_mutex lock failed` (exit 134),
+headless too; an empty project quit cleanly. `audio.gd` rendered the murmur on a
+`WorkerThreadPool` task it never waited on, and Godot needs every pool task waited on:
+at quit it freed the task after the script engine was gone. The task's id is kept now and
+waited on in `_exit_tree()`. Both `--test` and a windowed capture exit 0. Left: two leak
+lines at exit (a particle shader never freed), harmless.
