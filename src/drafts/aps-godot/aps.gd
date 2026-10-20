@@ -1924,6 +1924,8 @@ func _verify_and_capture() -> void:
 		var by_bea: Vector2 = bea.ground() + side * 2.2
 		student.position = Vector3(by_bea.x, bea.position.y, by_bea.y)
 		npcs.update(1.0 / 30.0)
+		if not npcs.hellos.any(func(h: Dictionary) -> bool: return h.npc == bea):
+			npcs._say_hello(bea) # she says hello only some of the time (CHATTY); the bubble is what is checked
 		var waving: bool = bea.noticed and bea.animation == "wave" and bea.waved == 1 and not bea.sprite.flip_h
 		var greeted: bool = npcs.hellos.any(func(h: Dictionary) -> bool: return h.npc == bea and not (h.label as Label).text.is_empty())
 		var walked_before: float = bea.walked

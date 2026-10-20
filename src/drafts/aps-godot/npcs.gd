@@ -132,6 +132,10 @@ const HELLOS := {
 	"coach-gab": {"first": ["Uy! Galaw-galaw!", "Practice mamaya, ha!"], "met": ["Ayan na ang atleta ko!", "Tubig, 'wag kalimutan!"]},
 	"default": {"first": ["Hi!", "Uy, hello!", "Kumusta?"], "met": ["Uy, ikaw ulit!", "Hello ulit!"]},
 }
+## How likely each NPC is to say hello as it waves (the rest of the time it just waves):
+## the friendly ones most times, the others now and then. Anyone not listed only waves.
+const CHATTY := {"ate-lorna": 0.8, "kuya-ben": 0.75, "coach-gab": 0.7, "bea": 0.6, "migo": 0.5,
+	"rica": 0.4, "bianca": 0.35, "paolo": 0.25}
 ## Lines for the hour and the weather, shared by everyone: in the rain most hellos are
 ## about it, and now and then someone greets the time of day instead.
 const RAIN_HELLOS := ["Ingat, umuulan!", "May payong ka?", "Basang-basa na tayo!"]
@@ -487,7 +491,7 @@ func update(delta: float) -> void:
 		npc.face(camera)
 		if npc.greeting:
 			npc.greeting = false
-			if npc != talking_to and _layer != null:
+			if npc != talking_to and _layer != null and _hello_rng.randf() < CHATTY.get(npc.id, 0.0):
 				_say_hello(npc)
 	# being moved away ends the conversation
 	if talking_to != null and talking_to.ground().distance_to(at) > REACH * 1.8:

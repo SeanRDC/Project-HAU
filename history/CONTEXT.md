@@ -1,6 +1,6 @@
 # Project Context
 
-**NPCs say hello, 2026-10-21.** As they wave, NPCs say hi in a small bubble (their own
+**NPCs say hello, 2026-10-21.** As they wave, some NPCs say hi (each with its own chance, `CHATTY`) in a small bubble (their own
 line, another once you've met, or one for the hour or the rain, some in Kapampangan);
 standing about, they look your way from 6 m. `HELLOS` in `npcs.gd`. See
 `sessions/2026-10-21-npc-hellos.md`.

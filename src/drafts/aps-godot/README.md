@@ -26,8 +26,8 @@ built yet is a reserved plot, and a building is merged on its plot as
   boulevard: Cafe Juan's front, the courtyard gate, study tables, the BDO ATM, and
   a brick apron at its west end out to the fountain.
 - **Eight NPCs** (Migo, Bea, Rica, Paolo, Bianca, Kuya Ben, Ate Lorna, Coach
-  Gab) who stroll or keep their posts, look your way, wave and say hi when you come
-  near (their own line, another once you've met, or one for the hour or the rain), open umbrellas
+  Gab) who stroll or keep their posts, look your way, wave when you come near, and the
+  friendlier ones say hi (their own line, another once you've met, or one for the hour or the rain), open umbrellas
   in the rain and talk: their lines type out with a blip in their voice, they ask
   questions, and they remember your replies for the session.
 - **Weather and sound:** rain that comes and goes, with wet ground, puddles and

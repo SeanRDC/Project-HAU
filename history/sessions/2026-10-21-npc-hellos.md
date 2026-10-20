@@ -24,6 +24,12 @@ and the weather, and NPCs facing the student.
 - **Looking:** standing about (a post, or waiting between strolls), an NPC turns to the
   student from 6 m (`LOOK`), without stopping or waving; walking NPCs keep facing their way.
 
+- **Not everyone says hi** (Mikko: "don't make all the NPCs say hi"): each waves as
+  before, but says hello only with its own chance (`CHATTY`): Ate Lorna 0.8, Kuya Ben
+  0.75, Coach Gab 0.7, Bea 0.6, Migo 0.5, Rica 0.4, Bianca 0.35, Paolo 0.25; the two
+  prototypes only wave. The check makes Bea's hello itself, so it does not depend on
+  the dice.
+
 ## What changed
 
 - `npc.gd`: `LOOK`, `greeting`, the look while standing about.
@@ -35,5 +41,6 @@ and the weather, and NPCs facing the student.
 
 ## Checks
 
-`toolsun-aps-godot.cmd --headless -- --test`: all true. `npm run check`, `npm run build`
+`tools
+un-aps-godot.cmd --headless -- --test`: all true. `npm run check`, `npm run build`
 pass. A morning capture at the start spot shows Kuya Ben waving with "Magandang araw po!".

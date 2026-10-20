@@ -618,7 +618,8 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   idle frames. Students stroll within `roam` metres of home
   along clear straight lines (no kerbs or steps); posts (`roam` 0) stay put.
 - **NPCs react.** Within 3 m of the student they stop, turn to them and wave once
-  (again only after the student has gone 6 m away), **saying hello** in a small paper
+  (again only after the student has gone 6 m away), and **some say hello** (`CHATTY`: how
+  likely each is to, Ate Lorna 0.8 down to Paolo 0.25; the prototypes only wave) in a small paper
   bubble over their head that types out in their voice and fades after 2.8 s
   (`HELLO_TIME`); it never stops the student. The line (`npcs.gd` `HELLOS`) is their
   own, "first" until the student has talked to them and "met" after; in rain past 0.35
