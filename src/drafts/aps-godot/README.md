@@ -26,7 +26,8 @@ built yet is a reserved plot, and a building is merged on its plot as
   boulevard: Cafe Juan's front, the courtyard gate, study tables, the BDO ATM, and
   a brick apron at its west end out to the fountain.
 - **Eight NPCs** (Migo, Bea, Rica, Paolo, Bianca, Kuya Ben, Ate Lorna, Coach
-  Gab) who stroll or keep their posts, wave when you come near, open umbrellas
+  Gab) who stroll or keep their posts, look your way, wave and say hi when you come
+  near (their own line, another once you've met, or one for the hour or the rain), open umbrellas
   in the rain and talk: their lines type out with a blip in their voice, they ask
   questions, and they remember your replies for the session.
 - **Weather and sound:** rain that comes and goes, with wet ground, puddles and
@@ -176,7 +177,7 @@ because their kernel grows with zoom.
 | `areas/student_center.gd` | The Student Center, the open arcade between the boulevard and the Main Building: the planter and rail (open at the crossings), the cream posts and the roof (it fades while you are under it), Cafe Juan's windows and doorway, the courtyard gate, the offices, the study tables, the ATM and cafe tables at the west end, the brick apron out to the fountain, the lawn at the east end. Its camera weights |
 | `areas/middle_road.gd` | HAU Boulevard between PGN and the Main Building, from the west road to the angel fountain: the lanes and grass median, the hedge strips and poles, the octagon-paver walks and bronze lampposts, the shrub strips and trees, both covered walkways (pillars, slatted roofs, benches), the zebras, signs, bins and urns, and the fountain. Its camera weights (which side it faces, the covered walkway cutaway) |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
-| `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking, stopping to look at and wave to the student, an umbrella in the rain |
+| `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking, looking at the student when standing about, stopping to wave and say hello, an umbrella in the rain |
 | `npcs.gd` | The cast and their talk scripts (questions, replies, what they remember), the talk hint, speech bubble and reply card |
 | `audio.gd` | Synthesised music, footsteps, blips, crickets, the student murmur, birds and rain (no audio files) |
 | `atmosphere.gd` | Rain and wet ground, puddles and lamp reflections, light shafts, falling leaves |

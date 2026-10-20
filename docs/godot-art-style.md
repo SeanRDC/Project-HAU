@@ -618,7 +618,13 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   idle frames. Students stroll within `roam` metres of home
   along clear straight lines (no kerbs or steps); posts (`roam` 0) stay put.
 - **NPCs react.** Within 3 m of the student they stop, turn to them and wave once
-  (again only after the student has gone 6 m away). In rain past 0.35 they open an
+  (again only after the student has gone 6 m away), **saying hello** in a small paper
+  bubble over their head that types out in their voice and fades after 2.8 s
+  (`HELLO_TIME`); it never stops the student. The line (`npcs.gd` `HELLOS`) is their
+  own, "first" until the student has talked to them and "met" after; in rain past 0.35
+  mostly a rain line (`RAIN_HELLOS`), and about a third of the time one for the hour
+  (`TIME_HELLOS`: morning, noon, afternoon, night, some in Kapampangan). Standing about
+  (not walking), they **look the student's way** from 6 m (`LOOK`). In rain past 0.35 they open an
   umbrella (an eight-sided matte canopy in their own colour, a steel rim and shaft,
   springing open over a quarter second) unless they stand under a roof (floor 0.45 m
   or higher, as in the canteen hall).

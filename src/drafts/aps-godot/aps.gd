@@ -1153,6 +1153,7 @@ func _process(delta: float) -> void:
 	atmosphere.update(delta)
 	sound.rain = atmosphere.rain
 	npcs.rain = atmosphere.rain
+	npcs.hour = hour
 
 ## A frame of the free cam: the student waits, the world goes on round the camera.
 func _fly(delta: float) -> void:
@@ -1171,6 +1172,7 @@ func _fly(delta: float) -> void:
 	atmosphere.update(delta)
 	sound.rain = atmosphere.rain
 	npcs.rain = atmosphere.rain
+	npcs.hour = hour
 
 ## Walking into the gym from a wide framing glides the zoom in to the hall's; walking
 ## out again glides back, unless the zoom was changed inside.
@@ -1923,10 +1925,21 @@ func _verify_and_capture() -> void:
 		student.position = Vector3(by_bea.x, bea.position.y, by_bea.y)
 		npcs.update(1.0 / 30.0)
 		var waving: bool = bea.noticed and bea.animation == "wave" and bea.waved == 1 and not bea.sprite.flip_h
+		var greeted: bool = npcs.hellos.any(func(h: Dictionary) -> bool: return h.npc == bea and not (h.label as Label).text.is_empty())
 		var walked_before: float = bea.walked
 		for i in 90:
 			npcs.update(1.0 / 30.0)
-		checks.npc_notices_and_waves = waving and bea.animation == "idle" and bea.waved == 1 and bea.walked == walked_before
+		checks.npc_notices_and_waves = waving and bea.animation == "idle" and bea.waved == 1 and bea.walked == walked_before 			and greeted
+		# Standing about, an NPC looks the student's way from further off than it notices them.
+		var ben: Node3D = npcs.cast.filter(func(n: Node3D) -> bool: return n.id == "kuya-ben")[0]
+		var by_ben: Vector2 = ben.ground() + side * 4.5
+		student.position = Vector3(by_ben.x, ben.position.y, by_ben.y)
+		npcs.update(1.0 / 30.0)
+		var looks_right: bool = not ben.noticed and not ben.sprite.flip_h
+		by_ben = ben.ground() - side * 4.5
+		student.position = Vector3(by_ben.x, ben.position.y, by_ben.y)
+		npcs.update(1.0 / 30.0)
+		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0
 		for i in 15:

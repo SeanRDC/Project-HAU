@@ -119,6 +119,30 @@ const CAST := [
 ## Each speaker's voice for the text blips (Hz); the browser game's where they had one.
 const VOICES := {"migo": 410.0, "bea": 659.0, "rica": 622.0, "paolo": 330.0, "bianca": 698.0,
 	"kuya-ben": 220.0, "ate-lorna": 494.0, "coach-gab": 210.0}
+## What each NPC says in passing as it waves: "first" until the student has talked to
+## them, "met" after. Taglish with a little Kapampangan, like their talks.
+const HELLOS := {
+	"migo": {"first": ["Uy, pre!", "Musta? Ready ka na sa quiz?"], "met": ["Uy, ikaw ulit! Review tayo?", "O, tara canteen mamaya!"]},
+	"bea": {"first": ["Hi! Ang init, no?", "Uy, hello!"], "met": ["Hi ulit! Halo-halo mamaya?", "Uy! Kumusta na ka?"]},
+	"rica": {"first": ["Hello! Busy ka?", "Hi, hi!"], "met": ["Uy, ikaw pala!", "Hi ulit! Salamat kanina."]},
+	"paolo": {"first": ["Yo.", "Uy, sup."], "met": ["Uy, pre. Ikaw ulit.", "O, ano'ng balita?"]},
+	"bianca": {"first": ["Hello! Ganda ng chapel, no?", "Hi po!"], "met": ["Hi ulit!", "Uy, kumusta na ka?"]},
+	"kuya-ben": {"first": ["Magandang araw po!", "Ingat po sa daan!"], "met": ["O, ikaw ulit! Ingat.", "Musta ang klase?"]},
+	"ate-lorna": {"first": ["Kain ka muna, anak!", "Turon, mainit pa!"], "met": ["O, balik ka! May bagong luto.", "Anak, kumain ka na?"]},
+	"coach-gab": {"first": ["Uy! Galaw-galaw!", "Practice mamaya, ha!"], "met": ["Ayan na ang atleta ko!", "Tubig, 'wag kalimutan!"]},
+	"default": {"first": ["Hi!", "Uy, hello!", "Kumusta?"], "met": ["Uy, ikaw ulit!", "Hello ulit!"]},
+}
+## Lines for the hour and the weather, shared by everyone: in the rain most hellos are
+## about it, and now and then someone greets the time of day instead.
+const RAIN_HELLOS := ["Ingat, umuulan!", "May payong ka?", "Basang-basa na tayo!"]
+const TIME_HELLOS := {
+	"morning": ["Magandang umaga!", "Mayap a abak!"],
+	"noon": ["Ang init, grabe!", "Kain na tayo!"],
+	"afternoon": ["Magandang hapon!", "Mayap a gatpanapun!"],
+	"night": ["Gabi na, uwi na!", "Mayap a bengi!", "Ingat pauwi!"],
+}
+## Seconds a hello stays up (it types out, then fades over the last half second).
+const HELLO_TIME := 2.8
 ## Letters per second as a line types out, as in the browser game.
 const CHARS_PER_SECOND := 42.0
 ## The browser game's dialogue colours.
@@ -138,8 +162,14 @@ var cast: Array[Npc] = []
 var talking_to: Npc
 ## What the student has said and done, as keys (see CAST). Kept for the session.
 var memory := {}
-## How hard it is raining (set by the scene), for the umbrellas.
+## How hard it is raining (set by the scene), for the umbrellas and the hellos.
 var rain := 0.0
+## The hour (set by the scene), for the hellos.
+var hour := 16.5
+## The hellos up now: {npc, panel, label, age, shown}.
+var hellos: Array = []
+var _hello_rng := RandomNumberGenerator.new()
+var _layer: CanvasLayer
 ## The steps still to come in this talk, and the replies on offer now.
 var queue: Array = []
 var options: Array = []
@@ -165,6 +195,7 @@ var _time := 0.0
 
 func _ready() -> void:
 	name = "NPCs"
+	_hello_rng.seed = 2026
 	for data in CAST:
 		var npc := Npc.new()
 		var entry: Dictionary = data.duplicate()
@@ -204,6 +235,7 @@ func build_ui(parent: Node) -> void:
 	var layer := CanvasLayer.new()
 	layer.name = "Talk"
 	parent.add_child(layer)
+	_layer = layer
 	# the opening's lettering font for everything said (the hint, the bubble, the replies)
 	var lettering := Theme.new()
 	lettering.default_font = Opening.lettering()
@@ -453,6 +485,10 @@ func update(delta: float) -> void:
 		npc.rain = rain
 		npc.update(delta, right, at)
 		npc.face(camera)
+		if npc.greeting:
+			npc.greeting = false
+			if npc != talking_to and _layer != null:
+				_say_hello(npc)
 	# being moved away ends the conversation
 	if talking_to != null and talking_to.ground().distance_to(at) > REACH * 1.8:
 		_close()
@@ -465,11 +501,68 @@ func update(delta: float) -> void:
 		hint.position = p - Vector2(hint.size.x * 0.5, hint.size.y + 4.0 - sin(_time * 3.0) * 3.0)
 	if bubble.visible and to_screen.is_valid():
 		_place_bubble()
+	_update_hellos(delta)
 	choice_panel.visible = choosing()
 	if choice_panel.visible:
 		choice_panel.reset_size()
 		var view := choice_panel.get_viewport_rect().size
 		choice_panel.position = Vector2((view.x - choice_panel.size.x) * 0.5, view.y - choice_panel.size.y - 26.0)
+
+## What `npc` says as it waves: about the rain when it is raining (mostly), now and then
+## the time of day, else its own line, which changes once the student has met them.
+func hello_for(npc: Npc) -> String:
+	if rain > 0.35 and _hello_rng.randf() < 0.65:
+		return RAIN_HELLOS[_hello_rng.randi_range(0, RAIN_HELLOS.size() - 1)]
+	if _hello_rng.randf() < 0.35:
+		var time := "night" if hour >= 18.0 or hour < 6.0 else ("morning" if hour < 11.0 else ("noon" if hour < 14.0 else "afternoon"))
+		var lines: Array = TIME_HELLOS[time]
+		return lines[_hello_rng.randi_range(0, lines.size() - 1)]
+	var own: Dictionary = HELLOS.get(npc.id, HELLOS["default"])
+	var said: Array = own["met"] if memory.has("met." + npc.id) else own["first"]
+	return said[_hello_rng.randi_range(0, said.size() - 1)]
+
+## A small paper bubble over the NPC's head that types its hello out in its voice, then
+## fades. It never stops the student; a new hello replaces the NPC's last one.
+func _say_hello(npc: Npc) -> void:
+	_drop_hello(npc)
+	var panel := PanelContainer.new()
+	panel.theme = bubble.theme
+	panel.add_theme_stylebox_override("panel", _box(PAPER, 10, 6))
+	var label := Label.new()
+	label.text = hello_for(npc)
+	label.visible_characters = 0
+	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_color_override("font_color", INK)
+	panel.add_child(label)
+	_layer.add_child(panel)
+	hellos.append({"npc": npc, "panel": panel, "label": label, "age": 0.0, "shown": 0.0})
+
+func _drop_hello(npc: Npc) -> void:
+	for hello in hellos.duplicate():
+		if hello.npc == npc:
+			(hello.panel as Control).queue_free()
+			hellos.erase(hello)
+
+func _update_hellos(delta: float) -> void:
+	for hello in hellos.duplicate():
+		var npc: Npc = hello.npc
+		hello.age += delta
+		if hello.age > HELLO_TIME or npc == talking_to or not to_screen.is_valid():
+			_drop_hello(npc)
+			continue
+		var label: Label = hello.label
+		var before := int(hello.shown)
+		hello.shown = minf(label.text.length(), hello.shown + delta * CHARS_PER_SECOND)
+		label.visible_characters = int(hello.shown)
+		if int(hello.shown) != before and before % 4 == 0 and label.text[before] != " " and sound != null:
+			sound.blip(VOICES.get(npc.id, 300.0))
+		var panel: Control = hello.panel
+		panel.modulate.a = clampf((HELLO_TIME - hello.age) / 0.5, 0.0, 1.0)
+		panel.reset_size()
+		# over the head, above the talk prompt when that is up too
+		var lift := 2.75 if hint.visible and in_reach() == npc else 2.3
+		var p: Vector2 = to_screen.call(npc.position + Vector3(0, lift, 0))
+		panel.position = p - Vector2(panel.size.x * 0.5, panel.size.y)
 
 func _place_bubble() -> void:
 	bubble_panel.reset_size()
