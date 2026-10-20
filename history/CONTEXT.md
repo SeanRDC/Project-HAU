@@ -1,5 +1,14 @@
 # Project Context
 
+**The chapel's south walk, 2026-10-20.** `areas/chapel_south.gd`: a black path with
+white kerbs from the plaza's south end along the chapel to the east road, dirt under
+thin trees and bamboo on the chapel side, a grass strip and the parked cars (now nosed
+in to it) on the other, bollards on the curve, picnic sheds in the corner and the
+EVACUATION SITE 3 sign. The chapel's south side is a glass hall with three gold arches
+and steps (`Chapel.south_bays()`). Along the walk the camera faces north and cuts away
+the road and SJH. Fast travel: "Chapel south walk", "Picnic corner". See
+`sessions/2026-10-20-chapel-south-walk.md`.
+
 **Sunny noon and rain glints, 2026-10-20.** Noon is a clear, sunny midday (strong
 white sun, crisp shadows, little haze); the other hours are unchanged. Wet-ground
 glints at night are only under outdoor lampposts. See
