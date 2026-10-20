@@ -1498,7 +1498,7 @@ func _verify_and_capture() -> void:
 		# The chapel is solid; its plaza, parking and the lawn path are walkable.
 		checks.chapel_blocks = World.blocked(-8.7, 58.1) and World.blocked(-25.0, 59.5)
 		var plaza_floor := World.floor_height(CHAPEL_SPOT.x, CHAPEL_SPOT.y)
-		checks.chapel_plaza_walkable = not World.blocked(CHAPEL_SPOT.x, CHAPEL_SPOT.y) and is_equal_approx(plaza_floor, -0.04)
+		checks.chapel_plaza_walkable = not World.blocked(CHAPEL_SPOT.x, CHAPEL_SPOT.y) and is_equal_approx(plaza_floor, -0.04) 			and not World.blocked(-54.0, 70.0) and not World.blocked(-54.0, 46.0) and World.blocked(-45.0, 60.0)
 		checks.lawn_path_walkable = not World.blocked(-36.0, 24.0) and World.blocked(-30.0, 24.0)
 		# (the chapel lawn is mown, with only a few clumps; the wilder lawns elsewhere add more)
 		checks.grass_built = (scene.find_child("Grass", false, false) as MultiMeshInstance3D).multimesh.instance_count > 400

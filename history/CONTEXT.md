@@ -1,5 +1,9 @@
 # Project Context
 
+**Chapel parking from the road, 2026-10-21.** The lawn between the west road and the chapel's
+oval parking is walkable (`Chapel.roadside`, z 42..78), so the parking can be reached from the
+road anywhere along it, not only by the drive. The planted island stays solid.
+
 **Cats and birds, 2026-10-21.** `critters.gd`: a dozen campus cats (five named spots, seven scattered)
 who sit, stroll, sleep, visit you and can be petted (E), and maya flocks scattered over the open ground that peck by day, groups flying over,
 and flutter off when you come close. PixelLab frames cleaned in pxl
