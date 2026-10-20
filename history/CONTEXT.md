@@ -6,7 +6,10 @@ brown-framed windows with AC hoods, louvre bays; and on the lane behind it the b
 ramp, the yellow shed, the HAU VEHICLE ONLY carport, the utility block, the back entrance
 and the sheds. The lane is walkable, reached round SJH's east end from the south road; the
 outer bound is now z 162. The camera faces north at the back (`Sjh.rear_for`). Fast travel:
-"SJH back lane", `--view=sjh-rear`. See `sessions/2026-10-21-sjh-rear-facade.md`.
+"SJH back lane", `--view=sjh-rear`. At the east corner a planted bed on a round kerb wraps
+round to the east end (`Sjh.bed()`), and past it the east end's side entrance (red block,
+tiled steps, handrails; `_east_entrance()`, the corridor not built). Godot no longer aborts
+on quit (`audio.gd` waits for its worker task). See `sessions/2026-10-21-sjh-rear-facade.md`.
 
 **Right-drag camera angle, 2026-10-20.** Holding the right mouse button and dragging
 turns the camera angle like Q/E (same ±0.25 rad orbit, `DRAG_TURN` in `aps.gd`), the
