@@ -78,3 +78,9 @@ perimeter wall turning maroon with a white iron railing east of the pillar. The 
 cut cap now uses only the part of the back in frame (the whole building's top corners
 held the cut too near at the east end with the camera turned, and the wall hid the
 student). The pillar, poles and wall stand past the cut: they show in the F2 free cam.
+
+Then, from Jorel's free-cam look: the bed is now 3.2 m deep (`BED`), wraps the corner on a
+round kerb of that radius and runs 8 m up the east end (`BED_SIDE`), one outline
+(`Sjh.bed()`) for the grass, the kerb and the collision, with thirteen bushes. The palm got a
+ring of rising and a ring of drooping fronds (the chapel palm's near-level fronds read
+edge-on from the lane).

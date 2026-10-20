@@ -73,11 +73,16 @@ const ACCESS := Rect2(37.0, 112.0, 7.4, 37.0)
 ## Bays of brown louvres instead of windows on the back, by bay index (x = (bay + 0.5) * 4.2).
 const LOUVRE_BAYS: Array[int] = [-8, -3, 1, 5]
 ## What stands against the back wall, east (the gym's end) to west, as in the photos:
-## local x from, x to, and how far out from the wall. The palm strip, the basement ramp,
+## local x from, x to, and how far out from the wall. The basement ramp,
 ## the motorcycles, the yellow shed, the HAU carport's closed east end, the utility block,
 ## the back entrance's steps, the patched shed's side.
-const REAR_SOLID: Array[Vector3] = [Vector3(-47.9, -40.0, 2.4), Vector3(-38.4, -33.0, 6.2), Vector3(-31.6, -29.4, 2.2),
+const REAR_SOLID: Array[Vector3] = [Vector3(-38.4, -33.0, 6.2), Vector3(-31.6, -29.4, 2.2),
 	Vector3(-27.8, -22.0, 4.6), Vector3(-9.7, -9.5, 6.0), Vector3(3.4, 8.4, 4.2), Vector3(9.2, 11.8, 1.6), Vector3(12.2, 12.5, 5.2)]
+## The planted bed at the east corner (photo 2): BED deep along the back from the ramp
+## (BED_END), round the corner on a kerb of that radius, and BED_SIDE up the east end.
+const BED := 3.2
+const BED_SIDE := 8.0
+const BED_END := -38.6
 ## The vehicles parked nose out along the back: local x, kind (0 car, 1 van, 2 pickup), colour.
 const REAR_CARS := [[-19.8, 2, "f1f1ec"], [-17.2, 0, "3a3f44"], [-14.0, 0, "b9bcbd"], [-11.3, 0, "c9cac6"],
 	[-8.2, 1, "e9e2d2"], [-5.4, 1, "e9e2d2"], [-2.5, 2, "f2f2ee"], [0.3, 2, "f2f2ee"], [15.2, 0, "b8322c"],
@@ -136,6 +141,24 @@ static func on_lane(x: float, z: float) -> bool:
 static func on_parking(x: float, z: float) -> bool:
 	return PARKING.has_point(Vector2(x, z)) or FRONT_ROW.has_point(Vector2(x, z)) or on_lane(x, z)
 
+static var _bed := PackedVector2Array()
+
+## The bed's outline (local x, z), closed along the walls: its first points, up to the
+## east end's wall, are the kerb.
+static func bed() -> PackedVector2Array:
+	if _bed.is_empty():
+		_bed.append(Vector2(BED_END, BACK))
+		for i in 7: # a small round turn off the wall by the ramp
+			var a := PI / 2.0 * i / 6.0
+			_bed.append(Vector2(BED_END - 1.0 + cos(a), BACK - BED + 1.0 - sin(a)))
+		for i in 13: # round the corner
+			var a := PI / 2.0 * i / 12.0
+			_bed.append(Vector2(-HALF - BED * sin(a), BACK - BED * cos(a)))
+		_bed.append(Vector2(-HALF - BED, BACK + BED_SIDE))
+		_bed.append(Vector2(-HALF, BACK + BED_SIDE))
+		_bed.append(Vector2(-HALF, BACK))
+	return _bed
+
 ## The carports' front posts (local x, z).
 static func carport_posts() -> Array[Vector2]:
 	var posts: Array[Vector2] = []
@@ -166,6 +189,8 @@ static func blocked(x: float, z: float) -> bool:
 				if absf(at.x - gap) < 1.2:
 					return false
 			return true # the railing
+	if Geometry2D.is_point_in_polygon(at, bed()):
+		return true
 	if at.y < BACK - 0.5:
 		if not on_lane(x, z):
 			return true # the perimeter wall and past it
@@ -583,7 +608,7 @@ func _rear() -> void:
 	w.box(Vector3(0.9, 0.6, 0.35), Vector3(11.4, 3.7, BACK - 0.2), w.material("plain", Color("e8e8e2")))
 
 ## On the ground along the back, east (the gym's end) to west, in the photos' order: the
-## palm strip, the basement ramp under its pergola, motorcycles, the yellow shed, the parked
+## planted bed round the corner, the basement ramp under its pergola, motorcycles, the yellow shed, the parked
 ## cars and carports (HAU VEHICLE ONLY), the louvred utility block, the patched shed and its
 ## red vehicle, the low carport. Across the lane: the trench grate, the dirt strip, the
 ## power poles and the perimeter wall.
@@ -613,21 +638,28 @@ func _rear_ground() -> void:
 		w.box(Vector3(0.12, 0.03, 0.03), Vector3(bar, 2.55 + 0.1 * posmod(roundi(bar * 5.0), 2), BOUNDARY), iron)
 		bar -= 0.2
 	w.box(Vector3(0.3, 2.6, BACK - BOUNDARY), Vector3(HALF + 0.3, 1.1, (BACK + BOUNDARY) / 2.0), w.material("stucco", Color("aeaba1")))
-	# The palm strip at the east corner (photo 2): grass inside a rounded concrete kerb
-	# that turns in to the wall at the ramp, a garden hose across it, and the wet
-	# stain the hose leaves down the lane's edge of the kerb.
+	# The planted bed at the east corner (photo 2): grass inside a round concrete kerb that
+	# wraps the corner, a garden hose across it, and the wet stain the hose leaves down the
+	# lane's edge of the kerb.
 	var kerb: Material = w.material("stucco", Color("cfc9b8"))
-	w.box(Vector3(9.3, 0.12, 2.4), Vector3(-43.25, -0.1, BACK - 1.2), w.material("grass"))
-	w.box(Vector3(8.6, 0.22, 0.2), Vector3(-43.6, 0.0, BACK - 2.45), kerb)
-	w.box(Vector3(1.2, 0.22, 0.2), Vector3(-38.95, 0.0, BACK - 2.1), kerb, PI / 4.0)
-	w.box(Vector3(0.2, 0.22, 1.6), Vector3(-38.6, 0.0, BACK - 0.9), kerb)
-	var hose := [Vector3(-46.8, 0.03, BACK - 0.3), Vector3(-45.2, 0.03, BACK - 1.6), Vector3(-42.5, 0.03, BACK - 2.1),
-		Vector3(-41.6, 0.14, BACK - 2.5), Vector3(-41.0, -0.03, BACK - 2.75), Vector3(-38.0, -0.03, BACK - 3.0)]
+	var outline := bed()
+	var triangles := PackedVector2Array()
+	var order := Geometry2D.triangulate_polygon(outline)
+	for i in order:
+		triangles.append(outline[i])
+	w._ground(triangles, -0.02, w.material("grass"))
+	for i in outline.size() - 2: # the last two edges run along the walls
+		var a := outline[i]
+		var b := outline[i + 1]
+		var mid := (a + b) / 2.0
+		w.box(Vector3(a.distance_to(b) + 0.06, 0.22, 0.2), Vector3(mid.x, 0.0, mid.y), kerb, atan2(-(b - a).y, (b - a).x))
+	var hose := [Vector3(-46.8, 0.0, BACK - 0.3), Vector3(-45.2, 0.0, BACK - 1.9), Vector3(-42.5, 0.0, BACK - 2.8),
+		Vector3(-41.6, 0.14, BACK - 3.2), Vector3(-41.0, -0.03, BACK - 3.5), Vector3(-37.4, -0.03, BACK - 3.8)]
 	for i in hose.size() - 1:
 		w.rod(hose[i], hose[i + 1], 0.012, Color("ecebe4"))
 	var wet: Material = w.material("plain", Color("4f5352"))
 	for stain in [Vector3(-46.0, 3.2, 0.5), Vector3(-43.0, 2.6, 0.7), Vector3(-40.6, 2.0, 0.9), Vector3(-37.4, 1.4, 0.6)]:
-		w.box(Vector3(stain.y, 0.006, stain.z), Vector3(stain.x, -0.034, BACK - 2.55 - stain.z / 2.0), wet)
+		w.box(Vector3(stain.y, 0.006, stain.z), Vector3(stain.x, -0.034, BACK - BED - 0.12 - stain.z / 2.0), wet)
 	# The basement ramp: low walls, a dark mouth, the grate, the rusty pergola and its screens.
 	# shortcut: the ramp only dips 0.15 m (the lawn under the scene sits at -0.2); cut a real pit if one is ever walked into.
 	w.box(Vector3(5.0, 0.02, 6.0), Vector3(-35.7, -0.03, BACK - 3.0), w.material("concrete", Color("8f9089")), 0.0, -0.025)
@@ -759,13 +791,28 @@ func _rear_planting() -> void:
 	var palms := Chapel.new()
 	palms.w = w
 	var palm := world(-44.5, BACK - 1.2)
-	palms._palm(Vector3(palm.x, 0.0, palm.y), 6.5, 801)
-	# Along the strip as in photo 2: a big clipped ficus by the corner, a golden bush, small
-	# dark round ones, another ficus by the ramp.
+	palms._palm(Vector3(palm.x, 0.0, palm.y), 5.6, 801)
+	# The photo's palm arches its fronds up and lets them droop: the chapel palm's near-level
+	# fronds read edge-on from the lane, so add a ring rising and a ring hanging.
+	var crown := Vector3(palm.x, 5.6, palm.y)
+	var fronds: ShaderMaterial = w._leaf_material(801, crown, Chapel.PALM_COLORS, true)
+	var card: ArrayMesh = w._cards(1.2, 3.0, 0.0, 1)
+	for i in 12:
+		var frond := MeshInstance3D.new()
+		frond.mesh = card
+		frond.material_override = fronds
+		var tilt := deg_to_rad(55.0 if i % 2 == 0 else 115.0)
+		frond.transform = Transform3D(Basis(Vector3.UP, TAU * i / 12.0) * Basis(Vector3.RIGHT, tilt), crown)
+		frond.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+		w.root.add_child(frond)
+	# Along the bed as in photo 2: big clipped lime ficus, golden bushes and small dark round
+	# ones, along the back, round the corner and up the east end.
 	var ficus: Array[Color] = [Color("6f9a2e"), Color("8fb83a"), Color("a9cc4a"), Color("c3dc6a"), Color("7fa832")]
 	var golden: Array[Color] = [Color("8a9a3a"), Color("aab448"), Color("c8c45a"), Color("9aa83e"), Color("dcd47a")]
-	for bush in [[-46.6, -1.1, 1.8, ficus], [-44.9, -0.7, 1.0, w.HEDGE_COLORS], [-43.3, -1.3, 1.5, golden],
-			[-41.9, -1.6, 1.0, w.HEDGE_COLORS], [-40.6, -0.9, 1.1, w.HEDGE_COLORS], [-39.6, -1.0, 1.2, ficus]]:
+	for bush in [[-46.4, -1.5, 1.9, ficus], [-45.5, -0.6, 1.0, w.HEDGE_COLORS], [-43.4, -2.1, 1.4, golden],
+			[-42.3, -0.9, 1.1, w.HEDGE_COLORS], [-41.0, -2.2, 1.6, ficus], [-39.9, -0.9, 1.2, w.HEDGE_COLORS],
+			[-39.8, -2.4, 0.9, golden], [-48.9, -1.6, 1.5, ficus], [-49.9, -0.4, 1.0, w.HEDGE_COLORS],
+			[-49.5, 1.5, 1.3, golden], [-49.9, 3.4, 1.6, ficus], [-49.3, 5.4, 1.0, w.HEDGE_COLORS], [-49.8, 7.0, 1.2, ficus]]:
 		var at := world(bush[0], BACK + bush[1])
 		w._shrub(Vector3(at.x, 0.05, at.y), bush[2], 802 + roundi(bush[0] * 10.0), bush[3])
 	for pile in _pile_at:
