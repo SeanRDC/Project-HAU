@@ -1,5 +1,9 @@
 # Project Context
 
+**Cats and birds, 2026-10-21.** `critters.gd`: three campus cats (Mingming, Kiko, Tisay)
+who sit, stroll, sleep, visit you and can be petted (E), and maya flocks that peck by day
+and flutter off when you come close. Drawn in code. See `sessions/2026-10-21-cats-and-birds.md`.
+
 **NPCs say hello, 2026-10-21.** As they wave, some NPCs say hi (each with its own chance, `CHATTY`) in a small bubble (their own
 line, another once you've met, or one for the hour or the rain, some in Kapampangan);
 standing about, they look your way from 6 m. `HELLOS` in `npcs.gd`. See
