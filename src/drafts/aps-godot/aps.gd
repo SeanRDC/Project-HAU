@@ -1447,6 +1447,19 @@ func _verify_and_capture() -> void:
 		checks.chapel_south_blocks = World.blocked(trunk.x, trunk.y) and World.blocked(step.x, step.y) \
 			and World.blocked(ChapelSouth.SHEDS[1].x, ChapelSouth.SHEDS[1].y) and not World.blocked(0.0, 91.8) \
 			and not World.blocked(0.0, 86.5) and not World.blocked(0.0, 95.0)
+		# From an empty bay in the chapel-side parking, out along its slant and north over
+		# the grass onto the path.
+		var bay_x := Sjh.PARKING.position.x + 1.4
+		var bay_z := Sjh.PARKING.position.y + 4.6
+		while World.blocked(bay_x, bay_z) and bay_x < 20.0:
+			bay_x += Sjh.SLANT_BAY
+		student.place(bay_x, bay_z)
+		_snap_follow()
+		for i in 150:
+			var out := Vector2(-sin(Sjh.SLANT), -cos(Sjh.SLANT)) if i < 60 else Vector2(0, -1)
+			student.move(out, false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		checks.parking_to_chapel_walk = student.position.z < ChapelSouth.PATH[4].y
 		student.position = saved
 		_set_zoom(112.0, true)
 		_snap_follow()
