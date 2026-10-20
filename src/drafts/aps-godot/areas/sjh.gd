@@ -19,7 +19,8 @@ extends RefCounted
 ## boards and high windows. In the centre tower the elevator lobby opens between two
 ## grey pillars up wide steps. At the west end a passage runs through the terracotta
 ## block to steps down its west face, a ramp runs up along its front, and a lane runs
-## south between SJH and MGN under the bridge that joins them upstairs.
+## south between SJH and MGN under the bridge that joins them upstairs (built in
+## areas/mgn.gd).
 ##
 ## Built in its own frame under a pivot ("SJH"): local x along the front (+x is west),
 ## local +z out of the front (north), local z 0 the plot's front edge.
@@ -106,9 +107,6 @@ const LANDING := 38.4
 const YARD_END := 51.0
 const LANE := Rect2(49.95, -11.05, 2.65, 13.65)
 const LANE_BACK := Rect2(48.05, -19.2, 2.85, 8.15)
-## The bridge to MGN across the lane (local z range), at MGN's first floor.
-const BRIDGE := Vector2(-16.4, -14.0)
-const BRIDGE_Y := 7.0
 ## Where the camera cuts inside the walkway: this far in front of the corridor's middle.
 const CUT_OFFSET := 1.2
 ## The parking: one row north of the south road (by the chapel), one south of it in
@@ -964,32 +962,6 @@ func _west_end() -> void:
 		w.box(Vector3(0.1, 0.04, 1.3), Vector3(HALF + 1.97, y, -3.2), w.material("plain", Color("5b6064")))
 		y += 0.14
 	w.box(Vector3(4.6, 2.4, 0.25), Vector3(50.3, 1.0, LANE_BACK.position.y - 0.2), w.material("concrete", Color("b3afa4")))
-	_bridge()
-
-## The covered bridge across the lane to MGN's first floor: a deck on a deep beam, cream
-## parapets with bronze-posted rails, a sloping corrugated roof on a steel frame.
-func _bridge() -> void:
-	var cream: Material = w.material("stucco", Color("eeece5"))
-	var steel: Material = w.material("plain", Color("4a4f53"))
-	var roof: Material = w.material("ribbed", Color("9aa1a3"))
-	var from := HALF
-	var to := YARD_END + 0.4
-	var length := to - from
-	var middle := (BRIDGE.x + BRIDGE.y) / 2.0
-	var width := BRIDGE.y - BRIDGE.x
-	var x := (from + to) / 2.0
-	w.box(Vector3(length, 0.7, width), Vector3(x, BRIDGE_Y - 0.35, middle), cream)
-	for z in [BRIDGE.x + 0.08, BRIDGE.y - 0.08]:
-		w.box(Vector3(length, 1.0, 0.16), Vector3(x, BRIDGE_Y + 0.5, z), cream)
-		w.box(Vector3(length, 0.04, 0.05), Vector3(x, BRIDGE_Y + 1.25, z), w.material("metal", Color("d9dcdc")))
-		var post := from + 0.4
-		while post < to:
-			w.box(Vector3(0.06, 0.25, 0.08), Vector3(post, BRIDGE_Y + 1.12, z), w.material("plain", Color("6e4a3a")))
-			post += 0.9
-	for z in [BRIDGE.x + 0.1, BRIDGE.y - 0.1]:
-		w.box(Vector3(0.08, 2.6, 0.08), Vector3(to - 0.2, BRIDGE_Y + 1.3, z), steel)
-	w.box(Vector3(length + 0.4, 0.06, width + 0.8), Vector3(x, BRIDGE_Y + 2.75, middle), roof, 0.0, 0.08)
-	w.box(Vector3(length + 0.4, 0.12, 0.1), Vector3(x, BRIDGE_Y + 2.62, BRIDGE.y + 0.35), steel)
 
 # --- North of the road: the parking and its cars ---------------------------------------
 
