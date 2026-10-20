@@ -1,5 +1,10 @@
 # Project Context
 
+**NPCs say hello, 2026-10-21.** As they wave, NPCs say hi in a small bubble (their own
+line, another once you've met, or one for the hour or the rain, some in Kapampangan);
+standing about, they look your way from 6 m. `HELLOS` in `npcs.gd`. See
+`sessions/2026-10-21-npc-hellos.md`.
+
 **Camera turn, 2026-10-21.** A ±45° turn was tried and taken back (the views broke down
 turned that far): Q/E and right-drag turn ±0.25 rad as before (`ORBIT_MAX`), and the turn
 now eases after the mouse (`orbit_goal`). See `sessions/2026-10-21-wider-turn.md`.
