@@ -1,8 +1,8 @@
 extends Node3D
-## Ambient life: the campus cats and the maya birds. Their sheets are pixel frames
-## written out here as rows of letters (no art files), side-on after Mikko's references
-## (a side-view tabby, a sparrow sheet), at the characters' density, edged in a darker
-## tone of their own colour like the cast, and lit and shadowed like them.
+## Ambient life: the campus cats and the maya birds. Their sheets are PixelLab frames made
+## from Mikko's references and cleaned in pxl (assets/drafts/characters/critters/pxl/),
+## side-on, at the characters' density, edged in a darker tone of their own colour like the
+## cast, and lit and shadowed like them.
 ##
 ## Cats: five strays with names, each round its own spot. They sit and flick their tail,
 ## stroll, and curl up asleep (more at noon, at night and in the rain). Stand still near
@@ -69,91 +69,26 @@ func _ready() -> void:
 	for data in FLOCKS:
 		_add_flock(data[0], data[1])
 
-# --- Drawing ----------------------------------------------------------------------
+# --- Sheets -----------------------------------------------------------------------
 
-## Sitting, facing right (after the side-view tabby reference): one frame.
-const CAT_SIT := [
-	["................o....o....", "...............oo...oo....", "...............opo.opo....", "..............oopooopoo...", "..............ooooooooo...", ".............ososooooooo..", ".............oooooooeoool.", ".............oooooooooolln", ".............ooooooooolll.", "..............ooooowwwll..", "..............oooowwww....", ".............oooooowww....", "............ooooooowww....", "...........oosooooowww....", "..........oooosooooww.....", ".........oooooosoooow.....", "........ooossooosooow.....", "........ooooosoooooooo....", ".......ooosooosooooooo....", ".......oooosoooosoooooo...", ".......ooooosoooooooooo...", ".......oooooooooooo.ooo...", ".......oooooooooooo.ooo...", "........ooooooooooo.ooo...", ".ooo....oooooooooo..ooo...", "oolsoo..ooooooooo...ooo...", "o.lssoooooooooooo...ooo...", "..osssoooooooowww..www....", "....oooooooowww....www...."],
-]
-## Walking, facing right: four frames, the legs swinging.
-const CAT_WALK := [
-	["........................o...o...", "........................oo.oo...", "........................opoop...", "..oo...................ooooooo..", ".oo....................oosoooeo.", ".o.....................ooooooolln", ".o...ooooooooooooooooooooooolll.", ".oo.oossooossooossooooooooowl...", "..oooossooossooossoooooooooww...", "...ooossooossooossoooooooowww...", "...ooooooooooooooooooooooowww...", "...oooooooooooooooooooooowww....", "....ooooooooooooooooooooww......", "....oo..oo..........oo..oo......", "....oo...oo.........oo...oo.....", "...oo....oo........oo....oo.....", "...oo.....oo.......oo.....oo....", "..ww......ww......ww......ww...."],
-	["........................o...o...", "........................oo.oo...", "........................opoop...", "..oo...................ooooooo..", ".oo....................oosoooeo.", ".o.....................ooooooolln", ".o...ooooooooooooooooooooooolll.", ".oo.oossooossooossooooooooowl...", "..oooossooossooossoooooooooww...", "...ooossooossooossoooooooowww...", "...ooooooooooooooooooooooowww...", "...oooooooooooooooooooooowww....", "....ooooooooooooooooooooww......", ".....oo.oo...........oo.oo......", ".....oo.oo...........oo.oo......", ".....oo.oo...........oo.oo......", ".....oo..oo..........oo..oo.....", "....ww...ww.........ww...ww....."],
-	["........................o...o...", "........................oo.oo...", "........................opoop...", "..oo...................ooooooo..", ".oo....................oosoooeo.", ".o.....................ooooooolln", ".o...ooooooooooooooooooooooolll.", ".oo.oossooossooossooooooooowl...", "..oooossooossooossoooooooooww...", "...ooossooossooossoooooooowww...", "...ooooooooooooooooooooooowww...", "...oooooooooooooooooooooowww....", "....ooooooooooooooooooooww......", "....oo..oo..........oo..oo......", "...oo...oo.........oo...oo......", "...oo...oo.........oo...oo......", "..oo....oo........oo....oo......", "..ww....ww........ww....ww......"],
-	["........................o...o...", "........................oo.oo...", "........................opoop...", "..oo...................ooooooo..", ".oo....................oosoooeo.", ".o.....................ooooooolln", ".o...ooooooooooooooooooooooolll.", ".oo.oossooossooossooooooooowl...", "..oooossooossooossoooooooooww...", "...ooossooossooossoooooooowww...", "...ooooooooooooooooooooooowww...", "...oooooooooooooooooooooowww....", "....ooooooooooooooooooooww......", ".....oooo............oooo.......", ".....oooo............oooo.......", "....oo.oo...........oo.oo.......", "....oo.oo...........oo.oo.......", "...ww..ww..........ww..ww......."],
-]
-## Asleep, curled up: one frame (it breathes by scale).
-const CAT_SLEEP := [
-	["...........................", "............o.o............", "...........oooooo..........", ".........oossoossoo........", ".......ooosooosooosoo..o.o.", ".....oooosoooosooooso.ooooo", "....ooosoooosooooooooooosoo", "...ooosooooooooooooooooooeo", "..oooooooooooooooooooooooll", "..oooooooooooooooooooooolln", ".oolllooooooooooooooooolll.", ".oolssssoooooooooooooooww..", "..oooooooooooooooooowwww..."],
-]
-## A maya on the ground, facing right: standing, mid-hop, pecking.
-const BIRD_GROUND := [
-	["..........cc....", ".........cccc...", "........cccocc..", "........hhdhhyy.", ".......bhhhdh...", "....kbbbbfddf...", "..kbkbkbbffff...", ".kbkkbkbbfff....", "kkbkbbbbfff.....", "kk..bbbffff.....", ".......g.g......", ".......g.g......"],
-	["................", "..........cc....", ".........cccc...", "........cccocc..", "........hhdhhyy.", "....kbbbhhhdh...", "..kbkbkbbfddf...", ".kbkkbkbbffff...", "kkbkbbbbfff.....", "kk..bbbffff.....", ".......g..g.....", ".......g..g....."],
-	["................", "................", "................", "................", "....kbbbb.......", "..kbkbkbbbcccc..", ".kbkkbkbbccccoc.", "kkbkbbbbfhhdhh..", "kk..bbbffffdhyy.", "........g.g.....", "........g.g.....", "........g.g....."],
-]
-## A maya flying: wings up, wings down.
-const BIRD_FLY := [
-	[".........kk.......", "........kbk.......", ".......kbbk.......", "......kbbk....cc..", ".....kbbbk...cccc.", "kk..bbbbbbbbcccocc", ".kkbbbbffffhhdhhyy", "..k...fffffdh....."],
-	["..................", "..................", "..............cc..", ".............cccc.", "kk..bbbbbbbbcccocc", ".kkbbbkbbfffhhdhyy", "..k..kbbkfffdh....", ".....kbbk.........", "......kbk.........", ".......kk........."],
-]
+## The sheets come from pxl (assets/drafts/characters/critters/pxl/, built by its build.ps1):
+## PixelLab frames, cleaned and on one palette per animal; the cats' coats are palette swaps.
+## Frames per sheet, side by side.
+const FRAMES := {"walk": 8, "sit": 1, "sleep": 1, "ground": 3, "fly": 4}
 
-## The cats' coats: a colour for each letter in the frames (o coat, s stripe, l muzzle,
-## w white, p ear and nose pink, e eye, n nose).
-const COATS := {
-	"orange": {"o": "d68a3c", "s": "a9612a", "l": "ebb26e", "w": "eee6d8", "p": "d79a8c", "e": "3b2a18", "n": "6b3a2a"},
-	"tuxedo": {"o": "34323a", "s": "2a2830", "l": "eee6d8", "w": "eee6d8", "p": "d79a8c", "e": "c9c24a", "n": "6b3a2a"},
-	"grey": {"o": "8f8b86", "s": "5f5b57", "l": "c2bdb4", "w": "eee6d8", "p": "d79a8c", "e": "8fa04a", "n": "5a4a48"},
-	"black": {"o": "2c2b30", "s": "232227", "l": "3a3940", "w": "3a3940", "p": "6a4a4a", "e": "c9c24a", "n": "1a1a1e"},
-	"white": {"o": "e9e3d6", "s": "d4ccbe", "l": "f2eee6", "w": "f2eee6", "p": "d79a8c", "e": "5f93b8", "n": "c98a8a"},
-}
-## The maya's colours (b back, k dark streak, c chestnut cap, h white cheek, d black spot
-## and bib, f buff belly, y beak, g legs, o eye).
-const BIRD_COLOURS := {"b": "8a6442", "k": "4e3424", "c": "7c4426", "h": "ece6da", "d": "2a2420",
-	"f": "c9b394", "y": "4a3a30", "g": "a07e62", "o": "2a2420"}
-
-## A sheet from frames of letter rows (each frame bottom-aligned in a box as big as the
-## largest), every filled pixel next to an empty one edged in a darker tone of its own
-## colour, as the cast are.
-static func _sheet(frames: Array, colours: Dictionary) -> Array:
-	var width := 0
-	var height := 0
-	for rows: Array in frames:
-		height = maxi(height, rows.size())
-		for row: String in rows:
-			width = maxi(width, row.length())
-	var image := Image.create(width * frames.size(), height, false, Image.FORMAT_RGBA8)
-	var filled := func(f: int, x: int, y: int) -> bool:
-		var rows: Array = frames[f]
-		var row_index := y - (height - rows.size())
-		if x < 0 or x >= width or row_index < 0 or row_index >= rows.size():
-			return false
-		var row: String = rows[row_index]
-		return x < row.length() and row[x] != "."
-	for f in frames.size():
-		var rows: Array = frames[f]
-		for r in rows.size():
-			var row: String = rows[r]
-			var y := r + height - rows.size()
-			for x in row.length():
-				if row[x] == ".":
-					continue
-				var colour := Color(colours[row[x]])
-				for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-					if not filled.call(f, x + d.x, y + d.y):
-						colour = colour.darkened(0.32)
-						break
-				image.set_pixel(f * width + x, y, colour)
-	return [ImageTexture.create_from_image(image), frames.size()]
+static func _load(name: String, frames: int) -> Array:
+	return [load("res://sprites/critters/%s.png" % name), frames]
 
 static func _cat_sheets(coat: String) -> Dictionary:
-	var colours: Dictionary = COATS[coat]
-	return {"walk": _sheet(CAT_WALK, colours), "sit": _sheet(CAT_SIT, colours), "sleep": _sheet(CAT_SLEEP, colours)}
+	var sheets := {}
+	for pose in ["walk", "sit", "sleep"]:
+		sheets[pose] = _load("cat_%s_%s" % [pose, coat], FRAMES[pose])
+	return sheets
 
 static var _bird_sheets: Dictionary = {}
 static func _birds() -> Dictionary:
 	if _bird_sheets.is_empty():
-		_bird_sheets = {"ground": _sheet(BIRD_GROUND, BIRD_COLOURS), "fly": _sheet(BIRD_FLY, BIRD_COLOURS)}
+		_bird_sheets = {"ground": _load("maya_ground", FRAMES.ground), "fly": _load("maya_fly", FRAMES.fly)}
 	return _bird_sheets
 
 static func _sprite(texture: Texture2D, frames: int) -> Sprite3D:
@@ -255,7 +190,7 @@ func _walk(cat: Dictionary, delta: float, speed: float, right: Vector2) -> bool:
 	cat.walked += step.length()
 	if absf(step.dot(right)) > 0.0001:
 		cat.facing = signf(step.dot(right))
-	_show(cat.sprite, cat.sheets.walk, int(cat.walked / 0.18))
+	_show(cat.sprite, cat.sheets.walk, int(cat.walked / 0.09))
 	_place(cat.node, cat.at, 0.0)
 	return false
 

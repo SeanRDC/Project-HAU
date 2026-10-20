@@ -629,14 +629,19 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   umbrella (an eight-sided matte canopy in their own colour, a steel rim and shaft,
   springing open over a quarter second) unless they stand under a roof (floor 0.45 m
   or higher, as in the canteen hall).
-- **Ambient life** (`critters.gd`): cats and maya birds. Their frames are **written in
-  code as rows of letters** (a palette key per pixel), side-on after Mikko's references
-  (a side-view orange tabby, a sparrow sheet; used as reference only, nothing copied), at
-  the characters' density (85 px for 1.83 m: the sitting cat 26 x 29 px, walking 32 x 18,
-  asleep 27 x 13; the maya 16-18 x 12), facing right and flipped, every filled pixel next
-  to an empty one edged in a darker tone of its own colour (as the cast: no black
-  outline), lit and shadowed like the cast. They are drawn on the large side so they read
-  at the game's zooms. Five cats (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
+- **Ambient life** (`critters.gd`): cats and maya birds, **PixelLab frames cleaned in pxl**,
+  the way Migo is: `assets/drafts/characters/critters/pxl/` keeps the PixelLab frames
+  (`source/`) and requests (`pixellab/`: generate-image-v2 from Mikko's side-view cat and
+  sparrow reference, with a Bea frame or the chosen cat as the style image; animate-with-
+  text-v3 for the walk, the peck and the flight). `convert.mjs` makes alpha solid, lifts
+  near-black edge pixels to a darker tone of the colour beside them (no black outlines),
+  drops lone pixels, trims each animal's frames to one box (feet on the bottom row) and
+  puts each animal on one palette (12 colours for the cats, 12 for the maya), writing
+  `cats.px.js` and `maya.px.js`; the other cat coats are **palette swaps** of the orange
+  tabby (fur and pale ramps per coat). `build.ps1` builds them with pxl into
+  `sprites/critters/` (one strip per pose: cat walk 8 x 44x32, sit 20x31, sleep 32x16; maya
+  ground 3 x 24x17, fly 4 x 24x28), at the characters' density, side-on facing right and
+  flipped, lit and shadowed like the cast. Five cats (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
   Kiko tuxedo by the canteen, Tisay grey tabby on the chapel plaza, Itim black at SJH,
   Puti white at the Student Center): sit with a tail flick, stroll within
   5 m of home, curl up asleep (more at noon, at night and in the rain), walk over to a

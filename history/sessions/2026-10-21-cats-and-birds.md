@@ -38,6 +38,22 @@ Ambient life: cats and birds.
   unknown, so nothing was copied in. Coats as palettes (`COATS`); five cats now (Itim,
   black, at SJH; Puti, white, at the Student Center) and eight flocks of 5-8.
 
+- **Made with PixelLab and pxl (Mikko gave the PixelLab key and asked for pxl first).**
+  pxl (github.com/crsolver/claude-pxl) was installed as the Claude Code skill at
+  `~/.claude/skills/pxl-pixel-art`, where Migo's build looks for it, and Node was upgraded
+  to 22.23.2 (pxl needs 22.18+). Mikko then sent "Pixel Cat and Sparrow Companions", a
+  side-on, softly shaded, outline-free picture close to the cast's look, and left the
+  choice of method to me. PixelLab generate-image-v2 made the standing cat at game size
+  from it (Bea's idle frame as the style image), then the sitting and sleeping cats and
+  the maya with the chosen cat as the style; animate-with-text-v3 made the walk (8), the
+  peck and the flight. 58 generations in all. The frames went through pxl as Migo's do:
+  `convert.mjs` (solid alpha, near-black edges lifted to a darker tone of their own colour,
+  lone pixels dropped, one box and one palette per animal; the palette's first colours
+  picked far apart, else k-means collapsed the oranges), `cats.px.js` / `maya.px.js` (the
+  other four coats as palette swaps with a neutral white for the chest and paws),
+  `build.ps1` into `sprites/critters/`. The letter-drawn frames in `critters.gd` are gone;
+  it loads the sheets. The key is not stored anywhere in the repo.
+
 ## What changed
 
 - `critters.gd` (new); `aps.gd`: created with the NPCs, updated each frame (and in the
