@@ -1,8 +1,8 @@
 extends CanvasLayer
 ## The opening: a quiet memory of HAU before the game starts, told like a manga page by
 ## page. Panels fade in one at a time and drift slowly; the narration types out beside
-## them in Tagalog. Any key or click moves on, Esc skips the rest. The game waits paused
-## behind it (aps.gd).
+## them in Tagalog. Any key or click moves on; holding Space (or Esc) skips the rest. The
+## game waits paused behind it (aps.gd).
 ##
 ## Each panel's picture is res://opening/panels/<id>.png when it has been drawn (see
 ## opening/README.md for what to draw), else res://opening/photos/<id>.jpg (a campus
@@ -22,6 +22,8 @@ const VOICE := 260.0
 ## How long a panel drifts across its slack, and how much bigger than its frame it is.
 const DRIFT_TIME := 14.0
 const SLACK := 1.1
+## How long Space is held to skip; a tap still moves on like any key.
+const HOLD := 0.9
 
 ## Pages in order. Each panel: id (its picture; "" for none), rect [x, y, w, h] in the page,
 ## lines [[text, where]] with where one of L, R (top corners), BL, BR (bottom corners), C.
@@ -88,6 +90,10 @@ var _font := lettering()
 var _advance := false
 var _skipping := false
 var _instant := false
+var _holding := false
+var _hold := 0.0
+var _hint := Label.new()
+var _fill := ColorRect.new()
 
 ## The lettering font: the opening's narration and the NPCs' talk (npcs.gd).
 static func lettering() -> SystemFont:
@@ -140,6 +146,13 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	var click := event as InputEventMouseButton
+	if key != null and key.keycode == KEY_SPACE:
+		if not key.echo:
+			_holding = key.pressed
+			if not key.pressed and _hold < 1.0:
+				_advance = true
+		get_viewport().set_input_as_handled()
+		return
 	if not ((key != null and key.pressed and not key.echo) or (click != null and click.pressed)):
 		return
 	if key != null and key.keycode == KEY_ESCAPE:
@@ -147,7 +160,22 @@ func _input(event: InputEvent) -> void:
 	_advance = true
 	get_viewport().set_input_as_handled()
 
+## Holding Space fills the bar under the hint; let go early and it drains back.
+func _process(delta: float) -> void:
+	if _hint.get_parent() == null:
+		return
+	if _skipping:
+		_hint.modulate.a = move_toward(_hint.modulate.a, 0.0, delta * 3.0)
+		return
+	_hold = clampf(_hold + (delta if _holding else -2.0 * delta) / HOLD, 0.0, 1.0)
+	_fill.scale.x = _hold
+	_hint.modulate.a = move_toward(_hint.modulate.a, 1.0 if _holding else 0.5, delta * 3.0)
+	if _hold >= 1.0:
+		_skipping = true
+		_advance = true
+
 func _play() -> void:
+	_skip_hint()
 	for page in PAGES:
 		if _skipping:
 			break
@@ -171,6 +199,34 @@ func _capture(index: int, path: String) -> void:
 	get_tree().quit()
 
 # --- Pages ------------------------------------------------------------------------
+
+## "HOLD SPACE TO SKIP" in the margin under the page's bottom right, lettered like the
+## narration, with a thin pen line beneath that fills while Space is held.
+func _skip_hint() -> void:
+	var area := _area()
+	var size := maxi(12, int(area.size.y * 0.024))
+	_hint.text = "HOLD SPACE TO SKIP"
+	_hint.add_theme_font_override("font", _font)
+	_hint.add_theme_font_size_override("font_size", size)
+	_hint.add_theme_color_override("font_color", PEN)
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint.modulate.a = 0.0
+	_root.add_child(_hint)
+	_hint.size = Vector2(area.size.x, 0)
+	_hint.position = Vector2(area.position.x, area.end.y + area.size.y * 0.012)
+	var width := _font.get_string_size(_hint.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var track := ColorRect.new()
+	track.color = Color(PEN, 0.18)
+	track.size = Vector2(width, 2)
+	track.position = Vector2(area.size.x - width, _hint.get_minimum_size().y)
+	track.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hint.add_child(track)
+	_fill.color = PEN
+	_fill.size = track.size
+	_fill.scale.x = 0.0
+	_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	track.add_child(_fill)
 
 func _area() -> Rect2:
 	var screen := get_viewport().get_visible_rect().size
@@ -350,7 +406,7 @@ func _title() -> void:
 
 # --- Timing -----------------------------------------------------------------------
 
-## Waits, or less if a key moves on (or Esc is skipping).
+## Waits, or less if a key moves on (or the opening is being skipped).
 func _wait(seconds: float) -> void:
 	if _instant:
 		return
