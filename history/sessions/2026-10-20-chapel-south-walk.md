@@ -42,6 +42,13 @@ sheds by the east road. Copy the photos into the repo, but not the ones with car
 - **Photos:** only the three without parked cars went into `assets/CHAPEL/` (08 to 10);
   the repo is public and the others show plates.
 
+- **Better grass everywhere** (Mikko: "improve the quality of the grass"). The tufts
+  were 34 one-pixel blades and read as straw sticks on a flat green floor. Now three
+  kinds (`Tuft`: a dense lawn clump, tall wild grass with seed heads, clover with tiny
+  flowers), blades coloured from the lawn's own green up so they grow out of it, a
+  carpet of small clumps between the tufts, and a lawn floor with soft lighter and
+  darker patches. About 6 500 tufts in all (the style guide's limit is now 10 000).
+
 ## What changed
 
 - `areas/chapel_south.gd` (new), `areas/chapel.gd` (south bays, steps solid, its south
