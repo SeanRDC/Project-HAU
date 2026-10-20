@@ -665,11 +665,22 @@ func _update_camera(delta: float) -> void:
 		# stands above it)
 		var south_edge := (Vector3(focus.x, 0.0, MiddleRoad.FACE_S - 0.2) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, south_edge * smoothstep(0.0, 1.0, middle_north))
+	# Every framing keeps the student in the middle top to bottom too: the camera moves
+	# straight up or down the screen onto their middle (in whole render pixels; the cuts
+	# stay put). Not in a cutaway, which frames its corridor. Zoomed far out it stops where
+	# the frame's lower edge would start under the ground (that shows as an empty band, and
+	# stepping the camera back to avoid it puts things behind it into the view), so there the
+	# student sits a little low.
+	var up := camera.global_basis.y
+	var middle_of := Vector3(follow.x, student.position.y + 0.9, follow.y)
+	var onto := (middle_of - camera.position).dot(up)
+	var lowest := (0.5 - camera.position.y + up.y * view_metres.y / 2.0) / up.y
+	onto = roundf(maxf(onto, lowest) / pixel) * pixel * (1.0 - inside)
+	camera.position += up * onto
 	# Those cuts take the near ground away too; zoomed out, the frame would reach past the
 	# cut's edge and show an empty band at the bottom. Raise the frame (straight up the
 	# screen, so the cut stays where it is) until the edge sits on its bottom.
 	if camera.near > inside_near + 0.01:
-		var up := camera.global_basis.y
 		var level := Vector3(forward.x, 0.0, forward.z).normalized()
 		var below := -0.2 - camera.position.y
 		var ahead := (camera.near - below * forward.y) / level.dot(forward)

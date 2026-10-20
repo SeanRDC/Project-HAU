@@ -708,6 +708,14 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   zone below says a wide framing "frames" or "centres on" a building, that is now its
   depth and height; to see the whole building, stand at its middle. The checks
   `wide_shows_l`, `whole_building_visible` and `mgn_view_faces_front` stand there.
+  **And top to bottom:** the camera then moves straight up or down the screen (whole
+  render pixels) onto the student's middle (0.9 m up), except in a cutaway. It stops where
+  the frame's lower edge would start under the ground (lower than 0.5 m): at these
+  shallow angles that shows as an empty band, and stepping the camera back instead puts
+  whatever stands behind it into the view. So close up the student is dead centre, and
+  zoomed out (from about 15 m) a little below it. Centring fully when zoomed out would
+  need the camera to look down more steeply (over 25° at 112 m); the angles are the
+  style's, so that was not done. Where an outdoor cut is in force its raise (below) wins.
   **No empty band under a cut:** the outdoor cuts (SJH, MGN, the boulevard, the chapel
   south walk) take the near ground away with everything else, so zoomed out the frame
   would show the empty background below the cut's edge. When one is in force the camera
