@@ -1,5 +1,11 @@
 # Project Context
 
+**The SJH–MGN bridge, 2026-10-20.** A covered bridge joins MGN's south wing (the service
+block) to SJH's west face at the third floor (`_bridge()` in `areas/mgn.gd`): concrete
+deck, parapets, steel rail, ribbed tin roof. Scenery only, and hidden from the game
+cameras behind SJH's stair tower (F2 free cam shows it). See
+`sessions/2026-10-20-sjh-mgn-bridge.md`.
+
 **Right-drag camera angle, 2026-10-20.** Holding the right mouse button and dragging
 turns the camera angle like Q/E (same ±0.25 rad orbit, `DRAG_TURN` in `aps.gd`), the
 cursor hidden while held. Not a full 360° turn: the zones' cuts assume their facing.
