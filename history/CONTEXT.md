@@ -1,5 +1,10 @@
 # Project Context
 
+**Right-drag camera angle, 2026-10-20.** Holding the right mouse button and dragging
+turns the camera angle like Q/E (same ±0.25 rad orbit, `DRAG_TURN` in `aps.gd`), the
+cursor hidden while held. Not a full 360° turn: the zones' cuts assume their facing. See
+`sessions/2026-10-20-camera-right-drag.md`.
+
 **The chapel's south walk, 2026-10-20.** `areas/chapel_south.gd`: a black path with
 white kerbs from the plaza's south end along the chapel to the east road, dirt under
 thin trees and bamboo on the chapel side, a grass strip and the parked cars (now nosed
