@@ -20,11 +20,14 @@ const PATH: Array[Vector2] = [Vector2(-35.3, 80.5), Vector2(-31.6, 86.4), Vector
 	Vector2(37.8, 78.8)]
 ## The asphalt's width (the white kerbs stand just outside it).
 const WIDTH := 1.5
-## The walkable ground round the path: the dirt up to the chapel and the grass down to
-## the parking (the chapel, the Formation Center's plot and every prop still block).
-const GROUND := Rect2(-30.0, 76.0, 67.0, 21.4)
 ## Where the parking starts (Sjh.PARKING's north edge), with its white kerb.
 const PARKING_Z := 97.6
+## The walkable ground round the path: the dirt up to the chapel and the grass down
+## into the parking, all along it from where it starts by the oval (the chapel, the
+## Formation Center's plot and every prop still block).
+const GROUND := Rect2(-44.0, 76.0, 81.0, PARKING_Z + 0.3 - 76.0)
+## The grass band along the path's chapel side, before the dirt starts (metres past the kerb).
+const VERGE := 1.4
 ## Thin shade trees on the dirt: x, z, height.
 const TREES: Array[Vector3] = [Vector3(-24.0, 87.0, 7.6), Vector3(-19.5, 84.6, 6.8), Vector3(-15.0, 87.8, 7.2),
 	Vector3(-10.5, 83.6, 6.6), Vector3(-6.0, 88.2, 7.8), Vector3(-1.5, 84.8, 7.0), Vector3(2.8, 88.6, 6.6),
@@ -32,7 +35,10 @@ const TREES: Array[Vector3] = [Vector3(-24.0, 87.0, 7.6), Vector3(-19.5, 84.6, 6
 	Vector3(24.5, 84.8, 7.2), Vector3(13.5, 82.6, 6.4), Vector3(-13.0, 80.6, 6.2)]
 ## Young trees in the grass by the path, where the photos have foxtail palms: x, z,
 ## height. (Palms' level fronds are edge-on to this low view and read as bare poles.)
-const SAPLINGS: Array[Vector3] = [Vector3(-17.0, 93.8, 3.6), Vector3(-2.0, 93.6, 3.9), Vector3(13.0, 93.8, 3.4)]
+const SAPLINGS: Array[Vector3] = [Vector3(-17.0, 93.8, 3.6), Vector3(-2.0, 93.6, 3.9), Vector3(13.0, 93.8, 3.4),
+	Vector3(29.6, 95.9, 3.0)]
+## Red-tipped shrubs on the picnic corner's lawn (the RIGHT SIDE DETAILS photo).
+const CORNER_SHRUBS: Array[Vector2] = [Vector2(29.4, 92.2), Vector2(36.0, 96.6), Vector2(27.2, 95.4), Vector2(35.8, 90.9)]
 ## Bamboo clumps: x, z, radius.
 const BAMBOO: Array[Vector3] = [Vector3(-27.0, 85.4, 1.3), Vector3(-23.2, 81.6, 0.9), Vector3(5.8, 79.6, 1.0),
 	Vector3(26.8, 82.6, 0.8)]
@@ -110,6 +116,9 @@ static func blocked(x: float, z: float) -> bool:
 	for shed in SHEDS:
 		if absf(x - shed.x) < 1.3 and absf(z - shed.y) < 0.9:
 			return true # picnic table and benches
+	for shrub in CORNER_SHRUBS:
+		if at.distance_to(shrub) < 0.55:
+			return true
 	for post in bollards() + [SIGN, BIN]:
 		if at.distance_to(post) < 0.3:
 			return true
@@ -127,13 +136,17 @@ static func floor_height(x: float, z: float) -> float:
 static func line_z(x: float) -> float:
 	return PATH[3].y if x < PATH[4].x else PATH[4].y - (x - PATH[4].x) * 0.8
 
-## Where grass grows: the strip south of the path, and only thinly on the dirt.
+## Where grass grows: the strip south of the path, the verge along its chapel side and
+## the picnic corner's lawn; only thinly on the dirt and not under the sheds.
 static func grassy(x: float, z: float) -> bool:
 	if not walkable(x, z):
 		return true
 	if from_path(x, z) < WIDTH / 2.0 + 0.3:
 		return false
-	return z > line_z(x)
+	for shed in SHEDS:
+		if absf(x - shed.x) < 2.2 and absf(z - shed.y) < 1.8:
+			return false # worn dirt under the sheds
+	return z > line_z(x) or from_path(x, z) < WIDTH / 2.0 + VERGE or x > 27.0
 
 ## 1 on the walk (the camera then cuts away the parking and SJH behind it).
 static func view_for(x: float, z: float) -> float:
@@ -155,11 +168,16 @@ func build(world: RefCounted) -> void:
 ## Bare dirt from the chapel down to the path, clear of the chapel and the Formation
 ## Center's plot (its own pad is drawn there).
 func _dirt() -> void:
+	# Its south edge follows the path a grass verge's width away (the path's chapel side).
 	var points := line()
-	var shape := PackedVector2Array([Vector2(-29.0, 76.0), Vector2(36.0, 76.0)])
-	for i in range(points.size() - 1, -1, -1):
+	var shape := PackedVector2Array([Vector2(-29.0, 76.0), Vector2(27.0, 76.0)])
+	for i in range(points.size() - 2, -1, -1):
 		var p := points[i]
-		if p.x > -29.0 and p.x < 36.0:
+		var across := Vector2(points[i].y - points[i + 1].y, points[i + 1].x - points[i].x).normalized()
+		if across.y > 0.0:
+			across = -across # towards the chapel
+		p += across * (WIDTH / 2.0 + VERGE)
+		if p.x > -29.0 and p.x < 27.0:
 			shape.append(p)
 	var pieces := Geometry2D.clip_polygons(shape, Chapel.outline())
 	var plot := PackedVector2Array()
@@ -173,8 +191,9 @@ func _dirt() -> void:
 			for k in index:
 				triangles.append(part[k])
 			w._ground(triangles, -0.18, dirt)
-	# The picnic corner's dirt, south of the curve down to the parking.
-	w.box(Vector3(12.0, 0.04, 11.0), Vector3(31.0, -0.2, 91.6), dirt)
+	# The picnic corner is lawn, worn to dirt under each shed.
+	for shed in SHEDS:
+		w.box(Vector3(4.4, 0.04, 3.6), Vector3(shed.x, -0.19, shed.y), dirt)
 
 func _path() -> void:
 	var asphalt: Material = w.material("road", Color("5f6468"))
@@ -213,6 +232,9 @@ func _planting() -> void:
 		w._shrub(Vector3(x, -0.2, 96.2 - (k % 2) * 0.5), 1.0 + (k % 3) * 0.15, 1350 + k)
 		x += 4.6 + (k % 3) * 0.7
 		k += 1
+	for i in CORNER_SHRUBS.size():
+		var at := CORNER_SHRUBS[i]
+		w._shrub(Vector3(at.x, -0.2, at.y), 1.1 + (i % 2) * 0.3, 1370 + i)
 	# Dark rounded hedges against the chapel's plinth, between the steps.
 	for at in [Vector2(-16.4, 77.6), Vector2(-6.0, 77.0), Vector2(-1.0, 73.6), Vector2(4.6, 72.4)]:
 		w._shrub(Vector3(at.x, -0.18, at.y), 1.6, 1380 + roundi(at.x), w.HEDGE_COLORS)

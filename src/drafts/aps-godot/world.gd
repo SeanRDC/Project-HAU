@@ -1216,7 +1216,7 @@ func _grasses() -> void:
 		if ChapelSouth.walkable(x, z):
 			if ChapelSouth.from_path(x, z) < ChapelSouth.WIDTH / 2.0 + 0.25:
 				return false # the path along the chapel's south side
-			if not ChapelSouth.grassy(x, z) and random.randf() > 0.25:
+			if not ChapelSouth.grassy(x, z) and random.randf() > 0.15:
 				return false # only thin grass on the dirt under the trees
 		var at := Vector2(x, z)
 		if not Geometry2D.is_point_in_polygon(at, inner) or Chapel.walkable(x, z) or Sjh.on_parking(x, z):
@@ -1239,6 +1239,9 @@ func _grasses() -> void:
 				spots.append(Vector4(at.x, -0.2, at.y, random.randf_range(0.7, 1.25)))
 	# Across the chapel lawn, thinner further out.
 	scatter.call(Vector2(-55, 11), Vector2(37, 107), 1400, -0.2, 1.15, lawn)
+	# Thick along the chapel's south walk: the strip by the cars, the path's verge and
+	# the picnic corner's lawn (and a few tufts on the dirt).
+	scatter.call(ChapelSouth.GROUND.position, ChapelSouth.GROUND.end, 3200, -0.19, 1.05, lawn)
 	for tree in [Vector2(-8.8, 12.5), Vector2(-4.0, 18.0), Vector2(14.5, 34.0), Vector2(7.0, 31.0),
 			Vector2(25.5, 6.5), Vector2(27.4, 18.2)]:
 		scatter.call(tree - Vector2(0.7, 0.7), tree + Vector2(0.7, 0.7), 9, -0.05 if tree.x > 20.0 else -0.2, 0.75, anywhere)
