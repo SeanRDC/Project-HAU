@@ -42,8 +42,8 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
   the lobby and the passage.
 - **Walking:** `Sjh.walkable` is the list of floors, steps, the ramp, the yard and the
   lane; `Sjh.blocked` takes out the railing, the pillars, the piers, the tables, the
-  bins, the ramp's rails and the shrub bed (the old APS-front rule in
-  `World.walkable_ground` covers that strip, so the bed has to block itself).
+  bins, the ramp's rails and the planter terrace (the old APS-front rule in
+  `World.walkable_ground` covers that strip, so the terrace has to block itself).
 - Guesses, not in the photos: the passage's depth and height (2.1 × 2.6 m), the
   ramp's slope (1:10), the lane's far wall, the bridge's span and roof, where along the
   walkway the tables stand.
@@ -62,7 +62,7 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
 
 - `areas/sjh.gd`: the constants, `_deck`, `_stair`, `_yard`, `walkway_for`, `view_for`,
   `in_front`, `walkable`, `blocked`, `floor_height`; `_walkway`, `_pier`, `_railing`,
-  `_gap_stairs`, `_bed`, `_inner_wall`, `_furniture`, `_lobby`, `_west_end`,
+  `_gap_stairs`, `_terrace`, `_inner_wall`, `_furniture`, `_lobby`, `_west_end`,
   `_bridge`; the west terracotta block and the centre tower's ground floor; the
   planting moved off the steps.
 - `world.gd`: the `diamond` texture.
