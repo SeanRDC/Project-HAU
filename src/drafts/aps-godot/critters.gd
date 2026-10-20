@@ -1,9 +1,10 @@
 extends Node3D
-## Ambient life: the campus cats and the maya birds. Both are small pixel sheets drawn
-## here in code (no art files), at the characters' density, edged in a darker tone of
-## their own colour like the cast, lit and shadowed like them.
+## Ambient life: the campus cats and the maya birds. Their sheets are pixel frames
+## written out here as rows of letters (no art files), side-on after Mikko's references
+## (a side-view tabby, a sparrow sheet), at the characters' density, edged in a darker
+## tone of their own colour like the cast, and lit and shadowed like them.
 ##
-## Cats: three strays with names, each round its own spot. They sit and flick their tail,
+## Cats: five strays with names, each round its own spot. They sit and flick their tail,
 ## stroll, and curl up asleep (more at noon, at night and in the rain). Stand still near
 ## one and it may come over; press E beside it to pet it (it purrs). Run at one and it
 ## dashes off.
@@ -28,12 +29,15 @@ const SCARE_RUNNING := 4.5
 const CATS := [
 	{"name": "Mingming", "home": Vector2(-6.0, 6.2), "coat": "orange"},
 	{"name": "Kiko", "home": Vector2(33.0, 13.0), "coat": "tuxedo"},
-	{"name": "Tisay", "home": Vector2(-31.0, 57.0), "coat": "calico"},
+	{"name": "Tisay", "home": Vector2(-31.0, 57.0), "coat": "grey"},
+	{"name": "Itim", "home": Vector2(-24.0, 118.5), "coat": "black"},
+	{"name": "Puti", "home": Vector2(-118.0, 83.0), "coat": "white"},
 ]
 ## Where flocks feed (world x, z) and how many birds each.
 const FLOCKS := [
-	[Vector2(12.0, 7.0), 5], [Vector2(24.0, 11.5), 4], [Vector2(-36.0, 52.5), 6],
-	[Vector2(-84.0, 70.5), 5], [Vector2(-150.0, 63.0), 4], [Vector2(-20.0, 108.0), 5],
+	[Vector2(12.0, 7.0), 6], [Vector2(24.0, 11.5), 5], [Vector2(-36.0, 52.5), 8],
+	[Vector2(-84.0, 70.5), 6], [Vector2(-150.0, 63.0), 6], [Vector2(-20.0, 108.0), 7],
+	[Vector2(52.0, 92.0), 5], [Vector2(-95.0, 56.0), 6],
 ]
 
 var camera: Camera3D
@@ -67,122 +71,89 @@ func _ready() -> void:
 
 # --- Drawing ----------------------------------------------------------------------
 
-## A sheet of frames side by side, each drawn by `paint(image, frame, x0)`, then edged:
-## every filled pixel next to an empty one takes a darker tone of its own colour.
-static func _sheet(width: int, height: int, frames: int, paint: Callable) -> ImageTexture:
-	var image := Image.create(width * frames, height, false, Image.FORMAT_RGBA8)
-	for frame in frames:
-		paint.call(image, frame, frame * width)
-	var edged := image.duplicate() as Image
-	for y in height:
-		for x in width * frames:
-			var c := image.get_pixel(x, y)
-			if c.a < 0.5:
-				continue
-			for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				var n := Vector2i(x, y) + d
-				var inside := n.x >= 0 and n.y >= 0 and n.x < width * frames and n.y < height and (n.x / width) == (x / width)
-				if not inside or image.get_pixel(n.x, n.y).a < 0.5:
-					edged.set_pixel(x, y, c.darkened(0.32))
-					break
-	return ImageTexture.create_from_image(edged)
+## Sitting, facing right (after the side-view tabby reference): one frame.
+const CAT_SIT := [
+	["................o....o....", "...............oo...oo....", "...............opo.opo....", "..............oopooopoo...", "..............ooooooooo...", ".............ososooooooo..", ".............oooooooeoool.", ".............oooooooooolln", ".............ooooooooolll.", "..............ooooowwwll..", "..............oooowwww....", ".............oooooowww....", "............ooooooowww....", "...........oosooooowww....", "..........oooosooooww.....", ".........oooooosoooow.....", "........ooossooosooow.....", "........ooooosoooooooo....", ".......ooosooosooooooo....", ".......oooosoooosoooooo...", ".......ooooosoooooooooo...", ".......oooooooooooo.ooo...", ".......oooooooooooo.ooo...", "........ooooooooooo.ooo...", ".ooo....oooooooooo..ooo...", "oolsoo..ooooooooo...ooo...", "o.lssoooooooooooo...ooo...", "..osssoooooooowww..www....", "....oooooooowww....www...."],
+]
+## Walking, facing right: four frames, the legs swinging.
+const CAT_WALK := [
+	["........................o...o...", "........................oo.oo...", "........................opoop...", "..oo...................ooooooo..", ".oo....................oosoooeo.", ".o.....................ooooooolln", ".o...ooooooooooooooooooooooolll.", ".oo.oossooossooossooooooooowl...", "..oooossooossooossoooooooooww...", "...ooossooossooossoooooooowww...", "...ooooooooooooooooooooooowww...", "...oooooooooooooooooooooowww....", "....ooooooooooooooooooooww......", "....oo..oo..........oo..oo......", "....oo...oo.........oo...oo.....", "...oo....oo........oo....oo.....", "...oo.....oo.......oo.....oo....", "..ww......ww......ww......ww...."],
+	["........................o...o...", "........................oo.oo...", "........................opoop...", "..oo...................ooooooo..", ".oo....................oosoooeo.", ".o.....................ooooooolln", ".o...ooooooooooooooooooooooolll.", ".oo.oossooossooossooooooooowl...", "..oooossooossooossoooooooooww...", "...ooossooossooossoooooooowww...", "...ooooooooooooooooooooooowww...", "...oooooooooooooooooooooowww....", "....ooooooooooooooooooooww......", ".....oo.oo...........oo.oo......", ".....oo.oo...........oo.oo......", ".....oo.oo...........oo.oo......", ".....oo..oo..........oo..oo.....", "....ww...ww.........ww...ww....."],
+	["........................o...o...", "........................oo.oo...", "........................opoop...", "..oo...................ooooooo..", ".oo....................oosoooeo.", ".o.....................ooooooolln", ".o...ooooooooooooooooooooooolll.", ".oo.oossooossooossooooooooowl...", "..oooossooossooossoooooooooww...", "...ooossooossooossoooooooowww...", "...ooooooooooooooooooooooowww...", "...oooooooooooooooooooooowww....", "....ooooooooooooooooooooww......", "....oo..oo..........oo..oo......", "...oo...oo.........oo...oo......", "...oo...oo.........oo...oo......", "..oo....oo........oo....oo......", "..ww....ww........ww....ww......"],
+	["........................o...o...", "........................oo.oo...", "........................opoop...", "..oo...................ooooooo..", ".oo....................oosoooeo.", ".o.....................ooooooolln", ".o...ooooooooooooooooooooooolll.", ".oo.oossooossooossooooooooowl...", "..oooossooossooossoooooooooww...", "...ooossooossooossoooooooowww...", "...ooooooooooooooooooooooowww...", "...oooooooooooooooooooooowww....", "....ooooooooooooooooooooww......", ".....oooo............oooo.......", ".....oooo............oooo.......", "....oo.oo...........oo.oo.......", "....oo.oo...........oo.oo.......", "...ww..ww..........ww..ww......."],
+]
+## Asleep, curled up: one frame (it breathes by scale).
+const CAT_SLEEP := [
+	["...........................", "............o.o............", "...........oooooo..........", ".........oossoossoo........", ".......ooosooosooosoo..o.o.", ".....oooosoooosooooso.ooooo", "....ooosoooosooooooooooosoo", "...ooosooooooooooooooooooeo", "..oooooooooooooooooooooooll", "..oooooooooooooooooooooolln", ".oolllooooooooooooooooolll.", ".oolssssoooooooooooooooww..", "..oooooooooooooooooowwww..."],
+]
+## A maya on the ground, facing right: standing, mid-hop, pecking.
+const BIRD_GROUND := [
+	["..........cc....", ".........cccc...", "........cccocc..", "........hhdhhyy.", ".......bhhhdh...", "....kbbbbfddf...", "..kbkbkbbffff...", ".kbkkbkbbfff....", "kkbkbbbbfff.....", "kk..bbbffff.....", ".......g.g......", ".......g.g......"],
+	["................", "..........cc....", ".........cccc...", "........cccocc..", "........hhdhhyy.", "....kbbbhhhdh...", "..kbkbkbbfddf...", ".kbkkbkbbffff...", "kkbkbbbbfff.....", "kk..bbbffff.....", ".......g..g.....", ".......g..g....."],
+	["................", "................", "................", "................", "....kbbbb.......", "..kbkbkbbbcccc..", ".kbkkbkbbccccoc.", "kkbkbbbbfhhdhh..", "kk..bbbffffdhyy.", "........g.g.....", "........g.g.....", "........g.g....."],
+]
+## A maya flying: wings up, wings down.
+const BIRD_FLY := [
+	[".........kk.......", "........kbk.......", ".......kbbk.......", "......kbbk....cc..", ".....kbbbk...cccc.", "kk..bbbbbbbbcccocc", ".kkbbbbffffhhdhhyy", "..k...fffffdh....."],
+	["..................", "..................", "..............cc..", ".............cccc.", "kk..bbbbbbbbcccocc", ".kkbbbkbbfffhhdhyy", "..k..kbbkfffdh....", ".....kbbk.........", "......kbk.........", ".......kk........."],
+]
 
-static func _ellipse(image: Image, x0: int, c: Vector2, r: Vector2, colour: Callable) -> void:
-	for y in range(int(c.y - r.y - 1), int(c.y + r.y + 2)):
-		for x in range(int(c.x - r.x - 1), int(c.x + r.x + 2)):
-			var d := Vector2((x + 0.5 - c.x) / r.x, (y + 0.5 - c.y) / r.y)
-			if d.length_squared() <= 1.0:
-				_put(image, x0, x, y, colour.call(x, y))
+## The cats' coats: a colour for each letter in the frames (o coat, s stripe, l muzzle,
+## w white, p ear and nose pink, e eye, n nose).
+const COATS := {
+	"orange": {"o": "d68a3c", "s": "a9612a", "l": "ebb26e", "w": "eee6d8", "p": "d79a8c", "e": "3b2a18", "n": "6b3a2a"},
+	"tuxedo": {"o": "34323a", "s": "2a2830", "l": "eee6d8", "w": "eee6d8", "p": "d79a8c", "e": "c9c24a", "n": "6b3a2a"},
+	"grey": {"o": "8f8b86", "s": "5f5b57", "l": "c2bdb4", "w": "eee6d8", "p": "d79a8c", "e": "8fa04a", "n": "5a4a48"},
+	"black": {"o": "2c2b30", "s": "232227", "l": "3a3940", "w": "3a3940", "p": "6a4a4a", "e": "c9c24a", "n": "1a1a1e"},
+	"white": {"o": "e9e3d6", "s": "d4ccbe", "l": "f2eee6", "w": "f2eee6", "p": "d79a8c", "e": "5f93b8", "n": "c98a8a"},
+}
+## The maya's colours (b back, k dark streak, c chestnut cap, h white cheek, d black spot
+## and bib, f buff belly, y beak, g legs, o eye).
+const BIRD_COLOURS := {"b": "8a6442", "k": "4e3424", "c": "7c4426", "h": "ece6da", "d": "2a2420",
+	"f": "c9b394", "y": "4a3a30", "g": "a07e62", "o": "2a2420"}
 
-static func _put(image: Image, x0: int, x: int, y: int, colour: Color) -> void:
-	if x >= 0 and y >= 0 and y < image.get_height() and x0 + x < image.get_width():
-		image.set_pixel(x0 + x, y, colour)
+## A sheet from frames of letter rows (each frame bottom-aligned in a box as big as the
+## largest), every filled pixel next to an empty one edged in a darker tone of its own
+## colour, as the cast are.
+static func _sheet(frames: Array, colours: Dictionary) -> Array:
+	var width := 0
+	var height := 0
+	for rows: Array in frames:
+		height = maxi(height, rows.size())
+		for row: String in rows:
+			width = maxi(width, row.length())
+	var image := Image.create(width * frames.size(), height, false, Image.FORMAT_RGBA8)
+	var filled := func(f: int, x: int, y: int) -> bool:
+		var rows: Array = frames[f]
+		var row_index := y - (height - rows.size())
+		if x < 0 or x >= width or row_index < 0 or row_index >= rows.size():
+			return false
+		var row: String = rows[row_index]
+		return x < row.length() and row[x] != "."
+	for f in frames.size():
+		var rows: Array = frames[f]
+		for r in rows.size():
+			var row: String = rows[r]
+			var y := r + height - rows.size()
+			for x in row.length():
+				if row[x] == ".":
+					continue
+				var colour := Color(colours[row[x]])
+				for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					if not filled.call(f, x + d.x, y + d.y):
+						colour = colour.darkened(0.32)
+						break
+				image.set_pixel(f * width + x, y, colour)
+	return [ImageTexture.create_from_image(image), frames.size()]
 
-## A cat's coat colour at a pixel (x, y) of a frame.
-static func _coat(kind: String, x: int, y: int) -> Color:
-	match kind:
-		"orange":
-			return Color("a8602a") if posmod(x + y / 3, 4) == 0 else Color("d9893b")
-		"tuxedo":
-			return Color("eceae4") if y >= 12 and posmod(x, 9) > 5 else Color("2f2d33")
-		_: # calico: white with orange and black patches
-			var cell := posmod(x / 4 + (y / 3) * 3, 5)
-			return Color("d9893b") if cell == 1 else (Color("2f2d33") if cell == 3 else Color("efece5"))
-
-static func _cat_sheets(kind: String) -> Dictionary:
-	var coat := func(x: int, y: int) -> Color: return _coat(kind, x, y)
-	var eye := Color("c9d24a")
-	var nose := Color("d98a8a")
-	# walking, facing right: four frames with the legs swinging
-	var walk := _sheet(26, 18, 4, func(image: Image, frame: int, x0: int) -> void:
-		var swing: int = [0, 1, 0, -1][frame]
-		for leg: Vector2i in [Vector2i(7, swing), Vector2i(9, -swing), Vector2i(16, -swing), Vector2i(18, swing)]:
-			for y in range(11, 17):
-				_put(image, x0, leg.x + (leg.y if y > 13 else 0), y, coat.call(leg.x, 14))
-		_ellipse(image, x0, Vector2(12.5, 9.5), Vector2(8.0, 3.6), coat)
-		_ellipse(image, x0, Vector2(21.0, 6.5), Vector2(3.4, 3.1), coat)
-		for ear: Vector2i in [Vector2i(19, 3), Vector2i(22, 3)]:
-			_put(image, x0, ear.x, ear.y, coat.call(ear.x, ear.y))
-			_put(image, x0, ear.x, ear.y - 1, coat.call(ear.x, ear.y))
-		_put(image, x0, 22, 6, eye)
-		_put(image, x0, 24, 7, nose)
-		var tip: int = [0, 1, 1, 0][frame]
-		for k in 6:
-			_put(image, x0, 4 - k / 2, 8 - k + tip, coat.call(3, 6)))
-	# sitting, facing right: the tail flicks over two frames
-	var sit := _sheet(26, 18, 2, func(image: Image, frame: int, x0: int) -> void:
-		_ellipse(image, x0, Vector2(12.0, 12.0), Vector2(5.0, 5.2), coat)
-		for leg in [14, 16]:
-			for y in range(12, 17):
-				_put(image, x0, leg, y, coat.call(leg, 14))
-		_ellipse(image, x0, Vector2(15.0, 5.5), Vector2(3.4, 3.1), coat)
-		for ear: Vector2i in [Vector2i(13, 2), Vector2i(16, 2)]:
-			_put(image, x0, ear.x, ear.y, coat.call(ear.x, ear.y))
-			_put(image, x0, ear.x, ear.y - 1, coat.call(ear.x, ear.y))
-		_put(image, x0, 17, 5, eye)
-		_put(image, x0, 18, 6, nose)
-		for k in 8:
-			_put(image, x0, 6 + k, 16 if k < 6 or frame == 0 else 15, coat.call(9, 16)))
-	# asleep, curled: breathing over two frames
-	var sleep := _sheet(26, 18, 2, func(image: Image, frame: int, x0: int) -> void:
-		_ellipse(image, x0, Vector2(12.0, 13.5 - frame * 0.3), Vector2(8.0, 3.4 + frame * 0.3), coat)
-		_ellipse(image, x0, Vector2(18.5, 13.5), Vector2(3.0, 2.6), coat)
-		_put(image, x0, 17, 11, coat.call(17, 11))
-		_put(image, x0, 20, 11, coat.call(20, 11))
-		_put(image, x0, 19, 13, Color("3a3030"))
-		for k in 7:
-			_put(image, x0, 6 + k, 16, coat.call(6, 16)))
-	return {"walk": [walk, 4], "sit": [sit, 2], "sleep": [sleep, 2]}
+static func _cat_sheets(coat: String) -> Dictionary:
+	var colours: Dictionary = COATS[coat]
+	return {"walk": _sheet(CAT_WALK, colours), "sit": _sheet(CAT_SIT, colours), "sleep": _sheet(CAT_SLEEP, colours)}
 
 static var _bird_sheets: Dictionary = {}
-## A maya: buff body, brown streaked back and wings, a chestnut cap, a white cheek with a
-## black spot and bib. Hopping/pecking (3 frames) and flying (2 frames), facing right.
 static func _birds() -> Dictionary:
-	if not _bird_sheets.is_empty():
-		return _bird_sheets
-	var body := func(x: int, y: int) -> Color: return Color("7a5534") if y < 4 and posmod(x, 2) == 0 else (Color("8c6a46") if y < 4 else Color("b49470"))
-	var head := func(_x: int, y: int) -> Color: return Color("7a3f22") if y < 2 else Color("e8e2d4")
-	var ground := _sheet(10, 8, 3, func(image: Image, frame: int, x0: int) -> void:
-		var peck := frame == 2
-		_ellipse(image, x0, Vector2(4.5, 4.6), Vector2(3.0, 2.0), body)
-		var h := Vector2(7.2, 4.6) if peck else Vector2(6.8, 2.6)
-		_ellipse(image, x0, h, Vector2(1.6, 1.5), head)
-		_put(image, x0, int(h.x) + 1, int(h.y) + 1, Color("2a2420"))
-		_put(image, x0, int(h.x) + 2, int(h.y) + (1 if peck else 0), Color("3a3230"))
-		_put(image, x0, 1, 3, body.call(1, 3))
-		_put(image, x0, 0, 3, body.call(0, 3))
-		var lift := 1 if frame == 1 else 0
-		for leg in [4, 5]:
-			_put(image, x0, leg, 7 - lift, Color("8a6a52")))
-	var flying := _sheet(12, 8, 2, func(image: Image, frame: int, x0: int) -> void:
-		_ellipse(image, x0, Vector2(5.5, 4.5), Vector2(3.2, 1.7), body)
-		_ellipse(image, x0, Vector2(8.6, 3.8), Vector2(1.5, 1.4), head)
-		_put(image, x0, 10, 4, Color("3a3230"))
-		_put(image, x0, 1, 4, body.call(1, 4))
-		for k in 5:
-			var y := 3 - k / 2 if frame == 0 else 5 + k / 2
-			_put(image, x0, 4 + k / 2, clampi(y, 0, 7), Color("7a5534")))
-	_bird_sheets = {"ground": [ground, 3], "fly": [flying, 2]}
+	if _bird_sheets.is_empty():
+		_bird_sheets = {"ground": _sheet(BIRD_GROUND, BIRD_COLOURS), "fly": _sheet(BIRD_FLY, BIRD_COLOURS)}
 	return _bird_sheets
 
 static func _sprite(texture: Texture2D, frames: int) -> Sprite3D:
@@ -234,17 +205,17 @@ func _update_cat(cat: Dictionary, delta: float, at: Vector2, still: bool, runnin
 		cat.target = _clear_spot(cat.at, cat.at - toward.normalized() * 3.5)
 	match cat.state:
 		"petted":
-			_show(cat.sprite, cat.sheets.sit, int(cat.phase * 2.0))
+			_show(cat.sprite, cat.sheets.sit, 0)
 			if cat.timer <= 0.0:
 				cat.state = "sit"
 				cat.timer = _rng.randf_range(2.0, 5.0)
 		"sleep":
-			_show(cat.sprite, cat.sheets.sleep, int(cat.phase * 0.8))
+			_show(cat.sprite, cat.sheets.sleep, 0)
 			if cat.timer <= 0.0:
 				cat.state = "sit"
 				cat.timer = _rng.randf_range(3.0, 7.0)
 		"sit":
-			_show(cat.sprite, cat.sheets.sit, int(cat.phase * 1.3) if int(cat.phase) % 4 == 0 else 0)
+			_show(cat.sprite, cat.sheets.sit, 0)
 			if near < 6.0 and absf(toward.dot(right)) > 0.05:
 				cat.facing = signf(toward.dot(right))
 			if still and near < 4.5 and near > 1.0 and _rng.randf() < delta * 0.25:
@@ -322,7 +293,7 @@ func pet() -> bool:
 func _add_flock(spot: Vector2, count: int) -> void:
 	var flock := {"spot": Npcs.free_spot(spot), "birds": [], "state": "feeding", "timer": 0.0}
 	for i in count:
-		var sprite := _sprite(_birds().ground[0], 3)
+		var sprite := _sprite(_birds().ground[0], _birds().ground[1])
 		var node := Node3D.new()
 		node.name = "Bird"
 		node.add_child(sprite)
@@ -425,6 +396,7 @@ func update(delta: float, still: bool, running: bool, talking: bool, npc_near: b
 	for cat in cats:
 		_update_cat(cat, delta, at, still, running, right)
 		cat.sprite.flip_h = cat.facing < 0.0
+		cat.sprite.scale.y = 1.0 + (0.03 * sin(cat.phase * 2.2) if cat.state == "sleep" else 0.0)
 		cat.sprite.rotation.y = atan2(-forward.x, -forward.z)
 	for flock in flocks:
 		_update_flock(flock, delta, at, running, right)
@@ -436,7 +408,7 @@ func update(delta: float, still: bool, running: bool, talking: bool, npc_near: b
 	if _hint.visible:
 		_hint_label.text = "Hawakan si " + cat.name
 		_hint.reset_size()
-		var p: Vector2 = to_screen.call(cat.node.position + Vector3(0, 0.75, 0))
+		var p: Vector2 = to_screen.call(cat.node.position + Vector3(0, 0.95, 0))
 		_hint.position = p - Vector2(_hint.size.x * 0.5, _hint.size.y + 4.0 - sin(_time * 3.0) * 3.0)
 	if _bubble.visible:
 		_bubble_age += delta
@@ -444,7 +416,7 @@ func update(delta: float, still: bool, running: bool, talking: bool, npc_near: b
 		_bubble.visible = _bubble_age < 2.0 and to_screen.is_valid()
 		if _bubble.visible:
 			_bubble.reset_size()
-			var p: Vector2 = to_screen.call(_bubble_cat.node.position + Vector3(0, 0.75, 0))
+			var p: Vector2 = to_screen.call(_bubble_cat.node.position + Vector3(0, 0.95, 0))
 			_bubble.position = p - Vector2(_bubble.size.x * 0.5, _bubble.size.y + (34.0 if _hint.visible else 4.0))
 
 func _say(cat: Dictionary, words: String) -> void:

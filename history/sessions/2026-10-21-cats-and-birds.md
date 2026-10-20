@@ -25,6 +25,19 @@ Ambient life: cats and birds.
   rain, when the existing bird calls stop too.
 - Sounds synthesised like the rest (`audio.gd`): a meow, a purr, a flutter.
 
+- **Redrawn (Mikko: "more, bigger, and it looks like it's not a cat")**, with references:
+  a side-view orange tabby and a sparrow sheet (and a cartoon pair, with a note to keep
+  them side-on and less cartoonish). The shapes made of ellipses did not read; the frames
+  are now hand-placed pixels written as rows of letters (`CAT_SIT`, `CAT_WALK`,
+  `CAT_SLEEP`, `BIRD_GROUND`, `BIRD_FLY`), drafted and previewed outside the game first:
+  a sitting tabby with ears, muzzle, white chest and paws, stripes and the tail along
+  the ground; a walking one with banded stripes and the tail up; a curled sleeper; a
+  maya with its chestnut cap, white cheek and black spot, streaked back, pecking and
+  flying. Bigger than life so they read (the sitting cat about 0.6 m, the bird about
+  0.35 m long). The downloaded sheets were used only as reference: their licence is
+  unknown, so nothing was copied in. Coats as palettes (`COATS`); five cats now (Itim,
+  black, at SJH; Puti, white, at the Student Center) and eight flocks of 5-8.
+
 ## What changed
 
 - `critters.gd` (new); `aps.gd`: created with the NPCs, updated each frame (and in the
@@ -34,6 +47,7 @@ Ambient life: cats and birds.
 
 ## Checks
 
-`toolsun-aps-godot.cmd --headless -- --test`: all true. `npm run check`, `npm run build`
+`tools
+un-aps-godot.cmd --headless -- --test`: all true. `npm run check`, `npm run build`
 pass. Captures: Mingming sitting at the APS front at noon; a flock pecking on the road in
 the morning.
