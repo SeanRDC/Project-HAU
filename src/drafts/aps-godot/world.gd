@@ -81,7 +81,7 @@ var _textures := {}
 var _room_glass: StandardMaterial3D
 var _streaks: Array[StandardMaterial3D] = []
 var _weathering: ShaderMaterial
-var _grass: ShaderMaterial
+var _grass := {} # Tuft kind -> its material
 var _card_meshes := {}
 
 static func canteen_local(x: float, z: float) -> Vector2:
@@ -427,9 +427,25 @@ func _texture(kind: String) -> Texture2D:
 				for p in 40:
 					_rect(image, cx + random.randi_range(-7, 7), cy + random.randi_range(-4, 4), 2, 1, Color(0.42, 0.36, 0.27, 0.35))
 		"grass":
-			for i in 900:
-				var tone: Color = [Color("5a7044"), Color("819a5c"), Color("93a868"), Color("647a49")][i % 4]
-				_rect(image, random.randi_range(0, 127), random.randi_range(0, 127), 1, random.randi_range(1, 3), tone)
+			# Soft lighter and darker patches (wrapped round the tile's edges, so it repeats
+			# without seams), then blade flecks in six greens and a few clover dots.
+			for i in 70:
+				var cx := random.randi_range(0, 127)
+				var cy := random.randi_range(0, 127)
+				var r := random.randf_range(5.0, 13.0)
+				var tone := Color("93a868") if i % 2 == 0 else Color("5c7243")
+				for dy in range(-ceili(r), ceili(r) + 1):
+					for dx in range(-ceili(r), ceili(r) + 1):
+						var d := Vector2(dx, dy * 1.6).length() / r
+						if d < 1.0 and random.randf() < 1.0 - d * 0.6:
+							var px := posmod(cx + dx, 128)
+							var py := posmod(cy + dy, 128)
+							image.set_pixel(px, py, Color(image.get_pixel(px, py).lerp(tone, 0.16), 1.0))
+			var flecks: Array[Color] = [Color("5a7044"), Color("819a5c"), Color("93a868"), Color("647a49"), Color("4c6239"), Color("a3b672")]
+			for i in 2200:
+				_rect(image, random.randi_range(0, 127), random.randi_range(0, 127), 1, random.randi_range(1, 3), flecks[i % 6])
+			for i in 40:
+				_rect(image, random.randi_range(0, 126), random.randi_range(0, 127), 2, 1, Color("6d9a4c"))
 		"stucco":
 			for i in 17:
 				_rect(image, random.randi_range(0, 127), random.randi_range(0, 116), 1, random.randi_range(2, 11),
@@ -546,27 +562,69 @@ func _foliage(image: Image, seed_value: int, center: Vector3) -> ShaderMaterial:
 	return made
 
 ## Grass blades for every tuft on campus: one shared material, lit like the lawn.
-func _grass_material() -> ShaderMaterial:
-	if _grass != null:
-		return _grass
+## The grass tufts' kinds: a low dense lawn clump, tall wild grass, clover and weeds.
+enum Tuft { CLUMP, WILD, CLOVER }
+## Each kind's card: width, height.
+const TUFT_CARDS := {Tuft.CLUMP: Vector2(0.7, 0.36), Tuft.WILD: Vector2(0.56, 0.62), Tuft.CLOVER: Vector2(0.5, 0.24)}
+## Blade greens from base to tip; the base is the lawn's own, so a tuft grows out of it.
+const BLADE_COLORS: Array[Color] = [Color("4f673c"), Color("617a49"), Color("7a9257"), Color("97ac66"), Color("b2c37a")]
+
+## One tuft kind's pixel image on a 48 × 32 card, as a swaying foliage material.
+func _grass_material(kind := Tuft.CLUMP) -> ShaderMaterial:
+	if _grass.has(kind):
+		return _grass[kind]
 	var image := Image.create(48, 32, false, Image.FORMAT_RGBA8)
 	var random := RandomNumberGenerator.new()
-	random.seed = 4412
-	var colors: Array[Color] = [Color("4f6a3f"), Color("647f48"), Color("7f9a58"), Color("9cae66")]
-	for i in 34:
-		var x := random.randi_range(3, 44)
-		var tall := random.randi_range(10, 30)
-		var lean := random.randf_range(-0.35, 0.35)
-		for step in tall:
-			var tone := colors[clampi(int(float(step) / tall * 3.0 + random.randf()), 0, 3)]
-			_rect(image, x + roundi(lean * step), 31 - step, 1, 1, tone)
+	random.seed = 4412 + kind * 97
+	match kind:
+		Tuft.CLUMP:
+			# Many short blades fanning out from a solid base, shortest at the edges.
+			for i in 80:
+				var x := random.randi_range(6, 41)
+				var tall := maxi(3, random.randi_range(6, 17) - absi(x - 24) / 4)
+				_blade(image, x, tall, (x - 24) / 40.0 + random.randf_range(-0.2, 0.2), random)
+			for x in range(9, 39):
+				_rect(image, x, 30, 1, 2, BLADE_COLORS[random.randi_range(0, 1)])
+		Tuft.WILD:
+			# Tall thin blades, a few carrying pale seed heads.
+			for i in 44:
+				var x := random.randi_range(4, 43)
+				var tall := random.randi_range(14, 31)
+				var lean := random.randf_range(-0.4, 0.4)
+				var tip := _blade(image, x, tall, lean, random)
+				if random.randf() < 0.2:
+					_rect(image, tip.x, maxi(tip.y - 2, 0), 1, 3, Color("cbbf8c"))
+		Tuft.CLOVER:
+			# Low rounded leaves in threes on short stems, and a few tiny flowers.
+			var leaves: Array[Color] = [Color("5b8843"), Color("6f9c4f"), Color("86ad5e")]
+			for i in 22:
+				var x := random.randi_range(5, 40)
+				var y := random.randi_range(19, 28)
+				_rect(image, x + 1, y + 2, 1, 31 - y - 1, BLADE_COLORS[1])
+				for leaf in [Vector2i(0, 0), Vector2i(2, 0), Vector2i(1, -2)]:
+					_rect(image, x + leaf.x, y + leaf.y, 2, 2, leaves[random.randi_range(0, 2)])
+			for i in 5:
+				_rect(image, random.randi_range(6, 41), random.randi_range(15, 22), 2, 1,
+					Color("f2efdc") if i % 2 == 0 else Color("e9cf4b"))
 	image.generate_mipmaps()
-	_grass = ShaderMaterial.new()
-	_grass.shader = LEAVES_SHADER
-	_grass.set_shader_parameter("leaves", ImageTexture.create_from_image(image))
-	_grass.set_shader_parameter("sway", 0.03)
-	_grass.set_shader_parameter("roundness", 0.9)
-	return _grass
+	var made := ShaderMaterial.new()
+	made.shader = LEAVES_SHADER
+	made.set_shader_parameter("leaves", ImageTexture.create_from_image(image))
+	made.set_shader_parameter("sway", 0.03 if kind != Tuft.WILD else 0.05)
+	made.set_shader_parameter("roundness", 0.9)
+	_grass[kind] = made
+	return made
+
+## One grass blade from the card's bottom row up, curving by `lean` towards its tip and
+## two pixels wide at its foot; returns where its tip ended.
+static func _blade(image: Image, x: int, tall: int, lean: float, random: RandomNumberGenerator) -> Vector2i:
+	var tip := Vector2i(x, 31)
+	for step in tall:
+		var t := float(step) / tall
+		var tone := BLADE_COLORS[clampi(int(t * 4.0 + random.randf() * 0.8), 0, 4)]
+		tip = Vector2i(x + roundi(lean * step * t * 1.6), 31 - step)
+		_rect(image, tip.x, tip.y, 2 if t < 0.3 else 1, 1, tone)
+	return tip
 
 # --- Geometry helpers -------------------------------------------------------
 
@@ -1242,6 +1300,9 @@ func _grasses() -> void:
 	# Thick along the chapel's south walk: the strip by the cars, the path's verge and
 	# the picnic corner's lawn (and a few tufts on the dirt).
 	scatter.call(ChapelSouth.GROUND.position, ChapelSouth.GROUND.end, 3200, -0.19, 1.05, lawn)
+	# A carpet of small low clumps over the lawn between the tufts, so it reads as grass
+	# rather than a green floor with weeds on it.
+	scatter.call(Vector2(-55, 11), Vector2(37, 107), 9000, -0.2, 0.5, lawn)
 	for tree in [Vector2(-8.8, 12.5), Vector2(-4.0, 18.0), Vector2(14.5, 34.0), Vector2(7.0, 31.0),
 			Vector2(25.5, 6.5), Vector2(27.4, 18.2)]:
 		scatter.call(tree - Vector2(0.7, 0.7), tree + Vector2(0.7, 0.7), 9, -0.05 if tree.x > 20.0 else -0.2, 0.75, anywhere)
@@ -1259,20 +1320,28 @@ func _grasses() -> void:
 	scatter.call(Vector2(32.45, 0.8), Vector2(32.7, 24.5), 50, -0.05, 0.5,
 		func(_x: float, z: float) -> bool: return z < 7.8 or z > 12.8)
 	scatter.call(Vector2(26.7, 18.0), Vector2(26.95, 24.0), 16, -0.05, 0.5, anywhere)
-	var multi := MultiMesh.new()
-	multi.transform_format = MultiMesh.TRANSFORM_3D
-	multi.mesh = _cards(0.62, 0.42, 0.0, 2)
-	multi.instance_count = spots.size()
-	for i in spots.size():
-		var spot := spots[i]
+	# Small spots (the carpet, moss) are lawn clumps; the rest mostly clumps, some wild
+	# grass and some clover. One MultiMesh per kind ("Grass" is the clumps).
+	var placed := {Tuft.CLUMP: [], Tuft.WILD: [], Tuft.CLOVER: []}
+	for spot in spots:
+		var roll := random.randf()
+		var kind := Tuft.CLUMP if spot.w < 0.65 or roll < 0.6 else (Tuft.WILD if roll < 0.85 else Tuft.CLOVER)
 		var turn := Basis(Vector3.UP, random.randf() * PI).scaled(Vector3(spot.w, spot.w * random.randf_range(0.8, 1.2), spot.w))
-		multi.set_instance_transform(i, Transform3D(turn, Vector3(spot.x, spot.y, spot.z)))
-	var tufts := MultiMeshInstance3D.new()
-	tufts.name = "Grass"
-	tufts.multimesh = multi
-	tufts.material_override = _grass_material()
-	tufts.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(tufts)
+		(placed[kind] as Array).append(Transform3D(turn, Vector3(spot.x, spot.y, spot.z)))
+	for kind in placed:
+		var card: Vector2 = TUFT_CARDS[kind]
+		var multi := MultiMesh.new()
+		multi.transform_format = MultiMesh.TRANSFORM_3D
+		multi.mesh = _cards(card.x, card.y, 0.0, 2)
+		multi.instance_count = (placed[kind] as Array).size()
+		for i in multi.instance_count:
+			multi.set_instance_transform(i, placed[kind][i])
+		var tufts := MultiMeshInstance3D.new()
+		tufts.name = ["Grass", "GrassWild", "GrassClover"][kind]
+		tufts.multimesh = multi
+		tufts.material_override = _grass_material(kind)
+		tufts.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(tufts)
 
 # --- Stair tower and canteen wing --------------------------------------------
 
