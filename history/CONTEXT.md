@@ -1,8 +1,8 @@
 # Project Context
 
-**Wider camera turn, 2026-10-21.** Q/E and right-drag turn ±45° (`ORBIT_MAX`, was ±14°).
-The views' cuts stay on at every angle (a fade of nearer things was dropped: it showed
-grey); the turn eases after the mouse. See `sessions/2026-10-21-wider-turn.md`.
+**Camera turn, 2026-10-21.** A ±45° turn was tried and taken back (the views broke down
+turned that far): Q/E and right-drag turn ±0.25 rad as before (`ORBIT_MAX`), and the turn
+now eases after the mouse (`orbit_goal`). See `sessions/2026-10-21-wider-turn.md`.
 
 **The camera centres the student top to bottom, 2026-10-21.** Dead centre close up;
 zoomed out it stops where the frame's lower edge would go under the ground, so the

@@ -42,6 +42,10 @@ and to fade whatever ends up between the camera and the student.
   easing out of the cuts were removed (`_cuts_hold`, `set_occluder_fade`, the global
   uniforms, the always-on distance fade). The smoothed turn stays.
 
+- **Taken back (Mikko: "stick with the previous angle limit, it has a lot of bugs"):** the
+  turn is ±0.25 again (`ORBIT_MAX` 0.25; `ORBIT_CUT` and `_orbit()` are gone). The eased
+  turn (`orbit_goal`) stays.
+
 ## What changed
 
 - `aps.gd`: `ORBIT_MAX`, `ORBIT_CUT`, `_orbit()`, `_cuts_hold()`; the cuts scaled by it;

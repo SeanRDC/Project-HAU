@@ -110,11 +110,9 @@ var orbit := 0.12
 ## Where the player has turned the camera to (Q/E, right-drag); `orbit` eases after it, so
 ## the turn glides rather than stepping with each mouse event.
 var orbit_goal := 0.12
-## The camera turns ORBIT_MAX either way (Q/E, right-drag); the views' outdoor cuts stay on
-## at every angle (a fade of whatever stood nearer than the student dithered whole walls
-## grey). In a corridor's cutaway the turn is held to ORBIT_CUT.
-const ORBIT_MAX := 0.785
-const ORBIT_CUT := 0.25
+## The camera turns ORBIT_MAX either way (Q/E, right-drag): the range every view's cuts
+## and cutaways were made for. (±45° was tried; turned that far the views broke down.)
+const ORBIT_MAX := 0.25
 ## Holding the right mouse button and dragging turns the angle, like Q/E (radians per pixel).
 const DRAG_TURN := 0.0015
 var _dragging := false
@@ -496,12 +494,7 @@ func _snap_follow() -> void:
 ## corner it hands a quarter turn on to SJH's), and on the boulevard -180° south at the
 ## Main Building's side or 0° north at PGN's (crossing the median it glides round through east).
 func _yaw() -> float:
-	return _orbit() - PI / 2.0 * _turns()
-
-## The turn the camera uses: the player's, held to ORBIT_CUT inside a corridor's cutaway.
-func _orbit() -> float:
-	var held := lerpf(ORBIT_MAX, ORBIT_CUT, clampf(hall + walkway + covered + arcade, 0.0, 1.0))
-	return clampf(orbit, -held, held)
+	return orbit - PI / 2.0 * _turns()
 
 ## The camera's turn in quarter turns (SJH's and the boulevard's south half turns count
 ## two, MGN's three; the boulevard's north view adds none); the controls use it too.
@@ -558,7 +551,7 @@ func _update_camera(delta: float) -> void:
 	var depth := maxf(0.0, follow.y - 5.3)
 	var reach := minf(Chapel.FACE_X, follow.x + 6.0)
 	# Move in whole render pixels so facade and shadow edges do not crawl.
-	var pixel := view_metres.x / float(viewport.size.x) / cos(_orbit())
+	var pixel := view_metres.x / float(viewport.size.x) / cos(orbit)
 	front = roundf(front / pixel) * pixel
 	side = roundf(side / pixel) * pixel
 	aisle = roundf(aisle / pixel) * pixel

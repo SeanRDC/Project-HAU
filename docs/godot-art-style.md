@@ -803,11 +803,9 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   `*_for(x, z)` weight, a corridor middle, a cut offset and a ceiling.
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
   away/towards, rotated by the zone's turn, so holding D walks you round the corner.
-- **Q/E** orbit ±0.785 rad (45°, `ORBIT_MAX`). Default orbit 0.12. The views' outdoor cuts
-  (SJH, MGN, the boulevard, the chapel south walk) stay on at every angle; a fade of
-  whatever stood nearer the camera than the student was tried and dropped, as it dithered
-  whole walls grey. Inside a corridor's cutaway the turn is held to ±0.25 (`ORBIT_CUT`,
-  `_orbit()`). **The turn eases** after where it was dragged (`orbit_goal`, rate 16). **Holding the right mouse button and
+- **Q/E** orbit ±0.25 rad (`ORBIT_MAX`). Default orbit 0.12. ±45° was tried (2026-10-21)
+  and taken back: turned that far, the views' cuts and cutaways broke down. **The turn
+  eases** after where it was dragged (`orbit_goal`, rate 16). **Holding the right mouse button and
   dragging** turns the same orbit (`DRAG_TURN` 0.0015 rad per pixel, mouse right looks
   right), within the same range; the cursor hides while held and comes back where it
   was (the `drag_angle` check). Smooth zoom (rate 10). **R** resets.
