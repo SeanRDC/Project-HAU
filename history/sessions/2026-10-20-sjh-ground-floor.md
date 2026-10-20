@@ -70,6 +70,17 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
   stairs there"); the railing is unbroken. The side entrance's steps are 9 risers of
   0.1 now too. The handrails run on the lobby stair over the landing.
 
+- **The brown sidewalk (third round, Mikko's marks on RIGHT SIDE.JPG and the walkway
+  photo):** along the sides there are no steps. From the plinth out: the raised planter
+  (to 1.6), the brown paver sidewalk at 0.5 m (to `WALK_EDGE` 3.6; it slopes to the
+  ground over 6 m at the east end and at the ramp's landing, where you walk on and off
+  it), a low stone wall (the red line), a grass strip with bamboo sloping to a white
+  kerb (the blue line, `KERB_Z` 5.97) by the parked cars. The lobby stair now runs out
+  to that kerb ("it extends near the car"), its landing joining the sidewalk. To make
+  room SJH moved 2 m further from the road (`SETBACK` 12, Mikko's choice); the lane to
+  MGN is 2 m shorter to stay clear of MGN's south wing (`LANE`, `LANE_BACK`). The
+  sidewalk uses the `brick` texture tinted brown, standing in for the zigzag pavers.
+
 ## What changed
 
 - `areas/sjh.gd`: the constants, `_deck`, `_stair`, `_yard`, `walkway_for`, `view_for`,
