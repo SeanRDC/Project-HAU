@@ -16,6 +16,7 @@ PixelLab sheets from the browser prototype: references, directions, idle, walk, 
 Migo, Bea, Bianca, Kuya Ben, Rica, Paolo, Ate Lorna and Coach Gab. Each is an edit of the style sheet's characters made at 512 px, then shrunk the way the boy was.
 * `pixellab/` - the edits and finals (`<name>-final.png`), `animate-all.mjs` (skeleton-posed walk and wave redraws, two jobs at a time with retries), `shrink.ps1`, `touchup.ps1`, and `frames/<name>/` with each walk and wave and the skeletons that posed them.
 * `rig/` - `NpcRig.cs` and `NpcCast.cs` (the boy's rig with per-character setups, for the idle, talk and portrait), `NpcSheets.cs` (cleans the PixelLab walk and wave and puts every sheet together), `build.ps1` (rebuilds all of them, skipping any kept in pxl) and `check.ps1` (finds loose pieces and notches; every sheet should come out clean).
+* `pxl/friend/` - the player's friend from the opening (no name yet): drawn in pxl over the redesigned player boy (`boy/pxl-new/`), so same body and size, with a black wolf cut (curtain bangs, middle parting), his own narrower half-lidded eyes, a black hoodie and a navy backpack. Idle and talk portrait only so far (no PixelLab key was at hand for a walk); `build.ps1` builds them.
 * `pxl/migo/` - Migo kept in pxl, like the boy: his chin cleaned and steady in every frame, his hair moving in the walk. `build.ps1` builds his sheets and portrait.
 * `Plaid.cs` - the grey HAU skirt plaid, shaded per pleat. `SoftEdges.cs` - softens the outlines.
 
