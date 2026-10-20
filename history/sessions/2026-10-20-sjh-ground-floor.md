@@ -15,9 +15,9 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
 ## Decisions
 
 - **The walkway is raised to 0.9 m** (`WALK_Y`, was 0.15) on a cream plinth, six risers
-  of 0.15 (counted off the elevator steps). A shrub bed runs along its face to
-  `BED_Z` 1.9; the railing gaps moved to ±16.8 and ±33.6, midway between the piers,
-  each with six steps down through the bed.
+  of 0.15 (counted off the elevator steps). A shrub bed ran along its face at first
+  (replaced by the planter terrace, below); the railing gaps moved to ±16.8 and ±33.6,
+  midway between the piers, each with six steps down to the walk.
 - **Square clad piers** every 8.4 m (two bays) behind the railing, bar tables with
   wooden chairs between them, the yellow, blue and green bins by a pier on the east
   side (on the west side they stood in the way from the side entrance), a wet-floor
