@@ -226,7 +226,13 @@ func _build_puddles() -> void:
 	_glint_material.set_shader_parameter("color", Color("ffd08a"))
 	_glint_material.set_shader_parameter("strength", 0.0)
 	for lamp in world.lamps:
+		# Only lampposts out in the rain: the omni lights (stalls, canopy strips, entrances)
+		# sit under roofs over dry floors, and their glints floated as glowing ghosts.
+		if not lamp is SpotLight3D:
+			continue
 		var at: Vector3 = lamp.global_position if lamp.is_inside_tree() else lamp.position
+		if World.floor_height(at.x, at.z) > 0.2:
+			continue
 		var glint := MeshInstance3D.new()
 		var card := QuadMesh.new()
 		card.size = Vector2(0.55, 1.0)
