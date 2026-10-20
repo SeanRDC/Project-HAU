@@ -364,6 +364,30 @@ func _south_wing() -> void:
 	for k in FLOORS:
 		w.box(Vector3(0.9, 1.0, 0.06), Vector3(SOUTH_WING.y - 2.8, GROUND + k * STOREY + 1.6, SOUTH_FRONT + 0.13), dark)
 	_tank(Vector3(SOUTH_WING.y - 2.8, block_top + 0.3, SOUTH_FRONT - 2.4), 1.6)
+	_bridge(SOUTH_WING.y - 2.8)
+
+## The covered bridge from the service block's third floor across to SJH's west end, from
+## IMG_1542: a concrete deck with solid parapets and a steel rail, under a ribbed tin roof
+## on four steel posts.
+func _bridge(x: float) -> void:
+	var white: Material = w.material("stucco", Color("ecebe4"))
+	var steel: Material = w.material("metal", Color("4a4e52"))
+	var floor_y := GROUND + STOREY
+	# Where SJH's west face crosses the bridge's line, in this frame.
+	var mid := world(x, SOUTH_FRONT)
+	var face := Sjh.world(Sjh.HALF, Sjh.local(mid.x, mid.y).y)
+	var far := local(face.x, face.y).y + 0.1
+	var span := far - SOUTH_FRONT
+	var centre := (SOUTH_FRONT + far) / 2.0
+	w.box(Vector3(2.6, 0.6, span), Vector3(x, floor_y - 0.3, centre), white)
+	for side in [-1.0, 1.0]:
+		w.box(Vector3(0.16, 1.0, span), Vector3(x + side * 1.22, floor_y + 0.5, centre), white)
+		w.box(Vector3(0.05, 0.05, span), Vector3(x + side * 1.22, floor_y + 1.2, centre), steel)
+		for z in [SOUTH_FRONT + 0.2, far - 0.2]:
+			w.box(Vector3(0.08, 2.6, 0.08), Vector3(x + side * 1.22, floor_y + 1.3, z), steel)
+	# The ribbed roof, pitched a little for the rain, and its steel eave on MGN's side.
+	w.box(Vector3(3.0, 0.05, span + 0.6), Vector3(x, floor_y + 2.65, centre), w.material("ribbed", Color("9ea4a6")), 0.0, -0.06)
+	w.box(Vector3(3.0, 0.14, 0.06), Vector3(x, floor_y + 2.55, SOUTH_FRONT), steel)
 
 ## Thin white bands along a face at every floor line, standing a little proud of it, as on
 ## the APS wing: `span` runs along the face (local x for a ±Z face, local z for ±X),
