@@ -43,7 +43,8 @@ const GAPS: Array[float] = [-36.0, -20.0, 20.0, 36.0]
 ## Where the camera cuts inside the walkway: this far in front of the corridor's middle.
 const CUT_OFFSET := 1.2
 ## The parking: one row north of the south road (by the chapel), one south of it in
-## front of SJH (world). Cars park nose to the road.
+## front of SJH (world). The chapel-side row parks nose to the grass, the front row
+## nose to the road.
 const PARKING := Rect2(-44.0, 97.6, 72.0, 8.6)
 const FRONT_ROW := Rect2(-48.0, 115.2, 82.0, 5.4)
 ## The gap in the front row at the entrance steps (world x).
@@ -126,8 +127,9 @@ static func floor_height(x: float, z: float) -> float:
 
 static var _cars: Array[Vector3] = []
 
-## The parked cars: x, z (world), colour index. The chapel-side row faces south, the
-## front row north, both nose to the road. Seeded, so every machine parks the same cars.
+## The parked cars: x, z (world), colour index. The chapel-side row is nosed in to the
+## grass by the chapel walk, the front row to the road: both face north. Seeded, so
+## every machine parks the same cars.
 static func cars() -> Array[Vector3]:
 	if not _cars.is_empty():
 		return _cars
@@ -517,7 +519,7 @@ func _parking() -> void:
 	var colours: Array[Color] = [Color("1c2128"), Color("e9e9e6"), Color("8a8e92"), Color("6b1f22"), Color("b8b2a4"),
 		Color("2e3f5a"), Color("c44a2c"), Color("43484c")]
 	for car in cars():
-		_car(Vector3(car.x, -0.04, car.y), colours[int(car.z)], -1.0 if car.y > 110.0 else 1.0)
+		_car(Vector3(car.x, -0.04, car.y), colours[int(car.z)], -1.0)
 
 ## A parked car: body, cabin glass, wheels and lights; `nose` +1 faces +z, -1 faces -z.
 func _car(at: Vector3, colour: Color, nose := 1.0) -> void:
