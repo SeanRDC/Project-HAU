@@ -34,6 +34,14 @@ and to fade whatever ends up between the camera and the student.
   then held 60 fps at SJH and on the boulevard. The turn also eases after the mouse
   (`orbit_goal`, rate 16), so it glides instead of stepping with each mouse event.
 
+- **The fade is gone (Mikko: "I don't want to see any grays when turning").** It measured
+  distance from the camera, so walls that were nearer than the student without blocking
+  them (SJH's brown tower, turned) dithered grey. With the fade off and the views' own
+  cuts kept on at every angle, captures turned 40° both ways at SJH, both sides of the
+  boulevard, MGN and APS showed no grey and the student in view, so the fade and the
+  easing out of the cuts were removed (`_cuts_hold`, `set_occluder_fade`, the global
+  uniforms, the always-on distance fade). The smoothed turn stays.
+
 ## What changed
 
 - `aps.gd`: `ORBIT_MAX`, `ORBIT_CUT`, `_orbit()`, `_cuts_hold()`; the cuts scaled by it;

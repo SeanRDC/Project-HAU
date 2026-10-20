@@ -110,10 +110,9 @@ var orbit := 0.12
 ## Where the player has turned the camera to (Q/E, right-drag); `orbit` eases after it, so
 ## the turn glides rather than stepping with each mouse event.
 var orbit_goal := 0.12
-## The camera turns ORBIT_MAX either way (Q/E, right-drag). The views' cut-aways were made
-## for ORBIT_CUT either way: past it they ease out, and anything nearer the camera than
-## the student fades instead (world.gd set_occluder_fade). In a corridor's cutaway the
-## turn is held to ORBIT_CUT.
+## The camera turns ORBIT_MAX either way (Q/E, right-drag); the views' outdoor cuts stay on
+## at every angle (a fade of whatever stood nearer than the student dithered whole walls
+## grey). In a corridor's cutaway the turn is held to ORBIT_CUT.
 const ORBIT_MAX := 0.785
 const ORBIT_CUT := 0.25
 ## Holding the right mouse button and dragging turns the angle, like Q/E (radians per pixel).
@@ -187,7 +186,6 @@ func _ready() -> void:
 		_args[parts[0]] = parts[1] if parts.size() > 1 else "true"
 	_build_display()
 	_build_lighting()
-	World.add_fade_globals()
 	world.build(scene)
 	_collect_cutaways()
 	student = Student.new()
@@ -505,10 +503,6 @@ func _orbit() -> float:
 	var held := lerpf(ORBIT_MAX, ORBIT_CUT, clampf(hall + walkway + covered + arcade, 0.0, 1.0))
 	return clampf(orbit, -held, held)
 
-## 1 while the turn is within what the views' cut-aways were made for, easing to 0 past it.
-func _cuts_hold() -> float:
-	return 1.0 - smoothstep(ORBIT_CUT, ORBIT_CUT + 0.1, absf(_orbit()))
-
 ## The camera's turn in quarter turns (SJH's and the boulevard's south half turns count
 ## two, MGN's three; the boulevard's north view adds none); the controls use it too.
 func _turns() -> float:
@@ -654,13 +648,11 @@ func _update_camera(delta: float) -> void:
 	var cut_depth := (Vector3(cut.x, focus.y, cut.z) - camera.position).dot(forward)
 	camera.near = maxf(0.1, cut_depth * inside)
 	var inside_near := camera.near
-	# The outdoor cuts below hold while the turn is within what they were made for.
-	var hold := _cuts_hold()
 	# Facing St. Joseph Hall the camera stands north of the chapel: everything north of
 	# the parking (the chapel, its trees) is cut away the same way as it turns round.
 	if sjh > 0.0:
 		var parking_edge := (Vector3(focus.x, focus.y, Sjh.PARKING.position.y - 0.6) - camera.position).dot(forward)
-		camera.near = maxf(camera.near, parking_edge * smoothstep(0.0, 1.0, sjh) * hold)
+		camera.near = maxf(camera.near, parking_edge * smoothstep(0.0, 1.0, sjh))
 	# On the walk along the chapel's south side, facing north at it, the camera stands over
 	# the road and SJH: everything past the road (SJH and its row of cars) is cut away, so
 	# the cars nosed in to the grass stay in front, as in the photos. It fades out as the
@@ -670,23 +662,23 @@ func _update_camera(delta: float) -> void:
 		# (through the ground line, as the plane leans with the camera: then nothing of the
 		# front row's cars stands above it)
 		var road_edge := (Vector3(focus.x, 0.0, Sjh.FRONT_ROW.position.y - 0.5) - camera.position).dot(forward)
-		camera.near = maxf(camera.near, road_edge * smoothstep(0.0, 1.0, south_walk * facing_north) * hold)
+		camera.near = maxf(camera.near, road_edge * smoothstep(0.0, 1.0, south_walk * facing_north))
 	# Facing MGN it stands over the chapel lawn: everything east of the west road (the
 	# lawn's trees, the chapel) is cut away.
 	if mgn > 0.0:
 		var lawn_edge := (Vector3(Mgn.CUT_X, focus.y, focus.z) - camera.position).dot(forward)
-		camera.near = maxf(camera.near, lawn_edge * smoothstep(0.0, 1.0, mgn) * hold)
+		camera.near = maxf(camera.near, lawn_edge * smoothstep(0.0, 1.0, mgn))
 	# Facing south across the boulevard the camera stands over PGN's plot: everything
 	# north of it (the APS wing, the corner garden) is cut away. Facing north it stands
 	# over the Main Building and MGN: everything south of their faces is cut away.
 	if middle > 0.0:
 		var north_edge := (Vector3(focus.x, focus.y, MIDDLE_CUT_Z) - camera.position).dot(forward)
-		camera.near = maxf(camera.near, north_edge * smoothstep(0.0, 1.0, middle) * hold)
+		camera.near = maxf(camera.near, north_edge * smoothstep(0.0, 1.0, middle))
 	if middle_north > 0.0:
 		# (through the ground line, as the plane leans with the camera: then nothing of MGN
 		# stands above it)
 		var south_edge := (Vector3(focus.x, 0.0, MiddleRoad.FACE_S - 0.2) - camera.position).dot(forward)
-		camera.near = maxf(camera.near, south_edge * smoothstep(0.0, 1.0, middle_north) * hold)
+		camera.near = maxf(camera.near, south_edge * smoothstep(0.0, 1.0, middle_north))
 	# Every framing keeps the student in the middle top to bottom too: the camera moves
 	# straight up or down the screen onto their middle (in whole render pixels; the cuts
 	# stay put). Not in a cutaway, which frames its corridor. Zoomed far out it stops where
@@ -717,9 +709,6 @@ func _update_camera(delta: float) -> void:
 		var back := corridor - toward * band_back
 		grade.set_shader_parameter("cut_top", camera.unproject_position(Vector3(back.x, ceiling, back.z)).y / size.y)
 		grade.set_shader_parameter("cut_bottom", camera.unproject_position(Vector3(cut.x, corridor.y - 1.35, cut.z)).y / size.y)
-	# Turned past the cuts' range, anything (but the ground) nearer than the student fades.
-	var student_at := camera.position.distance_to(Vector3(follow.x, student.position.y + 0.9, follow.y))
-	world.set_occluder_fade(hold < 1.0, camera.position, student_at - 5.0, student_at - 1.5)
 	# Shadow and fog ranges follow the camera so the wide views stay sharp and unhazed.
 	sun.directional_shadow_max_distance = distance + 45.0
 	environment.fog_depth_begin = distance + 14.0
