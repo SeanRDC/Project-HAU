@@ -92,6 +92,21 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
   it after the 2 m move). Mikko kept that one; this branch's `_bridge()` in sjh.gd and
   its `BRIDGE` constants are gone. The lane under it is unchanged.
 
+- **Fifth round (2026-10-21, Mikko's screenshot and two photos of the strip beside the
+  centre tower, "left middle" and "right middle"):** the front is all green: grass at
+  0.5 m from the plinth to the low wall at the kerb (the cream planter box is gone), with
+  shrubs and bamboo, and the brown sidewalk (2 m) winds through it (`_walk_middle`:
+  ±0.9 m, a curve every 14 m, straight out of the lobby's landing). Either side of the
+  lobby's bottom flight is grass and shrubs, not pavers. The front row of cars parks
+  with its tail against the kerb (`_front_row_z`, following SJH's slant).
+- **The flicker** (Mikko saw shading flicker as the camera moved, in both cameras): the
+  front's layers were flush (pavers on their base, the landing's pavers on its mass) and
+  the flights were nested boxes whose sides and nosings coincided, so they z-fought. Now
+  each layer stands a little above the one under it, each step is its own block, and
+  the nosings stand just proud of the step (also the passage's steps). Written into the
+  style guide ("No flush faces"). Not checked by eye in motion here (captures are still
+  frames); Mikko to confirm.
+
 ## What changed
 
 - `areas/sjh.gd`: the constants, `_deck`, `_stair`, `_yard`, `walkway_for`, `view_for`,
