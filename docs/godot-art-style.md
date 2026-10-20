@@ -41,7 +41,7 @@ Files:
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane; its doorways are open |
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
-| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map; its raised ground floor (the walkway on a plinth over a planter terrace behind a low stone wall, steps at the railing gaps, clad piers, bar tables and bins, the diamond-tiled floor, the elevator lobby up full-width steps in the centre tower, with a planter box), the west end (the passage through the terracotta block and its steps, the ramp, the yard, the lane to MGN under the bridge), the Mary statue garden, and two rows of parked cars (by the chapel, and in front of SJH) |
+| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map; its raised ground floor (the walkway on a plinth; in front, along the whole building, a flight of steps up to a landing with a planter on it; at the centre tower the long stair up to the elevator lobby: a flight, a deep landing, the steps up, with a planter box; clad piers, bar tables and bins, the diamond-tiled floor), the west end (the passage through the terracotta block and its steps, the ramp, the yard, the lane to MGN under the bridge), the Mary statue garden, and two rows of parked cars (by the chapel, and in front of SJH) |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
 | `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
@@ -103,8 +103,8 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
   top 0.0, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03, patio
   −0.05, canteen hall floor 0.45, chapel floor 0.9, gym hall floor 0.75 (the
   stands' deck and the balcony 4.95, bleacher rows +0.4 each, the stage 1.95), SJH's
-  raised ground floor 0.9 (`Sjh.WALK_Y`: the cars park at road level, steps of 0.15) over
-  its planter terrace 0.45 (`Sjh.TERRACE_Y`).
+  raised ground floor 0.9 (`Sjh.WALK_Y`: the cars park at road level) and the landing
+  along its front 0.5 (`Sjh.LANDING_Y`); risers 0.1, treads 0.33.
 - **Storeys:** APS wing 3.05 m, tall block 3.0 m, canteen 3.05 m over a
   ~5.3 m open hall.
 - **Plan:** APS is an L. The canteen wing stands forward from the stair tower,

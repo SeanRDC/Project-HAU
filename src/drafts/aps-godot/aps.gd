@@ -1588,8 +1588,8 @@ func _verify_and_capture() -> void:
 		_update_camera(1.0)
 		checks.sjh_view_faces_front = sjh > 0.99 and (-camera.global_basis.z).dot(Vector3.BACK) > 0.95 \
 			and _all_visible([Sjh.world(0, 1).x], [0.0, 20.0], [Sjh.world(0, 1).y])
-		# Walking into SJH's covered walkway up the steps at a railing gap: the cutaway again.
-		var sjh_gap := Sjh.world(Sjh.GAPS[2], 2.6)
+		# Walking into SJH's lobby up the front stairs: the cutaway again.
+		var sjh_gap := Sjh.world(3.0, Sjh.LOBBY_FOOT + 0.4)
 		student.place(sjh_gap.x, sjh_gap.y)
 		_set_zoom(36.0, true)
 		_snap_follow()
@@ -1614,7 +1614,9 @@ func _verify_and_capture() -> void:
 		var height := func(u: float, v: float) -> float:
 			var at := Sjh.world(u, v)
 			return World.floor_height(at.x, at.y)
-		var climbs: bool = height.call(Sjh.GAPS[1], 1.25) < Sjh.WALK_Y and height.call(Sjh.GAPS[1], 1.25) > 0.0 			and height.call(0.0, 2.0) < height.call(0.0, 1.2) and height.call(44.0, 1.5) > height.call(48.0, 1.5) 			and height.call(48.0, 1.5) > 0.0
+		var up := func(u: float, v: float, low: float, high: float) -> bool:
+			return height.call(u, v) > low and height.call(u, v) < high
+		var climbs: bool = up.call(25.0, 3.0, 0.0, Sjh.LANDING_Y) and is_equal_approx(height.call(25.0, 2.0), Sjh.LANDING_Y) 			and up.call(0.0, 1.5, Sjh.LANDING_Y, Sjh.WALK_Y) and is_equal_approx(height.call(0.0, 3.5), Sjh.LANDING_Y) 			and up.call(0.0, 5.0, 0.0, Sjh.LANDING_Y) and height.call(44.0, 1.5) > height.call(48.0, 1.5) 			and height.call(48.0, 1.5) > 0.0 and not solid.call(25.0, 2.0)
 		var west := Sjh.world(48.6, -0.8)
 		student.place(west.x, west.y)
 		_snap_follow()
