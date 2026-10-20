@@ -1975,7 +1975,8 @@ func _verify_and_capture() -> void:
 		var by_cat: Vector2 = tisay.at + Vector2(0.6, 0.0)
 		student.position = Vector3(by_cat.x, World.floor_height(by_cat.x, by_cat.y), by_cat.y)
 		var petted: bool = critters.pet() and tisay.state == "petted" and critters.pets == 1
-		checks.cats_and_birds = critters.cats.size() == 5 and critters.flocks.size() == 8 and took_off and flew_away and petted 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
+		var flying_over: bool = not critters.flyers.is_empty() and (critters.flyers[0].birds[0].node as Node3D).position.y > 4.0
+		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and petted 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
 		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0

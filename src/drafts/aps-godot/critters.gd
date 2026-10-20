@@ -4,13 +4,15 @@ extends Node3D
 ## side-on, at the characters' density, edged in a darker tone of their own colour like the
 ## cast, and lit and shadowed like them.
 ##
-## Cats: five strays with names, each round its own spot. They sit and flick their tail,
+## Cats: a dozen strays with names: five at their own spots, the rest scattered over the
+## campus's open ground. They sit and flick their tail,
 ## stroll, and curl up asleep (more at noon, at night and in the rain). Stand still near
 ## one and it may come over; press E beside it to pet it (it purrs). Run at one and it
 ## dashes off.
 ## Birds: flocks of maya (tree sparrows) hopping and pecking on the open ground by day.
 ## Come close, or run, and the whole flock flutters up and away; it lands again a while
-## later. They are gone at night and in the rain.
+## later. More flocks are scattered over the open ground, and small groups fly over the
+## campus now and then. They are gone at night and in the rain.
 
 const World := preload("res://world.gd")
 const Npc := preload("res://npc.gd")
@@ -40,6 +42,16 @@ const FLOCKS := [
 	[Vector2(52.0, 92.0), 5], [Vector2(-95.0, 56.0), 6],
 ]
 
+## More cats, scattered over the open ground (the coat cycles); and how many more flocks.
+const MORE_CATS := ["Muning", "Tagpi", "Bantot", "Kulot", "Mimi", "Garfield", "Sinta"]
+const MORE_FLOCKS := 14
+## Scattered spots keep this far (m) from each other and from the fixed ones.
+const CAT_SPACING := 22.0
+const FLOCK_SPACING := 14.0
+## Birds flying over: a group every FLY_EVERY seconds (random within), at most FLYERS at once.
+const FLY_EVERY := Vector2(3.0, 8.0)
+const FLYERS := 4
+
 var camera: Camera3D
 var student: Node3D
 var sound: Node
@@ -49,6 +61,9 @@ var hour := 16.5
 var rain := 0.0
 var cats: Array[Dictionary] = []
 var flocks: Array[Dictionary] = []
+## Groups flying over now: {birds: [{node, sprite, offset}], at, dir, height, travelled, phase}.
+var flyers: Array[Dictionary] = []
+var _next_flyers := 1.0
 ## Times a cat has been petted and a flock has taken off, for the checks.
 var pets := 0
 var takeoffs := 0
@@ -68,6 +83,47 @@ func _ready() -> void:
 		_add_cat(data)
 	for data in FLOCKS:
 		_add_flock(data[0], data[1])
+	# the rest scattered over the open ground, apart from each other and the fixed spots
+	var open := _open_ground()
+	var taken: Array[Vector2] = []
+	for data in CATS:
+		taken.append(data.home)
+	var coats := ["orange", "tuxedo", "grey", "black", "white"]
+	for i in MORE_CATS.size():
+		var spot := _pick(open, taken, CAT_SPACING)
+		if spot != Vector2.INF:
+			_add_cat({"name": MORE_CATS[i], "home": spot, "coat": coats[(i + 1) % coats.size()]})
+	taken.clear()
+	for data in FLOCKS:
+		taken.append(data[0])
+	for i in MORE_FLOCKS:
+		var spot := _pick(open, taken, FLOCK_SPACING)
+		if spot != Vector2.INF:
+			_add_flock(spot, _rng.randi_range(3, 6))
+
+## Open ground on a 4 m grid over the campus: walkable, at ground level, off the roads.
+static func _open_ground() -> Array[Vector2]:
+	var spots: Array[Vector2] = []
+	for gx in range(-170, 92, 4):
+		for gz in range(-2, 136, 4):
+			var x := float(gx)
+			var z := float(gz)
+			if World.blocked(x, z) or World.floor_height(x, z) > 0.2:
+				continue
+			var across := World.across_road(x, z)
+			if across > 3.5 and across < 11.5:
+				continue # the carriageway and its kerbs
+			spots.append(Vector2(x, z))
+	return spots
+
+## A random open spot at least `spacing` from every taken one (and taken with it), or INF.
+func _pick(open: Array[Vector2], taken: Array[Vector2], spacing: float) -> Vector2:
+	for attempt in 40:
+		var spot: Vector2 = open[_rng.randi_range(0, open.size() - 1)]
+		if taken.all(func(t: Vector2) -> bool: return t.distance_to(spot) >= spacing):
+			taken.append(spot)
+			return spot
+	return Vector2.INF
 
 # --- Sheets -----------------------------------------------------------------------
 
@@ -318,6 +374,51 @@ func _feed(bird: Dictionary, delta: float, spot: Vector2, right: Vector2) -> voi
 					bird.facing = signf((bird.to - bird.from).dot(right))
 	bird.sprite.flip_h = bird.facing < 0.0
 
+# --- Birds flying over ---------------------------------------------------------------
+
+## By day, now and then a little group of maya flies over: in from one side of the view,
+## across above the student at 5-14 m, out the other side, wings beating, bobbing a little.
+func _update_flyers(delta: float, at: Vector2, right: Vector2) -> void:
+	var day := hour >= 6.0 and hour < 18.0 and rain < 0.35
+	_next_flyers -= delta
+	if day and _next_flyers <= 0.0 and flyers.size() < FLYERS:
+		_next_flyers = _rng.randf_range(FLY_EVERY.x, FLY_EVERY.y)
+		_launch(at, right)
+	for group in flyers.duplicate():
+		group.travelled += group.speed * delta
+		group.phase += delta
+		var centre: Vector2 = group.start + group.dir * group.travelled
+		for bird in group.birds:
+			var offset: Vector2 = bird.offset
+			var p: Vector2 = centre + group.dir * offset.x + Vector2(-group.dir.y, group.dir.x) * offset.y
+			var bob := sin(group.phase * 3.0 + offset.x) * 0.25
+			(bird.node as Node3D).position = Vector3(p.x, group.height + bob + offset.y * 0.15, p.y)
+			_show(bird.sprite, _birds().fly, int(group.phase * 14.0 + offset.x * 3.0))
+			bird.sprite.flip_h = group.dir.dot(right) < 0.0
+		if group.travelled > group.length:
+			for bird in group.birds:
+				(bird.node as Node3D).queue_free()
+			flyers.erase(group)
+
+func _launch(at: Vector2, right: Vector2) -> void:
+	# across the view (along the camera's right), a little slanted, passing near the student
+	var side := 1.0 if _rng.randf() < 0.5 else -1.0
+	var dir := right.rotated(_rng.randf_range(-0.5, 0.5)) * side
+	var length := _rng.randf_range(80.0, 110.0)
+	var start := at - dir * length * 0.5 + Vector2(-dir.y, dir.x) * _rng.randf_range(-12.0, 12.0)
+	var group := {"start": start, "dir": dir, "length": length, "travelled": 0.0, "phase": _rng.randf() * 4.0,
+		"speed": _rng.randf_range(6.0, 9.0), "height": _rng.randf_range(5.0, 14.0), "birds": []}
+	for i in _rng.randi_range(2, 5):
+		var node := Node3D.new()
+		node.name = "Flying"
+		var sprite := _sprite(_birds().fly[0], _birds().fly[1])
+		node.add_child(sprite)
+		add_child(node)
+		# a loose V: each one a little behind and to the side of the one before
+		var offset := Vector2(-1.1 * i + _rng.randf_range(-0.3, 0.3), (1.0 if i % 2 == 0 else -1.0) * 0.8 * ceilf(i / 2.0))
+		group.birds.append({"node": node, "sprite": sprite, "offset": offset})
+	flyers.append(group)
+
 # --- Each frame -------------------------------------------------------------------
 
 static func _place(node: Node3D, at: Vector2, lift: float) -> void:
@@ -336,6 +437,10 @@ func update(delta: float, still: bool, running: bool, talking: bool, npc_near: b
 	for flock in flocks:
 		_update_flock(flock, delta, at, running, right)
 		for bird in flock.birds:
+			bird.sprite.rotation.y = atan2(-forward.x, -forward.z)
+	_update_flyers(delta, at, right)
+	for group in flyers:
+		for bird in group.birds:
 			bird.sprite.rotation.y = atan2(-forward.x, -forward.z)
 	# the pet prompt, when no one is there to talk to
 	var cat := cat_in_reach()

@@ -54,6 +54,12 @@ Ambient life: cats and birds.
   `build.ps1` into `sprites/critters/`. The letter-drawn frames in `critters.gd` are gone;
   it loads the sheets. The key is not stored anywhere in the repo.
 
+- **Scattered, and birds in the air (Mikko: "add birds flying around, scatter them, also
+  the cats").** Seven more named cats and 14 more flocks are scattered over the open ground
+  (`_open_ground`: walkable, at ground level, off the roads; a seeded pick, kept apart).
+  By day small groups of maya fly over the view in a loose V (`flyers`). In a capture
+  Tisay walked over to the student standing on the chapel steps and sat for a pet.
+
 ## What changed
 
 - `critters.gd` (new); `aps.gd`: created with the NPCs, updated each frame (and in the

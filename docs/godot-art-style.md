@@ -641,15 +641,19 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   tabby (fur and pale ramps per coat). `build.ps1` builds them with pxl into
   `sprites/critters/` (one strip per pose: cat walk 8 x 44x32, sit 20x31, sleep 32x16; maya
   ground 3 x 24x17, fly 4 x 24x28), at the characters' density, side-on facing right and
-  flipped, lit and shadowed like the cast. Five cats (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
+  flipped, lit and shadowed like the cast. Twelve cats: five at their own spots (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
   Kiko tuxedo by the canteen, Tisay grey tabby on the chapel plaza, Itim black at SJH,
-  Puti white at the Student Center): sit with a tail flick, stroll within
+  Puti white at the Student Center) and seven more (`MORE_CATS`, the coats in turn) scattered over
+  the open ground (`_open_ground`: a 4 m grid, walkable, at ground level, off the roads; 22 m
+  apart): sit with a tail flick, stroll within
   5 m of home, curl up asleep (more at noon, at night and in the rain), walk over to a
   student standing still within 4.5 m, dash off from a running one, and sit to be petted
   (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). Flocks
-  (`FLOCKS`: eight spots, 5-8 birds) hop and peck on open ground from 6:00 to 18:00 when
+  (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop and peck on open ground from 6:00 to 18:00 when
   it is not raining, and the whole flock flutters up and away when the student comes
   within 2.4 m (4.5 m running), landing again 10-20 s later once the student is 7 m off.
+  **Birds fly over** by day: every 3-8 s (at most four groups) 2-5 maya in a loose V cross the
+  view above the student at 5-14 m, 6-9 m/s, bobbing, their shadows on the ground (`flyers`).
   Sounds (`audio.gd`): `meow`, `purr`, `flutter`.
 - **Talks are scripts** in `npcs.gd` `CAST`: lines, and questions with two or three
   replies the student picks (W/S or arrows and E, 1-3, or the mouse) on a dark card at
