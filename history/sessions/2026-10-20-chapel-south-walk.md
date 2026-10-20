@@ -20,8 +20,16 @@ sheds by the east road. Copy the photos into the repo, but not the ones with car
   past the road, so the parked cars nosed in to the grass fill the bottom of the view,
   as in the photos. At the west end the chapel's view takes over, at the east end the
   gym's.
-- **The chapel-side cars are nosed in to the grass** (they faced the road), as in the
-  photos. `areas/sjh.gd`'s car facing changed for that row.
+- **The chapel-side cars are nosed in to the grass** (they faced the road), and park at
+  a slant (`Sjh.SLANT`, 0.44 rad, bays `SLANT_BAY` 2.9 m apart) with slanted bay lines,
+  as in the RIGHT SIDE DETAILS photo. Their collision follows the slant.
+- **The parking, the grass and the path are one walkable piece** (Mikko: "make the
+  chapel parking to sidewalk walkable"): the walk's ground reaches into the parking and
+  west to where it starts. Out of a bay you walk along its slant, then over the grass.
+- **More grass** (Mikko): a grass verge along the path's chapel side before the dirt
+  starts, thick tufts on the strip by the cars, a few more on the dirt; the picnic
+  corner is lawn worn to dirt only under the sheds, with red-tipped shrubs and a young
+  tree, as in the photo.
 - **The south glass hall:** the three outline edges facing the walk
   (`Chapel.south_bays()`) are glass between white double columns, a white beam, a gold
   half-moon in a white arch up to the roof bands, and wide steps with cheek blocks.
@@ -39,7 +47,7 @@ sheds by the east road. Copy the photos into the repo, but not the ones with car
 - `areas/chapel_south.gd` (new), `areas/chapel.gd` (south bays, steps solid, its south
   trees moved to the new area), `areas/sjh.gd` (car facing), `world.gd` (wiring, grass),
   `aps.gd` (the walk's cutaway, fast travel "Chapel south walk" and "Picnic corner",
-  checks `walk_chapel_south` and `chapel_south_blocks`).
+  checks `walk_chapel_south`, `chapel_south_blocks` and `parking_to_chapel_walk`).
 
 ## Validation
 

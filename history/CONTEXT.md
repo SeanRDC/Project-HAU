@@ -3,7 +3,8 @@
 **The chapel's south walk, 2026-10-20.** `areas/chapel_south.gd`: a black path with
 white kerbs from the plaza's south end along the chapel to the east road, dirt under
 thin trees and bamboo on the chapel side, a grass strip and the parked cars (now nosed
-in to it) on the other, bollards on the curve, picnic sheds in the corner and the
+in to it at a slant, and walkable through to the path) on the other, bollards on the
+curve, picnic sheds on a lawn in the corner and the
 EVACUATION SITE 3 sign. The chapel's south side is a glass hall with three gold arches
 and steps (`Chapel.south_bays()`). Along the walk the camera faces north and cuts away
 the road and SJH. Fast travel: "Chapel south walk", "Picnic corner". See
