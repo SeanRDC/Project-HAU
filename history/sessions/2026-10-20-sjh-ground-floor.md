@@ -87,6 +87,11 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
   edges at ±6.9); either side of it the brown pavers run on at the landing's height out
   to the kerb, and the landing itself is brown pavers too.
 
+- **Merged `main`** (PRs #31-#34): #33 had already added a covered SJH–MGN bridge
+  (`_bridge()` in `areas/mgn.gd`, which finds SJH's west face itself, so it still meets
+  it after the 2 m move). Mikko kept that one; this branch's `_bridge()` in sjh.gd and
+  its `BRIDGE` constants are gone. The lane under it is unchanged.
+
 ## What changed
 
 - `areas/sjh.gd`: the constants, `_deck`, `_stair`, `_yard`, `walkway_for`, `view_for`,

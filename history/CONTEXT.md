@@ -8,7 +8,8 @@ Clad piers, bar tables, bins, a diamond-tiled floor (`diamond` in world.gd). The
 tower opens into the elevator lobby up a long stair from the kerb: 5 steps (between the
 handrails, pavers either side), a 2 m landing, 4 steps.
 At the west end a passage through the terracotta block leads to steps, a ramp, a yard
-and the lane to MGN under the bridge (scenery). `--view=sjh-walkway`, `sjh-lobby`,
+and the lane to MGN under the bridge (MGN's, from #33; this branch's own bridge was
+dropped in the merge). `--view=sjh-walkway`, `sjh-lobby`,
 `sjh-west`, `sjh-steps`. See `sessions/2026-10-20-sjh-ground-floor.md`.
 
 **Hold Space to skip the opening, 2026-10-20.** Holding Space for 0.9 s skips the
