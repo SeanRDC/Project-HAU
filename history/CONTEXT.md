@@ -1,5 +1,9 @@
 # Project Context
 
+**Wider camera turn, 2026-10-21.** Q/E and right-drag turn ±45° (`ORBIT_MAX`, was ±14°).
+Past ±14° the views' cuts ease out and whatever stands nearer the camera than the student
+dithers out (`World.set_occluder_fade`). See `sessions/2026-10-21-wider-turn.md`.
+
 **The camera centres the student top to bottom, 2026-10-21.** Dead centre close up;
 zoomed out it stops where the frame's lower edge would go under the ground, so the
 student sits a little low there (centring fully would need steeper angles than the
