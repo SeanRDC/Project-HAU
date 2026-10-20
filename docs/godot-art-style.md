@@ -278,6 +278,7 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | wood | 1.5 | `#8b6b4e` | planks every 13 px |
 | metal | 2.0 | `#8c9b9e` | grain only |
 | grass | 3.0 | `#7c8a5f` | 9/255 grain, 70 soft lighter (`#93a868`) and darker (`#5c7243`) patches wrapped round the tile, 2200 vertical blade flecks in six greens, 40 clover dots; mown bands tint `#f3f5ec` |
+| lawn | 4.0 | `#6f8a4b` | 4/255 grain, 50 very soft broad patches (`#86a25a` / `#67824a`), 3600 short 1-2 px blade flecks in four close greens: the mown chapel lawn inside the road loop (`_grasses` lays it over the campus grass) |
 | dirt | 2.5 | `#9a8566` | pebbles in four browns and darker trodden patches (the picnic strip, the corner garden; building plots tinted `#e8e1cb`) |
 | floor | 2.4 | `#d9bfa9` | peach 30 cm ceramic tiles, light grout, the odd paler tile (the APS hallway, stair treads tinted `#eee9e2`) |
 | ledge | 1.2 | `#8a7d6a` | ledgestone: thin stacked slates in browns and greys with dark gaps (the hallway's front piers) |
@@ -391,7 +392,13 @@ for plants.
   shadows. Seeded placement: a thick band along the lawn's kerbs, scattered tufts across
   the lawn, a carpet of half-size clumps between them, rings round tree roots, half-size
   moss where the patio meets walls, the rail and the sidewalk, and grass round the dirt
-  yard. About 6 500 tufts in all; keep it under 10 000.
+  yard. The chapel lawn inside the road loop is kept and mown: its own "lawn" floor and
+  only small clumps (no wild grass or clover) along the kerbs and round the trunks. Under
+  every tree on it, fallen leaves (`_fallen_leaves`): one pixel-leaf decal per tree, 0.6 ×
+  its height across, brown, tan, yellow and olive, thicker towards the trunk. Decals use
+  nearest filtering (`rendering/textures/decals/filter=0` in `project.godot`): with
+  mipmaps the low camera blurs small pixel details on the ground away. Keep the tufts
+  under 10 000.
 - **Bamboo** (`_bamboo`): culms are thin rods leaning out from a tight base,
   with six small blade clusters each along their upper two thirds, arching out and
   drooping a little, in one `MultiMesh` per clump. Its leaf texture is

@@ -56,6 +56,15 @@ sheds by the east road. Copy the photos into the repo, but not the ones with car
   thins out into each patch (`ChapelSouth.dirt()`), so there are no hard edges. Faint
   lighter and darker drifts over the lawn break up the flat, freshly-mown carpet look.
 
+- **A clean, mown chapel lawn and fallen leaves** (Mikko: "the chapel is lawned well
+  with no bushy grass"; asked first, chose: mown with few tufts, the chapel lawn and the
+  south walk, a light scatter of leaves under the trees, the worn patches kept faint
+  under them). Inside the road loop: its own even "lawn" floor, only small clumps along
+  the kerbs and round the trunks, no wild grass or clover. A pixel-leaf decal under each
+  tree there. Decals are now filtered nearest (project setting): with mipmaps the low
+  camera blurred the leaves away entirely. `grass_built` now expects over 400 clumps
+  (was 800), since the mown lawn has few on purpose. The other lawns keep their wilder grass.
+
 ## What changed
 
 - `areas/chapel_south.gd` (new), `areas/chapel.gd` (south bays, steps solid, its south
