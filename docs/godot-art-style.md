@@ -695,6 +695,12 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
     **10°** (`PERCH_PITCH`), the zoom gliding to 16 m (`PERCH_WIDTH`) and back
     down after, facing the way its zone does (on a stand, that stand, as in the
     "middle view" photo).
+  **Every framing follows the student across the screen,** the wide ones too: after
+  the zones are blended, the focus slides sideways (along the screen's horizontal, in
+  whole render pixels) onto the student and keeps the depth its view frames. Where a
+  zone below says a wide framing "frames" or "centres on" a building, that is now its
+  depth and height; to see the whole building, stand at its middle. The checks
+  `wide_shows_l`, `whole_building_visible` and `mgn_view_faces_front` stand there.
   A new building gets its own zone the same way: a `*_for(x, z)` weight, a
   facing, and the plane it frames. Make sure the camera's standing spot (focus
   minus 23 m close up, up to 90 m wide) is not inside another building.
@@ -771,7 +777,7 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
   away/towards, rotated by the zone's turn, so holding D walks you round the corner.
 - **Q/E** orbit ±0.25 rad. Default orbit 0.12. **Holding the right mouse button and
-  dragging** turns the same orbit (`DRAG_TURN` 0.004 rad per pixel, mouse right looks
+  dragging** turns the same orbit (`DRAG_TURN` 0.0015 rad per pixel, mouse right looks
   right), within the same range; the cursor hides while held and comes back where it
   was (the `drag_angle` check). Smooth zoom (rate 10). **R** resets.
 

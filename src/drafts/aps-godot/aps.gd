@@ -108,7 +108,7 @@ var _sun_offset := Vector3(-55, 44, 60)
 var _sun_turn := INF
 var orbit := 0.12
 ## Holding the right mouse button and dragging turns the angle, like Q/E (radians per pixel).
-const DRAG_TURN := 0.004
+const DRAG_TURN := 0.0015
 var _dragging := false
 var _drag_from := Vector2.ZERO
 var width := 112.0
@@ -586,6 +586,14 @@ func _update_camera(delta: float) -> void:
 	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
 	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle + north_focus * middle_north
+	# Every framing, the wide ones too, keeps the student in the middle across the screen:
+	# the focus slides sideways onto them and keeps the depth its view frames.
+	var yaw := _yaw()
+	var across := Vector2(cos(yaw), -sin(yaw))
+	var flat := Vector2(focus.x, focus.z)
+	flat += across * (roundf(follow.dot(across) / pixel) * pixel - flat.dot(across))
+	focus.x = flat.x
+	focus.z = flat.y
 	# Inside a covered corridor (the APS hallway, SJH's walkway, the boulevard's covered
 	# walkways, the Student Center): glide in close and look a little down along it. Each
 	# gives the corridor's middle, how far in front of it the cut goes, and its ceiling.
@@ -612,7 +620,6 @@ func _update_camera(delta: float) -> void:
 	focus = focus.lerp(corridor, inside)
 	distance = lerpf(distance, 20.0, inside)
 	lift = lerpf(lift, 5.0, inside)
-	var yaw := _yaw()
 	var toward := Vector3(sin(yaw), 0.0, cos(yaw))
 	camera.position = focus + Vector3(sin(yaw) * distance, lift, cos(yaw) * distance)
 	camera.look_at(focus)
@@ -1494,11 +1501,14 @@ func _verify_and_capture() -> void:
 			_update_camera(1.0 / 30.0)
 		checks.parking_to_chapel_walk = student.position.z < ChapelSouth.PATH[4].y
 		student.position = saved
+		# The wide framings follow the student: from the middle of the L (where the 112 m
+		# frame used to stay) the whole APS and the canteen fit.
+		student.place(-7.85, 5.3)
 		_set_zoom(112.0, true)
 		_snap_follow()
 		_update_camera(1.0)
 		checks.wide_shows_l = _all_visible([-62.5, 43.3], [0.0, 13.4], [-3.4, 0.3]) and _all_visible([33.0, 43.3], [0.0, 18.4], [24.9])
-		student.place(0.7, 5.3)
+		student.place(5.72, 5.3)
 		_set_zoom(56.0, true)
 		_snap_follow()
 		_update_camera(1.0)
@@ -1613,7 +1623,9 @@ func _verify_and_capture() -> void:
 		var lawn_cut := (Vector3(Chapel.NOSE.x, 1.0, Chapel.NOSE.y) - camera.position).dot(forward) < camera.near
 		checks.walk_past_mgn = student.position.z > 85.0 and mgn > 0.95 and forward.dot(Vector3.LEFT) > 0.9 \
 			and camera.position.x > Mgn.CUT_X and camera.near > (Vector3(Mgn.CUT_X, 0, student.position.z) - camera.position).dot(forward) - 1.0
-		student.place(MGN_SPOT.x, MGN_SPOT.y)
+		# from the middle of its front, on the road (the frame follows the student)
+		var mgn_middle := Mgn.world(6.0, Mgn.local(MGN_SPOT.x, MGN_SPOT.y).y)
+		student.position = Vector3(mgn_middle.x, student.position.y, mgn_middle.y)
 		_was_perched = false # left over from the gym checks, it would cap the zoom
 		_set_zoom(56.0, true)
 		_snap_follow()
