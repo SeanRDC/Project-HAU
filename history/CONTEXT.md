@@ -1,5 +1,10 @@
 # Project Context
 
+**The camera centres the student top to bottom, 2026-10-21.** Dead centre close up;
+zoomed out it stops where the frame's lower edge would go under the ground, so the
+student sits a little low there (centring fully would need steeper angles than the
+style's). See `sessions/2026-10-21-camera-centre.md`.
+
 **The night sky, 2026-10-21.** `shaders/sky.gdshader`: varied, tinted, slowly twinkling
 stars (the brightest with a pixel cross), a faint Milky Way band and the moon with a
 glow where the night light comes from; rain hides them. In the F2 free cam the sky is laid
