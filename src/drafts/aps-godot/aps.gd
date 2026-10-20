@@ -218,7 +218,7 @@ func _ready() -> void:
 		atmosphere.start_raining() # --rain starts in a shower, for captures
 
 	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0],
-		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "mgn": [MGN_SPOT, 56.0], "middle": [MIDDLE_SPOT, 40.0],
+		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "sjh-rear": [Sjh.world(0.0, Sjh.BACK - 7.0), 40.0], "mgn": [MGN_SPOT, 56.0], "middle": [MIDDLE_SPOT, 40.0],
 		"middle-north": [MIDDLE_NORTH_SPOT, 40.0], "fountain": [Vector2(-159.0, 61.0), 40.0],
 		"student-center": [STUDENT_CENTER_SPOT, 22.0]}
 	var start: Array = views.get(_args.get("view", ""), [Vector2(0.7, 5.3), 112.0])
@@ -410,7 +410,7 @@ static func leg_for(x: float, z: float) -> float:
 ## How far the camera should turn to face the gym's front: on the east road past the
 ## canteen's tip (where it looked north) and on the apron in front of the gym.
 static func gym_for(x: float, z: float) -> float:
-	return smoothstep(38.0, 46.0, z) * smoothstep(34.0, 38.0, x) * (1.0 - Sjh.view_for(x, z))
+	return smoothstep(38.0, 46.0, z) * smoothstep(34.0, 38.0, x) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z))
 
 ## The further turn to face the gym's north gable, once past its north-west corner into
 ## the lane; it hands over to the hall view in the side entrance.
@@ -449,11 +449,11 @@ static func perch_for(x: float, z: float, level: float) -> float:
 
 static func chapel_for(x: float, z: float) -> float:
 	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z)) \
-		* (1.0 - MiddleRoad.view_for(x, z))
+		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z))
 
 ## The MGN view (facing west from the west road) yields to the middle road's.
 static func mgn_for(x: float, z: float) -> float:
-	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z))
+	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z))
 
 func _snap_follow() -> void:
 	follow = Vector2(student.position.x - 0.15, student.position.z)
@@ -645,6 +645,17 @@ func _update_camera(delta: float) -> void:
 		# front row's cars stands above it)
 		var road_edge := (Vector3(focus.x, 0.0, Sjh.FRONT_ROW.position.y - 0.5) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, road_edge * smoothstep(0.0, 1.0, south_walk * facing_north))
+	# Behind SJH, facing north at its back, it stands over the perimeter wall and the trees
+	# along it: everything past the lane's far kerb is cut away (through the ground line), but
+	# never the back itself: turned and pitched, its top corners stand nearer than the kerb.
+	var rear := Sjh.rear_for(follow.x, follow.y) * facing_north
+	if rear > 0.0:
+		var kerb := Sjh.world(Sjh.local(follow.x, follow.y).x, Sjh.LANE_EDGE)
+		var kerb_edge := (Vector3(focus.x, 0.0, kerb.y) - camera.position).dot(forward)
+		for end in [-Sjh.HALF, Sjh.HALF]:
+			var corner := Sjh.world(end, Sjh.BACK - 1.0)
+			kerb_edge = minf(kerb_edge, (Vector3(corner.x, Sjh.ROOF + 0.7, corner.y) - camera.position).dot(forward) - 0.5)
+		camera.near = maxf(camera.near, kerb_edge * smoothstep(0.0, 1.0, rear))
 	# Facing MGN it stands over the chapel lawn: everything east of the west road (the
 	# lawn's trees, the chapel) is cut away.
 	if mgn > 0.0:
@@ -883,6 +894,7 @@ static func travel_places() -> Array:
 		["IH Gym inside", GYM_IN_SPOT, ARENA_WIDTH],
 		["St. Joseph Hall", SJH_SPOT, 64.0],
 		["SJH walkway", Sjh.world(25.0, -1.8), 22.0],
+		["SJH back lane", Sjh.world(0.0, Sjh.BACK - 7.0), 40.0],
 		["Mary statue", Vector2(-48.5, 113.6), 26.0],
 		["MGN", MGN_SPOT, 56.0],
 		["MGN entrance", Mgn.world(21.0, 2.5), 18.0],
@@ -1597,6 +1609,22 @@ func _verify_and_capture() -> void:
 		var inside_local := Sjh.local(student.position.x, student.position.z)
 		checks.walk_into_sjh_walkway = inside_local.y < -1.0 and walkway > 0.95 and shown_width < HALL_WIDTH + 0.2 \
 			and camera.near > 5.0 and _all_visible([student.position.x], [0.3, 1.9], [student.position.z])
+		# Behind SJH: the lane along its back and the lane down to it round the east end
+		# walkable; the back wall, a parked van and the perimeter wall solid; the camera faces
+		# the back.
+		var lane := Sjh.world(0.0, Sjh.BACK - 7.0)
+		var back := Sjh.world(0.0, Sjh.BACK + 0.5)
+		var van := Sjh.world(-8.2, Sjh.BACK - 2.8)
+		var beyond := Sjh.world(0.0, Sjh.BOUNDARY - 0.5)
+		checks.sjh_rear_lane = not World.blocked(lane.x, lane.y) and not World.blocked(41.0, 130.0) \
+			and not World.blocked(42.0, 152.0) and is_equal_approx(World.floor_height(lane.x, lane.y), -0.04) \
+			and World.blocked(back.x, back.y) and World.blocked(van.x, van.y) and World.blocked(beyond.x, beyond.y)
+		student.place(lane.x, lane.y)
+		_set_zoom(64.0, true)
+		_snap_follow()
+		_update_camera(1.0)
+		checks.sjh_rear_view_faces_back = sjh < 0.01 and gym < 0.01 and chapel < 0.01 and mgn < 0.01 \
+			and (-camera.global_basis.z).dot(Vector3.FORWARD) > 0.95 and _all_visible([back.x], [4.0, 12.0], [back.y - 0.6])
 		# MGN: built on its plot facing the west road, solid, its garden planted, the entry
 		# walk under the wing open up to the turnstile, the road beside it walkable.
 		var mgn_node := scene.find_child("MGN", false, false) as Node3D
