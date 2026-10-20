@@ -66,3 +66,15 @@ headless too; an empty project quit cleanly. `audio.gd` rendered the murmur on a
 at quit it freed the task after the script engine was gone. The task's id is kept now and
 waited on in `_exit_tree()`. Both `--test` and a windowed capture exit 0. Left: two leak
 lines at exit (a particle shader never freed), harmless.
+
+## The east corner, refined from photo 2
+
+The palm strip now runs to the ramp inside a rounded kerb, planted as in the photo: a big
+clipped lime ficus by the corner, a golden bush, small dark round ones, another ficus by
+the ramp; a garden hose across it and a wet stain along the lane's edge. Across the lane:
+the gate pillar (`GATE`, local x −49.2) with the yellow meter box, cut-branch piles, two
+drum transformers on the east pole, more wires (two dropping to the corner), and the
+perimeter wall turning maroon with a white iron railing east of the pillar. The camera's
+cut cap now uses only the part of the back in frame (the whole building's top corners
+held the cut too near at the east end with the camera turned, and the wall hid the
+student). The pillar, poles and wall stand past the cut: they show in the F2 free cam.

@@ -647,14 +647,18 @@ func _update_camera(delta: float) -> void:
 		camera.near = maxf(camera.near, road_edge * smoothstep(0.0, 1.0, south_walk * facing_north))
 	# Behind SJH, facing north at its back, it stands over the perimeter wall and the trees
 	# along it: everything past the lane's far kerb is cut away (through the ground line), but
-	# never the back itself: turned and pitched, its top corners stand nearer than the kerb.
+	# never the back itself: turned and pitched, the top corners of the part in frame can
+	# stand nearer than the kerb.
 	var rear := Sjh.rear_for(follow.x, follow.y) * facing_north
 	if rear > 0.0:
 		var kerb := Sjh.world(Sjh.local(follow.x, follow.y).x, Sjh.LANE_EDGE)
 		var kerb_edge := (Vector3(focus.x, 0.0, kerb.y) - camera.position).dot(forward)
-		for end in [-Sjh.HALF, Sjh.HALF]:
+		var rear_along := Sjh.local(focus.x, focus.z).x
+		var half := view_metres.x / 2.0 / cos(orbit) + 1.0
+		var top := minf(Sjh.ROOF + 0.7, focus.y + view_metres.y)
+		for end in [clampf(rear_along - half, -Sjh.HALF, Sjh.HALF), clampf(rear_along + half, -Sjh.HALF, Sjh.HALF)]:
 			var corner := Sjh.world(end, Sjh.BACK - 1.0)
-			kerb_edge = minf(kerb_edge, (Vector3(corner.x, Sjh.ROOF + 0.7, corner.y) - camera.position).dot(forward) - 0.5)
+			kerb_edge = minf(kerb_edge, (Vector3(corner.x, top, corner.y) - camera.position).dot(forward) - 0.5)
 		camera.near = maxf(camera.near, kerb_edge * smoothstep(0.0, 1.0, rear))
 	# Facing MGN it stands over the chapel lawn: everything east of the west road (the
 	# lawn's trees, the chapel) is cut away.
