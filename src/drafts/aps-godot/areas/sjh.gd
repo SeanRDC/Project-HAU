@@ -83,6 +83,11 @@ const REAR_SOLID: Array[Vector3] = [Vector3(-38.4, -33.0, 6.2), Vector3(-31.6, -
 const BED := 3.2
 const BED_SIDE := 8.0
 const BED_END := -38.6
+## The side entrance on the east end, just past the bed (photo "east entrance"): the
+## opening's local z from, to, its floor (five risers up) and its top.
+const ENTRY := Vector2(-9.9, -6.8)
+const ENTRY_FLOOR := 0.75
+const ENTRY_TOP := 3.4
 ## The vehicles parked nose out along the back: local x, kind (0 car, 1 van, 2 pickup), colour.
 const REAR_CARS := [[-19.8, 2, "f1f1ec"], [-17.2, 0, "3a3f44"], [-14.0, 0, "b9bcbd"], [-11.3, 0, "c9cac6"],
 	[-8.2, 1, "e9e2d2"], [-5.4, 1, "e9e2d2"], [-2.5, 2, "f2f2ee"], [0.3, 2, "f2f2ee"], [15.2, 0, "b8322c"],
@@ -191,6 +196,8 @@ static func blocked(x: float, z: float) -> bool:
 			return true # the railing
 	if Geometry2D.is_point_in_polygon(at, bed()):
 		return true
+	if at.x < -HALF - 2.1 and at.x > -HALF - 3.7 and at.y > ENTRY.x - 0.45 and at.y < ENTRY.y + 0.4:
+		return true # the side entrance's steps
 	if at.y < BACK - 0.5:
 		if not on_lane(x, z):
 			return true # the perimeter wall and past it
@@ -269,6 +276,7 @@ func build(world_builder: RefCounted) -> void:
 	_details()
 	_rear()
 	_rear_ground()
+	_east_entrance()
 	w._flush()
 	w.root = saved
 	_parking()
@@ -342,7 +350,14 @@ func _end_towers() -> void:
 		w.box(Vector3(0.5, ROOF + 1.0, 0.4), Vector3(x0 - end * 2.3, (ROOF + 1.0) / 2.0, 0.6), silver)
 		w.box(Vector3(4.5, GROUND, 0.08), Vector3(x0, GROUND / 2.0, 0.54), w.material("brick", Color("e1876a")))
 		var cx: float = end * (HALF - 0.3)
-		w.box(Vector3(4.4, ROOF + 3.4, 9.0), Vector3(cx, (ROOF + 3.4) / 2.0, -6.5), cream)
+		if end > 0.0:
+			w.box(Vector3(4.4, ROOF + 3.4, 9.0), Vector3(cx, (ROOF + 3.4) / 2.0, -6.5), cream)
+		else:
+			# The east tower stands over the side entrance (_east_entrance): its ground floor is
+			# open between the red block and the louvred wall.
+			w.box(Vector3(4.4, ROOF, 9.0), Vector3(cx, ENTRY_TOP + ROOF / 2.0, -6.5), cream)
+			w.box(Vector3(4.4, ENTRY_TOP, 1.0), Vector3(cx, ENTRY_TOP / 2.0, -10.5), cream)
+			w.box(Vector3(4.4, ENTRY_TOP, ENTRY.y + 2.05), Vector3(cx, ENTRY_TOP / 2.0, (ENTRY.y - 0.05 - 2.0) / 2.0), cream)
 		for k in range(1, FLOORS + 1):
 			var y := GROUND + (k - 1) * STOREY + 1.6
 			w.box(Vector3(2.4, 1.6, 0.06), Vector3(cx, y, -1.98), pane)
@@ -758,6 +773,61 @@ func _rear_ground() -> void:
 			w.rod(tops[i] + Vector3(0, dy, 0), tops[i + 1] + Vector3(0, dy - 0.3, 0), 0.015, Color("26282a"))
 	for dy in [0.2, -0.3]:
 		w.rod(tops[0] + Vector3(0, dy, 0), Vector3(-HALF + 0.3, 8.6 + dy, BACK - 0.1), 0.015, Color("26282a"))
+
+## The side entrance on the east end, from its photo: a red block with grooves and a cream
+## cornice over a deep opening into the ground-floor corridor (cream walls, a tiled floor
+## with its diamond inlay, a maroon mat, a tube light), five tiled steps with dark nosings
+## out to a wide bottom step with cut corners, brown handrails with steel tops and bars,
+## and a tall dark louvre on the cream wall to the north. The corridor itself is not built.
+func _east_entrance() -> void:
+	var face := -HALF - 2.2 # the red block's face (local x); the tower's is at -HALF - 1.9
+	var mid := (ENTRY.x + ENTRY.y) / 2.0
+	var wide := ENTRY.y - ENTRY.x
+	var red: Material = w.material("stucco", Color("e48d82"))
+	var cream: Material = w.material("stucco", Color("eeeadf"))
+	w.box(Vector3(-face - HALF + 0.1, 5.6, 1.3), Vector3((face - HALF + 0.1) / 2.0, 2.8, ENTRY.x - 0.65), red)
+	w.box(Vector3(-face - HALF + 0.1, 5.6 - ENTRY_TOP + 0.02, wide), Vector3((face - HALF + 0.1) / 2.0, (5.6 + ENTRY_TOP - 0.02) / 2.0, mid), red)
+	var groove := 0.7
+	while groove < 5.6:
+		var cut := ENTRY.x if groove < ENTRY_TOP else ENTRY.y
+		w.box(Vector3(0.04, 0.05, cut - ENTRY.x + 1.3), Vector3(face - 0.01, groove, (ENTRY.x - 1.3 + cut) / 2.0), w.material("plain", Color("b5665e")))
+		groove += 0.7
+	w.box(Vector3(0.45, 0.3, 7.0), Vector3(face - 0.1, 5.75, -7.9), cream) # the cornice
+	# Inside the opening: cream walls, the tiled floor and mat, the dark corridor beyond.
+	var depth := -face - HALF
+	for z in [ENTRY.x + 0.02, ENTRY.y - 0.02]:
+		w.box(Vector3(depth, ENTRY_TOP - ENTRY_FLOOR, 0.04), Vector3((face - HALF) / 2.0, (ENTRY_TOP + ENTRY_FLOOR) / 2.0, z), cream)
+	w.box(Vector3(depth + 0.1, ENTRY_FLOOR, wide), Vector3((face - HALF) / 2.0, ENTRY_FLOOR / 2.0, mid), w.material("tile"))
+	w.box(Vector3(0.9, 0.012, wide - 0.6), Vector3(face + 0.7, ENTRY_FLOOR + 0.006, mid), w.material("plain", Color("8a1f35")))
+	w.box(Vector3(0.02, ENTRY_TOP - ENTRY_FLOOR - 0.3, 2.2), Vector3(-HALF - 0.02, (ENTRY_TOP + ENTRY_FLOOR - 0.3) / 2.0, mid), w.material("plain", Color("7d807d")))
+	w.box(Vector3(0.18, 0.05, 1.1), Vector3(face + 1.0, ENTRY_TOP - 0.05, mid), w.glow(Color("f4f1e6"), 0.6, 2.2))
+	# The steps: four down from the floor's edge, the bottom one wide with cut corners.
+	var tread: Material = w.material("slab", Color("eee6d6"))
+	var nosing: Material = w.material("plain", Color("4a4440"))
+	for k in range(1, 5):
+		var top := ENTRY_FLOOR - 0.15 * k
+		var out := 0.34 * k
+		var across := wide + 0.5 if k < 4 else wide + 0.9
+		w.box(Vector3(out, top + 0.1, across), Vector3(face - out / 2.0, (top - 0.1) / 2.0, mid), tread)
+		w.box(Vector3(0.05, 0.04, across), Vector3(face - out + 0.02, top, mid), nosing)
+	for side in [-1.0, 1.0]:
+		var corner := Vector3(face - 1.2, 0.0, mid + side * (wide + 0.9) / 2.0)
+		w.box(Vector3(0.4, 0.25, 0.4), corner, tread, PI / 4.0)
+	# The handrails: brown posts, a steel top rail, four bars along the slope.
+	for z in [ENTRY.x - 0.05, ENTRY.y + 0.05]:
+		var top_post := Vector3(face - 0.15, ENTRY_FLOOR, z)
+		var foot_post := Vector3(face - 1.25, 0.15, z)
+		for post in [top_post, foot_post]:
+			w.rod(post, post + Vector3(0, 0.95, 0), 0.025, Color("6b4a35"))
+		w.rod(top_post + Vector3(0, 0.95, 0), foot_post + Vector3(0, 0.95, 0), 0.03, Color("c9cdcf"))
+		for bar in 4:
+			var lift := 0.2 + bar * 0.18
+			w.rod(top_post + Vector3(0, lift, 0), foot_post + Vector3(0, lift, 0), 0.012, Color("6b4a35"))
+	# The louvre on the cream wall to the north.
+	var louvre: Material = w.material("plain", Color("33373a"))
+	w.box(Vector3(0.04, 2.2, 1.3), Vector3(-HALF - 1.92, 2.4, -4.9), louvre)
+	for i in 11:
+		w.box(Vector3(0.06, 0.04, 1.3), Vector3(-HALF - 1.95, 1.4 + i * 0.2, -4.9), w.material("plain", Color("4c5155")))
 
 ## A van or a pickup nosed out from the wall (-z): a tall body with the vans' brown and
 ## orange stripe, or a cab and an open bed; a dark windscreen, wheels and lights.

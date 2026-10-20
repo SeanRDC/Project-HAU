@@ -84,3 +84,12 @@ round kerb of that radius and runs 8 m up the east end (`BED_SIDE`), one outline
 (`Sjh.bed()`) for the grass, the kerb and the collision, with thirteen bushes. The palm got a
 ring of rising and a ring of drooping fronds (the chapel palm's near-level fronds read
 edge-on from the lane).
+
+Then the side entrance on the east end, just past the bed, from its photo
+(`_east_entrance()`, `ENTRY`): the grooved salmon-red block under a cream cornice, the
+opening cut through the east stair tower's ground floor (the tower is split round it),
+cream walls, the `tile` floor with a maroon mat and a tube light, four tiled steps with
+dark nosings out to a wide bottom step with cut corners, brown handrails with steel tops,
+and the tall louvre on the cream wall to the north. The steps are solid; the corridor
+behind is a grey back wall, not built. It faces east, away from the lane's camera, so it
+shows in the F2 free cam (checked there with a temporary capture flag, not committed).
