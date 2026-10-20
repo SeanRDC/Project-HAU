@@ -37,6 +37,30 @@ static func outline() -> PackedVector2Array:
 			_outline.append(point)
 	return _outline
 
+## The outline's middle, which the walls' outward sides are measured from.
+static func plan_centre() -> Vector2:
+	var middle := Vector2.ZERO
+	for p in outline():
+		middle += p
+	return middle / outline().size()
+
+## The outward unit normal of the outline's edge from a to b.
+static func outward(a: Vector2, b: Vector2) -> Vector2:
+	var out := Vector2(b.y - a.y, a.x - b.x).normalized()
+	return -out if out.dot((a + b) / 2.0 - plan_centre()) < 0.0 else out
+
+## The three bays of the glass hall on the south side, facing the walk (from the CHAPEL
+## RIGHTSIDE SIDEWALK photos): each [a, b] along the outline, west to east.
+static func south_bays() -> Array:
+	var bays := []
+	var shape := outline()
+	for i in shape.size():
+		var a := shape[i]
+		var b := shape[(i + 1) % shape.size()]
+		if outward(a, b).y > 0.7 and (a + b).y / 2.0 > 73.0:
+			bays.append([a, b])
+	return bays
+
 static func _in_ellipse(at: Vector2, centre: Vector2, radii: Vector2) -> bool:
 	var d := (at - centre) / radii
 	return d.length_squared() <= 1.0
@@ -53,6 +77,10 @@ static func blocked(x: float, z: float) -> bool:
 		return true
 	if x > NOSE.x - 1.9 and x < NOSE.x + 2.0 and absf(z - NOSE.y) < 6.2:
 		return true # the steps up to the glass front
+	for bay in south_bays():
+		var at := Vector2(x, z)
+		if at.distance_to(Geometry2D.get_closest_point_to_segment(at, bay[0], bay[1])) < 2.7:
+			return true # the steps up to the south glass hall
 	for banner in BANNERS:
 		if Vector2(x, z).distance_to(banner) < 0.25:
 			return true
@@ -239,7 +267,10 @@ func _building() -> void:
 		var middle := (a + b) / 2.0 - out * 0.25
 		var turn := atan2(-(b - a).y, (b - a).x)
 		var length := a.distance_to(b) + 0.06
-		if out.x < -0.3:
+		if [a, b] in south_bays():
+			_glass_bay(a, b, out)
+			continue # the bay's arch runs up through the frieze's height
+		elif out.x < -0.3:
 			w.box(Vector3(length, 4.7, 0.1), Vector3(middle.x, 3.25, middle.y), glass, turn)
 			var bars := maxi(1, int(length / 1.6))
 			for k in bars:
@@ -250,7 +281,18 @@ func _building() -> void:
 			w.box(Vector3(0.75, 0.22, 0.75), Vector3(a.x - out.x * 0.2, 6.1, a.y - out.y * 0.2), frieze, turn)
 		else:
 			w.box(Vector3(length, 5.3, 0.4), Vector3(middle.x, 3.55, middle.y), white, turn)
-			if absf(out.y) > 0.6 and length > 3.0:
+			if out.y > 0.6 and length > 3.0:
+				# Further along the south side: tall narrow bronze slots in the white wall
+				# over a weathered grey plinth, as in the sidewalk photos.
+				var slots := maxi(2, int(length / 1.7))
+				for k in slots:
+					var at := a.lerp(b, (k + 0.5) / slots) + out * 0.03
+					w.box(Vector3(0.46, 4.3, 0.05), Vector3(at.x, 3.35, at.y), w.material("plain", Color("a7843f")), turn)
+					at += out * 0.02
+					w.box(Vector3(0.2, 4.0, 0.05), Vector3(at.x, 3.35, at.y), w.material("glass", Color("4d4a3e")), turn)
+				var plinth := (a + b) / 2.0 + out * 0.35
+				w.box(Vector3(length, 1.0, 0.1), Vector3(plinth.x, 0.35, plinth.y), w.material("concrete", Color("b3b0a4")), turn)
+			elif absf(out.y) > 0.6 and length > 3.0:
 				# The side walls' tall arched windows, as dark recesses with light sills.
 				var at := (a + b) / 2.0
 				w.box(Vector3(minf(length - 1.2, 3.2), 3.4, 0.05), Vector3(at.x, 3.4, at.y), w.material("glass", Color("6d7f86")), turn)
@@ -275,6 +317,59 @@ func _building() -> void:
 	w.box(Vector3(0.5, 4.4, 1.9), Vector3(-23.9, 3.1, 64.6), w.material("plain", Color("b3262e")))
 	w._omni(Vector3(NOSE.x - 3.0, 4.5, NOSE.y), Color("ffd8a0"), 1.4, 12.0)
 
+## One bay of the south glass hall, from the sidewalk photos: a glass wall between white
+## double columns on the raised plinth, a white beam, and above it a gold half-moon in
+## a white arch rising to the roof bands; wide steps down to the dirt, with a white
+## cheek block where two bays meet.
+func _glass_bay(a: Vector2, b: Vector2, out: Vector2) -> void:
+	var turn := atan2(-(b - a).y, (b - a).x)
+	var length := a.distance_to(b)
+	var along := (b - a).normalized()
+	var face := (a + b) / 2.0
+	var white: Material = w.material("stucco", Color("fbfaf4"))
+	var column: Material = w.material("stucco", Color("fffef8"))
+	var glass: Material = w.material("glass", Color("9fb4b9"))
+	var at := face - out * 0.3
+	w.box(Vector3(length - 0.5, 3.3, 0.1), Vector3(at.x, 2.55, at.y), glass, turn)
+	var bars := maxi(2, int(length / 1.4))
+	for k in range(1, bars):
+		var bar := a.lerp(b, float(k) / bars) - out * 0.25
+		w.box(Vector3(0.07, 3.3, 0.09), Vector3(bar.x, 2.55, bar.y), column, turn)
+	# Double columns at both ends, with a base and a capital.
+	for end in [a + along * 0.35, b - along * 0.35]:
+		for pair in [-0.22, 0.22]:
+			var c: Vector2 = end + along * pair + out * 0.05
+			w.box(Vector3(0.3, 3.65, 0.32), Vector3(c.x, 2.72, c.y), column, turn)
+		var cap: Vector2 = end + out * 0.08
+		w.box(Vector3(0.95, 0.18, 0.45), Vector3(cap.x, 4.62, cap.y), column, turn)
+		w.box(Vector3(0.95, 0.14, 0.45), Vector3(cap.x, 0.97, cap.y), column, turn)
+	# The beam over the glass, then the white wall up to the roof bands.
+	w.box(Vector3(length, 0.34, 0.46), Vector3(face.x - out.x * 0.2, 4.4, face.y - out.y * 0.2), column, turn)
+	w.box(Vector3(length, 2.95, 0.4), Vector3(face.x - out.x * 0.25, 6.03, face.y - out.y * 0.25), white, turn)
+	# The arch: a white moulding ring and the gold half-moon inside it, in pixel steps.
+	var radius := minf(length / 2.0 - 0.5, 2.55)
+	var gold: Material = w.material("plain", Color("c9a24e"))
+	var strip := 0.16
+	var u := -radius - 0.22
+	while u < radius + 0.22:
+		var centre_u := u + strip / 2.0
+		var rim := sqrt(maxf(0.0, pow(radius + 0.22, 2.0) - centre_u * centre_u))
+		var p := face + along * centre_u + out * 0.0
+		w.box(Vector3(strip, rim, 0.04), Vector3(p.x, 4.58 + rim / 2.0, p.y), column, turn)
+		if absf(centre_u) < radius:
+			var fill := sqrt(radius * radius - centre_u * centre_u)
+			p += out * 0.025
+			w.box(Vector3(strip, fill, 0.04), Vector3(p.x, 4.6 + fill / 2.0, p.y), gold, turn)
+		u += strip
+	# Steps from the dirt up to the plinth, and a cheek block at each end.
+	for k in 5:
+		var height := 0.2 + (k + 1) * 0.18
+		var step := face + out * (0.7 + 0.36 * (4 - k))
+		w.box(Vector3(length - 0.9, height, 0.36), Vector3(step.x, -0.2 + height / 2.0, step.y), w.material("stone", Color("ccbfa6")), turn)
+	for end in [a, b]:
+		var cheek: Vector2 = end + out * 1.3
+		w.box(Vector3(0.7, 1.15, 2.4), Vector3(cheek.x, 0.37, cheek.y), white, turn)
+
 # --- Paths and planting -------------------------------------------------------------
 
 func _paths() -> void:
@@ -290,12 +385,12 @@ func _paths() -> void:
 	for z in [32.5, 34.7]:
 		w.box(Vector3(48.0, 0.08, 0.14), Vector3(-10.5, -0.17, z), edge)
 
-## Shade trees on dirt and grass round the chapel, and palms by its north side.
+## Shade trees on dirt and grass by the chapel's north side, and palms there. The south
+## side's trees are the walk's (areas/chapel_south.gd).
 func _planting() -> void:
 	var dirt: Material = w.material("dirt")
 	var trees: Array[Vector3] = [Vector3(-28.0, 30.0, 8.2), Vector3(-19.0, 37.2, 7.4), Vector3(-6.0, 29.8, 8.8),
-		Vector3(-12.0, 38.2, 7.0), Vector3(6.0, 38.5, 7.8), Vector3(-30.5, 86.5, 8.4), Vector3(-14.0, 89.0, 8.0),
-		Vector3(2.0, 92.0, 8.6), Vector3(18.0, 90.0, 7.6), Vector3(-22.0, 93.0, 7.2), Vector3(10.0, 94.5, 8.0)]
+		Vector3(-12.0, 38.2, 7.0), Vector3(6.0, 38.5, 7.8)]
 	for i in trees.size():
 		var tree := trees[i]
 		w.box(Vector3(3.4, 0.05, 3.0), Vector3(tree.x, -0.18, tree.y), dirt)

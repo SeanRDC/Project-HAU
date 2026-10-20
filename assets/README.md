@@ -12,7 +12,7 @@ Most are in `images/`: one folder per building in `images/buildings/`, the side 
 | Folder | What it shows | Built in Godot? |
 | --- | --- | --- |
 | `APS WALK FROM CHAPEL LAWN/` | 31 photos walking along APS from the chapel lawn: the wing, canopy, tall block, stair tower, canteen and patio | Yes, `world.gd` and `areas/hallway.gd` |
-| `CHAPEL/` | The Chapel of the Holy Guardian Angel from the front and both sides, and a layout sketch | Yes, `areas/chapel.gd` |
+| `CHAPEL/` | The Chapel of the Holy Guardian Angel from the front and both sides, a layout sketch, and the walk along its south side (08-10; the photos of that walk with parked cars are left out, for the plates) | Yes, `areas/chapel.gd` and `areas/chapel_south.gd` |
 | `SJH BUILDING/` | St. Joseph Hall from the front and both sides | Yes, `areas/sjh.gd` |
 | `MGN BUILDING/` | The Mamerto G. Nepomuceno Building from the front and both sides | Yes, `areas/mgn.gd` |
 

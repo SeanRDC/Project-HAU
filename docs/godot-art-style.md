@@ -277,7 +277,8 @@ fixed seed (`61015 + kind.hash()`), so every machine gets identical pixels.
 | brick | 2.0 | `#a7957b` | herringbone; the patio uses tint `#f0b49a` for red brick |
 | wood | 1.5 | `#8b6b4e` | planks every 13 px |
 | metal | 2.0 | `#8c9b9e` | grain only |
-| grass | 3.0 | `#7c8a5f` | 9/255 grain, 900 vertical blade flecks; mown bands tint `#f3f5ec` |
+| grass | 3.0 | `#7c8a5f` | 9/255 grain, 70 soft lighter (`#93a868`) and darker (`#5c7243`) patches wrapped round the tile, 2200 vertical blade flecks in six greens, 40 clover dots; mown bands tint `#f3f5ec` |
+| lawn | 4.0 | `#6f8a4b` | 4/255 grain, 50 very soft broad patches (`#86a25a` / `#67824a`), 3600 short 1-2 px blade flecks in four close greens: the mown chapel lawn inside the road loop (`_grasses` lays it over the campus grass) |
 | dirt | 2.5 | `#9a8566` | pebbles in four browns and darker trodden patches (the picnic strip, the corner garden; building plots tinted `#e8e1cb`) |
 | floor | 2.4 | `#d9bfa9` | peach 30 cm ceramic tiles, light grout, the odd paler tile (the APS hallway, stair treads tinted `#eee9e2`) |
 | ledge | 1.2 | `#8a7d6a` | ledgestone: thin stacked slates in browns and greys with dark gaps (the hallway's front piers) |
@@ -374,13 +375,30 @@ for plants.
   darker underneath, with no seams where cards cross. Cards that turn edge-on to
   the view fade out (`smoothstep(0.1, 0.3, |card · view|)`), so no straight lines
   of leaves cut through the crown.
-- **Grass** (`_grasses`): one `MultiMesh` named "Grass" of `_cards(0.62, 0.42, 0, 2)`
-  tufts (two crossed blade cards) with the shared `_grass_material()`: a 48 × 32 px
-  blade texture in four greens (`#4f6a3f` to `#9cae66`), sway 0.03, `center` far below
-  so it lights like the lawn. Tufts never cast shadows. Seeded placement: a thick
-  band along the lawn's kerbs, scattered tufts across the lawn, rings round tree roots,
-  half-size moss where the patio meets walls, the rail and the sidewalk, and grass
-  round the dirt yard. Keep the instance count under a few thousand.
+- **Grass** (`_grasses`): three tuft kinds (`Tuft`), each one `MultiMesh` of two
+  crossed cards (`TUFT_CARDS`) with its own `_grass_material(kind)`, a 48 × 32 px
+  pixel image:
+  - "Grass", the lawn clump (0.7 × 0.36 m): about 80 short blades fanning out from a
+    solid base, shortest at the edges. Every small spot (carpet, moss) is one.
+  - "GrassWild" (0.56 × 0.62 m): tall thin blades, a fifth with pale seed heads
+    (`#cbbf8c`), sway 0.05.
+  - "GrassClover" (0.5 × 0.24 m): low three-leaf clusters on stems and a few tiny
+    white (`#f2efdc`) and yellow (`#e9cf4b`) flowers.
+
+  Blades run through `BLADE_COLORS` from `#4f673c` at the base (the lawn's own green, so
+  a tuft grows out of the floor) to `#b2c37a` at the tip, two pixels wide at the foot
+  and curving towards the tip (`_blade`). Larger spots are 60% clumps, 25% wild, 15%
+  clover. Sway 0.03, `center` far below so they light like the lawn; tufts never cast
+  shadows. Seeded placement: a thick band along the lawn's kerbs, scattered tufts across
+  the lawn, a carpet of half-size clumps between them, rings round tree roots, half-size
+  moss where the patio meets walls, the rail and the sidewalk, and grass round the dirt
+  yard. The chapel lawn inside the road loop is kept and mown: its own "lawn" floor and
+  only small clumps (no wild grass or clover) along the kerbs and round the trunks. Under
+  every tree on it, fallen leaves (`_fallen_leaves`): one pixel-leaf decal per tree, 0.6 ×
+  its height across, brown, tan, yellow and olive, thicker towards the trunk. Decals use
+  nearest filtering (`rendering/textures/decals/filter=0` in `project.godot`): with
+  mipmaps the low camera blurs small pixel details on the ground away. Keep the tufts
+  under 10 000.
 - **Bamboo** (`_bamboo`): culms are thin rods leaning out from a tight base,
   with six small blade clusters each along their upper two thirds, arching out and
   drooping a little, in one `MultiMesh` per clump. Its leaf texture is
@@ -442,6 +460,8 @@ Night lights (in `world.lamps`, visible only at night):
 - Gym entrance lights: omni `#ffd79d`, 1.2, reach 6.0 (front doors, and MGN's porch); 1.0,
   reach 6.5 (two under the side canopy). Gym wall lamps are emissive only
   (`glow(#f6f1e1, 0, 1.6)`), no light.
+- Path bollards (the chapel's south walk): emissive only (`glow(#f2d38c, 0.15, 1.8)`),
+  no light, so a row of them costs nothing.
 - Canopy strips: omni `#ffcf92`, 0.55, reach 4.6, plus emissive strips (also the
   Student Center's ceiling, one at every other light panel).
 - Student Center daylight fill, on at every hour while the student is under its roof:

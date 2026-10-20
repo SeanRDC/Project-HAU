@@ -7,6 +7,7 @@ const World := preload("res://world.gd")
 const Student := preload("res://student.gd")
 const Sound := preload("res://audio.gd")
 const Chapel := preload("res://areas/chapel.gd")
+const ChapelSouth := preload("res://areas/chapel_south.gd")
 const Roads := preload("res://roads.gd")
 const CampusPlan := preload("res://campus_plan.gd")
 const Plots := preload("res://areas/plots.gd")
@@ -140,6 +141,9 @@ var _zoom_before := -1.0
 var sjh := 0.0
 ## 0..1: how far the camera has turned right round to look west at MGN from the west road.
 var mgn := 0.0
+## 0..1: how far the student is on the walk along the chapel's south side (the camera,
+## facing north at the chapel, cuts away the parking and SJH behind it).
+var south_walk := 0.0
 ## 0..1: how far the camera has turned to look south across the boulevard at the Main
 ## Building's side; middle_north, how far it looks north at PGN's (its turn is 0, like APS's).
 ## Which one is on follows the side of the centre line the student is on.
@@ -459,6 +463,7 @@ func _snap_follow() -> void:
 	hall = Hallway.hall_for(student.position.x, student.position.z)
 	sjh = Sjh.view_for(student.position.x, student.position.z)
 	mgn = mgn_for(student.position.x, student.position.z)
+	south_walk = ChapelSouth.view_for(student.position.x, student.position.z)
 	var on_middle := MiddleRoad.view_for(student.position.x, student.position.z)
 	middle = on_middle * MiddleRoad.south_for(student.position.z)
 	middle_north = on_middle - middle
@@ -514,6 +519,7 @@ func _update_camera(delta: float) -> void:
 	face = lerpf(face, face_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	sjh = lerpf(sjh, Sjh.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	mgn = lerpf(mgn, mgn_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	south_walk = lerpf(south_walk, ChapelSouth.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var on_middle := MiddleRoad.view_for(student.position.x, student.position.z)
 	var south := on_middle * MiddleRoad.south_for(student.position.z)
 	middle = lerpf(middle, south, 1.0 - exp(-delta * 3.0))
@@ -617,6 +623,16 @@ func _update_camera(delta: float) -> void:
 	if sjh > 0.0:
 		var parking_edge := (Vector3(focus.x, focus.y, Sjh.PARKING.position.y - 0.6) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, parking_edge * smoothstep(0.0, 1.0, sjh))
+	# On the walk along the chapel's south side, facing north at it, the camera stands over
+	# the road and SJH: everything past the road (SJH and its row of cars) is cut away, so
+	# the cars nosed in to the grass stay in front, as in the photos. It fades out as the
+	# chapel's or the gym's view takes over at either end.
+	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north, 0.0, 1.0)
+	if south_walk * facing_north > 0.0:
+		# (through the ground line, as the plane leans with the camera: then nothing of the
+		# front row's cars stands above it)
+		var road_edge := (Vector3(focus.x, 0.0, Sjh.FRONT_ROW.position.y - 0.5) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, road_edge * smoothstep(0.0, 1.0, south_walk * facing_north))
 	# Facing MGN it stands over the chapel lawn: everything east of the west road (the
 	# lawn's trees, the chapel) is cut away.
 	if mgn > 0.0:
@@ -836,6 +852,8 @@ static func travel_places() -> Array:
 		["Canteen hall", World.canteen_world(51.0, 0.0), 22.0],
 		["Picnic strip", Vector2(45.5, 10.0), 26.0],
 		["Chapel plaza", CHAPEL_SPOT, 32.0],
+		["Chapel south walk", Vector2(-8.0, 91.8), 30.0],
+		["Picnic corner", Vector2(29.0, 91.0), 30.0],
 		["IH Gym front", GYM_SPOT, 84.0],
 		["IH Gym side", GYM_SIDE_SPOT, 44.0],
 		["IH Gym inside", GYM_IN_SPOT, ARENA_WIDTH],
@@ -1369,7 +1387,8 @@ func _verify_and_capture() -> void:
 		var plaza_floor := World.floor_height(CHAPEL_SPOT.x, CHAPEL_SPOT.y)
 		checks.chapel_plaza_walkable = not World.blocked(CHAPEL_SPOT.x, CHAPEL_SPOT.y) and is_equal_approx(plaza_floor, -0.04)
 		checks.lawn_path_walkable = not World.blocked(-36.0, 24.0) and World.blocked(-30.0, 24.0)
-		checks.grass_built = (scene.find_child("Grass", false, false) as MultiMeshInstance3D).multimesh.instance_count > 800
+		# (the chapel lawn is mown, with only a few clumps; the wilder lawns elsewhere add more)
+		checks.grass_built = (scene.find_child("Grass", false, false) as MultiMeshInstance3D).multimesh.instance_count > 400
 		var saved := student.position
 		_set_hour(21.0)
 		checks.night_lamps = world.lamps.all(func(l: Light3D) -> bool: return l.visible) and sun.light_energy < 0.3
@@ -1412,6 +1431,36 @@ func _verify_and_capture() -> void:
 			student.move(Vector2(0, 1), true, 1.0 / 30.0, 0.0)
 			_update_camera(1.0 / 30.0)
 		checks.walk_to_chapel = student.position.z > 40.0 and chapel > 0.9 and (-camera.global_basis.z).dot(Vector3.RIGHT) > 0.9
+		# Along the path by the chapel's south side: facing north at the chapel, with the
+		# road and SJH behind the camera cut away; trunks, the steps and the sheds are solid.
+		student.place(-20.0, 91.8)
+		_set_zoom(56.0, true)
+		_snap_follow()
+		for i in 240:
+			student.move(Vector2(1, 0), false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		var south_forward := -camera.global_basis.z
+		checks.walk_chapel_south = student.position.x > -5.0 and ChapelSouth.on_path(student.position.x, student.position.z) \
+			and south_forward.dot(Vector3.FORWARD) > 0.9 and camera.near > 20.0
+		var trunk := ChapelSouth.TREES[0]
+		var bay: Array = Chapel.south_bays()[1]
+		var step: Vector2 = (bay[0] + bay[1]) / 2.0 + Chapel.outward(bay[0], bay[1]) * 1.5
+		checks.chapel_south_blocks = World.blocked(trunk.x, trunk.y) and World.blocked(step.x, step.y) \
+			and World.blocked(ChapelSouth.SHEDS[1].x, ChapelSouth.SHEDS[1].y) and not World.blocked(0.0, 91.8) \
+			and not World.blocked(0.0, 86.5) and not World.blocked(0.0, 95.0)
+		# From an empty bay in the chapel-side parking, out along its slant and north over
+		# the grass onto the path.
+		var bay_x := Sjh.PARKING.position.x + 1.4
+		var bay_z := Sjh.PARKING.position.y + 4.6
+		while World.blocked(bay_x, bay_z) and bay_x < 20.0:
+			bay_x += Sjh.SLANT_BAY
+		student.place(bay_x, bay_z)
+		_snap_follow()
+		for i in 150:
+			var out := Vector2(-sin(Sjh.SLANT), -cos(Sjh.SLANT)) if i < 60 else Vector2(0, -1)
+			student.move(out, false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		checks.parking_to_chapel_walk = student.position.z < ChapelSouth.PATH[4].y
 		student.position = saved
 		_set_zoom(112.0, true)
 		_snap_follow()
