@@ -58,6 +58,18 @@ MGN as scenery only; the work branches from `camera-right-drag` (PR #32 not merg
   pillars, the handrails standing on them (x ±7), with a raised planter box and a palm
   past the west pillar (from MIDDLE ELEVATOR.JPG).
 
+- **The long stair (Mikko's drawing and screenshot, second round):** the lobby stair is
+  not one flight but two: 5 steps up from the sidewalk, a long flat landing (2 m), 4
+  steps up to the floor, all risers 0.1 (9 × 0.1 = the 0.9 m floor), treads 0.33. The
+  bottom flight and the landing run along the whole front on both sides (to the east
+  end and the ramp's landing), the planter standing on the landing against the plinth
+  (`PLANTER_Z` 1.6, the landing to `FLIGHT_Z` 2.6, the flight's foot 4.25). At the lobby
+  the landing stands out 2 m in front of the upper steps, with its own flight to 5.97:
+  the bottom flight could not all run that far out, as the front row of cars is only
+  4.9 m from the building at its west end. The steps at the railing gaps are gone ("no
+  stairs there"); the railing is unbroken. The side entrance's steps are 9 risers of
+  0.1 now too. The handrails run on the lobby stair over the landing.
+
 ## What changed
 
 - `areas/sjh.gd`: the constants, `_deck`, `_stair`, `_yard`, `walkway_for`, `view_for`,
