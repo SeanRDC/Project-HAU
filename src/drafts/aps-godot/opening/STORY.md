@@ -178,8 +178,11 @@ The truth Lance has buried for twelve years; the player learns it late, in fragm
 7. **The birthday he can't celebrate.** His child is born on November 11.
 8. **The voicemail, twelve years later:**
 
-> "Uy... sorry sa kanina. Birthday ko pala ngayon, haha. Wala lang... gusto ko lang marinig
-> boses mo. Sige, bukas na lang. Ingat ka, Lance."
+> "Uy, Lance. 'Yung notes mo sa Ethics, nasa akin pa pala. Ibabalik ko na lang bukas.
+> ...Sige."
+
+Nothing in it: an ordinary promise about tomorrow. He only learns it was her birthday at
+the wake, from her sibling.
 
 ### How the trauma is shown
 
@@ -189,7 +192,8 @@ The weight comes from memory, aftermath and guilt, never from showing how she di
   wrong; 11:11 appears on clocks and jeep plates.
 - **The aftermath:** her bag on the chair for a week; the group chat asking "Ysha, nasaan
   ka?"; her mother folding her uniform at the wake; her sibling: "Kuya, kaibigan ka ba ni
-  Ate?"; her phone with one call to him that never connected.
+  Ate?"; her phone with one call to him that never connected; his Ethics notes, handed back by
+  her mother, with a sticky note inside: "Salamat ulit."
 - **The player is complicit:** early on, her call comes and the only button is "Decline".
 - **The guilt rots him:** he can't hold his child on November 11; he flinches at phones at
   night.
