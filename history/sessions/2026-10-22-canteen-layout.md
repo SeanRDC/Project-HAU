@@ -24,7 +24,22 @@ black steel frames.
 - The floor is grey tile, as in the photo. The old menu boards on the back wall are gone,
   and the doors moved between the islands.
 
+## The open back
+
+Mikko sent photos from inside the canteen. Its back (the wing's east side) is open, not
+walled: through it the strip and the parking behind can be seen, towards SH. Asked, Mikko
+said this is behind the canteen wing, and to build only the open back canteen (not the
+parking or SH).
+- The rear wall is gone. In its place: ledgestone-clad pillars on the back edge, a low grey wall
+  with a steel rail, and two gaps (`BACK_GAPS`) with a step down to the strip outside.
+  Outside is the scalloped awning on a steel frame, and round downlights under the slab.
+- The islands moved clear of the stair tower's part (x 44.4 and 52.6), and the tables
+  between them. Ate Lorna moved with GRANNY JINGS.
+- The islands' back-facing stalls nearest the tower are HAU COOP (yellow sign, red ink,
+  snacks piled on the counter) and RINA'S FOOD (maroon sign).
+- Some tables are pink, as in the photos.
+
 ## Checks
 
-`--test`: all true (`walk_into_canteen`, `stall_signs`, `canteen_view_faces_stalls`).
+`--test`: all true (`walk_into_canteen`, `stall_signs`, `canteen_view_faces_stalls`, `canteen_open_back`).
 `npm run check` and `npm run build` pass. Captures of the canteen view.
