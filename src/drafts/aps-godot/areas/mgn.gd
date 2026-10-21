@@ -73,13 +73,15 @@ const POTS: Array[Vector2] = [Vector2(31.5, 2.9), Vector2(31.5, -1.7), Vector2(3
 const GARDEN := 3.9
 const GARDEN_FROM := SOUTH_WING.x
 ## The brown paver walk through the garden (MGN FRONT.JPG): from the drive's kerb opposite
-## the Mary statue (mgn and Sjh middle.jpg) at WALK_FROM in at a slant to the corridor front
-## at WALK_TO, 2 * WALK_HALF wide, between low kerbs, laid just over the grass (the
-## photo's is a little below it).
-const WALK_FROM := Vector2(0.5, GARDEN + 0.6)
-const WALK_TO := Vector2(-1.5, 0.0)
+## the Mary statue (mgn and Sjh middle.jpg, local x WALK_X) straight in to the corridor
+## front, 2 * WALK_HALF wide, sunk between the garden's two beds and their white kerbs,
+## rising from the drive's level (WALK_Y.x) to the corridor floor (WALK_Y.y).
+const WALK_X := 0.9
+const WALK_FROM := Vector2(WALK_X, GARDEN + 0.6)
+const WALK_TO := Vector2(WALK_X, 0.0)
 const WALK_HALF := 0.8
-const WALK_Y := 0.32
+const WALK_Y := Vector2(-0.02, 0.15)
+const WALK_KERB := 0.16
 ## Facing MGN the camera cuts away everything east of this world x (the chapel lawn,
 ## its trees and the chapel), the way the SJH view cuts away everything north of its parking.
 ## It stops just east of SJH's terracotta end block (world x -50.3), so that block stays whole.
@@ -175,7 +177,12 @@ static func floor_height(x: float, z: float) -> float:
 		return FORECOURT_Y
 	if on_corner(x, z):
 		return 0.0
-	return WALK_Y if in_walk(x, z) else NAN
+	return walk_height(x, z) if in_walk(x, z) else NAN
+
+## The walk's surface height: rising from the drive to the corridor.
+static func walk_height(x: float, z: float) -> float:
+	var at := local(x, z)
+	return lerpf(WALK_Y.y, WALK_Y.x, clampf(at.y / WALK_FROM.y, 0.0, 1.0))
 
 var w: RefCounted
 
@@ -499,12 +506,15 @@ func _tank(at: Vector3, radius: float) -> void:
 ## The raised garden along the corridor front behind a weathered white kerb wall, with
 ## rocks in the planting (the closeup photo).
 func _garden() -> void:
-	var length := LONG - GARDEN_FROM
-	var middle := (LONG + GARDEN_FROM) / 2.0
-	w.box(Vector3(length, 0.5, GARDEN - 0.1), Vector3(middle, 0.05, GARDEN / 2.0 + 0.05), w.material("grass", Color("e9f0dc")))
-	w.box(Vector3(length + 0.3, 0.7, 0.28), Vector3(middle, 0.15, GARDEN - 0.1), w.material("stucco", Color("e5e1d6")))
-	w.box(Vector3(length + 0.4, 0.08, 0.34), Vector3(middle, 0.52, GARDEN - 0.1), w.material("stucco", Color("eeebe2")))
-	var rock: Material = w.material("stone", Color("6d6a66"))
+	# Two beds, either side of the walk, each with its kerb wall and cap.
+	var gap := WALK_HALF + WALK_KERB
+	for bed in [Vector2(GARDEN_FROM, WALK_X - gap), Vector2(WALK_X + gap, LONG)]:
+		var length: float = bed.y - bed.x
+		var middle: float = (bed.x + bed.y) / 2.0
+		w.box(Vector3(length, 0.5, GARDEN - 0.1), Vector3(middle, 0.05, GARDEN / 2.0 + 0.05), w.material("grass", Color("e9f0dc")))
+		w.box(Vector3(length + 0.15, 0.7, 0.28), Vector3(middle, 0.15, GARDEN - 0.1), w.material("stucco", Color("e5e1d6")))
+		w.box(Vector3(length + 0.2, 0.08, 0.34), Vector3(middle, 0.52, GARDEN - 0.1), w.material("stucco", Color("eeebe2")))
+	var rock: Material = w.material("stone", Color("8e8b85"))
 	var random := RandomNumberGenerator.new()
 	random.seed = 1414
 	for i in 14:
@@ -513,7 +523,7 @@ func _garden() -> void:
 		var lz := random.randf_range(0.8, GARDEN - 0.7)
 		if Geometry2D.get_closest_point_to_segment(Vector2(x, lz), WALK_FROM, WALK_TO).distance_to(Vector2(x, lz)) < WALK_HALF + 0.5:
 			continue # not on the walk
-		w.box(Vector3(size, size * 0.7, size * 0.9), Vector3(x, 0.3 + size * 0.3, lz), rock, random.randf() * PI)
+		w.box(Vector3(size, size * 0.45, size * 0.8), Vector3(x, 0.3 + size * 0.12, lz), rock, random.randf() * PI, random.randf_range(-0.2, 0.2))
 
 ## The north entrance's forecourt, its overhang, pillars and lobby, the drain, the bins and
 ## pots, and the paver corner beside it.
@@ -556,16 +566,17 @@ func _forecourt() -> void:
 	var depth := FORECOURT.end.y + DRAIN - PORCH_BACK
 	w.box(Vector3(CORNER.y - CORNER.x, 0.06, depth), Vector3((CORNER.x + CORNER.y) / 2.0, -0.02, PORCH_BACK + depth / 2.0), w.material("octagon"))
 
-## The paver walk, laid over the garden from the kerb to the corridor, with its kerbs.
+## The paver walk between the beds, sloping up from the drive to the corridor, and the white
+## kerbs that edge it (the beds' faces).
 func _walk() -> void:
-	var along := WALK_TO - WALK_FROM
-	var turn := atan2(-along.y, along.x)
-	var middle := (WALK_FROM + WALK_TO) / 2.0
-	var side := Vector2(-along.y, along.x).normalized()
-	w.box(Vector3(along.length(), 0.08, 2.0 * WALK_HALF), Vector3(middle.x, WALK_Y - 0.04, middle.y), w.material("brick", Color("8a5446")), turn)
+	var length := WALK_FROM.y - WALK_TO.y
+	var rise := WALK_Y.y - WALK_Y.x
+	var slope := atan2(rise, length)
+	var middle := (WALK_Y.x + WALK_Y.y) / 2.0
+	w.box(Vector3(2.0 * WALK_HALF, 0.1, length / cos(slope)), Vector3(WALK_X, middle - 0.05, length / 2.0), w.material("brick", Color("b07466")), 0.0, slope)
 	for k in [-1.0, 1.0]:
-		var edge: Vector2 = middle + side * k * (WALK_HALF + 0.08)
-		w.box(Vector3(along.length() - 0.4, 0.36, 0.16), Vector3(edge.x, 0.18, edge.y), w.material("stucco", Color("e5e1d6")), turn)
+		var edge: float = WALK_X + k * (WALK_HALF + WALK_KERB / 2.0)
+		w.box(Vector3(WALK_KERB, 0.4, GARDEN + 0.15), Vector3(edge, 0.12, (GARDEN + 0.15) / 2.0 - 0.1), w.material("stucco", Color("e9e6dc")))
 
 ## The big shade trees, short palms and shrubs in the garden (world coordinates).
 func _planting() -> void:
@@ -574,7 +585,7 @@ func _planting() -> void:
 	for tree in [Vector3(12.5, 2.0, 13.5), Vector3(-5.0, 1.8, 12.0), Vector3(-15.0, 2.2, 10.5)]:
 		var at := world(tree.x, tree.y)
 		w._tree(Vector3(at.x, 0.3, at.y), tree.z, 1400 + roundi(tree.x))
-	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(1.5, 2.8), Vector2(-10.5, 1.3)]:
+	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(3.0, 2.8), Vector2(-10.5, 1.3)]: # (3, 2.8): beside the walk
 		var at := world(spot.x, spot.y)
 		palms._palm(Vector3(at.x, 0.3, at.y), 4.2 + absf(spot.x) * 0.05, 1420 + roundi(spot.x))
 	for lx in [15.0, 10.0, 5.5, 3.0, -2.0, -8.0, -12.5, -16.5, -20.5, -24.0, -27.5]:

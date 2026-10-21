@@ -1773,7 +1773,7 @@ func _verify_and_capture() -> void:
 		var walk_in := Mgn.world(Mgn.WALK_FROM.x, Mgn.WALK_FROM.y - 0.3)
 		var beside := Mgn.world((Mgn.WALK_FROM.x + Mgn.WALK_TO.x) / 2.0 - 2.0, (Mgn.WALK_FROM.y + Mgn.WALK_TO.y) / 2.0)
 		var drive := Mgn.world(Mgn.WALK_FROM.x, Mgn.GARDEN + 0.9)
-		checks.mgn_front_walk = not World.blocked(walk_mid.x, walk_mid.y) and not World.blocked(walk_in.x, walk_in.y) 			and absf(World.floor_height(walk_mid.x, walk_mid.y) - Mgn.WALK_Y) < 0.01 and World.blocked(beside.x, beside.y) 			and not World.blocked(drive.x, drive.y)
+		checks.mgn_front_walk = not World.blocked(walk_mid.x, walk_mid.y) and not World.blocked(walk_in.x, walk_in.y) 			and absf(World.floor_height(walk_mid.x, walk_mid.y) - Mgn.walk_height(walk_mid.x, walk_mid.y)) < 0.01 and World.blocked(beside.x, beside.y) 			and not World.blocked(drive.x, drive.y)
 		var porch := Mgn.world(21.0, 2.5)
 		var turnstile := Mgn.world(21.0, 0.4)
 		var column := Mgn.world(Mgn.PORCH_COLUMNS[0], Mgn.COLUMN_Z)
