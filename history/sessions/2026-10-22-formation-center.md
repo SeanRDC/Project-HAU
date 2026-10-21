@@ -41,7 +41,10 @@ build the kiosks too; set the building back inside its plot.
 
 Mikko (screenshot 1181): "they are perfectly aligned together", so no gap between
 them. The back now runs on west to the chapel's east wall (`CHAPEL_EDGE`, the plot edge
-they share): full height behind the middle block, the south wing's height beside it.
+they share). At first it stood at the Formation Center's heights, which left a bare
+wedge of roof beside the terrace and a low one by the south wing ("still not perfectly
+merged", screenshot 1182). Now the chapel runs on to the back at its own height under its
+own roof (`CHAPEL_TOP` 9.32), and the Formation Center's back wall rises out of it.
 
 ## Checks
 
