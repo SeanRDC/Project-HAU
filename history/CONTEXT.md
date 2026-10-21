@@ -1,5 +1,29 @@
 # Project Context
 
+**Aero Hall, 2026-10-22.** `areas/aero.gd`: the navy corrugated hall in front of the gym's
+south end, between SJH and the gym, with its gabled front block, the HAU seal, aircon
+units and signs, and the yard behind the green wall. The camera cuts SJH away when
+facing the gym from there. See `sessions/2026-10-22-aero-hall.md`.
+
+**Audio fixes, 2026-10-22.** The looping sounds no longer pulse as they come round (an even
+crossfade), the students' murmur is gone (every version was heard as a buzz by
+APS), the rain loop pauses in dry weather, and the birds' take-off flutter is softer and shorter. The footsteps are
+unchanged. See `sessions/2026-10-22-audio-fixes.md`.
+
+**Formation Center, 2026-10-22.** `areas/formation.gd`: the Sister Josefina G. Nepomuceno
+Formation Center behind the chapel, facing the east road, set back so the new lawn-side
+sidewalk runs round the bend north of it. The colonnade under its steel name, the roof
+canopy, the stair tower's green strips, two curved wings; a drop-off round the tree
+island; gabled kiosks in a row along the road south of it. In front of it the camera faces
+it from over the road (`--view=formation`). See `sessions/2026-10-22-formation-center.md`.
+
+**SJH and MGN apart, 2026-10-21.** MGN's south wing is flush with its long block (it stood
+~1 m from SJH) and SJH is 2 m east of its outline (`EAST_SHIFT`): a ~4.7 m drive runs
+between them under the bridge, ~9 m wall to wall, as in the photos. A concrete drive off the road's bend curves round Mary's big lawn into
+that lane; MGN's garden walk slants from opposite Mary to the corridor, and the bridge
+joins both third floors. MGN's north block has its forecourt entrance on the west road. See
+`sessions/2026-10-21-sjh-mgn-spacing.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
