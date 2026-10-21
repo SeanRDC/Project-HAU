@@ -70,7 +70,7 @@ const PLOTS := {
 	"court": {"name": "Covered Court", "short": "Covered Court", "no": 19, "kind": "building", "built": false,
 		"label": Vector2(72.6, 38.8),
 		"outline": [Vector2(48.4, 56.4), Vector2(48.6, 17.8), Vector2(89.8, 18.2), Vector2(89.8, 42.8), Vector2(105.4, 43), Vector2(105.4, 57)]},
-	"annex": {"name": "Aero Hall", "short": "Aero Hall", "no": 21, "kind": "building", "built": false,
+	"annex": {"name": "Aero Hall", "short": "Aero Hall", "no": 21, "kind": "building", "built": true,
 		"label": Vector2(84.7, 120.9),
 		"outline": [Vector2(44.9, 120), Vector2(44.5, 136.8), Vector2(48.4, 136.9), Vector2(48.3, 141.2), Vector2(48.3, 144.4), Vector2(98.4, 146), Vector2(98.5, 142.5), Vector2(106.9, 142.8), Vector2(108.8, 64.1), Vector2(101.1, 63.9), Vector2(101, 67.7), Vector2(99, 136.5), Vector2(57.1, 135.2), Vector2(57.5, 120.4)]},
 	"coveredWalk": {"name": "Covered Walk", "short": "Covered Walk", "no": 0, "kind": "walk", "built": false,
