@@ -299,6 +299,14 @@ static func lawn() -> PackedVector2Array:
 			_lawn.append(BEND + Vector2(cos(a), sin(a)) * LAWN_ROAD)
 		_lawn.append(Vector2(LAWN_EAST, LAWN_SOUTH))
 		_lawn.append(Vector2(_lawn[0].x, LAWN_SOUTH))
+		# the kerb's corners rounded, as in the photos (two passes of corner cutting)
+		for cut in 2:
+			var rounded := PackedVector2Array()
+			for i in _lawn.size():
+				var a := _lawn[i]
+				var b := _lawn[(i + 1) % _lawn.size()]
+				rounded.append_array([a.lerp(b, 0.25), a.lerp(b, 0.75)])
+			_lawn = rounded
 	return _lawn
 
 static func blocked(x: float, z: float) -> bool:
@@ -1159,29 +1167,24 @@ func _profile(points: Array) -> PackedVector2Array:
 	return out
 
 ## The Mary statue, from the "CLOSE UP RIGHT SIDE" photo: Our Lady with her unborn child
-## on an octagonal white pedestal with a black plaque ("A Mother's Prayer for Her Unborn
+## on a square white pedestal with a moulded cap with a black plaque ("A Mother's Prayer for Her Unborn
 ## Child") and a ring of yellow and white flowers. A white robe with a gentle belly; a
 ## pale-blue mantle over her head, open at the front and falling down her back; arms held
-## out and down with wide bell sleeves and open palms; a pink heart on her chest. A ground
+## out and down with wide bell sleeves and open palms; a white rose with a blush-pink heart on her chest. A ground
 ## lamp in the lawn lights her at night.
 func _mary() -> void:
 	var white: Material = w.material("stucco", Color("f3f3ef"))
 	var stone: Material = w.material("stucco", Color("eceae3"))
-	var blue := (w.material("plain", Color("b3c9de")) as StandardMaterial3D).duplicate() as StandardMaterial3D
+	var blue := (w.material("plain", Color("9dbde0")) as StandardMaterial3D).duplicate() as StandardMaterial3D
 	blue.cull_mode = BaseMaterial3D.CULL_DISABLED
 	var face: Material = w.material("plain", Color("ebe5dc"))
 	var at := Vector3(MARY.x, 0.0, MARY.y)
-	# The pedestal: a wide base, the octagonal shaft (a flat face to the road), a capping slab.
-	for part in [[0.64, 0.66, 0.14, 0.15, stone], [0.55, 0.55, 1.0, 0.72, white], [0.68, 0.66, 0.1, 1.27, stone]]:
-		var octagon := CylinderMesh.new()
-		octagon.top_radius = part[0]
-		octagon.bottom_radius = part[1]
-		octagon.height = part[2]
-		octagon.radial_segments = 8
-		var block: MeshInstance3D = w._mesh(octagon, at + Vector3(0, part[3], 0), part[4])
-		block.rotation.y = PI / 8.0
+	# The pedestal, square (CLOSE UP RIGHT SIDE, mgn and Sjh middle.jpg): a wider plinth, the
+	# white shaft, a cap moulded in two steps.
+	for part in [[1.04, 0.14, 0.15, stone], [0.86, 1.0, 0.72, white], [1.0, 0.05, 1.245, stone], [0.94, 0.05, 1.295, stone]]:
+		w.box(Vector3(part[0], part[1], part[0]), at + Vector3(0, part[2], 0), part[3])
 	# The plaque on the front face, its title and lines of the prayer.
-	var front := at + Vector3(0, 0, -0.505)
+	var front := at + Vector3(0, 0, -0.44)
 	w.box(Vector3(0.44, 0.56, 0.02), front + Vector3(0, 0.74, 0), w.material("plain", Color("1d2022")))
 	w.box(Vector3(0.32, 0.03, 0.01), front + Vector3(0, 0.95, -0.012), w.material("plain", Color("d9d4c6")))
 	for line in 7:
@@ -1193,7 +1196,7 @@ func _mary() -> void:
 	var blooms: Array[Color] = [Color("f2d43a"), Color("f6f6f0"), Color("f0a030"), Color("f2d43a"), Color("fbfbf6")]
 	for i in 34:
 		var a := TAU * i / 34.0 + random.randf_range(-0.05, 0.05)
-		var r := random.randf_range(0.46, 0.6)
+		var r := random.randf_range(0.36, 0.47)
 		var spot := at + Vector3(cos(a) * r, 1.36 + random.randf_range(0.0, 0.08), sin(a) * r)
 		if i % 3 == 0:
 			w.box(Vector3(0.14, 0.08, 0.1), spot - Vector3(0, 0.04, 0), w.material("plain", Color("4f7a3a")), a)
@@ -1245,15 +1248,21 @@ func _mary() -> void:
 		var palm: MeshInstance3D = w._mesh(hand, wrist + Vector3(side * 0.08, -0.03, -0.05), face)
 		palm.scale = Vector3(1.0, 1.4, 0.55)
 		palm.rotation = Vector3(0.3, 0, side * 0.5)
-	# The Immaculate Heart on her chest: a pink heart with a small gold flame.
-	var chest := figure + Vector3(0, 1.5, -0.205)
-	var heart := BoxMesh.new()
-	heart.size = Vector3(0.1, 0.1, 0.03)
-	var shape: MeshInstance3D = w._mesh(heart, chest, w.material("plain", Color("d77f8f")))
-	shape.rotation.z = PI / 4.0
+	# On her chest a white rose with a blush-pink heart and two leaves (the close-up photos).
+	var chest := figure + Vector3(0, 1.5, -0.215)
+	var bloom := SphereMesh.new()
+	bloom.radius = 0.06
+	bloom.height = 0.12
+	var rose: MeshInstance3D = w._mesh(bloom, chest, w.material("plain", Color("f6f2ee")))
+	rose.scale = Vector3(1.0, 1.0, 0.6)
+	for k in 5:
+		var a := TAU * k / 5.0
+		var petal: MeshInstance3D = w._mesh(bloom, chest + Vector3(cos(a) * 0.045, sin(a) * 0.045, 0.01), w.material("plain", Color("f1dfe0")))
+		petal.scale = Vector3(0.55, 0.55, 0.4)
+	var middle: MeshInstance3D = w._mesh(bloom, chest + Vector3(0, 0, -0.03), w.material("plain", Color("d9909c")))
+	middle.scale = Vector3(0.4, 0.4, 0.3)
 	for side in [-1.0, 1.0]:
-		w.box(Vector3(0.05, 0.05, 0.03), chest + Vector3(side * 0.03, 0.035, -0.002), w.material("plain", Color("d77f8f")))
-	w.box(Vector3(0.03, 0.06, 0.02), chest + Vector3(0, 0.1, -0.01), w.material("plain", Color("e3b54a")))
+		w.box(Vector3(0.07, 0.025, 0.015), chest + Vector3(side * 0.07, -0.055, 0.012), w.material("plain", Color("7c9a6a")), side * 0.5)
 	# The ground lamp in the lawn in front, lighting her at night.
 	var lamp_at := at + Vector3(0.3, 0.12, -1.85)
 	w.box(Vector3(0.2, 0.16, 0.2), lamp_at, w.material("plain", Color("26282a")))

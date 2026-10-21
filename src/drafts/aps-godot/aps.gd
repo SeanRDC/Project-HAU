@@ -1750,7 +1750,7 @@ func _verify_and_capture() -> void:
 		checks.mgn_built = mgn_node != null and mgn_node.find_child("MGN 09", false, false) != null and not Plots.shapes().has("mgn")
 		checks.mgn_faces_road = mgn_node != null and (mgn_node.global_basis * Vector3.BACK).dot(Vector3.RIGHT) > 0.99
 		var mgn_solid := true
-		for spot in [Vector2(0, -8), Vector2(35, -10), Vector2(-24, -10), Vector2(-24, 4), Vector2(12, -1.5), Vector2(0, 2.0)]:
+		for spot in [Vector2(0, -8), Vector2(35, -10), Vector2(-24, -10), Vector2(-24, 4), Vector2(12, -1.5), Vector2(5.0, 2.0)]: # (5, 2): the garden, clear of the walk
 			var p := Mgn.world(spot.x, spot.y)
 			mgn_solid = mgn_solid and World.blocked(p.x, p.y)
 		checks.mgn_solid_and_garden = mgn_solid
