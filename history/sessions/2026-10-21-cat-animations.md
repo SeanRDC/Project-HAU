@@ -31,6 +31,14 @@ before.
   each, played once); asleep it breathes (the scale pulse is gone); it wakes with a stretch and
   strolls off; petted, it loops the lean with eyes closed.
 
+- **Then a gallop and a real hop (Mikko approved).** The dash played the walk faster; now
+  it is its own fast stride (animated from the walk's first frame, frames 2-6 of the second
+  try; the first stayed a walk), 0.2 m a frame. The maya's hop was the standing frame twice;
+  now it is crouch, legs tucked, landing (the second try; the first turned to the camera and
+  grew), sharing a box with the ground frames; the code's arc is lower (0.06 m) as the
+  frames lift the bird a little. The ground sheet is now standing and pecking only. The check
+  also has a cat gallop off and a maya hop. About 6 more generations.
+
 ## What changed
 
 - `assets/drafts/characters/critters/pxl/`: `pixellab/run.mjs` and the new requests, the

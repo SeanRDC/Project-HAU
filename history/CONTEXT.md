@@ -2,7 +2,7 @@
 
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
-cat leans into the hand with its eyes closed. PixelLab frames from the existing cat, cleaned in
+cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
 pxl (`pixellab/run.mjs` sends a request; the blink is drawn in `convert.mjs`). See
 `sessions/2026-10-21-cat-animations.md`.
 
