@@ -46,15 +46,20 @@ const STAIR := Vector2(24.6, 29.2)
 ## The north block (on the chapel walkway side) and the south wing (beside SJH).
 const NORTH_END := 39.5
 const NORTH_BACK := -17.25
+## The south wing's front is flush with the long block's (it stood 5.7 m forward on the plan,
+## ~1 m from SJH; in the photos the drive and MGN's planting run between them, ~9 m wall to
+## wall under the bridge), and the garden runs on in front of it.
 const SOUTH_WING := Vector2(-28.9, -17.96)
-const SOUTH_FRONT := 5.7
+const SOUTH_FRONT := 0.0
 const SOUTH_BACK := -23.0
-## The raised garden between the corridor front and the road, behind a white kerb wall.
+## The raised garden between the corridor front and the road, behind a white kerb wall,
+## from the south wing's far end (GARDEN_FROM) to the long block's north end.
 const GARDEN := 3.9
+const GARDEN_FROM := SOUTH_WING.x
 ## Facing MGN the camera cuts away everything east of this world x (the chapel lawn,
 ## its trees and the chapel), the way the SJH view cuts away everything north of its parking.
-## It stops just east of SJH's terracotta end block (world x -52.3), so that block stays whole.
-const CUT_X := -51.8
+## It stops just east of SJH's terracotta end block (world x -50.3), so that block stays whole.
+const CUT_X := -49.8
 
 static func origin() -> Vector2:
 	return (EDGE_NORTH + EDGE_SOUTH) / 2.0
@@ -113,7 +118,7 @@ static func blocked(x: float, z: float) -> bool:
 		return at.y < TURNSTILE_Z + 0.35 # the turnstile and the guard's desk
 	if inside(at.x, at.y):
 		return true
-	return absf(at.x) < LONG and at.y > 0.0 and at.y < GARDEN + 0.05 # the raised garden
+	return at.x > GARDEN_FROM and at.x < LONG and at.y > 0.0 and at.y < GARDEN + 0.05 # the raised garden
 
 static func floor_height(x: float, z: float) -> float:
 	return FLOOR_Y if in_entry(x, z) else NAN
@@ -438,14 +443,16 @@ func _tank(at: Vector3, radius: float) -> void:
 ## The raised garden along the corridor front behind a weathered white kerb wall, with
 ## rocks in the planting (the closeup photo).
 func _garden() -> void:
-	w.box(Vector3(2.0 * LONG, 0.5, GARDEN - 0.1), Vector3(0, 0.05, GARDEN / 2.0 + 0.05), w.material("grass", Color("e9f0dc")))
-	w.box(Vector3(2.0 * LONG + 0.3, 0.7, 0.28), Vector3(0, 0.15, GARDEN - 0.1), w.material("stucco", Color("e5e1d6")))
-	w.box(Vector3(2.0 * LONG + 0.4, 0.08, 0.34), Vector3(0, 0.52, GARDEN - 0.1), w.material("stucco", Color("eeebe2")))
+	var length := LONG - GARDEN_FROM
+	var middle := (LONG + GARDEN_FROM) / 2.0
+	w.box(Vector3(length, 0.5, GARDEN - 0.1), Vector3(middle, 0.05, GARDEN / 2.0 + 0.05), w.material("grass", Color("e9f0dc")))
+	w.box(Vector3(length + 0.3, 0.7, 0.28), Vector3(middle, 0.15, GARDEN - 0.1), w.material("stucco", Color("e5e1d6")))
+	w.box(Vector3(length + 0.4, 0.08, 0.34), Vector3(middle, 0.52, GARDEN - 0.1), w.material("stucco", Color("eeebe2")))
 	var rock: Material = w.material("stone", Color("6d6a66"))
 	var random := RandomNumberGenerator.new()
 	random.seed = 1414
 	for i in 14:
-		var x := random.randf_range(-LONG + 1.0, LONG - 1.0)
+		var x := random.randf_range(GARDEN_FROM + 1.0, LONG - 1.0)
 		var size := random.randf_range(0.35, 0.7)
 		w.box(Vector3(size, size * 0.7, size * 0.9), Vector3(x, 0.3 + size * 0.3, random.randf_range(0.8, GARDEN - 0.7)), rock, random.randf() * PI)
 
@@ -459,6 +466,6 @@ func _planting() -> void:
 	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(1.5, 2.8), Vector2(-10.5, 1.3)]:
 		var at := world(spot.x, spot.y)
 		palms._palm(Vector3(at.x, 0.3, at.y), 4.2 + absf(spot.x) * 0.05, 1420 + roundi(spot.x))
-	for lx in [15.0, 10.0, 5.5, 3.0, -2.0, -8.0, -12.5, -16.5]:
+	for lx in [15.0, 10.0, 5.5, 3.0, -2.0, -8.0, -12.5, -16.5, -20.5, -24.0, -27.5]:
 		var at := world(lx, 2.2 + fmod(absf(lx), 1.5))
 		w._shrub(Vector3(at.x, 0.3, at.y), 1.1, 1440 + roundi(lx))

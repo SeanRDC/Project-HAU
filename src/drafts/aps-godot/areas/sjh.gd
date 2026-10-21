@@ -32,9 +32,13 @@ const Roads := preload("res://roads.gd")
 ## from it. Mikko's map (2026-10-16) has SJH further from the road than the OSM outline,
 ## with a second row of parked cars and the Mary statue between it and the road; 2 m
 ## more (2026-10-20) leave room for the brown sidewalk and the grass strip in front.
+## EAST_SHIFT moves it east of the outline: on the plan it stood ~1 m from MGN's south
+## wing and 3 m from its garden kerb; the photos (sjh front right to back connector*.JPG)
+## have a one-lane drive about 5 m wide between SJH's west wall and that kerb (2026-10-21).
 const SETBACK := 12.0
-const EDGE_EAST := Vector2(36.5, 118.3 + SETBACK)
-const EDGE_WEST := Vector2(-59.3, 115.1 + SETBACK)
+const EAST_SHIFT := 2.0
+const EDGE_EAST := Vector2(36.5 + EAST_SHIFT, 118.3 + SETBACK)
+const EDGE_WEST := Vector2(-59.3 + EAST_SHIFT, 115.1 + SETBACK)
 const HALF := 47.9
 const DEPTH := 19.4
 ## Storeys: a tall ground floor, then eight floors.
@@ -107,8 +111,9 @@ const RAMP := Vector2(0.7, 2.3)
 const RAMP_FOOT := 49.5
 const LANDING := 38.4
 const YARD_END := 51.0
-const LANE := Rect2(49.95, -11.05, 2.65, 13.65)
-const LANE_BACK := Rect2(48.05, -19.2, 2.85, 8.15)
+## The lane is the drive from the stair tower's west wall to MGN's garden kerb (~4.7 m).
+const LANE := Rect2(49.95, -11.05, 4.75, 13.65)
+const LANE_BACK := Rect2(48.05, -19.2, 6.65, 8.15)
 ## Where the camera cuts inside the walkway: this far in front of the corridor's middle.
 const CUT_OFFSET := 1.2
 ## The parking: one row north of the south road (by the chapel), one south of it in
@@ -121,7 +126,7 @@ const SLANT := 0.44
 const SLANT_BAY := 2.9
 const FRONT_ROW := Rect2(-48.0, 115.2, 82.0, 5.4)
 ## The gap in the front row at the entrance steps (world x).
-const ENTRANCE_GAP := Vector2(-18.5, -4.5)
+const ENTRANCE_GAP := Vector2(-18.5 + EAST_SHIFT, -4.5 + EAST_SHIFT)
 ## The Mary statue's grass island at the building's right (west) end, as seen from the
 ## front: between the cream stair tower and the road's turn up the west road (world).
 const ISLAND := Rect2(-57.0, 115.6, 6.0, 7.0)
@@ -984,7 +989,7 @@ func _west_end() -> void:
 	while y < 3.0:
 		w.box(Vector3(0.1, 0.04, 1.3), Vector3(HALF + 1.97, y, -3.2), w.material("plain", Color("5b6064")))
 		y += 0.14
-	w.box(Vector3(4.6, 2.4, 0.25), Vector3(50.3, 1.0, LANE_BACK.position.y - 0.2), w.material("concrete", Color("b3afa4")))
+	w.box(Vector3(LANE_BACK.size.x, 2.4, 0.25), Vector3(LANE_BACK.get_center().x, 1.0, LANE_BACK.position.y - 0.2), w.material("concrete", Color("b3afa4")))
 
 # --- North of the road: the parking and its cars ---------------------------------------
 
