@@ -37,7 +37,7 @@ const PLOTS := {
 	"stl": {"name": "St. Therese of Lisieux Building", "short": "STL", "no": 4, "kind": "building", "built": false,
 		"label": Vector2(-132.3, 15.2),
 		"outline": [Vector2(-163.8, 49.3), Vector2(-163.8, 36.5), Vector2(-160.6, 36.5), Vector2(-160.8, -0.4), Vector2(-121, -0.3), Vector2(-121, -2.8), Vector2(-87.5, -2.7), Vector2(-87.4, 18.1), Vector2(-102.4, 18), Vector2(-102.4, 11), Vector2(-119.8, 10.9), Vector2(-119.8, 14.1), Vector2(-147.8, 14), Vector2(-147.8, 31.8), Vector2(-142.6, 31.8), Vector2(-142.6, 36.9), Vector2(-145.1, 36.8), Vector2(-145.1, 49.4)]},
-	"pgn": {"name": "Peter G. Nepomuceno Building", "short": "PGN", "no": 11, "kind": "building", "built": false,
+	"pgn": {"name": "Peter G. Nepomuceno Building", "short": "PGN", "no": 11, "kind": "building", "built": true,
 		"label": Vector2(-90.4, 23.8),
 		"outline": [Vector2(-64.4, -19.4), Vector2(-64.1, 49.3), Vector2(-130.1, 49.1), Vector2(-130.2, 19.8), Vector2(-86.7, 19.9), Vector2(-86.8, -19.5)]},
 	"student": {"name": "Student Center", "short": "Student Center", "no": 0, "kind": "building", "built": true,
