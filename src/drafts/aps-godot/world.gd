@@ -15,14 +15,25 @@ const CANTEEN_PIERS: Array[float] = [36.8, 46.25, 55.75, 65.2]
 ## patio): each [centre, facing, name, sign colour, ink]. The three named ones keep their
 ## signs; the rest are plain. Ate Lorna (npcs.gd) stands at GRANNY JINGS's counter.
 const STALL_SIZE := Vector2(2.3, 1.6)
-const STALL_ISLANDS: Array[float] = [42.7, 51.7]
+const STALL_ISLANDS: Array[float] = [44.4, 52.6]
 const STALL_ROW_X := 64.25
 ## Each stall in the end-wall row is narrower, so four fit along the hall's depth.
 const ROW_STALL := 1.8
-const STALL_LIGHTS: Array[Vector2] = [Vector2(42.7, -1.2), Vector2(51.7, -1.2), Vector2(61.6, -2.7)]
+const STALL_LIGHTS: Array[Vector2] = [Vector2(44.4, -1.2), Vector2(52.6, -1.2), Vector2(61.6, -2.7), Vector2(48.5, -6.0)]
 ## The blue tables between the stalls (canteen frame).
-const CANTEEN_TABLES: Array[Vector2] = [Vector2(38.4, -4.2), Vector2(38.4, -1.1), Vector2(47.2, -4.2), Vector2(47.2, -1.1),
-	Vector2(56.9, -4.2), Vector2(56.9, -1.1), Vector2(60.3, -4.2), Vector2(60.3, -1.1)]
+const CANTEEN_TABLES: Array[Vector2] = [Vector2(48.5, -4.2), Vector2(48.5, -1.1), Vector2(57.2, -4.2), Vector2(57.2, -1.1),
+	Vector2(60.6, -4.2), Vector2(60.6, -1.1)]
+## The hall's back is open (the photos from inside): stone-clad pillars at the back edge
+## (local z -7.0), a low wall with a steel rail between them, and two gaps (x from..to) with
+## a step down to the strip outside; a scalloped awning outside over the back.
+const BACK_EDGE := -7.0
+const BACK_GAPS: Array[Vector2] = [Vector2(42.0, 43.8), Vector2(58.4, 60.2)]
+
+static func in_back_gap(x: float) -> bool:
+	for gap in BACK_GAPS:
+		if x >= gap.x and x <= gap.y:
+			return true
+	return false
 
 static func stalls() -> Array:
 	var list := []
@@ -33,6 +44,8 @@ static func stalls() -> Array:
 		for row in [[-4.6, Vector2(0, -1)], [-3.0, Vector2(0, 1)]]:
 			for side in [-1.0, 1.0]:
 				var sign := ["", plain[n % plain.size()], "1d1d1d"]
+				if row[0] == -4.6 and side < 0.0:
+					sign = [["HAU COOP", "f2d23a", "c8222e"], ["RINA'S FOOD", "7a1f1f", "f6e7c8"]][island]
 				if row[0] == -3.0 and side < 0.0:
 					sign = [["YUM-YUMS", "eee3cc", "34528a"], ["GRANNY JINGS", "c36f59", "fff3da"]][island]
 				list.append([Vector2(x + side * STALL_SIZE.x / 2.0, row[0]), row[1], STALL_SIZE, sign[0], sign[1], sign[2]])
@@ -161,7 +174,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 
 static func in_canteen(x: float, z: float) -> bool:
 	var local := canteen_local(x, z)
-	return local.x > 36.5 and local.x < 65.5 and local.y > -7.3 and local.y < 3.3
+	return local.x > 36.5 and local.x < 65.5 and local.y > -7.45 and local.y < 3.3
 
 ## level is the height the walker stands at now (NAN: the ground, for a jump or a
 ## teleport); it picks the storey inside the gym, where the lobby and the stands overlap.
@@ -173,8 +186,10 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 		return true # solid stair tower
 	var local := canteen_local(x, z)
 	if in_canteen(x, z):
-		if local.y < -6.4 or local.x < 41.5 or local.x > 65.3:
-			return true # rear wall, end walls, and the part inside the tower
+		if local.x < 41.5 or local.x > 65.3:
+			return true # the end walls, and the part inside the tower
+		if local.y < BACK_EDGE + 0.2 and not in_back_gap(local.x):
+			return true # the low wall along the open back
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
@@ -200,8 +215,8 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 
 static func floor_height(x: float, z: float, level := NAN) -> float:
 	var local := canteen_local(x, z)
-	if local.x >= 36.5 and local.x <= 65.5 and local.y < 2.45 and local.y > -7.3:
-		return 0.45
+	if local.x >= 36.5 and local.x <= 65.5 and local.y < 2.45 and local.y > -7.45:
+		return 0.45 if local.y > BACK_EDGE - 0.1 else 0.2 # the step down out of the back
 	if local.x > 49.0 and local.x < 53.0 and local.y <= 3.26 and local.y >= 2.45:
 		return 0.15 if local.y > 2.8 else 0.3
 	var gym := Gym.floor_height(x, z, level)
@@ -1494,11 +1509,8 @@ func _canteen() -> void:
 		box(Vector3(0.23, 12.4, 0.28), Vector3(36.5 + bay * 4.83, 11.65, 0.4), white)
 
 	box(Vector3(29.1, 0.3, 8.5), Vector3(51, 5.3, -2.7), white)
-	# The hall is open to the patio; the building's rear wall closes it behind the stalls.
-	box(Vector3(29, 4.9, 0.3), Vector3(51, 2.9, -7.0), material("stucco", Color("e9e0cc")))
-	box(Vector3(29, 1.2, 0.04), Vector3(51, 0.95, -6.83), material("plain", Color("c3b8a2")))
-	for x in [38.4, 47.2, 56.9]:
-		box(Vector3(1.6, 2.4, 0.1), Vector3(x, 1.65, -6.82), material("plain", Color("5d5a52")))
+	# The hall is open to the patio and, at the back, to the strip behind the wing.
+	_canteen_back()
 	box(Vector3(29, 0.2, 9.8), Vector3(51, 0.35, -2.4), material("tile", Color("b8b8b4"))) # grey tiles, as in the photo
 	for i in CANTEEN_PIERS.size():
 		var x := CANTEEN_PIERS[i]
@@ -1566,6 +1578,45 @@ func _canteen() -> void:
 		rod(Vector3(66.6, y, -2.1), Vector3(66.6, y + 3, -0.3), 0.035, Color("414b50"))
 		rod(Vector3(66.6, y + 0.8, -2.1), Vector3(66.6, y + 3.8, -0.3), 0.025, Color("414b50"))
 
+## The hall's open back, from the photos: ledgestone-clad pillars on the back edge, a low
+## grey wall with a steel rail between them (open at the gaps, a step down outside each),
+## the scalloped awning outside over the back, round downlights under the slab.
+func _canteen_back() -> void:
+	var stone := material("stone")
+	var white := material("stucco", Color("efece4"))
+	var wall := material("stucco", Color("d9d6cd"))
+	var steel := Color("6b7175")
+	for x in CANTEEN_PIERS:
+		box(Vector3(0.7, 2.2, 0.7), Vector3(x, 1.55, BACK_EDGE), stone)
+		box(Vector3(0.62, 2.6, 0.62), Vector3(x, 3.95, BACK_EDGE), white)
+	var from := 41.5
+	var runs: Array[Vector2] = []
+	for gap in BACK_GAPS:
+		runs.append(Vector2(from, gap.x))
+		from = gap.y
+	runs.append(Vector2(from, 65.5))
+	for run in runs:
+		box(Vector3(run.y - run.x, 1.0, 0.25), Vector3((run.x + run.y) / 2.0, 0.95, BACK_EDGE), wall)
+		rod(Vector3(run.x, 1.75, BACK_EDGE), Vector3(run.y, 1.75, BACK_EDGE), 0.025, steel)
+	for gap in BACK_GAPS:
+		box(Vector3(gap.y - gap.x, 0.25, 0.45), Vector3((gap.x + gap.y) / 2.0, 0.08, BACK_EDGE - 0.25), material("tile", Color("b8b8b4")))
+	# The scalloped awning: a pale sheet on a steel frame along the back, its edge cut in scallops.
+	var sheet := material("plain", Color("d8d2c6"))
+	box(Vector3(29.0, 0.04, 1.6), Vector3(51.0, 4.75, BACK_EDGE - 0.85), sheet, 0.0, -0.12)
+	var x := 36.7
+	while x < 65.4:
+		box(Vector3(0.36, 0.16, 0.03), Vector3(x, 4.58, BACK_EDGE - 1.65), sheet)
+		x += 0.45
+	var post := 36.8
+	while post <= 65.3:
+		rod(Vector3(post, 4.85, BACK_EDGE), Vector3(post, 4.62, BACK_EDGE - 1.6), 0.02, steel)
+		post += 2.4
+	# Round downlights under the slab over the hall.
+	var lamp := glow(Color("f7f3e8"), 0.5, 2.0)
+	for lx in [43.0, 48.5, 54.0, 59.5, 64.0]:
+		for lz in [-5.8, -1.0]:
+			box(Vector3(0.3, 0.03, 0.3), Vector3(lx, 5.13, lz), lamp)
+
 ## One stall in the canteen's frame: [centre, facing (unit, x/z), size (across, deep), sign
 ## name or "", sign colour, ink]. Built square, its counter on the facing side, then turned:
 ## a cream body, the counter with its red top, the glass guard and trays, the sign above.
@@ -1588,6 +1639,10 @@ func _stall(stall: Array) -> void:
 	for tray in 3:
 		piece.call(Vector3(0.45, 0.08, 0.32), (tray - 1) * 0.6, 2.04, deep / 2.0 - 0.3, material("plain", trays[tray]))
 	piece.call(Vector3(size.x, 0.6, 0.06), 0.0, 3.25, deep / 2.0 - 0.67, material("plain", Color(stall[4])))
+	if stall[3] == "HAU COOP":
+		var snacks: Array[Color] = [Color("e8c22c"), Color("d2362c"), Color("2f7fd0"), Color("f08a2a"), Color("6aae3a")]
+		for k in 10:
+			piece.call(Vector3(0.18, 0.22, 0.12), -size.x / 2.0 + 0.2 + k * 0.21, 2.45 + (k % 2) * 0.24, deep / 2.0 - 0.5, material("plain", snacks[k % snacks.size()]))
 	if stall[3] != "":
 		var p: Vector2 = place.call(0.0, deep / 2.0 - 0.63)
 		var label: Label3D = panel(stall[3], Vector3(p.x, 3.25, p.y), size.x - 0.2, 0.55, Color(stall[5]))
@@ -1598,7 +1653,7 @@ func _stall(stall: Array) -> void:
 ## A blue fibreglass canteen table with its two benches on a black steel frame (the photo):
 ## at (x, z) in the canteen's frame, the table along x.
 func _canteen_table(at: Vector2) -> void:
-	var blue := material("plain", Color("2f6fd1"))
+	var blue := material("plain", Color("d3437a") if posmod(roundi(at.x), 3) == 0 else Color("2f6fd1")) # some pink, as in the photos
 	var frame := material("plain", Color("1f2224"))
 	box(Vector3(1.7, 0.06, 0.8), Vector3(at.x, 1.2, at.y), blue)
 	for side in [-1.0, 1.0]:
