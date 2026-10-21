@@ -1,5 +1,10 @@
 # Project Context
 
+**Aero Hall, 2026-10-22.** `areas/aero.gd`: the navy corrugated hall in front of the gym's
+south end, between SJH and the gym, with its gabled front block, the HAU seal, aircon
+units and signs, and the yard behind the green wall. The camera cuts SJH away when
+facing the gym from there. See `sessions/2026-10-22-aero-hall.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
