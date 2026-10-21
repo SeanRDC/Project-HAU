@@ -176,6 +176,24 @@ answering this time, not for everything before; someone says it to his face. Eve
 opens with a content warning and ends with help information (in the Philippines, the NCMH
 crisis line 1553; check current numbers before release).
 
+## How the story should feel
+
+Love ordinary life, lose it, and get it back only through many small acts of noticing.
+
+1. **Ordinary days first.** June and July feel good: shared notes, the jeep after night
+   class, the canteen table, Ysha's "haha", her pen, her sketchbook, Pat dragging Lance to
+   class. When those routines stop, the player feels it before anyone says a word.
+2. **A playable prologue in 2038.** Before the opening, one short day as Lance on November
+   11, 2038: feeding their two-year-old, Pat teasing him, the birthday cake, a game on the
+   floor, the child calling him "Papa"; then the car and the voicemail. The family in the
+   photo becomes a child the player has held, so endings 1 and 4 truly cost something.
+3. **Small kindnesses add up to the true ending.** Each of Ysha's reach-outs the player
+   catches (2:14 AM, the guidance office line, the jeep, the pen, the November 10 message)
+   restores a little of the photo. Attentive play earns ending 3.
+4. **Let the grief take time.** Where she is lost, show the empty months before 2038: Lance
+   not going to class, her seat, the rain, the silent group chat, Pat knocking and him not
+   opening the door.
+
 ## The story, month by month
 
 | Month | What happens | Mood |
