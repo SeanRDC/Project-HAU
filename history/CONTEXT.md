@@ -1,5 +1,12 @@
 # Project Context
 
+**SJH and MGN apart, 2026-10-21.** MGN's south wing is flush with its long block (it stood
+~1 m from SJH) and SJH is 2 m east of its outline (`EAST_SHIFT`): a ~4.7 m drive runs
+between them under the bridge, ~9 m wall to wall, as in the photos. A concrete drive off the road's bend curves round Mary's big lawn into
+that lane; MGN's garden walk slants from opposite Mary to the corridor, and the bridge
+joins both third floors. MGN's north block has its forecourt entrance on the west road. See
+`sessions/2026-10-21-sjh-mgn-spacing.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in

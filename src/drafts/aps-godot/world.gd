@@ -1385,9 +1385,10 @@ func _grasses() -> void:
 	# The strip by the Covered Court: grass along its edges and round the posts.
 	scatter.call(STRIP.position, STRIP.end, 70, -0.05, 0.8,
 		func(x: float, _z: float) -> bool: return x < 43.8 or x > 47.1 or random.randf() < 0.2)
-	# Lush grass on the Mary statue's island, clear of her pedestal.
-	scatter.call(Sjh.ISLAND.position + Vector2(0.35, 0.35), Sjh.ISLAND.end - Vector2(0.35, 0.35), 140, 0.08, 0.95,
-		func(x: float, z: float) -> bool: return Vector2(x, z).distance_to(Sjh.MARY) > 0.8)
+	# Lush grass on the Mary lawn, clear of her pedestal and the kerb.
+	var mary_lawn := Sjh.lawn()
+	scatter.call(Vector2(-61.0, 114.0), Vector2(Sjh.LAWN_EAST, Sjh.LAWN_SOUTH), 320, 0.08, 0.95,
+		func(x: float, z: float) -> bool: return Vector2(x, z).distance_to(Sjh.MARY) > 0.8 			and Geometry2D.is_point_in_polygon(Vector2(x, z), mary_lawn))
 	# Moss and short grass where the patio meets the walls, the rail and the sidewalk.
 	scatter.call(Vector2(18.3, 0.35), Vector2(30.9, 0.75), 40, -0.05, 0.5, anywhere)
 	scatter.call(Vector2(32.45, 0.8), Vector2(32.7, 24.5), 50, -0.05, 0.5,
