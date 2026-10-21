@@ -1,5 +1,11 @@
 # Project Context
 
+**Canteen layout, 2026-10-22.** The APS canteen now follows Mikko's sketch: two islands of
+four stalls and a row of four by the tip, with blue tables and benches between them on a
+grey tile floor (`stalls()` and `CANTEEN_TABLES` in `world.gd`). Its back is open, with stone
+pillars, a low wall with two gaps out to the strip, and the scalloped awning; HAU COOP and RINA'S FOOD face it. See
+`sessions/2026-10-22-canteen-layout.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
