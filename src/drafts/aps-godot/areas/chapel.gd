@@ -9,6 +9,7 @@ extends RefCounted
 ## World coordinates (metres, Y up). Built with world.gd's helpers, like every area.
 
 const CampusPlan := preload("res://campus_plan.gd")
+const Roads := preload("res://roads.gd")
 
 ## The front tip of the round end, from the plan.
 const NOSE := Vector2(-25.7, 59.5)
@@ -21,6 +22,9 @@ const ISLAND := Vector2(-45.0, 59.5)
 const ISLAND_RADII := Vector2(3.2, 13.0)
 ## The paved gap from the oval to the west road.
 const DRIVE := Rect2(-55.2, 55.0, 2.2, 9.0)
+## The lawn between the west road and the oval (z range): walkable, so the parking can be
+## reached from the road anywhere along it, not only by the drive.
+const ROADSIDE := Vector2(42.0, 78.0)
 ## The lawn path from the APS road to the oval's north end.
 const PATH := Rect2(-37.5, 10.4, 3.0, 28.3)
 ## Banners (Vatican yellow/white, white/red, white/blue) round the plaza.
@@ -69,8 +73,15 @@ static func in_plaza(x: float, z: float) -> bool:
 	var at := Vector2(x, z)
 	return (_in_ellipse(at, OVAL, OVAL_RADII) and not _in_ellipse(at, ISLAND, ISLAND_RADII)) or DRIVE.has_point(at)
 
+## The lawn strip between the west road's kerb and the oval.
+static func roadside(x: float, z: float) -> bool:
+	if z < ROADSIDE.x or z > ROADSIDE.y or x > OVAL.x or _in_ellipse(Vector2(x, z), OVAL, OVAL_RADII):
+		return false
+	var across := Roads.across(x, z)
+	return across >= 10.6 and across < 22.0
+
 static func walkable(x: float, z: float) -> bool:
-	return in_plaza(x, z) or PATH.has_point(Vector2(x, z))
+	return in_plaza(x, z) or PATH.has_point(Vector2(x, z)) or roadside(x, z)
 
 static func blocked(x: float, z: float) -> bool:
 	if Geometry2D.is_point_in_polygon(Vector2(x, z), outline()):

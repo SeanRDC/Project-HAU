@@ -1,0 +1,9 @@
+{
+  "description": "an orange tabby cat standing, seen exactly from the side, facing right, tail curled up behind it; realistic cat proportions, white chest and white paws, soft shading, no black outline; whole body in frame, paws on the bottom edge",
+  "image_size": {"width": 44, "height": 32},
+  "no_background": true,
+  "seed": 21,
+  "reference_images": [{"image": {"type": "base64", "base64": "@ref-cat-walk.png", "format": "png"}, "size": {"width": 740, "height": 535}, "usage_description": "this exact cat: its pose, side view, proportions, colours and tabby stripes"}],
+  "style_image": {"image": {"type": "base64", "base64": "@style-bea.png", "format": "png"}, "size": {"width": 54, "height": 84}},
+  "style_options": {"color_palette": false, "outline": true, "detail": true, "shading": true}
+}

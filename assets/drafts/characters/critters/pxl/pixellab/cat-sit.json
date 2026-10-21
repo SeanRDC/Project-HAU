@@ -1,0 +1,4 @@
+{"description": "this same orange tabby cat sitting upright, seen exactly from the side, facing right, front legs straight, tail lying along the ground around its paws; realistic proportions, soft shading, no black outline; paws on the bottom edge", "image_size": {"width": 32, "height": 36}, "no_background": true, "seed": 31,
+ "reference_images": [{"image": {"type": "base64", "base64": "@cat-base.png", "format": "png"}, "size": {"width": 44, "height": 32}, "usage_description": "the cat itself: its colours, stripes, white chest and paws, face"}],
+ "style_image": {"image": {"type": "base64", "base64": "@cat-base.png", "format": "png"}, "size": {"width": 44, "height": 32}},
+ "style_options": {"color_palette": true, "outline": true, "detail": true, "shading": true}}

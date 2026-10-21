@@ -1,0 +1,3 @@
+{"first_frame": {"type": "base64", "base64": "@cat-sit.png", "format": "png"}, "pad": [40, 40],
+ "action": "the sitting cat swishes its tail: the tail lifts clearly up off the ground in a curve behind it, sways, and curls back down around its paws; side profile view, the head, body and paws do not move at all",
+ "frame_count": 6, "seed": 21, "no_background": true}

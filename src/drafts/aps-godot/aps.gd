@@ -14,6 +14,7 @@ const Plots := preload("res://areas/plots.gd")
 const Gym := preload("res://areas/gym.gd")
 const GymInterior := preload("res://areas/gym_interior.gd")
 const Npcs := preload("res://npcs.gd")
+const Critters := preload("res://critters.gd")
 const Atmosphere := preload("res://atmosphere.gd")
 const Hallway := preload("res://areas/hallway.gd")
 const Sjh := preload("res://areas/sjh.gd")
@@ -25,7 +26,7 @@ const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
-const HOURS: Array[float] = [8.0, 12.0, 16.5, 21.0]
+const HOURS: Array[float] = [5.75, 8.0, 12.0, 16.5, 17.75, 18.5, 21.0]
 const FRAMINGS := [[112.0, "APS + canteen"], [56.0, "Whole building"], [36.0, "Corridor"], [28.0, "Canteen"], [10.0, "Close-up"], [32.0, "Chapel"],
 	[84.0, "IH Gym"], [44.0, "Gym side"], [64.0, "SJH"], [30.0, "Gym inside"]]
 ## Down to about the student and an arm's length around them.
@@ -90,6 +91,7 @@ var edges := ShaderMaterial.new()
 var student: Student
 var sound: Sound
 var npcs: Npcs
+var critters: Critters
 var atmosphere: Atmosphere
 ## E was just used to talk, so holding it does not also turn the camera.
 var _e_talk := false
@@ -107,6 +109,12 @@ var hour := 16.5
 var _sun_offset := Vector3(-55, 44, 60)
 var _sun_turn := INF
 var orbit := 0.12
+## Where the player has turned the camera to (Q/E, right-drag); `orbit` eases after it, so
+## the turn glides rather than stepping with each mouse event.
+var orbit_goal := 0.12
+## The camera turns ORBIT_MAX either way (Q/E, right-drag): the range every view's cuts
+## and cutaways were made for. (±45° was tried; turned that far the views broke down.)
+const ORBIT_MAX := 0.25
 ## Holding the right mouse button and dragging turns the angle, like Q/E (radians per pixel).
 const DRAG_TURN := 0.0015
 var _dragging := false
@@ -178,6 +186,7 @@ func _ready() -> void:
 		_args[parts[0]] = parts[1] if parts.size() > 1 else "true"
 	_build_display()
 	_build_lighting()
+	Atmosphere.add_wind()
 	world.build(scene)
 	_collect_cutaways()
 	student = Student.new()
@@ -198,6 +207,8 @@ func _ready() -> void:
 	add_child(free_cam)
 	if _args.has("travel"):
 		travel.toggle.call_deferred() # --travel opens the panel, for captures
+	if _args.has("free-cam"):
+		_look_freely.call_deferred(str(_args["free-cam"])) # --free-cam=<yaw>,<pitch>: a free cam capture
 	npcs = Npcs.new()
 	npcs.camera = camera
 	npcs.student = student
@@ -205,6 +216,13 @@ func _ready() -> void:
 	npcs.sound = sound
 	scene.add_child(npcs)
 	npcs.build_ui(self)
+	critters = Critters.new()
+	critters.camera = camera
+	critters.student = student
+	critters.to_screen = _to_screen
+	critters.sound = sound
+	scene.add_child(critters)
+	critters.build_ui(self)
 	# weather and atmosphere: rain, falling leaves, light shafts
 	atmosphere = Atmosphere.new()
 	atmosphere.world = world
@@ -212,22 +230,29 @@ func _ready() -> void:
 	atmosphere.sun = sun
 	atmosphere.environment = environment
 	atmosphere.sky = sky_material
+	atmosphere.sound = sound
 	scene.add_child(atmosphere)
 	atmosphere.build()
 	if _args.has("rain"):
 		atmosphere.start_raining() # --rain starts in a shower, for captures
+	if Atmosphere.WEATHER.has(_args.get("weather", "")):
+		atmosphere.auto_weather = false # --weather=clear|overcast|rain|storm|fog|windy, for captures
+		atmosphere.set_weather(_args["weather"], true)
 
 	var views := {"canteen": [CANTEEN_SPOT, 28.0], "gym": [GYM_SPOT, 84.0], "gym-side": [GYM_SIDE_SPOT, 44.0],
 		"gym-in": [GYM_IN_SPOT, ARENA_WIDTH], "sjh": [SJH_SPOT, 64.0], "sjh-rear": [Sjh.world(0.0, Sjh.BACK - 7.0), 40.0], "mgn": [MGN_SPOT, 56.0], "middle": [MIDDLE_SPOT, 40.0],
 		"middle-north": [MIDDLE_NORTH_SPOT, 40.0], "fountain": [Vector2(-159.0, 61.0), 40.0],
-		"student-center": [STUDENT_CENTER_SPOT, 22.0]}
+		"student-center": [STUDENT_CENTER_SPOT, 22.0], "sjh-walkway": [Sjh.world(25.0, -1.8), 22.0],
+		"sjh-lobby": [Sjh.world(0.0, -1.5), 22.0], "sjh-west": [Sjh.world(48.6, -0.8), 22.0],
+		"sjh-steps": [Sjh.world(6.0, 4.0), 30.0]}
 	var start: Array = views.get(_args.get("view", ""), [Vector2(0.7, 5.3), 112.0])
 	var spot: Vector2 = start[0]
 	hour = float(_args.get("hour", "16.5"))
 	if not HOURS.has(hour):
 		hour = 16.5
 	pixel_mode = _args.get("pixel", "auto") if PIXEL_MODES.has(_args.get("pixel", "auto")) else "auto"
-	orbit = clampf(float(_args.get("angle", "0.12")), -0.25, 0.25)
+	orbit = clampf(float(_args.get("angle", "0.12")), -ORBIT_MAX, ORBIT_MAX)
+	orbit_goal = orbit
 	if _args.has("girl"):
 		student.set_character("girl")
 	# --level= starts the student on an upper storey inside the gym (the stands, the stage).
@@ -676,11 +701,22 @@ func _update_camera(delta: float) -> void:
 		# stands above it)
 		var south_edge := (Vector3(focus.x, 0.0, MiddleRoad.FACE_S - 0.2) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, south_edge * smoothstep(0.0, 1.0, middle_north))
+	# Every framing keeps the student in the middle top to bottom too: the camera moves
+	# straight up or down the screen onto their middle (in whole render pixels; the cuts
+	# stay put). Not in a cutaway, which frames its corridor. Zoomed far out it stops where
+	# the frame's lower edge would start under the ground (that shows as an empty band, and
+	# stepping the camera back to avoid it puts things behind it into the view), so there the
+	# student sits a little low.
+	var up := camera.global_basis.y
+	var middle_of := Vector3(follow.x, student.position.y + 0.9, follow.y)
+	var onto := (middle_of - camera.position).dot(up)
+	var lowest := (0.5 - camera.position.y + up.y * view_metres.y / 2.0) / up.y
+	onto = roundf(maxf(onto, lowest) / pixel) * pixel * (1.0 - inside)
+	camera.position += up * onto
 	# Those cuts take the near ground away too; zoomed out, the frame would reach past the
 	# cut's edge and show an empty band at the bottom. Raise the frame (straight up the
 	# screen, so the cut stays where it is) until the edge sits on its bottom.
 	if camera.near > inside_near + 0.01:
-		var up := camera.global_basis.y
 		var level := Vector3(forward.x, 0.0, forward.z).normalized()
 		var below := -0.2 - camera.position.y
 		var ahead := (camera.near - below * forward.y) / level.dot(forward)
@@ -726,45 +762,92 @@ func _aim_sun(force := false) -> void:
 	var target := Vector3(22, 7, 0)
 	sun.look_at_from_position(target + Basis(Vector3.UP, turn) * offset, target)
 	edges.set_shader_parameter("sun_dir", sun.basis.z.normalized())
+	# At night the light is the moon's: the sky draws the moon where it comes from.
+	sky_material.set_shader_parameter("moon_dir", sun.basis.z.normalized())
+
+## The time-of-day presets (T steps through them): the sun's offset as seen from the APS
+## front (`_aim_sun` turns it with the view), its colour and strength, the ambient fill,
+## haze, grade, glow, sky, the display's light and shade tints, cloud shadows, whether the
+## lamps and lit windows are on, stars, the crickets, the light shafts' strength and the
+## dawn mist.
+const PRESETS := {
+	5.75: {"label": "Dawn · 5:45 AM", "sun_offset": Vector3(60, 16, 60), "sun": "ffb39a", "energy": 0.5,
+		"ambient": "9aa4c8", "ambient_energy": 0.42, "fog": 1.0, "saturation": 0.96, "contrast": 1.02,
+		"glow": 0.55, "glow_threshold": 1.1, "top": "3f527f", "horizon": "f1b5a3", "ground": "5e6371",
+		"light_tint": "ffe9e4", "shade_tint": "d4daf2", "clouds": 0.35, "lamps": true, "stars": 0.3,
+		"crickets": false, "shafts": 0.06, "shaft_colour": "ffc9b0", "mist": 0.7},
+	8.0: {"label": "Morning · 8:00 AM", "sun_offset": Vector3(55, 44, 60), "sun": "ffce96", "energy": 1.08,
+		"ambient": "b8bec6", "ambient_energy": 0.42, "fog": 0.6, "saturation": 1.05, "contrast": 1.04,
+		"glow": 0.25, "glow_threshold": 1.6, "top": "5d8aaf", "horizon": "edd3ae", "ground": "8a8a7c",
+		"light_tint": "fff6e4", "shade_tint": "eceef4", "clouds": 0.85, "lamps": false, "stars": 0.0,
+		"crickets": false, "shafts": 0.085, "shaft_colour": "ffd59a", "mist": 0.15},
+	# Noon is a clear, sunny Philippine midday: a strong white sun a little off overhead so
+	# the shadows still read, a blue sky fill in the shade, almost no haze.
+	12.0: {"label": "Noon · 12:00 PM", "sun_offset": Vector3(-55, 80, 34), "sun": "fff4de", "energy": 1.42,
+		"ambient": "a9bdd8", "ambient_energy": 0.32, "fog": 0.1, "saturation": 1.18, "contrast": 1.08,
+		"glow": 0.25, "glow_threshold": 1.6, "top": "3f86d0", "horizon": "bfdcf0", "ground": "8a8a7c",
+		"light_tint": "fff6e4", "shade_tint": "eceef4", "clouds": 0.5, "lamps": false, "stars": 0.0,
+		"crickets": false, "shafts": 0.045, "shaft_colour": "fff1d6", "mist": 0.0},
+	16.5: {"label": "Afternoon · 4:30 PM", "sun_offset": Vector3(-55, 44, 60), "sun": "ffce96", "energy": 1.08,
+		"ambient": "b8bec6", "ambient_energy": 0.42, "fog": 0.6, "saturation": 1.05, "contrast": 1.04,
+		"glow": 0.25, "glow_threshold": 1.6, "top": "5d8aaf", "horizon": "edd3ae", "ground": "8a8a7c",
+		"light_tint": "fff6e4", "shade_tint": "eceef4", "clouds": 0.85, "lamps": false, "stars": 0.0,
+		"crickets": false, "shafts": 0.085, "shaft_colour": "ffd59a", "mist": 0.0},
+	# Golden hour: the sun low in the west, deep warm light, long shadows, glowing edges,
+	# strong shafts and dust in them.
+	17.75: {"label": "Golden hour · 5:45 PM", "sun_offset": Vector3(-62, 17, 50), "sun": "ffa257", "energy": 1.2,
+		"ambient": "d6b08c", "ambient_energy": 0.36, "fog": 0.75, "saturation": 1.16, "contrast": 1.07,
+		"glow": 0.5, "glow_threshold": 1.15, "top": "6a84b6", "horizon": "ffbd76", "ground": "8a7862",
+		"light_tint": "fff0d6", "shade_tint": "e6d8d6", "clouds": 0.6, "lamps": false, "stars": 0.0,
+		"crickets": false, "shafts": 0.16, "shaft_colour": "ffb866", "mist": 0.0},
+	# Dusk: the sun just under the horizon, the sky orange to deep blue, the lamps and
+	# windows coming on, the first stars.
+	18.5: {"label": "Dusk · 6:30 PM", "sun_offset": Vector3(-62, 9, 50), "sun": "ff8e6e", "energy": 0.32,
+		"ambient": "7c86b6", "ambient_energy": 0.42, "fog": 0.8, "saturation": 1.0, "contrast": 1.04,
+		"glow": 0.8, "glow_threshold": 0.9, "top": "1f2d5c", "horizon": "e2896a", "ground": "3a3c4a",
+		"light_tint": "f4e4ea", "shade_tint": "cfd6f4", "clouds": 0.25, "lamps": true, "stars": 0.45,
+		"crickets": true, "shafts": 0.0, "shaft_colour": "ff9a70", "mist": 0.2},
+	21.0: {"label": "Night · 9:00 PM", "sun_offset": Vector3(55, 58, 60), "sun": "a7bee5", "energy": 0.2,
+		"ambient": "6f86c2", "ambient_energy": 0.3, "fog": 0.6, "saturation": 1.05, "contrast": 1.04,
+		"glow": 0.9, "glow_threshold": 0.85, "top": "101c39", "horizon": "364566", "ground": "2a3040",
+		"light_tint": "e6eeff", "shade_tint": "c9d6ff", "clouds": 0.0, "lamps": true, "stars": 1.0,
+		"crickets": true, "shafts": 0.0, "shaft_colour": "ffd59a", "mist": 0.0},
+}
 
 func _set_hour(value: float) -> void:
-	hour = value
-	var night := hour >= 19.0 or hour < 6.0
-	var noon := hour >= 10.0 and hour < 15.0
-	var morning := hour < 10.0 and not night
-	# Noon is a clear, sunny Philippine midday: a strong white sun a little off overhead
-	# so the shadows still read, a blue sky fill in the shade, almost no haze.
-	_sun_offset = Vector3(55 if night or morning else -55, 58 if night else (80 if noon else 44), 34 if noon else 60)
+	hour = value if PRESETS.has(value) else 16.5
+	var p: Dictionary = PRESETS[hour]
+	var lamps: bool = p.lamps
+	_sun_offset = p.sun_offset
 	_aim_sun(true)
-	sun.light_color = Color("a7bee5") if night else (Color("fff4de") if noon else Color("ffce96"))
-	sun.light_energy = 0.2 if night else (1.42 if noon else 1.08)
-	environment.ambient_light_color = Color("6f86c2") if night else (Color("a9bdd8") if noon else Color("b8bec6"))
-	environment.ambient_light_energy = 0.3 if night else (0.32 if noon else 0.42)
-	environment.fog_density = 0.1 if noon else 0.6
-	environment.adjustment_saturation = 1.18 if noon else 1.05
-	environment.adjustment_contrast = 1.08 if noon else 1.04
-	environment.glow_intensity = 0.9 if night else 0.25
-	environment.glow_hdr_threshold = 0.85 if night else 1.6
-	var top := Color("101c39") if night else (Color("3f86d0") if noon else Color("5d8aaf"))
-	var horizon := Color("364566") if night else (Color("bfdcf0") if noon else Color("edd3ae"))
-	sky_material.set_shader_parameter("top_color", top)
+	sun.light_color = Color(p.sun)
+	sun.light_energy = p.energy
+	environment.ambient_light_color = Color(p.ambient)
+	environment.ambient_light_energy = p.ambient_energy
+	environment.fog_density = p.fog
+	environment.adjustment_saturation = p.saturation
+	environment.adjustment_contrast = p.contrast
+	environment.glow_intensity = p.glow
+	environment.glow_hdr_threshold = p.glow_threshold
+	var horizon := Color(p.horizon)
+	sky_material.set_shader_parameter("top_color", Color(p.top))
 	sky_material.set_shader_parameter("horizon_color", horizon)
-	sky_material.set_shader_parameter("ground_color", Color("2a3040") if night else Color("8a8a7c"))
-	sky_material.set_shader_parameter("stars", 1.0 if night else 0.0)
+	sky_material.set_shader_parameter("ground_color", Color(p.ground))
+	sky_material.set_shader_parameter("stars", p.stars)
 	environment.fog_light_color = horizon
 	var grade := display.material as ShaderMaterial
-	grade.set_shader_parameter("light_tint", Color("e6eeff") if night else Color("fff6e4"))
-	grade.set_shader_parameter("shade_tint", Color("c9d6ff") if night else Color("eceef4"))
+	grade.set_shader_parameter("light_tint", Color(p.light_tint))
+	grade.set_shader_parameter("shade_tint", Color(p.shade_tint))
 	# Cloud shadows by day, a touch lighter in the slanting light; few at a clear noon.
-	edges.set_shader_parameter("clouds", 0.0 if night else (0.5 if noon else 0.85))
-	world.set_night(night)
+	edges.set_shader_parameter("clouds", p.clouds)
+	world.set_night(lamps)
 	if atmosphere:
-		atmosphere.set_hour(hour, night)
+		atmosphere.set_hour(hour, lamps, p)
 	if sound:
-		sound.night = night
+		sound.night = p.crickets
 		sound.hour = hour
 	if time_label:
-		time_label.text = "Night · 9:00 PM" if night else ("Noon · 12:00 PM" if noon else ("Morning · 8:00 AM" if morning else "Afternoon · 4:30 PM"))
+		time_label.text = p.label
 
 # --- Interface -----------------------------------------------------------------
 
@@ -810,7 +893,7 @@ func _build_interface() -> void:
 	title.add_theme_constant_override("shadow_offset_y", 2)
 	stack.add_child(title)
 	var controls := Label.new()
-	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    G  Rain    C  Character    M  Mute\n" + \
+	controls.text = "A/D  Walk    W/S  Depth    Shift  Run    T  Time    G  Weather    C  Character    M  Mute\n" + \
 		"E/Space  Talk (near someone)\n" + \
 		"Wheel or +/-  Zoom    1-9, 0  Framings    Q/E or right-drag  Angle    P  Pixels\n" + \
 		"R  Reset    F11  Fullscreen    F1  Fast travel (dev)    F2  Free cam (dev)    Tab  Hide controls    Esc  Close"
@@ -876,6 +959,7 @@ func _choose_framing(index: int) -> void:
 func _reset() -> void:
 	student.place(0.7, 5.3)
 	orbit = 0.12
+	orbit_goal = orbit
 	_snap_follow()
 	_set_hour(16.5)
 	_set_zoom(112.0)
@@ -898,6 +982,8 @@ static func travel_places() -> Array:
 		["IH Gym inside", GYM_IN_SPOT, ARENA_WIDTH],
 		["St. Joseph Hall", SJH_SPOT, 64.0],
 		["SJH walkway", Sjh.world(25.0, -1.8), 22.0],
+		["SJH lobby", Sjh.world(0.0, -1.5), 22.0],
+		["SJH west entrance", Sjh.world(48.6, -0.8), 22.0],
 		["SJH back lane", Sjh.world(0.0, Sjh.BACK - 7.0), 40.0],
 		["Mary statue", Vector2(-48.5, 113.6), 26.0],
 		["MGN", MGN_SPOT, 56.0],
@@ -942,7 +1028,7 @@ func _input(event: InputEvent) -> void:
 		elif not event.pressed:
 			_end_drag()
 	elif event is InputEventMouseMotion and _dragging:
-		orbit = clampf(orbit - event.relative.x * DRAG_TURN, -0.25, 0.25)
+		orbit_goal = clampf(orbit_goal - event.relative.x * DRAG_TURN, -ORBIT_MAX, ORBIT_MAX)
 		get_viewport().set_input_as_handled()
 
 func _end_drag() -> void:
@@ -965,6 +1051,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_end_drag()
 			free_cam.enter()
+			sky_material.set_shader_parameter("free_look", true) # the stars by direction, staying put as it turns
 			pixel_scale = 0
 			_resize()
 		sound.select()
@@ -1027,9 +1114,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			if npcs.interact():
 				_e_talk = true
 				sound.select()
+			elif critters.pet():
+				_e_talk = true
 		KEY_SPACE, KEY_ENTER, KEY_KP_ENTER:
 			if npcs.interact():
 				sound.select()
+			else:
+				critters.pet()
 		KEY_P:
 			pixel_mode = PIXEL_MODES[(PIXEL_MODES.find(pixel_mode) + 1) % PIXEL_MODES.size()]
 			pixel_scale = 0
@@ -1083,11 +1174,24 @@ func _held(keys: Array) -> bool:
 			return true
 	return false
 
+## --free-cam=<yaw>,<pitch> (degrees): starts in the free cam looking that way from where
+## the camera stands, for captures of the sky.
+func _look_freely(angles: String) -> void:
+	var parts := angles.split(",")
+	free_cam.enter()
+	free_cam.yaw = deg_to_rad(float(parts[0]))
+	free_cam.pitch = deg_to_rad(float(parts[1]) if parts.size() > 1 else 20.0)
+	free_cam._aim()
+	sky_material.set_shader_parameter("free_look", true)
+	pixel_scale = 0
+	_resize()
+
 ## Lands the free cam back on the student's camera, snapped there at once.
 func _leave_free_cam() -> void:
 	if not free_cam.active:
 		return
 	free_cam.leave()
+	sky_material.set_shader_parameter("free_look", false)
 	pixel_scale = 0
 	_resize()
 	_update_camera(1.0)
@@ -1116,17 +1220,33 @@ func _process(delta: float) -> void:
 	if _dragging and not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
 		_end_drag() # released while the window was not listening
 
-	orbit = clampf(orbit + (float(_held([KEY_E]) and not _e_talk) - float(_held([KEY_Q]))) * delta * 0.25, -0.25, 0.25)
+	orbit_goal = clampf(orbit_goal + (float(_held([KEY_E]) and not _e_talk) - float(_held([KEY_Q]))) * delta * 0.25, -ORBIT_MAX, ORBIT_MAX)
+	orbit = lerpf(orbit, orbit_goal, 1.0 - exp(-delta * 16.0))
 	_glide_zoom()
 	_update_camera(delta)
 	_update_cutaways(delta)
 	npcs.update(delta)
+	critters.hour = hour
+	critters.rain = atmosphere.rain
+	critters.update(delta, direction == Vector2.ZERO, direction != Vector2.ZERO and _held([KEY_SHIFT]), npcs.talking_to != null, npcs.in_reach() != null)
 	atmosphere.focus = student.position
 	atmosphere.view_width = width
 	atmosphere.indoor = sound.indoor
 	atmosphere.update(delta)
 	sound.rain = atmosphere.rain
 	npcs.rain = atmosphere.rain
+	npcs.hour = hour
+	_show_weather()
+
+## The time badge also names the weather when it is not clear.
+func _show_weather() -> void:
+	if time_label == null or not PRESETS.has(hour):
+		return
+	var text: String = PRESETS[hour].label
+	if atmosphere.weather != "clear":
+		text += " · " + {"overcast": "Overcast", "rain": "Rain", "storm": "Thunderstorm", "windy": "Windy"}[atmosphere.weather]
+	if time_label.text != text:
+		time_label.text = text
 
 ## A frame of the free cam: the student waits, the world goes on round the camera.
 func _fly(delta: float) -> void:
@@ -1140,11 +1260,13 @@ func _fly(delta: float) -> void:
 	student.face(camera)
 	_update_cutaways(delta)
 	npcs.update(delta)
+	critters.update(delta, true, false, false, false)
 	atmosphere.focus = Vector3(ahead.x, 0.0, ahead.z)
 	atmosphere.view_width = 60.0
 	atmosphere.update(delta)
 	sound.rain = atmosphere.rain
 	npcs.rain = atmosphere.rain
+	npcs.hour = hour
 
 ## Walking into the gym from a wide framing glides the zoom in to the hall's; walking
 ## out again glides back, unless the zoom was changed inside.
@@ -1453,7 +1575,7 @@ func _verify_and_capture() -> void:
 		# The chapel is solid; its plaza, parking and the lawn path are walkable.
 		checks.chapel_blocks = World.blocked(-8.7, 58.1) and World.blocked(-25.0, 59.5)
 		var plaza_floor := World.floor_height(CHAPEL_SPOT.x, CHAPEL_SPOT.y)
-		checks.chapel_plaza_walkable = not World.blocked(CHAPEL_SPOT.x, CHAPEL_SPOT.y) and is_equal_approx(plaza_floor, -0.04)
+		checks.chapel_plaza_walkable = not World.blocked(CHAPEL_SPOT.x, CHAPEL_SPOT.y) and is_equal_approx(plaza_floor, -0.04) 			and not World.blocked(-54.0, 70.0) and not World.blocked(-54.0, 46.0) and World.blocked(-45.0, 60.0)
 		checks.lawn_path_walkable = not World.blocked(-36.0, 24.0) and World.blocked(-30.0, 24.0)
 		# (the chapel lawn is mown, with only a few clumps; the wilder lawns elsewhere add more)
 		checks.grass_built = (scene.find_child("Grass", false, false) as MultiMeshInstance3D).multimesh.instance_count > 400
@@ -1600,8 +1722,8 @@ func _verify_and_capture() -> void:
 		_update_camera(1.0)
 		checks.sjh_view_faces_front = sjh > 0.99 and (-camera.global_basis.z).dot(Vector3.BACK) > 0.95 \
 			and _all_visible([Sjh.world(0, 1).x], [0.0, 20.0], [Sjh.world(0, 1).y])
-		# Walking into SJH's covered walkway through a railing gap: the cutaway again.
-		var sjh_gap := Sjh.world(20.0, 2.5)
+		# Walking into SJH's lobby up the front stairs: the cutaway again.
+		var sjh_gap := Sjh.world(3.0, Sjh.LOBBY_FOOT + 0.4)
 		student.place(sjh_gap.x, sjh_gap.y)
 		_set_zoom(36.0, true)
 		_snap_follow()
@@ -1612,7 +1734,32 @@ func _verify_and_capture() -> void:
 			_update_camera(1.0 / 30.0)
 		var inside_local := Sjh.local(student.position.x, student.position.z)
 		checks.walk_into_sjh_walkway = inside_local.y < -1.0 and walkway > 0.95 and shown_width < HALL_WIDTH + 0.2 \
-			and camera.near > 5.0 and _all_visible([student.position.x], [0.3, 1.9], [student.position.z])
+			and camera.near > 5.0 and is_equal_approx(student.level(), Sjh.WALK_Y) 			and _all_visible([student.position.x], [student.position.y + 0.3, student.position.y + 1.9], [student.position.z])
+		# SJH's raised ground floor: the lobby and the passage are on the walkway's floor, the
+		# steps and the ramp climb to it, the planter terrace, the piers, the tables and the lift
+		# wall stop the walk, the yard and the lane at the west end are open, and walking
+		# from the yard up the west steps leads into the corridor.
+		var deck := func(u: float, v: float) -> bool:
+			var at := Sjh.world(u, v)
+			return not World.blocked(at.x, at.y) and is_equal_approx(World.floor_height(at.x, at.y), Sjh.WALK_Y)
+		var solid := func(u: float, v: float) -> bool:
+			var at := Sjh.world(u, v)
+			return World.blocked(at.x, at.y)
+		var height := func(u: float, v: float) -> float:
+			var at := Sjh.world(u, v)
+			return World.floor_height(at.x, at.y)
+		var up := func(u: float, v: float, low: float, high: float) -> bool:
+			return height.call(u, v) > low and height.call(u, v) < high
+		var climbs: bool = is_equal_approx(height.call(25.0, Sjh._walk_middle(25.0)), Sjh.LANDING_Y) and up.call(-38.0, Sjh._walk_middle(-38.0), -0.04, Sjh.LANDING_Y) and solid.call(25.0, Sjh.KERB_Z - 0.1) and solid.call(25.0, Sjh._walk_middle(25.0) - 1.3) and solid.call(8.3, 5.0) 			and up.call(0.0, 1.5, Sjh.LANDING_Y, Sjh.WALK_Y) and is_equal_approx(height.call(0.0, 3.5), Sjh.LANDING_Y) 			and up.call(0.0, 5.0, 0.0, Sjh.LANDING_Y) and height.call(44.0, 1.5) > height.call(48.0, 1.5) 			and height.call(48.0, 1.5) > 0.0 and not solid.call(25.0, Sjh._walk_middle(25.0))
+		var west := Sjh.world(48.6, -0.8)
+		student.place(west.x, west.y)
+		_snap_follow()
+		var east := Sjh.world(-1.0, -0.8) - Sjh.world(0.0, -0.8)
+		for i in 200:
+			student.move(east, false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		var up_the_west_steps := Sjh.local(student.position.x, student.position.z).x < Sjh.WALK_END - 2.0 			and is_equal_approx(student.level(), Sjh.WALK_Y)
+		checks.sjh_ground_floor = deck.call(0.0, -1.5) and deck.call(0.0, 0.6) and deck.call(43.0, -0.8) and deck.call(39.5, 1.5) 			and climbs and solid.call(25.0, 1.1) and solid.call(Sjh.PIERS[1], -0.5) and solid.call(Sjh.TABLES[1], Sjh.TABLE_Z) 			and solid.call(0.0, Sjh.WALL_Z) and solid.call(8.5, 0.5) and solid.call(25.0, Sjh.RAIL_Z) 			and not solid.call(48.6, -0.8) and not solid.call(51.2, -8.0) and not solid.call(49.4, -17.0) 			and is_equal_approx(height.call(51.2, -8.0), -0.04) and up_the_west_steps
 		# Behind SJH: the lane along its back and the lane down to it round the east end
 		# walkable; the back wall, a parked van and the perimeter wall solid; the camera faces
 		# the back.
@@ -1628,7 +1775,7 @@ func _verify_and_capture() -> void:
 		_snap_follow()
 		_update_camera(1.0)
 		checks.sjh_rear_view_faces_back = sjh < 0.01 and gym < 0.01 and chapel < 0.01 and mgn < 0.01 \
-			and (-camera.global_basis.z).dot(Vector3.FORWARD) > 0.95 and _all_visible([back.x], [4.0, 12.0], [back.y - 0.6])
+			and (-camera.global_basis.z).dot(Vector3.FORWARD) > 0.95 and _all_visible([back.x], [1.0, 6.0], [back.y - 0.6])
 		# MGN: built on its plot facing the west road, solid, its garden planted, the entry
 		# walk under the wing open up to the turnstile, the road beside it walkable.
 		var mgn_node := scene.find_child("MGN", false, false) as Node3D
@@ -1887,11 +2034,103 @@ func _verify_and_capture() -> void:
 		var by_bea: Vector2 = bea.ground() + side * 2.2
 		student.position = Vector3(by_bea.x, bea.position.y, by_bea.y)
 		npcs.update(1.0 / 30.0)
+		if not npcs.hellos.any(func(h: Dictionary) -> bool: return h.npc == bea):
+			npcs._say_hello(bea) # she says hello only some of the time (CHATTY); the bubble is what is checked
 		var waving: bool = bea.noticed and bea.animation == "wave" and bea.waved == 1 and not bea.sprite.flip_h
+		var greeted: bool = npcs.hellos.any(func(h: Dictionary) -> bool: return h.npc == bea and not (h.label as Label).text.is_empty())
 		var walked_before: float = bea.walked
 		for i in 90:
 			npcs.update(1.0 / 30.0)
-		checks.npc_notices_and_waves = waving and bea.animation == "idle" and bea.waved == 1 and bea.walked == walked_before
+		checks.npc_notices_and_waves = waving and bea.animation == "idle" and bea.waved == 1 and bea.walked == walked_before 			and greeted
+		# Standing about, an NPC looks the student's way from further off than it notices them.
+		var ben: Node3D = npcs.cast.filter(func(n: Node3D) -> bool: return n.id == "kuya-ben")[0]
+		var by_ben: Vector2 = ben.ground() + side * 4.5
+		student.position = Vector3(by_ben.x, ben.position.y, by_ben.y)
+		npcs.update(1.0 / 30.0)
+		var looks_right: bool = not ben.noticed and not ben.sprite.flip_h
+		by_ben = ben.ground() - side * 4.5
+		student.position = Vector3(by_ben.x, ben.position.y, by_ben.y)
+		npcs.update(1.0 / 30.0)
+		# Ambient life: the cats and the flocks are there; a flock takes off when the student
+		# comes close and lands again later; a cat can be petted.
+		critters.hour = 12.0
+		critters.rain = 0.0
+		var flock: Dictionary = critters.flocks[0]
+		var first: Dictionary = flock.birds[0]
+		var by_bird: Vector2 = first.at + Vector2(1.0, 0.0)
+		student.position = Vector3(by_bird.x, 0.0, by_bird.y)
+		critters.update(1.0 / 30.0, true, false, false, false)
+		var took_off: bool = flock.state == "flying" and critters.takeoffs >= 1
+		# it flies off the screen before it is gone (never vanishing in view), and lands again
+		# gliding in to the ground
+		var vanished_in_view := false
+		for i in 600:
+			var was: bool = (first.node as Node3D).visible
+			critters.update(1.0 / 30.0, true, false, false, false)
+			if was and not (first.node as Node3D).visible and camera.is_position_in_frustum((first.node as Node3D).position):
+				vanished_in_view = true
+			if flock.state == "away":
+				break
+		var flew_away: bool = flock.state == "away" and not (first.node as Node3D).visible and not vanished_in_view
+		student.position = Vector3(by_bird.x + 40.0, 0.0, by_bird.y)
+		flock.timer = 0.0
+		for i in 150:
+			critters.update(1.0 / 30.0, true, false, false, false)
+		var landed: bool = flock.state == "feeding" and (first.node as Node3D).visible 			and absf((first.node as Node3D).position.y - World.floor_height((first.at as Vector2).x, (first.at as Vector2).y)) < 0.2
+		var tisay: Dictionary = critters.cats[2]
+		var by_cat: Vector2 = tisay.at + Vector2(0.6, 0.0)
+		student.position = Vector3(by_cat.x, World.floor_height(by_cat.x, by_cat.y), by_cat.y)
+		var petted: bool = critters.pet() and tisay.state == "petted" and critters.pets == 1
+		# petted, it leans into the hand (its own frames); sitting, it fidgets now and then; asleep
+		# it breathes; it wakes with a stretch and strolls off
+		var leans := {}
+		for i in 40:
+			critters._update_cat(tisay, 1.0 / 30.0, by_cat, true, false, side)
+			if tisay.state == "petted":
+				leans[tisay.sprite.frame] = tisay.sprite.texture == tisay.sheets.petted[0]
+		var kiko: Dictionary = critters.cats[1]
+		var away: Vector2 = kiko.at + Vector2(30.0, 0.0)
+		kiko.state = "sit"
+		kiko.timer = 99.0
+		kiko.next_fidget = 0.0
+		var fidgeted := false
+		for i in 30:
+			critters._update_cat(kiko, 1.0 / 30.0, away, false, false, side)
+			fidgeted = fidgeted or (kiko.fidget != "" and kiko.sprite.texture == kiko.sheets[kiko.fidget][0])
+		kiko.state = "sleep"
+		kiko.timer = 2.0
+		var breaths := {}
+		var stretched := false
+		for i in 180:
+			critters._update_cat(kiko, 1.0 / 30.0, away, false, false, side)
+			if kiko.state == "sleep" and kiko.sprite.texture == kiko.sheets.breathe[0]:
+				breaths[kiko.sprite.frame] = true
+			stretched = stretched or (kiko.state == "stretch" and kiko.sprite.texture == kiko.sheets.stretch[0])
+		var woke: bool = kiko.state in ["walk", "sit"]
+		# run at a cat and it gallops off; a feeding maya hops with its own frames
+		kiko.state = "sit"
+		var galloped := false
+		for i in 20:
+			critters._update_cat(kiko, 1.0 / 30.0, kiko.at + Vector2(1.0, 0.0), false, true, side)
+			galloped = galloped or (kiko.state == "dash" and kiko.sprite.texture == kiko.sheets.gallop[0])
+		var hopper: Dictionary = critters.flocks[1].birds[0]
+		hopper.hop = 0.0
+		hopper.from = hopper.at
+		hopper.to = hopper.at + Vector2(0.2, 0.0)
+		var hops := {}
+		for i in 6:
+			critters._feed(hopper, 1.0 / 30.0, critters.flocks[1].spot, side)
+			if hopper.sprite.texture == critters._birds().hop[0]:
+				hops[hopper.sprite.frame] = true
+		var cat_animates: bool = galloped and hops.size() >= 3 and leans.size() >= 3 and leans.values().all(func(v: bool) -> bool: return v) and fidgeted 			and breaths.size() >= 3 and stretched and woke
+		# birds flying over cross between the camera and the student, above the ground
+		var screen_right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
+		critters._launch(Vector2(student.position.x, student.position.z), screen_right)
+		critters.update(1.0 / 30.0, true, false, false, false)
+		var over: Node3D = critters.flyers[-1].birds[0].node
+		var flying_over: bool = over != null and over.position.y > World.floor_height(over.position.x, over.position.z) + 2.0 			and (over.position - student.position).dot(camera.global_transform.basis.z) > 1.0
+		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and landed and petted and cat_animates 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
+		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0
 		for i in 15:
@@ -1924,6 +2163,25 @@ func _verify_and_capture() -> void:
 		atmosphere.update(0.1)
 		sound.rain = 0.0
 		checks.rain_wets_then_dries = raining and atmosphere.wet_count() == 0 and not atmosphere.puddles[0].visible
+		# The weathers: a storm flashes lightning and blows hard, overcast dims the sun; G
+		# steps through them; then clear again.
+		atmosphere.set_weather("clear", true)
+		atmosphere.update(0.1)
+		var sun_before := sun.light_energy
+		atmosphere.set_weather("storm", true)
+		for i in 200:
+			atmosphere.update(0.1)
+		var stormy: bool = atmosphere.strikes > 0 and atmosphere.rain > 0.99 and atmosphere.wind > 0.75
+		atmosphere.set_weather("overcast", true)
+		atmosphere.update(0.1)
+		var dull := sun.light_energy < sun_before * 0.6
+		var stepped := Atmosphere.WEATHERS.size() == 5 and not Atmosphere.WEATHER.has("fog")
+		atmosphere.toggle_rain()
+		stepped = stepped and atmosphere.weather == "rain"
+		atmosphere.set_weather("clear", true)
+		atmosphere.update(0.1)
+		var hours_ok := HOURS.all(func(h: float) -> bool: return PRESETS.has(h))
+		checks.weather_and_light = stormy and dull and stepped and hours_ok and environment.fog_height_density < 0.05
 		# light: every tree drops leaves and (by day) casts shafts
 		checks.leaves_and_shafts = world.trees.size() > 10 and atmosphere.leaves.size() == world.trees.size() 			and (night_now() or atmosphere.shafts.get_child_count() >= world.trees.size())
 		checks.campus_sounds = sound.murmur.playing and sound.crowd > 0.9 and (sound.night or sound.bird_calls > calls)
@@ -1958,7 +2216,7 @@ func _verify_and_capture() -> void:
 		checks.free_cam = same_view and flown and risen and student.position == still and not free_cam.active 			and camera.projection == Camera3D.PROJECTION_ORTHOGONAL and is_equal_approx(camera.far, 240.0) 			and camera.position.distance_to(from) < 0.01
 		# Right-drag turns the angle while the button is held, within the Q/E range.
 		var saved_orbit := orbit
-		orbit = 0.12
+		orbit_goal = 0.12
 		var right := InputEventMouseButton.new()
 		right.button_index = MOUSE_BUTTON_RIGHT
 		right.pressed = true
@@ -1966,15 +2224,16 @@ func _verify_and_capture() -> void:
 		var drag := InputEventMouseMotion.new()
 		drag.relative = Vector2(20, 0)
 		_input(drag)
-		var turned := is_equal_approx(orbit, 0.12 - 20.0 * DRAG_TURN)
+		var turned := is_equal_approx(orbit_goal, 0.12 - 20.0 * DRAG_TURN)
 		drag.relative = Vector2(-1000, 0)
 		_input(drag)
-		var clamped := is_equal_approx(orbit, 0.25)
+		var clamped := is_equal_approx(orbit_goal, ORBIT_MAX)
 		right.pressed = false
 		_input(right)
 		_input(drag)
-		checks.drag_angle = turned and clamped and not _dragging and is_equal_approx(orbit, 0.25)
+		checks.drag_angle = turned and clamped and not _dragging and is_equal_approx(orbit_goal, ORBIT_MAX)
 		orbit = saved_orbit
+		orbit_goal = saved_orbit
 		_update_camera(1.0)
 	var okay := not checks.values().has(false)
 	print(JSON.stringify({"scene": "APS 2.5D", "checks": checks, "checks_pass": okay, "boxes": world.box_count,

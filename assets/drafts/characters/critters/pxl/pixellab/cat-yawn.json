@@ -1,0 +1,3 @@
+{"first_frame": {"type": "base64", "base64": "@cat-sit.png", "format": "png"}, "pad": [40, 40],
+ "action": "the sitting cat yawns in side profile: its head stays turned to the right, the jaw drops open showing a small pink mouth, eyes squeezed shut, then the mouth closes; the head never turns toward the viewer, body stays seated",
+ "frame_count": 6, "seed": 26, "no_background": true}

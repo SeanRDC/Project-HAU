@@ -23,7 +23,7 @@ frozen references.
 | Editor | `tools\run-aps-godot.cmd -e` |
 | Checks | `tools\run-aps-godot.cmd --headless -- --test` prints JSON; every check must be `true` and `checks_pass` must be `true` |
 | Review shots | `sh tools/capture-aps-godot.sh` writes shots to the ignored `builds/aps-godot-review/port/`. One shot: `-- --hour=16.5 --hide-help --zoom=28 --capture=<absolute .png path>` |
-| Preview flags | `--hour=8\|12\|16.5\|21`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn\|middle\|middle-north\|fountain\|student-center`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
+| Preview flags | `--hour=5.75\|8\|12\|16.5\|17.75\|18.5\|21`, `--weather=clear\|overcast\|rain\|storm\|windy`, `--girl`, `--x=`, `--z=`, `--level=` (start on an upper storey inside the gym, e.g. `4.95` the stands' aisle, `1.95` the stage), `--zoom=`, `--angle=`, `--view=canteen\|gym\|gym-side\|gym-in\|sjh\|mgn\|middle\|middle-north\|fountain\|student-center`, `--pixel=auto\|crisp\|pixel`, `--walk=<seconds>`, `--free-cam=<yaw>,<pitch>` (degrees: start in the free cam looking that way, e.g. `--hour=21 --free-cam=200,30` for the night sky), `--hide-help`, `--capture=<path>` (all after `--`). The chapel plaza: `--x=-34 --z=55 --zoom=32` |
 | Campus plan | `npm run export:godot-plan` regenerates `campus_plan.gd` from `src/game/campus/plan.ts` (run it whenever the plan or `osm.ts` changes) |
 
 Files:
@@ -41,14 +41,14 @@ Files:
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside, under its own pivot, with its walk, steps, props, apron and lane; its doorways are open |
 | `areas/gym_interior.gd` | Inside the gym: the court, stands, balcony, lobby, rooms, stage and roof structure, its storeys and collision, and which groups the camera cuts away |
 | `areas/hallway.gd` | The APS ground-floor hallway, the bust and the campus map, and its cutaway zone |
-| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 10 m (`SETBACK`) from its OSM outline to match the team's map, its covered walkway, the Mary statue garden at its west end, and two rows of parked cars (by the chapel, and in front of SJH); the back from the rear photos (`assets/SJH BUILDING/rear/`) and the lane behind it, reached round the east end |
+| `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 12 m (`SETBACK`) from its OSM outline to match the team's map and leave room for its front; its raised ground floor (the walkway on a plinth; in front, along the whole building, grass with shrubs and bamboo at 0.5 m from the plinth to a low stone wall at the kerb (the front row of cars parks against it), and through it the brown paver sidewalk winding from side to side and sloping to the ground at both ends; at the centre tower the long stair out to the kerb: the steps up to the elevator lobby across the tower, a deep brown landing where the sidewalk meets it, the flight down between its handrails with grass and shrubs either side, and a planter box; clad piers, bar tables and bins, the diamond-tiled floor), the west end (the passage through the terracotta block and its steps, the ramp, the yard, the lane to MGN under the bridge), the Mary statue garden, and two rows of parked cars (by the chapel, and in front of SJH); the back from the rear photos (`assets/SJH BUILDING/rear/`) and the lane behind it, reached round the east end |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank, the raised garden in front; walkable up to the turnstile |
 | `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
 | `student.gd` | The player sprite, its animation, foot contact shadow and movement |
 | `shaders/edges.gdshader` | Pixel outlines, crease highlights and drifting cloud shadows over the 3D world |
 | `shaders/weathering.gdshader` | The grime band and paint patches on every wall material (a second pass) |
 | `shaders/leaves.gdshader` | Foliage cards |
-| `shaders/sky.gdshader` | Screen-graded sky with night stars |
+| `shaders/sky.gdshader` | Screen-graded sky; at night the stars, the Milky Way and the moon |
 | `shaders/display.gdshader` | Final colour grade and vignette |
 
 Everything is built from code. There are no imported 3D models and no photo
@@ -102,7 +102,9 @@ The look is **Until Then-inspired**: crisp pixel art in a real 3D space.
 - **Ground levels:** lawn −0.2 (the base under everything), road −0.19, kerb
   top 0.0, sidewalk and plaza −0.04, lawn path −0.17, canopy tile 0.03, patio
   −0.05, canteen hall floor 0.45, chapel floor 0.9, gym hall floor 0.75 (the
-  stands' deck and the balcony 4.95, bleacher rows +0.4 each, the stage 1.95).
+  stands' deck and the balcony 4.95, bleacher rows +0.4 each, the stage 1.95), SJH's
+  raised ground floor 0.9 (`Sjh.WALK_Y`: the cars park at road level) and the brown
+  sidewalk and stair landing along its front 0.5 (`Sjh.LANDING_Y`); risers 0.1, treads 0.33.
 - **Storeys:** APS wing 3.05 m, tall block 3.0 m, canteen 3.05 m over a
   ~5.3 m open hall.
 - **Plan:** APS is an L. The canteen wing stands forward from the stair tower,
@@ -355,6 +357,11 @@ Rules:
   subject (lawn trees, for example) renders in front of it. At the Canteen
   framing the camera sits ~30 m back over the lawn; keep tall props out of that strip.
 
+**No flush faces.** Two faces at exactly the same depth flicker as the camera moves
+(z-fighting). Stack layers a little apart (SJH's front: stone base 0.03 under the grass,
+pavers 0.02 over it), build a flight of steps one block per tread rather than nested
+boxes (their sides would coincide), and stand nosings just proud of the step's front.
+
 ---
 
 ## Trees and grass (2.5D foliage)
@@ -434,13 +441,20 @@ its zone's turn.
 
 | Preset | Hour | Sun offset (x, y, z) | Sun colour | Energy | Ambient | Sky top / horizon | Grade light / shade |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| Dawn | 5:45 | (60, 16, 60) | `#ffb39a` | 0.5 | `#9aa4c8` × 0.42 | `#3f527f` / `#f1b5a3` + faint stars | `#ffe9e4` / `#d4daf2` |
 | Morning | 8:00 | (55, 44, 60) | `#ffce96` | 1.08 | `#b8bec6` × 0.42 | `#5d8aaf` / `#edd3ae` | `#fff6e4` / `#eceef4` |
 | Noon | 12:00 | (−55, 80, 34) | `#fff4de` | 1.42 | `#a9bdd8` × 0.32 | `#3f86d0` / `#bfdcf0` | `#fff6e4` / `#eceef4` |
 | Afternoon (default) | 16:30 | (−55, 44, 60) | `#ffce96` | 1.08 | `#b8bec6` × 0.42 | `#5d8aaf` / `#edd3ae` | `#fff6e4` / `#eceef4` |
+| Golden hour | 17:45 | (−62, 17, 50) | `#ffa257` | 1.2 | `#d6b08c` × 0.36 | `#6a84b6` / `#ffbd76` | `#fff0d6` / `#e6d8d6` |
+| Dusk | 18:30 | (−62, 9, 50) | `#ff8e6e` | 0.32 | `#7c86b6` × 0.42 | `#1f2d5c` / `#e2896a` + stars 0.45 | `#f4e4ea` / `#cfd6f4` |
 | Night | 21:00 | (55, 58, 60) | `#a7bee5` | 0.2 | `#6f86c2` × 0.3 | `#101c39` / `#364566` + stars | `#e6eeff` / `#c9d6ff` |
 
-Glow: intensity 0.25 by day (HDR threshold 1.6), 0.9 at night (threshold
-0.85). Fog colour follows the horizon colour. Noon is a clear, sunny Philippine
+All the values are in `PRESETS` in `aps.gd` (T steps through them). Lamps and lit
+windows are on at dawn, dusk and night; the crickets at dusk and night. Light shafts:
+0.085 morning and afternoon, 0.045 noon, **0.16 at golden hour** (`#ffb866`), with drifting
+dust specks round the student in the low clear sun. Dawn has a low mist (`mist` 0.7).
+Glow: intensity 0.25 by day (HDR threshold 1.6), 0.5 at golden hour (1.15), 0.55 at dawn,
+0.8 at dusk, 0.9 at night (threshold 0.85). Fog colour follows the horizon colour. Noon is a clear, sunny Philippine
 midday: fog density 0.1 (0.6 at other hours), saturation 1.18 and contrast 1.08
 (1.05 and 1.04 otherwise), so it never reads flat or hazy.
 
@@ -479,8 +493,18 @@ before using them.
 2026-10-16 at Mclaren's request; Sean, please confirm.** Rain is the only time
 anything is wet or has specular other than glass.
 
-- **Rain** comes and goes on its own (dry spells of 80-160 s, showers of
-  50-90 s); **G** starts or stops it, `--rain` starts it at once. It
+- **Weather** (`WEATHER` in `atmosphere.gd`): clear, overcast, rain, thunderstorm and windy
+  come and go on their own (clear spells 80-160 s, others 50-100 s, by `WEATHER_ODDS`);
+  **G** steps through them, `--weather=<name>` starts in one, `--rain` in rain. Each sets
+  rain, **gloom** (overcast's flat light: the sun down to 20%, ambient up and grey, contrast
+  down, so shadows soften away) and **wind** (the global shader value `wind`, 1 to 3.6,
+  makes the foliage sway harder and lean; falling leaves come down thicker and blow
+  sideways). A fog weather was tried and taken out (2026-10-21); only dawn keeps its low
+  mist (height fog, `mist` in the preset). A **thunderstorm** is rain with wind and
+  lightning every 5-14 s: a double flash that lifts the ambient light and whitens the sky,
+  and the thunder (`audio.gd` `thunder`) 0.6-2.2 s later. The time badge names the weather
+  when it is not clear.
+- **Rain** fades in and out over about 6 s. It
   fades in and out over about 6 s. Streaks are `QuadMesh` 0.03 x 0.55 at alpha
   0.24 (4000 at full rain), splashes 0.1 x 0.035 at alpha 0.28 (320). Both
   follow the student.
@@ -545,7 +569,7 @@ anything is wet or has specular other than glass.
 | `edges.gdshader` | A full-screen quad on the camera (render priority 127) reads depth and normals. It draws a dark line where something sits in front of a farther surface and lightens convex creases by one pixel, and lays the drifting cloud shadows (see Lighting). It is **multiplied** over the image, so lighting, fog and glow stay intact | `line_dark 0.32`, `crease_light 0.16`, `depth_gap 0.45`, `strength` 1.0 when the pixel scale > 1, 0.7 at native resolution; `clouds`, `sun_dir`, `wind` | The sky gets no lines. Don't add per-object outlines; this handles everything |
 | `weathering.gdshader` | A multiplied second pass (`next_pass`) on the `WEATHERED` wall materials: a stepped grime band at the foot of vertical faces and faint paint patches, in world space | `grime 0.22`, `grime_height 1.15`, `patches 0.06` | Don't paint dirt into the wall colours; this keeps every wall consistent |
 | `leaves.gdshader` | Alpha-cut foliage cards (leaves, grass, vines) that sway (shadows follow), are lit as a round volume and glow when backlit; edge-on cards fade out | `sway 0.045` (grass 0.03), `phase` per tree, `center` (crown middle; far below for grass), `roundness` (1.0 trees, 0.9 grass), scissor 0.4, backlight 0.45 × leaf colour | Leaf images are procedural (`_leaf_material(seed, center)`), five greens from `#3a5650` to `#a8ab70`. Round normals are per pixel |
-| `sky.gdshader` | An orthographic camera sees one direction, so the sky grades over the screen instead; fixed 2-px stars at night. Lighting probes use a direction-based gradient | `top_color`, `horizon_color`, `ground_color`, `stars` (set by `_set_hour`) | |
+| `sky.gdshader` | An orthographic camera sees one direction, so the sky grades over the screen instead. Lighting probes use a direction-based gradient. At night: stars in three tints and a range of brightnesses, the brightest (1 in ~1400) with a one-cell pixel cross, about half twinkling slowly (each at its own pace); a faint patchy Milky Way band with more stars in it; the moon (drawn ~4x real size) with a soft glow, dark patches and a darker limb, where the night light comes from; stars thin out near it and fade at the horizon. In the F2 free cam (`free_look`) it is laid out by direction on a cube of 512 cells a face, so it stays put as the camera turns; in the game views over the screen (2-px cells, the moon high on the right). Hashes avoid `sin()`, which streaks at large cell numbers on the GPU | `top_color`, `horizon_color`, `ground_color`, `stars` (set by `_set_hour`), `overcast` (the rain, from atmosphere.gd: hides the night sky), `free_look` (F2), `moon_dir` (set with the sun in `_aim_sun`) | |
 | `shaft.gdshader` | Light shafts under trees and the lamp reflections on wet ground: an additive card, brightest in the middle, fading at its edges and ends | `color`, `strength` (0.08) | Unshaded, no fog, never writes depth |
 | `display.gdshader` | Final grade on the enlarged image: shade towards `shade_tint`, light towards `light_tint`, soft vignette | `warmth 0.06`, `vignette 0.22`, tints from `_set_hour` | Keep this the only colour grade |
 | `manga.gdshader` | The opening's panels only (a canvas shader, not the world). A stand-in photo becomes pen and ink: Sobel edges as ink lines, deep shadow black, shadow diagonal hatching, mid-tones screentone dots, the rest paper | `ink` 1 (photos) or 0 (drawn panels: greyed onto the paper only), `paper #f4f1ea`, `pen #1c1b19`, `tone 4.0` px | Tone and hatching are in screen pixels, like real screentone. Keep it mostly paper: light lines, few blacks |
@@ -611,10 +635,58 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   idle frames. Students stroll within `roam` metres of home
   along clear straight lines (no kerbs or steps); posts (`roam` 0) stay put.
 - **NPCs react.** Within 3 m of the student they stop, turn to them and wave once
-  (again only after the student has gone 6 m away). In rain past 0.35 they open an
+  (again only after the student has gone 6 m away), and **some say hello** (`CHATTY`: how
+  likely each is to, Ate Lorna 0.8 down to Paolo 0.25; the prototypes only wave) in a small paper
+  bubble over their head that types out in their voice and fades after 2.8 s
+  (`HELLO_TIME`); it never stops the student. The line (`npcs.gd` `HELLOS`) is their
+  own, "first" until the student has talked to them and "met" after; in rain past 0.35
+  mostly a rain line (`RAIN_HELLOS`), and about a third of the time one for the hour
+  (`TIME_HELLOS`: morning, noon, afternoon, night, some in Kapampangan). Standing about
+  (not walking), they **look the student's way** from 6 m (`LOOK`). In rain past 0.35 they open an
   umbrella (an eight-sided matte canopy in their own colour, a steel rim and shaft,
   springing open over a quarter second) unless they stand under a roof (floor 0.45 m
   or higher, as in the canteen hall).
+- **Ambient life** (`critters.gd`): cats and maya birds, **PixelLab frames cleaned in pxl**,
+  the way Migo is: `assets/drafts/characters/critters/pxl/` keeps the PixelLab frames
+  (`source/`) and requests (`pixellab/`: generate-image-v2 from Mikko's side-view cat and
+  sparrow reference, with a Bea frame or the chosen cat as the style image; animate-with-
+  text-v3 for the walk, the peck and the flight, and from the sitting cat the tail flick,
+  grooming, yawn and petted lean, from the sleeper the breathing, and from a generated stretch
+  pose the rise; `pixellab/run.mjs` sends a request, padding the first frame so the pose has
+  room). The blink is drawn in `convert.mjs` (the eye's two pixels shut to a lid line), as
+  PixelLab kept recolouring the eyes. `convert.mjs` makes alpha solid, lifts
+  near-black edge pixels to a darker tone of the colour beside them (no black outlines),
+  drops lone pixels, trims each pose's frames to one box (feet on the bottom row; the poses
+  that follow each other in place, sit with its fidgets and petting, and sleep with breathing,
+  share one) and puts each animal on one palette (16 colours for the cats, 12 for the maya;
+  fewer flattened the tabby stripes), writing
+  `cats.px.js` and `maya.px.js`; the other cat coats are **palette swaps** of the orange
+  tabby (fur and pale ramps per coat). `build.ps1` builds them with pxl into
+  `sprites/critters/` (one strip per pose: cat walk 8 x 44x32; sit, tail 7, blink 4, groom 9,
+  yawn 7 and petted 5, all 26x34; sleep and breathe 6, 32x17; stretch 12 x 51x31; gallop 5 x
+  46x30; maya ground 2 (standing, pecking) and hop 3 (crouch, tucked, landing), 24x24, fly 4 x
+  24x28), at the characters' density, side-on facing right and
+  flipped, lit and shadowed like the cast. Twelve cats: five at their own spots (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
+  Kiko tuxedo by the canteen, Tisay grey tabby on the chapel plaza, Itim black at SJH,
+  Puti white at the Student Center) and seven more (`MORE_CATS`, the coats in turn) scattered over
+  the open ground (`_open_ground`: a 4 m grid, walkable, at ground level, off the roads; 22 m
+  apart): sit, every 2.5-6 s flicking the tail or blinking (35% each), grooming or yawning
+  (15% each) once through (`FIDGETS`), stroll within
+  5 m of home, curl up asleep breathing (more at noon, at night and in the rain) and wake with
+  a stretch before strolling off, walk over to a
+  student standing still within 4.5 m, gallop off from a running one (a 0.2 m stride per frame), and lean into a pet, eyes closed
+  (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). Flocks
+  (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop (its own frames, with a 0.06 m arc) and peck on open ground from 6:00 to 18:00 when
+  it is not raining, and the whole flock flutters up and away when the student comes
+  within 2.4 m (4.5 m running): up, across the screen away from the student and towards the
+  camera (the open side of every view), each bird hidden only once it is off the screen
+  (`is_position_in_frustum`); 10-20 s later, once the student is 7 m off, the birds glide back
+  in from off the screen (`_land`, 2.4 s) to their spots.
+  **Birds fly over** by day: every 3-8 s (at most four groups) 2-5 maya in a loose V cross the
+  view straight along the screen, 2.5-7 m in front of the student (towards the camera, so
+  never through the building the view looks at) and 3-8 m up, 6-9 m/s, bobbing, from off
+  the screen to off the screen, their shadows on the ground (`flyers`).
+  Sounds (`audio.gd`): `meow`, `purr`, `flutter`.
 - **Talks are scripts** in `npcs.gd` `CAST`: lines, and questions with two or three
   replies the student picks (W/S or arrows and E, 1-3, or the mouse) on a dark card at
   the bottom of the screen, the picked one in maroon. A reply can be remembered, and
@@ -701,6 +773,14 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   zone below says a wide framing "frames" or "centres on" a building, that is now its
   depth and height; to see the whole building, stand at its middle. The checks
   `wide_shows_l`, `whole_building_visible` and `mgn_view_faces_front` stand there.
+  **And top to bottom:** the camera then moves straight up or down the screen (whole
+  render pixels) onto the student's middle (0.9 m up), except in a cutaway. It stops where
+  the frame's lower edge would start under the ground (lower than 0.5 m): at these
+  shallow angles that shows as an empty band, and stepping the camera back instead puts
+  whatever stands behind it into the view. So close up the student is dead centre, and
+  zoomed out (from about 15 m) a little below it. Centring fully when zoomed out would
+  need the camera to look down more steeply (over 25° at 112 m); the angles are the
+  style's, so that was not done. Where an outdoor cut is in force its raise (below) wins.
   **No empty band under a cut:** the outdoor cuts (SJH, MGN, the boulevard, the chapel
   south walk) take the near ground away with everything else, so zoomed out the frame
   would show the empty background below the cut's edge. When one is in force the camera
@@ -718,7 +798,12 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   over from the chapel and gym zones (their weights are multiplied by
   `1 − view_for`). Because the camera then stands north of the chapel, the near plane
   also cuts everything north of the parking (z < 97), so the chapel and its trees
-  never stand in front of SJH.
+  never stand in front of SJH. South of the road it also covers SJH's west end (the
+  yard, the side entrance's steps, the lane to MGN: z > 119.5, x −66..−50), so the MGN
+  view yields there and the camera keeps facing SJH. Inside, the walkway's cutaway
+  (`Sjh.walkway_for`) covers the elevator lobby and the passage through the west
+  terracotta block too. `--view=sjh-walkway`, `sjh-lobby`, `sjh-west` and `sjh-steps`
+  start there; F1 has the walkway, the lobby and the west entrance.
 - **SJH back lane** (`Sjh.rear_for`): behind SJH (local z under its back, x within the
   building ± 2..6 m) the camera keeps the plain north view, like the APS front, and the
   SJH, gym, chapel and MGN zones yield to it (`1 − rear_for`). The near plane cuts
@@ -789,7 +874,9 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   `*_for(x, z)` weight, a corridor middle, a cut offset and a ceiling.
 - **Controls are camera-relative.** A/D move screen-left/right and W/S move
   away/towards, rotated by the zone's turn, so holding D walks you round the corner.
-- **Q/E** orbit ±0.25 rad. Default orbit 0.12. **Holding the right mouse button and
+- **Q/E** orbit ±0.25 rad (`ORBIT_MAX`). Default orbit 0.12. ±45° was tried (2026-10-21)
+  and taken back: turned that far, the views' cuts and cutaways broke down. **The turn
+  eases** after where it was dragged (`orbit_goal`, rate 16). **Holding the right mouse button and
   dragging** turns the same orbit (`DRAG_TURN` 0.0015 rad per pixel, mouse right looks
   right), within the same range; the cursor hides while held and comes back where it
   was (the `drag_angle` check). Smooth zoom (rate 10). **R** resets.

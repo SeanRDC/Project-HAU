@@ -1,0 +1,5 @@
+{"description": "a small Eurasian tree sparrow (maya) standing on the ground, seen exactly from the side, facing right: chestnut-brown cap, white cheek with a black spot, small black bib, brown back streaked with dark brown, buff-grey belly, short tail; realistic, soft shading, no black outline; feet on the bottom edge",
+ "image_size": {"width": 24, "height": 20}, "no_background": true, "seed": 41,
+ "reference_images": [{"image": {"type": "base64", "base64": "@ref-bird-side.png", "format": "png"}, "size": {"width": 275, "height": 195}, "usage_description": "the bird's shape, side pose and colours"}],
+ "style_image": {"image": {"type": "base64", "base64": "@cat-base.png", "format": "png"}, "size": {"width": 44, "height": 32}},
+ "style_options": {"color_palette": false, "outline": true, "detail": true, "shading": true}}

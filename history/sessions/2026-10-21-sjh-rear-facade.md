@@ -93,3 +93,12 @@ dark nosings out to a wide bottom step with cut corners, brown handrails with st
 and the tall louvre on the cream wall to the north. The steps are solid; the corridor
 behind is a grey back wall, not built. It faces east, away from the lane's camera, so it
 shows in the F2 free cam (checked there with a temporary capture flag, not committed).
+
+## Merge with main
+
+Merged main (SJH's raised ground floor, 12 m `SETBACK`, the atmosphere, cats, camera
+centring). Conflicts kept both sides: `Sjh.view_for` keeps main's west-end zone and
+yields to `rear_for`; `Sjh.blocked` has main's deck rules then the back's. With the
+student centred top to bottom, `sjh_rear_view_faces_back` now checks the back from 1 to
+6 m (12 m is above the 64 px test frame). Headless `--test` all true; `npm run check` and
+`npm run build` pass.
