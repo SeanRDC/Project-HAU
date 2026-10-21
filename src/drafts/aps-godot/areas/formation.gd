@@ -29,6 +29,8 @@ const TOWER_BACK := 19.5
 ## the south one, a storey lower, from the middle block's south corner.
 const NORTH_WING := Vector3(18.5, 45.0, 6.2)
 const SOUTH_WING := Vector3(17.5, 64.5, 7.5)
+## The chapel's east wall, which the back meets (the plot edge the two share, campus_plan.gd).
+const CHAPEL_EDGE := [Vector2(9.9, 44.8), Vector2(3.7, 69.0)]
 ## Storeys: a tall ground floor (its top is the sign band), then two; the roof terrace;
 ## the stair tower above it.
 const GROUND := 4.4
@@ -86,8 +88,22 @@ static func in_island(x: float, z: float) -> bool:
 	var d := (Vector2(x, z) - ISLAND) / ISLAND_RADII
 	return d.length_squared() <= 1.0
 
+## The chapel's east wall's x at z.
+static func chapel_x(z: float) -> float:
+	var a: Vector2 = CHAPEL_EDGE[0]
+	var b: Vector2 = CHAPEL_EDGE[1]
+	return lerpf(a.x, b.x, (z - a.y) / (b.y - a.y))
+
+## The piece joining the back to the chapel's east wall, from z to z.
+static func join(from: float, to: float) -> PackedVector2Array:
+	return PackedVector2Array([Vector2(chapel_x(from) - 0.1, from), Vector2(BACK_X + 0.1, from), Vector2(BACK_X + 0.1, to), Vector2(chapel_x(to) - 0.1, to)])
+
 ## The building's footprint on the ground (the colonnade is open in front of RECESS_X).
 static func inside(x: float, z: float) -> bool:
+	var a: Vector2 = CHAPEL_EDGE[0]
+	var b: Vector2 = CHAPEL_EDGE[1]
+	if z >= a.y and z <= b.y and x <= BACK_X + 0.1 and x >= chapel_x(z) - 0.1:
+		return true # joined to the chapel
 	if x >= BACK_X and x <= RECESS_X and z >= MIDDLE.x and z <= MIDDLE.y:
 		return true
 	if x >= BACK_X and x <= TOWER_FRONT and z >= TOWER.x and z <= TOWER.y:
@@ -292,13 +308,14 @@ func _middle() -> void:
 			w.framed_window(Vector3(FRONT_X, y, window[0]), window[1], 1.25, Vector3.RIGHT, posmod(k + roundi(window[0]), 3) == 0, roundi(window[1] / 1.0) - 1)
 	for z in [49.1, 52.4, 57.0, 60.75, 64.1]:
 		w.box(Vector3(0.3, 2.0 * STOREY, 0.22), Vector3(FRONT_X + 0.15, GROUND + STOREY, z), band)
-	# The back: rows of plain windows.
-	for k in 3:
-		var y := (1.9 if k == 0 else GROUND + (k - 1) * STOREY + 1.75)
-		var z := MIDDLE.x + 2.0
-		while z < MIDDLE.y - 1.5:
-			w.framed_window(Vector3(BACK_X, y, z), 1.8, 1.2, Vector3.LEFT, posmod(roundi(z) + k, 4) == 0)
-			z += 3.2
+	# The back runs on west to the chapel's east wall, so the two stand as one: full height
+	# behind the middle block, the south wing's height beside it.
+	var edge: Vector2 = CHAPEL_EDGE[0]
+	var end: Vector2 = CHAPEL_EDGE[1]
+	_prism(join(edge.y, MIDDLE.y), -0.2, ROOF, cream)
+	_prism(join(MIDDLE.y, end.y), -0.2, SOUTH_ROOF, cream)
+	_prism(join(edge.y, MIDDLE.y), ROOF, ROOF + 0.06, w.material("concrete", Color("b9b6aa")))
+	_prism(join(MIDDLE.y, end.y), SOUTH_ROOF, SOUTH_ROOF + 0.8, band)
 	# The colonnade: the recessed wall with white steel grilles over dark glass doors,
 	# square columns, the steel name over them on the sign band.
 	var grille: Material = w.material("plain", Color("f2f0e8"))
