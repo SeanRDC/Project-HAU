@@ -11,7 +11,48 @@ extends RefCounted
 const COLUMN_X: Array[float] = [-7.5, -3.4, 3.4, 7.5]
 ## Canteen piers, stalls and steps are in the wing's own frame (see canteen_local).
 const CANTEEN_PIERS: Array[float] = [36.8, 46.25, 55.75, 65.2]
-const STALL_X: Array[float] = [41.0, 50.8, 60.6]
+## The canteen's stalls (canteen frame: x along the hall, z from the back wall at -7 to the
+## patio): each [centre, facing, name, sign colour, ink]. The three named ones keep their
+## signs; the rest are plain. Ate Lorna (npcs.gd) stands at GRANNY JINGS's counter.
+const STALL_SIZE := Vector2(2.3, 1.6)
+const STALL_ISLANDS: Array[float] = [42.7, 51.7]
+const STALL_ROW_X := 64.25
+## Each stall in the end-wall row is narrower, so four fit along the hall's depth.
+const ROW_STALL := 1.8
+const STALL_LIGHTS: Array[Vector2] = [Vector2(42.7, -1.2), Vector2(51.7, -1.2), Vector2(61.6, -2.7)]
+## The blue tables between the stalls (canteen frame).
+const CANTEEN_TABLES: Array[Vector2] = [Vector2(38.4, -4.2), Vector2(38.4, -1.1), Vector2(47.2, -4.2), Vector2(47.2, -1.1),
+	Vector2(56.9, -4.2), Vector2(56.9, -1.1), Vector2(60.3, -4.2), Vector2(60.3, -1.1)]
+
+static func stalls() -> Array:
+	var list := []
+	var plain := ["e2b04a", "6f9a5a", "c9763f", "7a8fb8", "b8a07a", "8e5a8a", "d9c7a0", "5f8f8a", "c75a5a"]
+	var n := 0
+	for island in STALL_ISLANDS.size():
+		var x: float = STALL_ISLANDS[island]
+		for row in [[-4.6, Vector2(0, -1)], [-3.0, Vector2(0, 1)]]:
+			for side in [-1.0, 1.0]:
+				var sign := ["", plain[n % plain.size()], "1d1d1d"]
+				if row[0] == -3.0 and side < 0.0:
+					sign = [["YUM-YUMS", "eee3cc", "34528a"], ["GRANNY JINGS", "c36f59", "fff3da"]][island]
+				list.append([Vector2(x + side * STALL_SIZE.x / 2.0, row[0]), row[1], STALL_SIZE, sign[0], sign[1], sign[2]])
+				n += 1
+	for k in 4:
+		var sign := ["BYFROST", "426db4", "ffffff"] if k == 0 else ["", plain[(n + k) % plain.size()], "1d1d1d"]
+		list.append([Vector2(STALL_ROW_X, 0.05 - k * ROW_STALL), Vector2(-1, 0), Vector2(ROW_STALL, STALL_SIZE.y), sign[0], sign[1], sign[2]])
+	return list
+
+## Inside a stall or a table and its benches (canteen frame).
+static func in_stall(x: float, z: float) -> bool:
+	for x0 in STALL_ISLANDS:
+		if absf(x - x0) < STALL_SIZE.x + 0.1 and z > -5.4 - 0.1 and z < -2.2 + 0.55:
+			return true
+	if x > STALL_ROW_X - STALL_SIZE.y / 2.0 - 0.55 and z < 0.95 + 0.1:
+		return true
+	for table in CANTEEN_TABLES:
+		if absf(x - table.x) < 0.95 and absf(z - table.y) < 0.95:
+			return true
+	return false
 ## The wing's frame: world x = CANTEEN_ORIGIN.x - local z, world z = CANTEEN_ORIGIN.y + local x.
 ## Its tip lands on the plan's z 24.9 (OSM); its first 4.7 m sit inside the stair
 ## tower's footprint, where the real wing meets the main block.
@@ -150,9 +191,8 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 			return true
 	if local.x > 36.3 and local.x < 65.7 and (local.x < 48.8 or local.x > 53.2) and absf(local.y - 2.68) < 0.22:
 		return true # patio rail, open at the steps
-	for stall in STALL_X:
-		if absf(local.x - stall) < 2.75 and absf(local.y + 3.15) < 0.8:
-			return true
+	if in_canteen(x, z) and in_stall(local.x, local.y):
+		return true
 	for table in PATIO_TABLES:
 		if Vector2(x, z).distance_to(table) < 1.12:
 			return true
@@ -1457,11 +1497,9 @@ func _canteen() -> void:
 	# The hall is open to the patio; the building's rear wall closes it behind the stalls.
 	box(Vector3(29, 4.9, 0.3), Vector3(51, 2.9, -7.0), material("stucco", Color("e9e0cc")))
 	box(Vector3(29, 1.2, 0.04), Vector3(51, 0.95, -6.83), material("plain", Color("c3b8a2")))
-	for x in [38.4, 45.9, 55.9, 63.4]:
+	for x in [38.4, 47.2, 56.9]:
 		box(Vector3(1.6, 2.4, 0.1), Vector3(x, 1.65, -6.82), material("plain", Color("5d5a52")))
-	for x in [41.0, 50.8, 60.6]:
-		box(Vector3(3.6, 0.7, 0.06), Vector3(x, 3.6, -6.83), material("plain", Color("c9b79a")))
-	box(Vector3(29, 0.2, 9.8), Vector3(51, 0.35, -2.4), material("tile"))
+	box(Vector3(29, 0.2, 9.8), Vector3(51, 0.35, -2.4), material("tile", Color("b8b8b4"))) # grey tiles, as in the photo
 	for i in CANTEEN_PIERS.size():
 		var x := CANTEEN_PIERS[i]
 		box(Vector3(0.65, 4.75, 0.65), Vector3(x, 2.825, 1.45), white)
@@ -1493,19 +1531,14 @@ func _canteen() -> void:
 	_valance()
 	panel("APS CANTEEN", Vector3(51, 4.8, 3.3), 3.5, 0.52, Color("fff4dc"), Color("526e75"))
 
-	var stalls := [["YUM-YUMS", "eee3cc", "34528a"], ["GRANNY JINGS", "c36f59", "fff3da"], ["BYFROST", "426db4", "ffffff"]]
-	var trays: Array[Color] = [Color("b57738"), Color("d8b55e"), Color("984c35")]
-	for i in 3:
-		var x := STALL_X[i]
-		box(Vector3(5, 1.05, 1.1), Vector3(x, 0.975, -3.15), material("stucco", Color("f5e5c5")))
-		box(Vector3(4.8, 0.45, 0.7), Vector3(x, 1.72, -3.15), material("glass", Color("d7eee5")))
-		box(Vector3(5.1, 0.08, 1.18), Vector3(x, 1.5, -3.15), material("plain", Color("b95442")))
-		for tray in 5:
-			box(Vector3(0.65, 0.08, 0.44), Vector3(x - 1.7 + tray * 0.85, 1.99, -3.15), material("plain", trays[tray % 3]))
-		panel(stalls[i][0], Vector3(x, 3.25, -3.03), 4.4, 0.7, Color(stalls[i][2]), Color(stalls[i][1]))
-		for dx in [-2.35, 2.35]:
-			box(Vector3(0.035, 1.8, 0.035), Vector3(x + dx, 2.7, -3.2), steel)
-		_omni(Vector3(x, 3.8, -1.2), Color("ffd79d"), 1.6, 7.5)
+	# The stalls (Mikko's layout): two islands of four back to back, and a row of four along
+	# the end wall by the tip facing into the hall; the blue tables and benches between them.
+	for stall in stalls():
+		_stall(stall)
+	for i in STALL_LIGHTS.size():
+		_omni(Vector3(STALL_LIGHTS[i].x, 3.8, STALL_LIGHTS[i].y), Color("ffd79d"), 1.6, 7.5)
+	for table in CANTEEN_TABLES:
+		_canteen_table(table)
 
 	for x in [37.6, 64.2]:
 		pot(x, 2.1)
@@ -1532,6 +1565,49 @@ func _canteen() -> void:
 		box(Vector3(1.2, 0.09, 2), Vector3(66.3, y, -1.2), steel)
 		rod(Vector3(66.6, y, -2.1), Vector3(66.6, y + 3, -0.3), 0.035, Color("414b50"))
 		rod(Vector3(66.6, y + 0.8, -2.1), Vector3(66.6, y + 3.8, -0.3), 0.025, Color("414b50"))
+
+## One stall in the canteen's frame: [centre, facing (unit, x/z), size (across, deep), sign
+## name or "", sign colour, ink]. Built square, its counter on the facing side, then turned:
+## a cream body, the counter with its red top, the glass guard and trays, the sign above.
+func _stall(stall: Array) -> void:
+	var at: Vector2 = stall[0]
+	var facing: Vector2 = stall[1]
+	var size: Vector2 = stall[2]
+	var turn := atan2(facing.x, facing.y)
+	var place := func(u: float, v: float) -> Vector2:
+		return at + Vector2(u, v).rotated(-turn) # u across, v out towards the counter's front
+	var piece := func(dims: Vector3, u: float, y: float, v: float, made: Material) -> void:
+		var p: Vector2 = place.call(u, v)
+		box(dims, Vector3(p.x, y, p.y), made, turn)
+	var deep := size.y
+	piece.call(Vector3(size.x, 2.6, deep - 0.7), 0.0, 0.45 + 1.3, -0.35, material("stucco", Color("f5e5c5")))
+	piece.call(Vector3(size.x, 1.05, 0.6), 0.0, 0.975, deep / 2.0 - 0.3, material("stucco", Color("efdcb8")))
+	piece.call(Vector3(size.x + 0.08, 0.08, 0.68), 0.0, 1.5, deep / 2.0 - 0.3, material("plain", Color("b95442")))
+	piece.call(Vector3(size.x - 0.2, 0.45, 0.06), 0.0, 1.78, deep / 2.0 - 0.45, material("glass", Color("d7eee5")))
+	var trays: Array[Color] = [Color("b57738"), Color("d8b55e"), Color("984c35")]
+	for tray in 3:
+		piece.call(Vector3(0.45, 0.08, 0.32), (tray - 1) * 0.6, 2.04, deep / 2.0 - 0.3, material("plain", trays[tray]))
+	piece.call(Vector3(size.x, 0.6, 0.06), 0.0, 3.25, deep / 2.0 - 0.67, material("plain", Color(stall[4])))
+	if stall[3] != "":
+		var p: Vector2 = place.call(0.0, deep / 2.0 - 0.63)
+		var label: Label3D = panel(stall[3], Vector3(p.x, 3.25, p.y), size.x - 0.2, 0.55, Color(stall[5]))
+		label.rotation.y = turn
+	for side in [-1.0, 1.0]:
+		piece.call(Vector3(0.04, 1.2, 0.04), side * (size.x / 2.0 - 0.05), 2.55, deep / 2.0 - 0.1, material("plain", Color("414b50")))
+
+## A blue fibreglass canteen table with its two benches on a black steel frame (the photo):
+## at (x, z) in the canteen's frame, the table along x.
+func _canteen_table(at: Vector2) -> void:
+	var blue := material("plain", Color("2f6fd1"))
+	var frame := material("plain", Color("1f2224"))
+	box(Vector3(1.7, 0.06, 0.8), Vector3(at.x, 1.2, at.y), blue)
+	for side in [-1.0, 1.0]:
+		box(Vector3(1.7, 0.06, 0.34), Vector3(at.x, 0.88, at.y + side * 0.7), blue)
+		for end in [-0.65, 0.65]:
+			box(Vector3(0.05, 0.43, 0.05), Vector3(at.x + end, 0.66, at.y + side * 0.7), frame)
+			box(Vector3(0.05, 0.72, 0.05), Vector3(at.x + end * 0.45, 0.81, at.y + side * 0.28), frame, 0.0, side * 0.45)
+	for end in [-0.65, 0.65]:
+		box(Vector3(0.05, 0.05, 1.45), Vector3(at.x + end, 0.6, at.y), frame)
 
 func _valance() -> void:
 	var image := Image.create(256, 16, false, Image.FORMAT_RGBA8)

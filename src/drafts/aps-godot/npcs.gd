@@ -83,7 +83,7 @@ const CAST := [
 			]},
 		]},
 	]},
-	{"id": "ate-lorna", "name": "Ate Lorna", "home": Vector2(0, 0), "roam": 0.0, "facing": -1.0, "canteen_stall": 50.8, "talks": [
+	{"id": "ate-lorna", "name": "Ate Lorna", "home": Vector2(0, 0), "roam": 0.0, "facing": -1.0, "canteen_stall": 50.55, "talks": [
 		{"when": ["lorna.ordered"], "say": ["O, ikaw ulit! Balik ka bukas, may turon na."]},
 		{"when": ["bea.turon"], "not": ["met.ate-lorna"], "say": [
 			"Ikaw pala 'yung mahilig sa turon, sabi ni Bea!",
