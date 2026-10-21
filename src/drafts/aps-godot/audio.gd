@@ -13,19 +13,19 @@ const NIGHT_ROOT := 196.0
 
 var muted := false
 var night := false
-## Indoors (canteen, hallway, walkway): the murmur and rain are muffled.
+## Indoors (canteen, hallway, walkway): the rain is muffled and the birds are not heard.
 var indoor := false
 ## Footsteps played so far, for the checks.
 var steps := 0
-## 0..1: how busy the spot is, and how hard it rains (set by the scene).
+## 0..1: how busy the spot is, and how hard it rains (set by the scene). There is no crowd
+## sound: every murmur of students tried (noise bursts, a buzz, soft tones) was heard as a
+## buzz by the APS front, so it was taken out (2026-10-22); crowd is kept for the next one.
 var crowd := 0.0
 var rain := 0.0
 ## The hour, for the birds: busiest in the morning.
 var hour := 16.5
 ## Bird calls played so far, for the checks.
 var bird_calls := 0
-## The campus around you: a murmur of students, looped.
-var murmur := AudioStreamPlayer.new()
 ## Rain: a broad hiss, pulled down to a dull roar on the roof indoors (as in the browser game).
 var rainfall := AudioStreamPlayer.new()
 var _rain_filter := AudioEffectLowPassFilter.new()
@@ -58,9 +58,6 @@ func _ready() -> void:
 	for i in 8:
 		_music.append(_player("Music"))
 		_effects.append(_player("Master"))
-	murmur.volume_db = -60.0
-	murmur.name = "Murmur"
-	add_child(murmur)
 	var rain_bus := AudioServer.get_bus_index("Rain")
 	if rain_bus < 0:
 		rain_bus = AudioServer.bus_count
@@ -77,9 +74,6 @@ func _ready() -> void:
 	rainfall.stream = _wav(_seamless(_rain(), RATE, 0.11 * MASTER), true)
 	add_child(rainfall)
 	rainfall.play()
-	# the murmur takes about a quarter of a second to render, so it is made on a
-	# worker thread and fades in when ready: no stutter at start
-	WorkerThreadPool.add_task(func() -> void: _start_loop.call_deferred(murmur, _murmur()))
 	for i in 3:
 		_warm.append(_birds.bind(i))
 	# Render the rest a little at a time so the first notes do not stutter.
@@ -99,17 +93,10 @@ func _player(bus: String) -> AudioStreamPlayer:
 	add_child(player)
 	return player
 
-func _start_loop(player: AudioStreamPlayer, stream: AudioStream) -> void:
-	if player.stream == null:
-		player.stream = stream
-		player.play()
-
 ## Renders everything still queued at once (the checks need it all ready).
 func warm_all() -> void:
 	while not _warm.is_empty():
 		_warm.pop_front().call()
-	if murmur.stream == null:
-		_start_loop(murmur, _murmur())
 
 func _play(stream: AudioStream, pool: Array[AudioStreamPlayer], delay := 0.0, volume := 1.0) -> void:
 	var player := pool[0]
@@ -140,9 +127,9 @@ func _process(delta: float) -> void:
 		if randf() < 0.3:
 			_play(_bass(root), _music)
 		_next_note = _clock + (1.4 if night else 0.9) * (2.0 if randf() < 0.3 else 1.0) + randf() * 0.5
-	# the students, quieter at night and muffled indoors (and fewer of them out in the rain)
-	_fade(murmur, crowd * (0.2 if night else 1.0) * (0.6 if indoor else 1.0) * (1.0 - 0.5 * rain), delta)
 	_fade(rainfall, rain * (0.5 if indoor else 1.0), delta)
+	# In dry weather the rain loop stops once it has faded out, rather than idling faintly.
+	rainfall.stream_paused = rain < 0.005 and rainfall.volume_db < -70.0
 	_rain_filter.cutoff_hz = lerpf(_rain_filter.cutoff_hz, 700.0 if indoor else 5200.0, 1.0 - exp(-delta * 3.0))
 	if not night and not indoor and rain < 0.3 and _clock >= _next_bird:
 		_play(_birds(randi() % 3), _effects, 0.0, randf_range(0.5, 1.0))
@@ -246,55 +233,6 @@ func _footstep(hard: bool, variant: int) -> AudioStreamWAV:
 		for i in buffer.size():
 			buffer[i] *= gain * MASTER * pow(0.0001 / gain, minf(float(i) / RATE / 0.07, 1.0))
 		return buffer)
-
-## Students talking a little way off, faintly: each voice a soft rounded tone (a sine with
-## a little of its octave and twelfth) at its own pitch, rising and falling through a
-## phrase, shaped into soft syllables with pauses between phrases; many overlap, so the
-## level stays even, and the mix is muffled as if across the lawn. (Bursts of filtered
-## noise flickered like wind; a buzz through vowel formants, tried next, buzzed.)
-func _murmur() -> AudioStreamWAV:
-	var count := RATE * 8
-	var mix := PackedFloat32Array()
-	mix.resize(count)
-	for v in 7:
-		var pitch := randf_range(105.0, 150.0) if v % 2 == 0 else randf_range(180.0, 250.0)
-		var source := PackedFloat32Array()
-		source.resize(count)
-		var level := PackedFloat32Array()
-		level.resize(count)
-		# Phrases of syllables, then a breath.
-		var at := randi_range(0, RATE)
-		while at < count:
-			var phrase := randi_range(3, 9)
-			for s in phrase:
-				var length := int(randf_range(0.11, 0.26) * RATE)
-				var loud := randf_range(0.55, 1.0)
-				for i in length:
-					if at + i >= count:
-						break
-					var t := float(i) / length
-					level[at + i] = loud * pow(sin(PI * t), 0.6)
-				at += length + int(randf_range(0.01, 0.06) * RATE)
-				if at >= count:
-					break
-			at += int(randf_range(0.35, 1.2) * RATE)
-		var phase := 0.0
-		var drift := randf() * TAU
-		for i in count:
-			var t := float(i) / RATE
-			var f := pitch * (1.0 + 0.08 * sin(TAU * 0.6 * t + drift) + 0.03 * sin(TAU * 2.3 * t))
-			phase = fposmod(phase + f / RATE, 1.0)
-			source[i] = (sin(TAU * phase) + 0.3 * sin(TAU * phase * 2.0) + 0.1 * sin(TAU * phase * 3.0)) * level[i]
-		var gain := randf_range(0.6, 1.0)
-		for i in count:
-			mix[i] += source[i] * gain
-	mix = _filter(mix, "lowpass", 900.0, 0.7)
-	var peak := 0.0001
-	for x in mix:
-		peak = maxf(peak, absf(x))
-	for i in count:
-		mix[i] /= peak
-	return _wav(_seamless(mix, RATE, 0.025 * MASTER), true)
 
 ## Rain: a soft, mostly low hiss (white noise thinned at the top), for the loop.
 func _rain() -> PackedFloat32Array:
