@@ -5,8 +5,8 @@ extends RefCounted
 ## curves north-east past low bollard lamps to the east road. North of it, lawn worn to
 ## dirt under thin shade trees and bamboo, up to the chapel's glass hall and the
 ## EVACUATION SITE 3 sign; south of it, a grass strip with red-tipped shrubs and young
-## trees, then the parked cars nosed in to it. Green picnic sheds stand on worn lawn in
-## the corner by the east road.
+## trees, then the parked cars nosed in to it. Green gabled kiosks stand in a row on worn
+## lawn in the corner by the east road.
 ##
 ## World coordinates (metres, Y up). Built with world.gd's helpers, like every area.
 
@@ -34,13 +34,15 @@ const TREES: Array[Vector3] = [Vector3(-24.0, 87.0, 7.6), Vector3(-19.5, 84.6, 6
 ## height. (Palms' level fronds are edge-on to this low view and read as bare poles.)
 const SAPLINGS: Array[Vector3] = [Vector3(-17.0, 93.8, 3.6), Vector3(-2.0, 93.6, 3.9), Vector3(13.0, 93.8, 3.4),
 	Vector3(29.6, 95.9, 3.0)]
-## Red-tipped shrubs on the picnic corner's lawn (the RIGHT SIDE DETAILS photo).
-const CORNER_SHRUBS: Array[Vector2] = [Vector2(29.4, 92.2), Vector2(36.0, 96.6), Vector2(27.2, 95.4), Vector2(35.8, 90.9)]
+## Red-tipped shrubs on the picnic corner's lawn (the RIGHT SIDE DETAILS photo), clear of
+## the Formation Center's sidewalk along the road.
+const CORNER_SHRUBS: Array[Vector2] = [Vector2(29.4, 92.2), Vector2(30.6, 94.6), Vector2(27.2, 95.4), Vector2(30.2, 88.0)]
 ## Bamboo clumps: x, z, radius.
 const BAMBOO: Array[Vector3] = [Vector3(-27.0, 85.4, 1.3), Vector3(-23.2, 81.6, 0.9), Vector3(5.8, 79.6, 1.0),
 	Vector3(26.8, 82.6, 0.8)]
-## The green picnic sheds in the corner by the east road.
-const SHEDS: Array[Vector2] = [Vector2(35.0, 84.6), Vector2(32.8, 88.8), Vector2(32.8, 93.4)]
+## The green gabled kiosks in the corner by the east road, in a row along the Formation
+## Center's sidewalk (LEFT SIDE FORMATION CENTER.JPG).
+const SHEDS: Array[Vector2] = [Vector2(32.8, 86.6), Vector2(32.8, 89.8), Vector2(32.8, 93.0), Vector2(32.8, 96.2)]
 ## The EVACUATION SITE 3 sign.
 const SIGN := Vector2(4.0, 86.0)
 ## The red bin by the glass hall's west steps.
@@ -292,7 +294,7 @@ func _planting() -> void:
 
 func _corner() -> void:
 	for shed in SHEDS:
-		w._shed(shed.x, shed.y)
+		w._kiosk(shed.x, shed.y)
 	# Low square bollards, dark grey with a warm glass top, lit at night (glow only).
 	var body: Material = w.material("plain", Color("4d5452"))
 	var lamp: Material = w.glow(Color("f2d38c"), 0.15, 1.8)

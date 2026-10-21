@@ -61,7 +61,7 @@ const PLOTS := {
 	"ggn": {"name": "Geromin G. Nepomuceno Building", "short": "GGN", "no": 10, "kind": "building", "built": false,
 		"label": Vector2(-47, -56.9),
 		"outline": [Vector2(-26.6, -99), Vector2(-22.6, -39.7), Vector2(-35.1, -31.1), Vector2(-52.5, -29.9), Vector2(-74.4, -26), Vector2(-92.8, -28.6), Vector2(-93.4, -47.3), Vector2(-87.6, -57.1), Vector2(-58, -54.6), Vector2(-57.7, -63.3), Vector2(-86.5, -65.9), Vector2(-95, -65.4), Vector2(-95.5, -85.4), Vector2(-83.7, -98.1), Vector2(-70.2, -98), Vector2(-63.6, -103.9), Vector2(-48.8, -101.6), Vector2(-42.5, -96.7)]},
-	"formation": {"name": "Sister Josefina Nepomuceno Formation Center", "short": "Formation Center", "no": 16, "kind": "building", "built": false,
+	"formation": {"name": "Sister Josefina Nepomuceno Formation Center", "short": "Formation Center", "no": 16, "kind": "building", "built": true,
 		"label": Vector2(22.5, 62.4),
 		"outline": [Vector2(9.9, 44.8), Vector2(3.7, 69), Vector2(8.2, 70.9), Vector2(11.5, 77.4), Vector2(15.9, 81.4), Vector2(28, 82), Vector2(32, 76.3), Vector2(35.6, 67.2), Vector2(36.1, 56.6), Vector2(35.5, 47.5), Vector2(34.3, 38.6), Vector2(30.9, 34.7), Vector2(20.8, 35.1), Vector2(16.9, 38.6), Vector2(13.2, 40.5)]},
 	"sh": {"name": "Sacred Heart Building", "short": "SH", "no": 18, "kind": "building", "built": false,
