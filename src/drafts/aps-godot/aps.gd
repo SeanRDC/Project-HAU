@@ -1584,6 +1584,12 @@ func _verify_and_capture() -> void:
 		for i in 60:
 			student.move(Vector2(1, 0), false, 0.05)
 		checks.walk_into_canteen = student.position.x > 35.0 and is_equal_approx(student.position.y, 0.465)
+		# The canteen's back is open: out through a gap to the strip behind the wing, the low
+		# wall solid elsewhere; HAU COOP and RINA'S FOOD face the back.
+		var back_gap := World.canteen_world((World.BACK_GAPS[0].x + World.BACK_GAPS[0].y) / 2.0, World.BACK_EDGE)
+		var low_wall := World.canteen_world(50.0, World.BACK_EDGE)
+		var wing_node := scene.find_child("CanteenWing", false, false)
+		checks.canteen_open_back = not World.blocked(back_gap.x, back_gap.y) and World.blocked(low_wall.x, low_wall.y) 			and wing_node != null and wing_node.find_child("HAU COOP", false, false) != null
 		var steps_before := sound.steps
 		for i in 20:
 			student.move(Vector2(-1, 0), false, 0.05)
