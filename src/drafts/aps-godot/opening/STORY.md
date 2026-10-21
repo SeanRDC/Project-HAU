@@ -107,7 +107,7 @@ quietly, and nobody was close enough to see the pile.
 1. **"Ako ang dahilan."** Her father's firing. It mirrors Lance's guilt.
 2. **Lola (July).** The only one who still asked "Kumain ka na ba, apo?" dies. After that,
    nobody asks. She plays her lola's last voice message on the jeep home.
-3. **The rumour (September).** A joke about "the irreg girl who failed" in a big HAU group
+3. **The rumour (September).** A joke about "the irreg girl who failed" (it started with Lance) in a big HAU group
    chat. She replies "haha grabe kayo". In the game the rumour spreads through the NPCs.
 4. **The letter (November 10).** She will be dropped at the end of the semester. She tells
    no one. That night: "Lance, may sasabihin sana ako bukas. Okay lang ba?"
@@ -132,6 +132,32 @@ In the true ending none of these is fixed by Lance; she just doesn't carry them 
 | November 11 | "Pwede ba tayong mag-usap mamaya?" Then the call at 11:11 PM | "Ang drama mo, Ysha." Declined. |
 
 In the 2026 the player relives, every row is a moment to catch, or miss again.
+
+## What lies underneath (the reveals)
+
+Truths hidden from the player, and from Lance, until late.
+
+- **The rumour started with Lance.** In August Ysha tells only him she is failing again and
+  makes him promise not to tell. Weeks later he jokes with Pat and friends: "Si Ysha nga,
+  irreg na, babagsak pa ulit." Someone posts it. Late in the game the player can trace the
+  rumour back through the NPCs' memories, and the trail ends at him.
+- **She chose him,** because he was the only one who lent her notes without asking anything
+  back. To him it was nothing; to her it was the one kindness left.
+- **Memories change when revisited.** The bright early 2026 is how Lance wants to remember
+  it. Later the same scenes replay with what he edited out: her empty tray, her eyes on the
+  jeep window, a smile that doesn't reach her eyes, the HAU letter in her bag.
+- **The opening was her sketchbook.** Ysha wanted to draw manga. Late in the game Lance finds
+  her sketchbook of HAU and recognises every page of the opening. The pages thin out from
+  June to November; the last ones are blank.
+- **Her doodle self.** She draws herself as a faceless stick figure; whenever she says "okay
+  lang ako", her sprite flickers into it for one frame.
+- **The mother who smiles.** "Anak, okay ka lang naman, 'di ba? Ikaw ang pag-asa namin."
+  Too kind, too sure, leaving no room to say she isn't.
+- **Her hidden account,** drawings and real thoughts at 3 AM under another name. In the true
+  ending she shows it to Lance and Pat; otherwise Lance finds it in 2038.
+- **Wordless pages:** scenes without words, her face in close-up, smiling a little too long.
+
+None of these is "the cause": her pain stays layered.
 
 ## What happened on November 11, 2026
 
