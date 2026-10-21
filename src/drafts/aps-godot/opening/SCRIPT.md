@@ -31,7 +31,7 @@ manga shader), else a grey card naming what to draw.
 | 6 | `bangko` (photo) | 2:14 AM. "Gising ka pa?" / Nakita ko kinaumagahan. | 2:14 AM. "Are you still up?" I saw it the next morning. |
 | 7 | `lakad` (photo) | Binigay mo sa'kin ang paborito mong ballpen. / Nawala ko sa loob ng isang linggo. | You gave me your favourite pen. I lost it within a week. |
 | 7 | `tagulan` (photo, rain drawn over) | Pagdating ng tag-ulan... / ...ikaw na lang ang hindi sumisilong. | When the rainy season came... you were the only one who didn't run for shelter. |
-| 8 | blank page, specks | Nobyembre 11. / Sana nagtanong ako. / Sana nakinig ako. / Sana hindi kita iniwan mag-isa. / ...sana sinagot ko. | November 11. I wish I'd asked. I wish I'd listened. I wish I hadn't left you alone. ...I wish I'd answered. |
+| 8 | blank page, specks | Nobyembre 11. / 11:11 PM. / 1 missed call. | November 11. 11:11 PM. 1 missed call. |
 | 9 | `mata` (to draw), on black | Kung pwede lang bumalik... / ...hindi na kita pababayaan. | If only I could go back... I would never leave you alone again. |
 
 Then the title card, "PROJECT HAU", and the game starts.

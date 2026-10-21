@@ -79,11 +79,10 @@ const PAGES := [
 		{"id": "tagulan", "rect": [0.0, 0.60, 1.0, 0.40],
 			"lines": [["Pagdating ng tag-ulan...", "C"], ["...ikaw na lang ang hindi sumisilong.", "BR"]]},
 	]},
-	# the date, and every "sana", smaller and smaller; the last line is the game's hidden truth
+	# only facts, like a phone screen; what they mean comes out late in the game
 	{"panels": [
 		{"id": "", "rect": [0.0, 0.0, 1.0, 1.0], "frame": false, "marks": true,
-			"lines": [["Nobyembre 11.", "C"], ["Sana nagtanong ako.", "L"], ["Sana nakinig ako.", "R"],
-				["Sana hindi kita iniwan mag-isa.", "BL"], ["...sana sinagot ko.", "BR"]]},
+			"lines": [["Nobyembre 11.", "L"], ["11:11 PM.", "C"], ["1 missed call.", "BR"]]},
 	]},
 	{"panels": [
 		{"id": "mata", "rect": [0.0, 0.1, 1.0, 0.8], "dark": true, "draw": "Close-up ng mga mata ng bida, may luha sa gilid",
