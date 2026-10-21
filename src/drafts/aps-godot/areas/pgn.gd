@@ -45,6 +45,21 @@ const LANE_Y := 0.0
 const POTS: Array[Vector2] = [Vector2(-136.3, 46.0), Vector2(-136.3, 42.6), Vector2(-136.3, 39.2), Vector2(-136.3, 35.8),
 	Vector2(-136.3, 32.4), Vector2(-136.3, 29.0), Vector2(-136.3, 25.6), Vector2(-136.3, 22.2), Vector2(-131.0, 35.0),
 	Vector2(-131.0, 42.6)]
+## The east face's ground floor on the west road (PGN RIGHT SIDE VIEW ON APS CLOSE UP): a
+## raised walk under the first band behind a steel railing, open at the steps up to the
+## glass door; the dark drive-through passage at its north end with yellow-edged kerbs, the
+## paved apron in front of it; a lawn strip with a rounded hedge and the NO PARKING board.
+const EAST_WALK := Rect2(EAST - RECESS, 23.0, RECESS + 0.7, 23.0)
+const EAST_WALK_Y := 0.35
+const RAIL_X := EAST + 0.65
+const EAST_STEPS := Vector2(35.4, 37.6)
+const DOOR_Z := 36.5
+const PASSAGE := Vector2(15.5, 21.0)
+const APRON := Rect2(EAST, PASSAGE.x, -62.0 - EAST, 23.0 - PASSAGE.x)
+const EAST_LAWN := Rect2(EAST, 5.0, -62.0 - EAST, PASSAGE.x - 5.0)
+## Facing PGN's east face, the camera stands over the west road and the corner garden:
+## everything east of this world x (the garden's bamboo, the chapel lawn's trees) is cut away.
+const CUT_X := -55.5
 ## The blue glass stair tower and the dark louvred corner on the west end (z from..to).
 const BLUE := Vector2(36.0, 41.6)
 const DARK := Vector2(43.4, 49.0)
@@ -63,9 +78,23 @@ static func inside(x: float, z: float) -> bool:
 
 static func walkable(x: float, z: float) -> bool:
 	var at := Vector2(x, z)
-	return LANE.has_point(at) or COURT.has_point(at)
+	return LANE.has_point(at) or COURT.has_point(at) or EAST_WALK.has_point(at) or APRON.has_point(at)
+
+## The east face's ground-floor columns (at the bands' line, every 6.4 m).
+static func east_columns() -> Array[float]:
+	var at: Array[float] = []
+	var along := 3.2
+	while along < FACE - NORTH - 2.0:
+		at.append(FACE - along)
+		along += 6.4
+	return at
 
 static func blocked(x: float, z: float) -> bool:
+	if EAST_WALK.has_point(Vector2(x, z)):
+		for column in east_columns():
+			if absf(z - column) < 0.42 and absf(x - EAST) < 0.42:
+				return true
+		return absf(x - RAIL_X) < 0.1 and (z < EAST_STEPS.x or z > EAST_STEPS.y) # the railing, open at the steps
 	if inside(x, z):
 		return true
 	for pot in POTS:
@@ -84,7 +113,19 @@ static func lane_for(x: float, z: float) -> float:
 	return 1.0 if grown.has_point(Vector2(x, z)) else 0.0
 
 static func floor_height(x: float, z: float) -> float:
+	var at := Vector2(x, z)
+	if EAST_WALK.has_point(at):
+		return EAST_WALK_Y
+	if APRON.has_point(at):
+		return -0.04
 	return LANE_Y if walkable(x, z) else NAN
+
+## 1 on the west road beside PGN's east face and on its raised walk: the camera turns to
+## face the east face from over the road (west, like MGN's view further south), rather than
+## turning east to the chapel and standing inside PGN.
+static func east_for(x: float, z: float) -> float:
+	return (1.0 - smoothstep(-57.5, -55.5, x)) * smoothstep(-67.0, -65.5, x) * smoothstep(20.0, 23.0, z) \
+		* (1.0 - smoothstep(49.5, 51.5, z))
 
 var w: RefCounted
 var white: Material
@@ -96,6 +137,7 @@ func build(world: RefCounted) -> void:
 	_floors()
 	_front()
 	_west_end()
+	_east_ground()
 	_roof()
 	_lane()
 
@@ -251,6 +293,66 @@ func _front() -> void:
 	for k in 3:
 		w.box(Vector3(doors.y - doors.x + 1.0, 0.15, 0.32), Vector3((doors.x + doors.y) / 2.0, 0.075 + 0.15 * k, FACE - RECESS + 0.7 - 0.32 * k), w.material("stone", Color("c9c4b8")))
 		w.box(Vector3(doors.y - doors.x + 1.0, 0.03, 0.05), Vector3((doors.x + doors.y) / 2.0, 0.15 + 0.15 * k, FACE - RECESS + 0.84 - 0.32 * k), w.material("plain", Color("e3c33a")))
+
+## The east face's ground floor: the raised walk and its railing, the steps and the glass
+## door, a notice board, a potted plant; the drive-through passage and its apron; the lawn
+## strip with its rounded hedge and the NO PARKING board.
+func _east_ground() -> void:
+	var tile: Material = w.material("tile", Color("cfcbc2"))
+	var edge: Material = w.material("concrete", Color("b9b8b1"))
+	var walk := EAST_WALK
+	w.box(Vector3(walk.size.x, EAST_WALK_Y + 0.2, walk.size.y), Vector3(walk.get_center().x, (EAST_WALK_Y - 0.2) / 2.0, walk.get_center().y), tile)
+	w.box(Vector3(0.12, EAST_WALK_Y + 0.22, walk.size.y), Vector3(walk.end.x - 0.06, (EAST_WALK_Y - 0.2) / 2.0 + 0.01, walk.get_center().y), edge)
+	# The railing: two steel rails on posts along the walk's edge, open at the steps.
+	var steel := Color("c9cdcf")
+	for run in [Vector2(walk.position.y + 0.2, EAST_STEPS.x), Vector2(EAST_STEPS.y, walk.end.y - 0.2)]:
+		for y in [EAST_WALK_Y + 0.5, EAST_WALK_Y + 0.95]:
+			w.rod(Vector3(RAIL_X, y, run.x), Vector3(RAIL_X, y, run.y), 0.025, steel)
+		var z: float = run.x
+		while z <= run.y + 0.01:
+			w.rod(Vector3(RAIL_X, EAST_WALK_Y, z), Vector3(RAIL_X, EAST_WALK_Y + 0.97, z), 0.022, steel)
+			z += 1.5
+	for k in 2:
+		var top := EAST_WALK_Y - 0.13 * (k + 1)
+		w.box(Vector3(0.3, top + 0.2, EAST_STEPS.y - EAST_STEPS.x), Vector3(walk.end.x + 0.15 + 0.3 * k, (top - 0.2) / 2.0, (EAST_STEPS.x + EAST_STEPS.y) / 2.0), w.material("stone", Color("c9c4b8")))
+	# The glass door in a white frame, the notice board, the potted plant.
+	w.box(Vector3(0.06, 2.4, 1.6), Vector3(EAST - RECESS + 0.05, EAST_WALK_Y + 1.2, DOOR_Z), w.material("glass", Color("2e3a44")))
+	for dz in [-0.83, 0.0, 0.83]:
+		w.box(Vector3(0.08, 2.45, 0.07), Vector3(EAST - RECESS + 0.08, EAST_WALK_Y + 1.22, DOOR_Z + dz), w.material("plain", Color("eceeec")))
+	w.box(Vector3(0.05, 0.9, 1.3), Vector3(EAST - RECESS + 0.05, EAST_WALK_Y + 1.5, 30.0), w.material("wood", Color("8a6a4c")))
+	w.box(Vector3(0.05, 0.75, 1.15), Vector3(EAST - RECESS + 0.08, EAST_WALK_Y + 1.5, 30.0), w.material("plain", Color("e6dccb")))
+	w.pot(EAST - 0.4, 44.6)
+	w._shrub(Vector3(EAST - 0.4, 0.6, 44.6), 1.2, 1760, w.HEDGE_COLORS)
+	# The drive-through passage: a dark opening under the building, yellow-edged kerbs.
+	var dark: Material = w.material("plain", Color("23272a"))
+	w.box(Vector3(0.06, GROUND - 0.4, PASSAGE.y - PASSAGE.x), Vector3(EAST - RECESS + 0.02, (GROUND - 0.4) / 2.0, (PASSAGE.x + PASSAGE.y) / 2.0), dark)
+	var reach := -62.0 - EAST + RECESS
+	for z in [PASSAGE.x, PASSAGE.y]:
+		w.box(Vector3(reach, 0.16, 0.25), Vector3(EAST - RECESS + reach / 2.0, 0.0, z), edge)
+		var stripe := 0.0
+		while stripe < reach - 0.2:
+			w.box(Vector3(0.3, 0.02, 0.26), Vector3(EAST - RECESS + 0.2 + stripe, 0.09, z), w.material("plain", Color("e3c33a")))
+			stripe += 0.6
+	w.box(Vector3(APRON.size.x + RECESS, 0.2, APRON.size.y), Vector3(APRON.get_center().x - RECESS / 2.0, -0.14, APRON.get_center().y), w.material("concrete", Color("b2b1aa")))
+	# The lawn strip: a curved kerb round its south end, a rounded clipped hedge, the board.
+	var lawn := EAST_LAWN
+	w.box(Vector3(lawn.size.x + RECESS, 0.12, lawn.size.y), Vector3(lawn.get_center().x - RECESS / 2.0, -0.1, lawn.get_center().y), w.material("grass"))
+	var corner := Vector2(EAST, lawn.position.y + lawn.size.x)
+	for i in 8:
+		var a := PI / 2.0 * i / 8.0
+		var b := PI / 2.0 * (i + 1) / 8.0
+		var p0 := corner + Vector2(sin(a), -cos(a)) * lawn.size.x
+		var p1 := corner + Vector2(sin(b), -cos(b)) * lawn.size.x
+		var mid := (p0 + p1) / 2.0
+		w.box(Vector3(p0.distance_to(p1) + 0.04, 0.18, 0.16), Vector3(mid.x, -0.07, mid.y), edge, atan2(-(p1 - p0).y, (p1 - p0).x))
+	w.box(Vector3(0.16, 0.18, lawn.end.y - corner.y), Vector3(-62.08, -0.07, (corner.y + lawn.end.y) / 2.0), edge)
+	var lime: Array[Color] = [Color("6f8a30"), Color("8fa53a"), Color("a9b84a"), Color("c4c65a"), Color("5d7a2c")]
+	w._shrub(Vector3(EAST + 0.1, -0.04, 10.5), 2.2, 1761, lime)
+	w._shrub(Vector3(EAST - 0.2, -0.04, 7.2), 1.5, 1762, w.HEDGE_COLORS)
+	for side in [-0.16, 0.16]:
+		w.box(Vector3(0.04, 0.75, 0.5), Vector3(-62.5 + side, 0.3, 13.6), w.material("plain", Color("f2f2ee")), 0.0, 0.0)
+	var board: Label3D = w.panel("NO PARKING", Vector3(-62.3, 0.38, 13.6), 0.46, 0.22, Color("1d1d1d"))
+	board.rotation.y = PI / 2.0
 
 ## The west end: the blue glass stair tower, and the dark louvred corner on the lane with
 ## the name in steel letters.
