@@ -127,10 +127,22 @@ const SLANT_BAY := 2.9
 const FRONT_ROW := Rect2(-48.0, 115.2, 82.0, 5.4)
 ## The gap in the front row at the entrance steps (world x).
 const ENTRANCE_GAP := Vector2(-18.5 + EAST_SHIFT, -4.5 + EAST_SHIFT)
-## The Mary statue's grass island at the building's right (west) end, as seen from the
-## front: between the cream stair tower and the road's turn up the west road (world).
+## The Mary statue at the building's right (west) end, as seen from the front, and the
+## bed of shrubs round her plinth (world).
 const ISLAND := Rect2(-57.0, 115.6, 6.0, 7.0)
 const MARY := Vector2(-54.0, 119.3)
+## The drive off the road's bend (mgn and Sjh middle.jpg): it curves round the Mary lawn
+## along MGN's garden kerb into the lane, through DRIVE (from, bend, to; world), 2 *
+## DRIVE_HALF wide.
+const DRIVE: Array[Vector2] = [Vector2(-60.4, 108.9), Vector2(-62.0, 115.5), Vector2(-61.7, 125.2)]
+const DRIVE_HALF := 2.2
+## The Mary lawn, one big lawn behind a curved kerb: from the drive to the road's sidewalk
+## (LAWN_ROAD from the bend's centre BEND), east to LAWN_EAST by the SJH front strip, south
+## to LAWN_SOUTH by the ramp (world).
+const BEND := Vector2(-50.5, 102.0)
+const LAWN_ROAD := 13.6
+const LAWN_EAST := -49.8
+const LAWN_SOUTH := 124.2
 
 static func origin() -> Vector2:
 	return (EDGE_EAST + EDGE_WEST) / 2.0
@@ -247,10 +259,50 @@ static func in_front(x: float, z: float) -> bool:
 
 static func walkable(x: float, z: float) -> bool:
 	var at := local(x, z)
-	return _deck(at.x, at.y) or not is_nan(_stair(at.x, at.y)) or _yard(at.x, at.y) or on_parking(x, z) or in_front(x, z)
+	return _deck(at.x, at.y) or not is_nan(_stair(at.x, at.y)) or _yard(at.x, at.y) or on_parking(x, z) or in_front(x, z) 		or in_drive(x, z)
+
+## The drive's centre line, sampled along its curve.
+static var _drive := PackedVector2Array()
+static func drive_line() -> PackedVector2Array:
+	if _drive.is_empty():
+		for i in 17:
+			var t := i / 16.0
+			_drive.append(DRIVE[0].lerp(DRIVE[1], t).lerp(DRIVE[1].lerp(DRIVE[2], t), t))
+	return _drive
+
+static func in_drive(x: float, z: float) -> bool:
+	var line := drive_line()
+	var at := Vector2(x, z)
+	for i in line.size() - 1:
+		if Geometry2D.get_closest_point_to_segment(at, line[i], line[i + 1]).distance_to(at) < DRIVE_HALF:
+			return true
+	return false
+
+## The Mary lawn's outline (world): up the drive's east kerb, round the road's sidewalk,
+## down by the front strip and back along the ramp.
+static var _lawn := PackedVector2Array()
+static func lawn() -> PackedVector2Array:
+	if _lawn.is_empty():
+		var line := drive_line()
+		var start := 0.0
+		for i in range(line.size() - 1, -1, -1):
+			var ahead := line[mini(i + 1, line.size() - 1)] - line[maxi(i - 1, 0)]
+			var edge: Vector2 = line[i] + Vector2(ahead.y, -ahead.x).normalized() * (DRIVE_HALF + 0.2)
+			if edge.distance_to(BEND) < LAWN_ROAD:
+				break
+			if edge.y < LAWN_SOUTH:
+				_lawn.append(edge)
+				start = atan2(edge.y - BEND.y, edge.x - BEND.x)
+		var to := atan2(sqrt(LAWN_ROAD * LAWN_ROAD - pow(LAWN_EAST - BEND.x, 2.0)), LAWN_EAST - BEND.x)
+		for k in range(1, 9):
+			var a := lerpf(start, to, k / 8.0)
+			_lawn.append(BEND + Vector2(cos(a), sin(a)) * LAWN_ROAD)
+		_lawn.append(Vector2(LAWN_EAST, LAWN_SOUTH))
+		_lawn.append(Vector2(_lawn[0].x, LAWN_SOUTH))
+	return _lawn
 
 static func blocked(x: float, z: float) -> bool:
-	if ISLAND.has_point(Vector2(x, z)):
+	if Geometry2D.is_point_in_polygon(Vector2(x, z), lawn()):
 		return true
 	var at := local(x, z)
 	var u := at.x
@@ -305,7 +357,7 @@ static func floor_height(x: float, z: float) -> float:
 		return stair
 	if _deck(at.x, at.y):
 		return WALK_Y
-	if on_parking(x, z) or in_front(x, z) or _yard(at.x, at.y):
+	if on_parking(x, z) or in_front(x, z) or _yard(at.x, at.y) or in_drive(x, z):
 		return -0.04
 	return NAN
 
@@ -1040,17 +1092,21 @@ func _car(at: Vector3, colour: Color, nose := 1.0, turn := 0.0) -> void:
 # --- The Mary statue garden ------------------------------------------------------------
 
 func _garden() -> void:
-	# A rounded grass island with a yellow-edged kerb.
-	var middle := ISLAND.get_center()
-	var shape := PackedVector2Array()
-	for i in 32:
-		var a := TAU * i / 32.0
-		var c := cos(a)
-		var s := sin(a)
-		shape.append(middle + Vector2(signf(c) * pow(absf(c), 0.4) * ISLAND.size.x / 2.0, signf(s) * pow(absf(s), 0.4) * ISLAND.size.y / 2.0))
+	# The drive in concrete, from the bend to the lane.
+	var line := drive_line()
+	var strip := PackedVector2Array()
+	for i in line.size() - 1:
+		var ahead := (line[i + 1] - line[i]).normalized()
+		var next := (line[mini(i + 2, line.size() - 1)] - line[i + 1]).normalized()
+		var side := Vector2(ahead.y, -ahead.x) * DRIVE_HALF
+		var side_next := Vector2(next.y, -next.x) * DRIVE_HALF
+		strip.append_array([line[i] - side, line[i] + side, line[i + 1] + side_next, line[i] - side, line[i + 1] + side_next, line[i + 1] - side_next])
+	w._ground(strip, 0.01, w.material("concrete", Color("c4c2bb")))
+	# The Mary lawn behind a curved kerb, painted yellow along its top.
+	var shape := lawn()
 	var triangles := PackedVector2Array()
-	for i in shape.size():
-		triangles.append_array([middle, shape[i], shape[(i + 1) % shape.size()]])
+	for index in Geometry2D.triangulate_polygon(shape):
+		triangles.append(shape[index])
 	w._ground(triangles, 0.08, w.material("grass"))
 	for i in shape.size():
 		var a := shape[i]
