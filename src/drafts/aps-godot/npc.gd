@@ -2,8 +2,9 @@ extends Node3D
 ## A campus NPC: a lit, alpha-cut sheet from the style reference, animated by the
 ## boy's rig (assets/drafts/characters/npcs/rig/), who strolls between spots near
 ## home, stops a while, and talks when the student asks. Posts (roam 0) stay put.
-## When the student comes near it stops, turns to them and waves; in the rain it
-## opens an umbrella unless it is under a roof.
+## When the student comes near it stops, turns to them, waves and says hello (the cast
+## shows the bubble); standing about, it looks their way from further off. In the rain
+## it opens an umbrella unless it is under a roof.
 
 const World := preload("res://world.gd")
 ## Metres per sprite pixel: the student's density, 85 px for 1.83 m.
@@ -17,6 +18,8 @@ const RATES := {"idle": 4.0, "talk": 6.0, "wave": 7.0}
 const NOTICE := 3.0
 const AWAY := 6.0
 const WAVE_TIME := 1.6
+## Metres: standing about (not walking), it turns to look at a student this close.
+const LOOK := 6.0
 
 var id := ""
 var display_name := ""
@@ -35,6 +38,8 @@ var walked := 0.0 # metres, for the checks
 ## The student is close: it stops and looks at them.
 var noticed := false
 var waved := 0 # times it has waved, for the checks
+## Set when it starts to wave: the cast shows its hello and clears it.
+var greeting := false
 ## How hard it is raining (set by the cast each frame), and whether it is under a roof.
 var rain := 0.0
 var sheltered := false
@@ -211,6 +216,7 @@ func update(delta: float, screen_right: Vector2, student_at: Vector2) -> void:
 			_greeted = true
 			_waving = WAVE_TIME
 			waved += 1
+			greeting = true
 	if _waving > 0.0:
 		_waving -= delta
 		_animate("wave", delta)
@@ -218,6 +224,8 @@ func update(delta: float, screen_right: Vector2, student_at: Vector2) -> void:
 	if noticed:
 		_animate("idle", delta)
 		return
+	if toward.length() < LOOK and (roam <= 0.0 or _wait > 0.0 or (_target - ground()).length() < 0.08):
+		_turn_to(toward, screen_right) # standing about, it looks the student's way
 	if roam <= 0.0 or _wait > 0.0:
 		_wait -= delta
 		if _wait <= 0.0 and roam > 0.0:

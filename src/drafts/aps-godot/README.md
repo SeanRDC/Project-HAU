@@ -19,14 +19,15 @@ built yet is a reserved plot, and a building is merged on its plot as
   walk into.
 - **The chapel** with its plaza, oval parking and the road loop round its lawn.
 - **The IH Gym**, outside at its real size and walkable inside.
-- **St. Joseph Hall**, its covered walkway, the Mary statue garden and parking.
+- **St. Joseph Hall**, its raised ground floor (the walkway, the elevator lobby, the west side entrance and ramp, the lane to MGN), the Mary statue garden and parking.
 - **MGN** from outside, walkable up to the turnstile, and **HAU Boulevard** (the
   middle road) between PGN and the Main Building out to the angel fountain.
 - **The Student Center**, the open arcade along the Main Building beside the
   boulevard: Cafe Juan's front, the courtyard gate, study tables, the BDO ATM, and
   a brick apron at its west end out to the fountain.
 - **Eight NPCs** (Migo, Bea, Rica, Paolo, Bianca, Kuya Ben, Ate Lorna, Coach
-  Gab) who stroll or keep their posts, wave when you come near, open umbrellas
+  Gab) who stroll or keep their posts, look your way, wave when you come near, and the
+  friendlier ones say hi (their own line, another once you've met, or one for the hour or the rain), open umbrellas
   in the rain and talk: their lines type out with a blip in their voice, they ask
   questions, and they remember your replies for the session.
 - **Weather and sound:** rain that comes and goes, with wet ground, puddles and
@@ -97,8 +98,8 @@ NPC checks fail.
 | 1-6 | APS + canteen, Whole building, Corridor, Canteen (patio), Close-up, Chapel (plaza) |
 | 7-9, 0 | IH Gym (front), Gym side (the side entrance from the lane), SJH, Gym inside (the court) |
 | Q/E, or right-drag | Camera angle (hold the right mouse button and drag) |
-| T | Morning, noon, afternoon, night |
-| G | Rain on or off (it also comes and goes on its own) |
+| T | Dawn, morning, noon, afternoon, golden hour, dusk, night |
+| G | Weather: clear, overcast, rain, thunderstorm, windy (it also changes on its own) |
 | C | Boy / girl |
 | E, Space or Enter | Talk to someone in reach, like the browser game: the line types out with a blip in their voice; press again to show it all, again for the next line (E turns the camera when nobody is near). When they ask something, pick a reply with W/S (or the arrows) and E, 1-3, or the mouse; they remember what you said |
 | M | Mute |
@@ -171,12 +172,13 @@ because their kernel grows with zoom.
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both open doorways, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
 | `areas/gym_interior.gd` | Inside the gym, walkable everywhere a student could go: the court with the seal, the bleachers upstairs on both sides, the balcony, the lobby, equipment room and corridors, the stage and backstage, the roof structure; its storeys, collision and cutaway groups |
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
-| `areas/sjh.gd` | St. Joseph Hall: the slab, its covered walkway (walk in through a railing gap), the Mary statue garden, the parking and cars |
+| `areas/sjh.gd` | St. Joseph Hall: the slab, its raised ground floor (the walkway behind its railing, the planter, brown sidewalk and grass strip in front, the elevator lobby up the long stair in the middle, the side entrance and ramp at the west end, the lane to MGN under the bridge), the Mary statue garden, the parking and cars |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside: the open-corridor block, the box-window wing over the entrance (walk in up to the turnstile), the open stair, the north block, the south wing with its roof tank, the raised garden. The camera turns to face it on the west road |
 | `areas/student_center.gd` | The Student Center, the open arcade between the boulevard and the Main Building: the planter and rail (open at the crossings), the cream posts and the roof (it fades while you are under it), Cafe Juan's windows and doorway, the courtyard gate, the offices, the study tables, the ATM and cafe tables at the west end, the brick apron out to the fountain, the lawn at the east end. Its camera weights |
 | `areas/middle_road.gd` | HAU Boulevard between PGN and the Main Building, from the west road to the angel fountain: the lanes and grass median, the hedge strips and poles, the octagon-paver walks and bronze lampposts, the shrub strips and trees, both covered walkways (pillars, slatted roofs, benches), the zebras, signs, bins and urns, and the fountain. Its camera weights (which side it faces, the covered walkway cutaway) |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
-| `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking, stopping to look at and wave to the student, an umbrella in the rain |
+| `critters.gd` | Ambient life: a dozen campus cats (Mingming, Kiko, Tisay, Itim, Puti and seven more scattered about) who sit (flicking the tail, blinking, grooming, yawning), stroll, sleep breathing and wake with a stretch, come to a student standing still, gallop off from a running one and lean into a pet (E), flocks of maya birds scattered over the open ground that hop and peck by day and flutter off when you come close, and little groups flying over; their side-on sheets are PixelLab frames cleaned in pxl (`assets/drafts/characters/critters/pxl/`, `build.ps1`) |
+| `npc.gd` | One NPC: a sheet animated by the boy's rig, strolling near home, talking, looking at the student when standing about, stopping to wave and say hello, an umbrella in the rain |
 | `npcs.gd` | The cast and their talk scripts (questions, replies, what they remember), the talk hint, speech bubble and reply card |
 | `audio.gd` | Synthesised music, footsteps, blips, crickets, the student murmur, birds and rain (no audio files) |
 | `atmosphere.gd` | Rain and wet ground, puddles and lamp reflections, light shafts, falling leaves |
@@ -200,7 +202,7 @@ switching, sprite shadows, and that the wide/whole-building framings contain
 the frontage, and the gym inside (walking in through a doorway and the side entrance, its two storeys, the stairs and bleacher rows, the stage and backstage, the cutaway and the hall view), SJH, MGN, the middle road and the walk along the chapel's south side, every fast-travel place being walkable, the NPCs (spawned on walkable ground, wandering, noticing and waving, umbrellas, talking, choices, the talk closing when you walk away), the campus sounds, and rain wetting the ground and drying. Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
 writes review shots into the ignored `builds/aps-godot-review/port/`.
 
-Optional arguments after `--`: `--hour=8|12|16.5|21`, `--girl`, `--x=`, `--z=`,
+Optional arguments after `--`: `--hour=5.75|8|12|16.5|17.75|18.5|21`, `--weather=clear|overcast|rain|storm|windy`, `--girl`, `--x=`, `--z=`,
 `--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn|middle|middle-north|fountain|student-center`, `--pixel=auto|crisp|pixel`,
 `--walk=<seconds>`, `--rain`, `--talk` (start a conversation with whoever is in reach), `--travel` (open the fast-travel panel), `--hide-help`, `--capture=<absolute PNG path>`.
 

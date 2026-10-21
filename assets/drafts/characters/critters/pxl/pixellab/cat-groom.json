@@ -1,0 +1,3 @@
+{"first_frame": {"type": "base64", "base64": "@cat-sit.png", "format": "png"}, "pad": [40, 40],
+ "action": "the sitting cat grooms itself: it lifts one front paw to its mouth, licks the paw, and wipes it over its face; side view, sitting in place",
+ "frame_count": 8, "seed": 15, "no_background": true}

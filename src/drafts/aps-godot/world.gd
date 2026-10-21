@@ -57,7 +57,7 @@ const StudentCenter := preload("res://areas/student_center.gd")
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
 	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0,
-	"octagon": 1.2, "slab": 2.4, "circles": 1.8, "lawn": 4.0}
+	"octagon": 1.2, "slab": 2.4, "circles": 1.8, "lawn": 4.0, "diamond": 2.4}
 ## Wall kinds that weather: drawn a second time with shaders/weathering.gdshader, a
 ## grime band at their foot and faint paint patches over them.
 const WEATHERED := ["stucco", "concrete", "brick", "stone", "ledge"]
@@ -66,7 +66,8 @@ const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
 	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc",
-	"octagon": "9f5a45", "slab": "ddd2bf", "circles": "a4523b", "lawn": "6f8a4b"}
+	"octagon": "9f5a45", "slab": "ddd2bf", "circles": "a4523b", "lawn": "6f8a4b",
+	"diamond": "ebe3d3"}
 
 var root: Node3D
 var lamps: Array[Light3D] = []
@@ -395,6 +396,22 @@ func _texture(kind: String) -> Texture2D:
 			for line in range(0, 128, 32):
 				_rect(image, line, 0, 1, 128, Color("b4a996"))
 				_rect(image, 0, line, 128, 1, Color("b4a996"))
+		"diamond":
+			# SJH's ground floor: cream tiles laid on the diagonal (30 cm), in a band of grey
+			# tiles drawn as a big diamond 2.4 m across, maroon tiles at its four points.
+			for y in 128:
+				for x in 128:
+					var dx := absf(float(x) - 63.5)
+					var dy := absf(float(y) - 63.5)
+					var d := dx + dy
+					var tone := image.get_pixel(x, y)
+					if d >= 46.0 and d < 58.0:
+						tone = Color("7d4b4f") if minf(dx, dy) < 7.0 else Color("8f8d8f")
+					elif random.randf() < 0.002:
+						tone = tone.darkened(0.05)
+					if posmod(x + y, 16) == 0 or posmod(x - y, 16) == 0:
+						tone = tone.darkened(0.12)
+					image.set_pixel(x, y, tone)
 		"circles":
 			# The Student Center's floor: small terracotta tiles laid in rows of overlapping
 			# circles (a fish-scale run), each circle rings of dark and light tiles round a dark
