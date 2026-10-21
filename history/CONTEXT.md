@@ -1,5 +1,10 @@
 # Project Context
 
+**Audio fixes, 2026-10-22.** The looping sounds no longer pulse as they come round (an even
+crossfade), the students' murmur is gone (every version was heard as a buzz by
+APS), the rain loop pauses in dry weather, and the birds' take-off flutter is softer and shorter. The footsteps are
+unchanged. See `sessions/2026-10-22-audio-fixes.md`.
+
 **Formation Center, 2026-10-22.** `areas/formation.gd`: the Sister Josefina G. Nepomuceno
 Formation Center behind the chapel, facing the east road, set back so the new lawn-side
 sidewalk runs round the bend north of it. The colonnade under its steel name, the roof
