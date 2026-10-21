@@ -1,5 +1,10 @@
 # Project Context
 
+**Aero Hall, 2026-10-22.** `areas/aero.gd`: the navy corrugated hall in front of the gym's
+south end, between SJH and the gym, with its gabled front block, the HAU seal, aircon
+units and signs, and the yard behind the green wall. The camera cuts SJH away when
+facing the gym from there. See `sessions/2026-10-22-aero-hall.md`.
+
 **Audio fixes, 2026-10-22.** The looping sounds no longer pulse as they come round (an even
 crossfade), the students' murmur is gone (every version was heard as a buzz by
 APS), the rain loop pauses in dry weather, and the birds' take-off flutter is softer and shorter. The footsteps are

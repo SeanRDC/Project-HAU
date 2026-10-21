@@ -22,6 +22,7 @@ const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
 const Formation := preload("res://areas/formation.gd")
+const Aero := preload("res://areas/aero.gd")
 const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
@@ -691,6 +692,12 @@ func _update_camera(delta: float) -> void:
 	if formation > 0.0:
 		var court_edge := (Vector3(Formation.CUT_X, focus.y, focus.z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, court_edge * smoothstep(0.0, 1.0, formation))
+
+	# Facing the gym's front from beside Aero Hall it would stand inside SJH: everything west
+	# of SJH's east face is cut away (only out past the road's end, not on the road).
+	if gym > 0.0 and Aero.cut_for(follow.y) > 0.0:
+		var sjh_edge := (Vector3(Aero.CUT_X, focus.y, focus.z) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, sjh_edge * smoothstep(0.0, 1.0, gym) * Aero.cut_for(follow.y))
 	# Facing south across the boulevard the camera stands over PGN's plot: everything
 	# north of it (the APS wing, the corner garden) is cut away. Facing north it stands
 	# over the Main Building and MGN: everything south of their faces is cut away.
@@ -1853,6 +1860,16 @@ func _verify_and_capture() -> void:
 		student.place(40.5, 60.0)
 		_snap_follow()
 		checks.formation_view = faces_front and formation < 0.01 and gym > 0.99
+
+		# Aero Hall: built in front of the gym's south end, solid; the concrete beside it and the
+		# yard behind the green wall walkable; facing the gym from out here the camera stands
+		# west of SJH's east face, with SJH cut away.
+		checks.aero_built = scene.find_child("AERO NO PARKING", true, false) != null and not Plots.shapes().has("annex") 			and World.blocked(51.0, 128.0) and World.blocked(Aero.PLANTER.get_center().x, Aero.PLANTER.get_center().y) 			and not World.blocked(42.0, 128.0) and not World.blocked(46.5, 140.0) and not World.blocked(60.0, 140.0) 			and World.blocked(Aero.GREEN_WALL.x, 140.0) and is_equal_approx(World.floor_height(42.0, 128.0), Aero.GROUND_Y)
+		student.place(42.0, 128.0)
+		_set_zoom(40.0, true)
+		_snap_follow()
+		_update_camera(1.0)
+		checks.aero_view = gym > 0.9 and camera.near > 1.0
 		_set_zoom(MIN_WIDTH, true)
 		_update_camera(1.0)
 		# HAU Boulevard: walkable from the west road to the fountain, both lanes, both covered
