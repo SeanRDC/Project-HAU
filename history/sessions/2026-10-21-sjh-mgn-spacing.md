@@ -54,6 +54,26 @@ side.JPG.
     plants; red octagon pavers (`CORNER`) to the walkway with the road kerb painted yellow.
   - New checks `mgn_north_entrance`, `mary_drive_and_lawn`.
 
+- **Corrections from Mikko (screenshots 1170/1173 with red markings, MGN FRONT.JPG, mgn and
+  Sjh middle.jpg; "don't hallucinate, base it on the photos").**
+  - **The curve at MGN's right side:** the paving at the boulevard's corner is one paved
+    sweep, not a rectangle. The kerb now curves from the west road into the south lane
+    (`MiddleRoad.CORNER_R` 2.5 m, yellow; outside it the lane's road, at road height), the
+    loop's grey sidewalk is paved in red octagon pavers from that curve down to MGN's
+    forecourt (`PAVED_TO`), the opening in the sidewalk and kerb (`Roads.OPENINGS`) runs to
+    the curve's end, and the south lane's kerb starts there. The yellow strip I had put by
+    the forecourt is gone (the photo's yellow is only at the curve).
+  - **The walk is beside the Mary statue:** `WALK_FROM`/`WALK_TO` moved so it leaves the
+    drive's kerb opposite her (z 119.5, she is at 119.3); the palm and shrub moved for its
+    old line are back. The `mgn_solid_and_garden` check's garden spot (0, 2) now lies on the
+    walk, so it tests (5, 2) instead.
+  - **The Mary statue, checked against CLOSE UP RIGHT SIDE.jpg and mgn and Sjh middle.jpg:**
+    the pedestal is square (a plinth, the white shaft, a cap in two steps, the plaque on
+    its front face), not octagonal; on her chest a white rose with a blush-pink heart and
+    two leaves, not a pink heart with a flame; the mantle a clearer pale blue (it read as
+    white). Her arms held out and down in bell sleeves were already as in the photos.
+  - **Her lawn's kerb is rounded** (the outline's corners cut twice), as in the photos.
+
 ## What changed
 
 - `areas/sjh.gd`: `EAST_SHIFT`, `LANE`, `LANE_BACK`, `ENTRANCE_GAP`, the end wall.
