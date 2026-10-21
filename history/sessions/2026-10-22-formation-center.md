@@ -37,6 +37,12 @@ build the kiosks too; set the building back inside its plot.
   gym). On the road it still faces the gym. `--view=formation`.
 - The plot is marked built (`tools/export-godot-plan.mjs`), so its pad is gone.
 
+## Joined to the chapel
+
+Mikko (screenshot 1181): "they are perfectly aligned together", so no gap between
+them. The back now runs on west to the chapel's east wall (`CHAPEL_EDGE`, the plot edge
+they share): full height behind the middle block, the south wing's height beside it.
+
 ## Checks
 
 `--test`: all true, with `formation_built`, `formation_walkable`, `formation_sidewalk`
