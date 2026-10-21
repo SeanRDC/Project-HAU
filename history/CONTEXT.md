@@ -1,5 +1,12 @@
 # Project Context
 
+**Formation Center, 2026-10-22.** `areas/formation.gd`: the Sister Josefina G. Nepomuceno
+Formation Center behind the chapel, facing the east road, set back so the new lawn-side
+sidewalk runs round the bend north of it. The colonnade under its steel name, the roof
+canopy, the stair tower's green strips, two curved wings; a drop-off round the tree
+island; gabled kiosks in a row along the road south of it. In front of it the camera faces
+it from over the road (`--view=formation`). See `sessions/2026-10-22-formation-center.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
