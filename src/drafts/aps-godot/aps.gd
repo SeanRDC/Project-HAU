@@ -21,6 +21,7 @@ const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
+const CoveredCourt := preload("res://areas/court.gd")
 const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
@@ -675,6 +676,11 @@ func _update_camera(delta: float) -> void:
 	if mgn > 0.0:
 		var lawn_edge := (Vector3(Mgn.CUT_X, focus.y, focus.z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, lawn_edge * smoothstep(0.0, 1.0, mgn))
+	# Facing south at the gym from the lane (or inside it), the camera stands over the
+	# Covered Court: its roof and columns, north of the lane, are cut away.
+	if forward.z > 0.3 and focus.z > CoveredCourt.CUT_Z and camera.position.z < CoveredCourt.CUT_Z:
+		var court_edge := (Vector3(focus.x, focus.y, CoveredCourt.CUT_Z) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, court_edge)
 	# Facing south across the boulevard the camera stands over PGN's plot: everything
 	# north of it (the APS wing, the corner garden) is cut away. Facing north it stands
 	# over the Main Building and MGN: everything south of their faces is cut away.
@@ -1526,7 +1532,7 @@ func _verify_and_capture() -> void:
 		checks.plan_loaded = CampusPlan.PLOTS.size() == 29 and CampusPlan.PLOTS["aps"]["built"] \
 			and not CampusPlan.PLOTS.has("corazon") and not CampusPlan.PLOTS.has("srh")
 		checks.road_loop_closed = Roads.points()[0].distance_to(Roads.points()[-1]) < 0.01
-		checks.plots_reserved = Plots.occupied(72.6, 38.8) and Plots.occupied(76.8, -7.1) and not Plots.occupied(-8.7, 58.1)
+		checks.plots_reserved = Plots.occupied(-197.1, 43.6) and Plots.occupied(76.8, -7.1) and not Plots.occupied(-8.7, 58.1)
 		# The layout reference: the Student Center (built now, so no longer a plot) between
 		# the boulevard and the Main Building, and every plot painted with its name and
 		# outlined in dashes.
@@ -1799,6 +1805,17 @@ func _verify_and_capture() -> void:
 		_set_zoom(MIN_WIDTH, true)
 		_update_camera(1.0)
 		checks.mgn_close_shows_student = _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
+		# The Covered Court: built on its plot, its floor and the ramp up from the gym's lane
+		# walkable, the columns, bleachers and the things in front of it solid; facing south at
+		# the gym from the lane, its roof is cut away.
+		checks.court_built = scene.find_child("COURT RESERVED", true, false) != null and not Plots.shapes().has("court") 			and not World.blocked(70.0, 40.0) and is_equal_approx(World.floor_height(70.0, 40.0), CoveredCourt.FLOOR_Y) 			and not World.blocked(70.0, 56.8) and World.blocked(CoveredCourt.columns()[2], CoveredCourt.SHED.end.y - 0.3) 			and World.blocked(70.0, 21.0) and World.blocked(CoveredCourt.SHED_AT.x, CoveredCourt.SHED_AT.y)
+		student.place(GYM_SIDE_SPOT.x, GYM_SIDE_SPOT.y)
+		_set_zoom(44.0, true)
+		_snap_follow()
+		_update_camera(1.0)
+		checks.court_cut_from_lane = gable > 0.9 and camera.near > 1.0
+		_set_zoom(MIN_WIDTH, true)
+		_update_camera(1.0)
 		# HAU Boulevard: walkable from the west road to the fountain, both lanes, both covered
 		# walkways, both open walks and the crossings; the strips, median, planters, pillars
 		# and the fountain solid.
