@@ -1,0 +1,104 @@
+# SJH's back and the lane behind it
+
+**Who:** Jorel, with Claude Code.
+
+## What was asked
+
+Build St. Joseph Hall's rear facade from nine photos taken along it from the gym's end,
+where the scene had only the slab's blank back face, and expand the map if the lane
+behind it needs it.
+
+## Decisions
+
+- **The gym's end is the east end** (local x −47.9): the gym's plot is x 57..101, SJH's
+  −59..36.5. In the photos the building is always on the right, so they look west, and the
+  white building closing the lane (photos 4, 8, 10) is MGN's south wing.
+- **Order from the photos' content.** Photo 1 (the back entrance) and photo 9 were taken at
+  the same spot (the green-posted shed, NO PARKING sign, red tactile strip), and photos 2–8
+  step west from the east corner. So the back entrance stands after the HAU VEHICLE ONLY
+  carport, not at the gym's end. East to west: the palm strip by the rusticated corner, the
+  basement ramp under its rusty pergola, motorcycles, the yellow shed with the Isuzu and a
+  CR-V, a lean-to of sedans, HAU VEHICLE ONLY (two vans, two pickups, a closed east end), the
+  louvred utility block, the back entrance's steps, the patched shed with the red vehicle,
+  the low carport. Spacing along the wall is estimated from the photos.
+- **The facade:** per floor a white slab standing out 0.9 m as a sunshade over a cream wall
+  (`#f6ecd0`) between white piers, brown-framed `framed_window()`s (`#5b4334`), silver
+  window-AC hoods on about three in four, four bays of brown louvres; the plinth with
+  basement louvres; rusticated end blocks with a vent; downpipes; a dark eave. All over
+  the body's back face (not removed).
+- **The lane is walkable.** It runs from the east end to the west end between the back and
+  the perimeter wall (z ≈ 157..161), reached round SJH's east end from the south road's
+  corner (x 37..44.4): Aero Hall's reserved plot fills the strip south of the gym's apron,
+  and photo 2 shows the road bending in there. The outer bound goes from z 140 to 162.
+  Past the lane is blocked: before, only the z 140 bound kept the student out of the
+  ground south of SJH.
+- **The camera** keeps its plain north view there (`Sjh.rear_for`; the SJH front, gym,
+  chapel and MGN zones yield). The near plane cuts past the far kerb, capped in front of
+  the slab's nearest top corner; without the cap, wide or turned frames sliced the top of
+  the facade's near end.
+- **Left out:** the trees along the perimeter wall (the camera always looks across them and
+  a flat cut cannot hold them back at the frame's edges); the ramp only dips 0.15 m (a
+  `shortcut:` comment), with no basement behind its dark mouth; no interiors.
+
+## What changed
+
+- `areas/sjh.gd`: `_rear()`, `_rear_ground()`, `_van()`, `_rear_planting()`; `rear_for()`,
+  `on_lane()`, `carport_posts()`; `on_parking()` takes in the lane (floor −0.04, no grass);
+  `blocked()` has the props, vehicles, posts and everything past the lane.
+- `world.gd`: `clamp_position` z 140 → 162.
+- `aps.gd`: the gym, chapel and MGN zones yield to `rear_for`; the back lane's cut;
+  `--view=sjh-rear`; fast travel "SJH back lane"; checks `sjh_rear_lane` and
+  `sjh_rear_view_faces_back`.
+- Photos in `assets/SJH BUILDING/rear/01–09.jpg`, in walking order.
+- `docs/godot-art-style.md` (SJH file row, the back lane zone, the bounds), the Godot README.
+
+## Checks
+
+Headless `--test`: all true, `checks_pass` true. `npm run check` and `npm run build` pass.
+Captures looked at: the lane at 22, 40, 64 and 112 m, at angles 0.12 and −0.25, at morning,
+noon, afternoon and night, and the lane round the east end.
+
+## Also: the crash on quit
+
+Every run on macOS ended in `libc++abi: ... recursive_mutex lock failed` (exit 134),
+headless too; an empty project quit cleanly. `audio.gd` rendered the murmur on a
+`WorkerThreadPool` task it never waited on, and Godot needs every pool task waited on:
+at quit it freed the task after the script engine was gone. The task's id is kept now and
+waited on in `_exit_tree()`. Both `--test` and a windowed capture exit 0. Left: two leak
+lines at exit (a particle shader never freed), harmless.
+
+## The east corner, refined from photo 2
+
+The palm strip now runs to the ramp inside a rounded kerb, planted as in the photo: a big
+clipped lime ficus by the corner, a golden bush, small dark round ones, another ficus by
+the ramp; a garden hose across it and a wet stain along the lane's edge. Across the lane:
+the gate pillar (`GATE`, local x −49.2) with the yellow meter box, cut-branch piles, two
+drum transformers on the east pole, more wires (two dropping to the corner), and the
+perimeter wall turning maroon with a white iron railing east of the pillar. The camera's
+cut cap now uses only the part of the back in frame (the whole building's top corners
+held the cut too near at the east end with the camera turned, and the wall hid the
+student). The pillar, poles and wall stand past the cut: they show in the F2 free cam.
+
+Then, from Jorel's free-cam look: the bed is now 3.2 m deep (`BED`), wraps the corner on a
+round kerb of that radius and runs 8 m up the east end (`BED_SIDE`), one outline
+(`Sjh.bed()`) for the grass, the kerb and the collision, with thirteen bushes. The palm got a
+ring of rising and a ring of drooping fronds (the chapel palm's near-level fronds read
+edge-on from the lane).
+
+Then the side entrance on the east end, just past the bed, from its photo
+(`_east_entrance()`, `ENTRY`): the grooved salmon-red block under a cream cornice, the
+opening cut through the east stair tower's ground floor (the tower is split round it),
+cream walls, the `tile` floor with a maroon mat and a tube light, four tiled steps with
+dark nosings out to a wide bottom step with cut corners, brown handrails with steel tops,
+and the tall louvre on the cream wall to the north. The steps are solid; the corridor
+behind is a grey back wall, not built. It faces east, away from the lane's camera, so it
+shows in the F2 free cam (checked there with a temporary capture flag, not committed).
+
+## Merge with main
+
+Merged main (SJH's raised ground floor, 12 m `SETBACK`, the atmosphere, cats, camera
+centring). Conflicts kept both sides: `Sjh.view_for` keeps main's west-end zone and
+yields to `rear_for`; `Sjh.blocked` has main's deck rules then the back's. With the
+student centred top to bottom, `sjh_rear_view_faces_back` now checks the back from 1 to
+6 m (12 m is above the 64 px test frame). Headless `--test` all true; `npm run check` and
+`npm run build` pass.

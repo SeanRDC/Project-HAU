@@ -37,6 +37,9 @@ var _warm: Array[Callable] = []
 var _clock := 0.0
 var _next_note := 1.0
 var _next_chirp := 0.0
+## The worker task rendering the murmur: Godot needs every pool task waited on, or quitting
+## frees it after the script engine is gone and aborts.
+var _murmur_task := -1
 var _step := 0
 
 func _ready() -> void:
@@ -79,7 +82,7 @@ func _ready() -> void:
 	rainfall.play()
 	# the murmur takes about a quarter of a second to render, so it is made on a
 	# worker thread and fades in when ready: no stutter at start
-	WorkerThreadPool.add_task(func() -> void: _start_loop.call_deferred(murmur, _murmur()))
+	_murmur_task = WorkerThreadPool.add_task(func() -> void: _start_loop.call_deferred(murmur, _murmur()))
 	for i in 3:
 		_warm.append(_birds.bind(i))
 	# Render the rest a little at a time so the first notes do not stutter.
@@ -388,3 +391,8 @@ func _wav(buffer: PackedFloat32Array, loop := false) -> AudioStreamWAV:
 		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		wav.loop_end = buffer.size()
 	return wav
+
+func _exit_tree() -> void:
+	if _murmur_task >= 0:
+		WorkerThreadPool.wait_for_task_completion(_murmur_task)
+		_murmur_task = -1

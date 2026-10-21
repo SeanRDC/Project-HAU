@@ -1,5 +1,16 @@
 # Project Context
 
+**SJH's back, 2026-10-21.** `areas/sjh.gd` builds St. Joseph Hall's rear facade from the
+rear photos (`assets/SJH BUILDING/rear/`, east to west): slab sunshades over cream walls,
+brown-framed windows with AC hoods, louvre bays; and on the lane behind it the basement
+ramp, the yellow shed, the HAU VEHICLE ONLY carport, the utility block, the back entrance
+and the sheds. The lane is walkable, reached round SJH's east end from the south road; the
+outer bound is now z 162. The camera faces north at the back (`Sjh.rear_for`). Fast travel:
+"SJH back lane", `--view=sjh-rear`. At the east corner a planted bed on a round kerb wraps
+round to the east end (`Sjh.bed()`), and past it the east end's side entrance (red block,
+tiled steps, handrails; `_east_entrance()`, the corridor not built). Godot no longer aborts
+on quit (`audio.gd` waits for its worker task). See `sessions/2026-10-21-sjh-rear-facade.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
