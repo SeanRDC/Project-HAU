@@ -3,7 +3,7 @@ extends RefCounted
 ## hall in front of the gym's south end, between St. Joseph Hall and the gym, just past the
 ## gym's HOLY ANGEL UNIVERSITY GYM doorway. One storey of corrugated navy walls on a white
 ## base under a dark metal gable roof; a taller gabled front block at its north end with
-## the HAU seal on its side; windows with white aircon units, a NO PARKING sign, a white
+## the HAU seal on its side (drawn to the photo, `_seal`); windows with white aircon units, a NO PARKING sign, a white
 ## planter with shrubs; free-standing signs on the concrete in front. Past it, towards
 ## SJH, a yard behind a green-painted wall, walled off at the campus edge, with bins, a
 ## skip and a small steel-framed shelter.
@@ -149,25 +149,7 @@ func _hall() -> void:
 func _details() -> void:
 	var face := HALL.position.x - FRONT_OUT - 0.04 # the front block's west face
 	var wall := HALL.position.x - 0.04 # the long part's west face
-	# The seal: a white disc in a navy ring with a dark shield and white wings.
-	var disc := CylinderMesh.new()
-	disc.top_radius = 0.95
-	disc.bottom_radius = 0.95
-	disc.height = 0.06
-	disc.radial_segments = 24
-	var seal: MeshInstance3D = w._mesh(disc, Vector3(face - 0.03, 2.4, 123.0), w.material("plain", Color("f4f4f0")))
-	seal.rotation.z = PI / 2.0
-	var ring := CylinderMesh.new()
-	ring.top_radius = 1.05
-	ring.bottom_radius = 1.05
-	ring.height = 0.04
-	ring.radial_segments = 24
-	var rim: MeshInstance3D = w._mesh(ring, Vector3(face - 0.01, 2.4, 123.0), w.material("plain", Color("3c4a7a")))
-	rim.rotation.z = PI / 2.0
-	for side in [-1.0, 1.0]:
-		w.box(Vector3(0.04, 0.42, 0.34), Vector3(face - 0.07, 2.55, 123.0 + side * 0.36), w.material("plain", Color("b9bec8")), 0.0, side * 0.4) # the wings
-	w.box(Vector3(0.04, 0.62, 0.42), Vector3(face - 0.09, 2.32, 123.0), w.material("plain", Color("2f3a66"))) # the shield
-	w.box(Vector3(0.04, 0.1, 0.46), Vector3(face - 0.11, 2.3, 123.0), w.material("plain", Color("c9a65a")), 0.0, 0.5)
+	_seal(Vector3(face - 0.03, 2.4, 123.0), 1.0)
 	# The door, round the front block's corner, facing the gym's doorway.
 	w.box(Vector3(1.2, 2.3, 0.05), Vector3(HALL.position.x + 0.7, BASE_Y + 1.15, FRONT.x - 0.03), w.material("glass", Color("1f242b")))
 	# Windows along the long part, each with a white aircon unit on the wall beside it.
@@ -204,6 +186,133 @@ func _details() -> void:
 		if board[1] != "":
 			var label: Label3D = w.panel(board[1], Vector3(at.x - 0.03, 1.0, at.y), 0.58, 0.16, board[2])
 			label.rotation.y = -PI / 2.0
+
+## The university seal as on the hall (IMG_1519.JPG): a white disc with a thin navy ring
+## inside its edge, LAUS DEO SEMPER round the top and HOLY ANGEL UNIVERSITY round the
+## bottom; inside, a brown shield under a white scalloped mantle, and the white angel with
+## its wings spread down holding a small black shield with a gold band reading HAU. Drawn
+## as a pixel image facing the wall's outside (west), the lettering as Label3Ds round it.
+func _seal(at: Vector3, radius: float) -> void:
+	var size := 96
+	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var white := Color("f4f3ee")
+	var navy := Color("2d3a66")
+	var brown := Color("6b3a2a")
+	var black := Color("1e1e22")
+	var gold := Color("c9a14a")
+	var angel := Color("f7f6f2")
+	var shade := Color("c9ccd4")
+	var c := (size - 1) / 2.0
+	for y in size:
+		for x in size:
+			var d := Vector2(x - c, y - c).length()
+			if d <= c:
+				image.set_pixel(x, y, white)
+			if d <= c and d > c - 1.5:
+				image.set_pixel(x, y, navy)
+			if absf(d - c * 0.72) < 0.7:
+				image.set_pixel(x, y, navy)
+	# The brown shield: flat top, straight sides, rounding to a point (y down in the image).
+	var top := 24
+	var bottom := 74
+	for y in range(top, bottom + 1):
+		var k := float(y - top) / (bottom - top)
+		var half := 18.0 if k < 0.5 else 18.0 * sqrt(maxf(0.0, 1.0 - pow((k - 0.5) / 0.5, 2.0)))
+		for x in range(roundi(c - half), roundi(c + half) + 1):
+			image.set_pixel(x, y, brown)
+	# The white mantle's scallops across its top.
+	for k in 3:
+		var centre := Vector2(c - 12.0 + 12.0 * k, top + 1.0)
+		for y in range(top - 3, top + 6):
+			for x in range(roundi(centre.x - 7), roundi(centre.x + 7)):
+				if Vector2(x, y).distance_to(centre) < 6.5 and y <= top + 4:
+					image.set_pixel(x, y, angel)
+	# The angel: the wings spread down and out from the shoulders, the head, the robe.
+	for side in [-1, 1]:
+		for y in range(36, 66):
+			var reach := 6 + (y - 36) * 0.45
+			var inner := 3 + (y - 36) * 0.15
+			for dx in range(roundi(inner), roundi(minf(reach, 22.0))):
+				var x: int = roundi(c) + side * dx
+				var feather: bool = (x + y) % 5 == 0
+				image.set_pixel(x, y, shade if feather else angel)
+	for y in range(36, 80):
+		var half := 4.0 + (y - 36) * 0.08
+		for x in range(roundi(c - half), roundi(c + half) + 1):
+			image.set_pixel(x, y, angel if (x + y) % 7 != 0 else shade)
+	for y in range(27, 36):
+		for x in range(roundi(c - 4), roundi(c + 5)):
+			if Vector2(x, y).distance_to(Vector2(c, 31)) < 4.2:
+				image.set_pixel(x, y, Color("f0d9b5"))
+	# A soft grey outline where the angel meets the brown, so its wings and robe read.
+	var outline: Array[Vector2i] = []
+	for y in range(1, size - 1):
+		for x in range(1, size - 1):
+			if image.get_pixel(x, y) != angel:
+				continue
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if image.get_pixel(x + d.x, y + d.y) == brown:
+					outline.append(Vector2i(x, y))
+					break
+	for spot in outline:
+		image.set_pixelv(spot, Color("9da2ae"))
+	# The small black shield the angel holds, a gold band down across it reading HAU.
+	for y in range(46, 70):
+		var k := float(y - 46) / 23.0
+		var half := 8.0 if k < 0.55 else 8.0 * sqrt(maxf(0.0, 1.0 - pow((k - 0.55) / 0.45, 2.0)))
+		for x in range(roundi(c - half), roundi(c + half) + 1):
+			var on_band := absf((x - (c - 8.0)) * 1.3 - (y - 46.0) - 1.0) < 4.0
+			image.set_pixel(x, y, gold if on_band else black)
+	var glyphs := {"H": ["101", "101", "111", "101", "101"], "A": ["010", "101", "111", "101", "101"], "U": ["101", "101", "101", "101", "111"]}
+	var letters := ["H", "A", "U"]
+	for n in 3:
+		var origin := Vector2i(roundi(c - 7.0) + n * 4, 47 + n * 5)
+		for row in 5:
+			for col in 3:
+				if glyphs[letters[n]][row][col] == "1":
+					image.set_pixel(origin.x + col, origin.y + row, black)
+	image.generate_mipmaps()
+	var made := StandardMaterial3D.new()
+	made.albedo_texture = ImageTexture.create_from_image(image)
+	made.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	made.alpha_scissor_threshold = 0.4
+	made.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT
+	made.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	made.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS
+	# A node facing the wall's outside (-x), holding the disc and its lettering.
+	var seal := Node3D.new()
+	seal.name = "AeroSeal"
+	seal.position = at
+	seal.rotation.y = -PI / 2.0
+	w.root.add_child(seal)
+	var quad := QuadMesh.new()
+	quad.size = Vector2(2.0 * radius, 2.0 * radius)
+	var disc := MeshInstance3D.new()
+	disc.mesh = quad
+	disc.material_override = made
+	seal.add_child(disc)
+	# The lettering round the ring: LAUS DEO SEMPER over the top, HOLY ANGEL UNIVERSITY
+	# under the bottom, each letter turned to the ring, read left to right.
+	var ring := radius * 0.86
+	for line in [["LAUS DEO SEMPER", 1.0, deg_to_rad(62.0)], ["HOLY ANGEL UNIVERSITY", -1.0, deg_to_rad(72.0)]]:
+		var text: String = line[0]
+		var up: float = line[1]
+		var spread: float = line[2]
+		for n in text.length():
+			if text[n] == " ":
+				continue
+			var a := lerpf(-spread, spread, n / float(text.length() - 1))
+			var letter := Label3D.new()
+			letter.text = text[n]
+			letter.font_size = 32
+			letter.pixel_size = radius * 0.0042
+			letter.outline_size = 0
+			letter.modulate = navy
+			letter.shaded = true
+			letter.alpha_cut = Label3D.ALPHA_CUT_OPAQUE_PREPASS
+			letter.position = Vector3(sin(a) * ring, up * cos(a) * ring, 0.01)
+			letter.rotation.z = -a if up > 0.0 else a
+			seal.add_child(letter)
 
 ## The yard: the green-painted wall with its stains, the grey wall at the campus edge, the
 ## skip, a blue bin, a pile of cut branches, the steel-framed shelter, a pole with a lamp.
