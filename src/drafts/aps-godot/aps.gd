@@ -2049,13 +2049,39 @@ func _verify_and_capture() -> void:
 		var by_cat: Vector2 = tisay.at + Vector2(0.6, 0.0)
 		student.position = Vector3(by_cat.x, World.floor_height(by_cat.x, by_cat.y), by_cat.y)
 		var petted: bool = critters.pet() and tisay.state == "petted" and critters.pets == 1
+		# petted, it leans into the hand (its own frames); sitting, it fidgets now and then; asleep
+		# it breathes; it wakes with a stretch and strolls off
+		var leans := {}
+		for i in 40:
+			critters._update_cat(tisay, 1.0 / 30.0, by_cat, true, false, side)
+			if tisay.state == "petted":
+				leans[tisay.sprite.frame] = tisay.sprite.texture == tisay.sheets.petted[0]
+		var kiko: Dictionary = critters.cats[1]
+		var away: Vector2 = kiko.at + Vector2(30.0, 0.0)
+		kiko.state = "sit"
+		kiko.timer = 99.0
+		kiko.next_fidget = 0.0
+		var fidgeted := false
+		for i in 30:
+			critters._update_cat(kiko, 1.0 / 30.0, away, false, false, side)
+			fidgeted = fidgeted or (kiko.fidget != "" and kiko.sprite.texture == kiko.sheets[kiko.fidget][0])
+		kiko.state = "sleep"
+		kiko.timer = 2.0
+		var breaths := {}
+		var stretched := false
+		for i in 180:
+			critters._update_cat(kiko, 1.0 / 30.0, away, false, false, side)
+			if kiko.state == "sleep" and kiko.sprite.texture == kiko.sheets.breathe[0]:
+				breaths[kiko.sprite.frame] = true
+			stretched = stretched or (kiko.state == "stretch" and kiko.sprite.texture == kiko.sheets.stretch[0])
+		var cat_animates: bool = leans.size() >= 3 and leans.values().all(func(v: bool) -> bool: return v) and fidgeted 			and breaths.size() >= 3 and stretched and kiko.state in ["walk", "sit"]
 		# birds flying over cross between the camera and the student, above the ground
 		var screen_right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
 		critters._launch(Vector2(student.position.x, student.position.z), screen_right)
 		critters.update(1.0 / 30.0, true, false, false, false)
 		var over: Node3D = critters.flyers[-1].birds[0].node
 		var flying_over: bool = over != null and over.position.y > World.floor_height(over.position.x, over.position.z) + 2.0 			and (over.position - student.position).dot(camera.global_transform.basis.z) > 1.0
-		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and landed and petted 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
+		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and landed and petted and cat_animates 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
 		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0
