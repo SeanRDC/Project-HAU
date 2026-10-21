@@ -51,6 +51,7 @@ const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
+const Formation := preload("res://areas/formation.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
@@ -114,7 +115,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
 	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
-			or StudentCenter.walkable(x, z):
+			or StudentCenter.walkable(x, z) or Formation.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
@@ -137,7 +138,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
-			or StudentCenter.blocked(x, z):
+			or StudentCenter.blocked(x, z) or Formation.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -178,6 +179,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return -0.19 # carriageway
 	if (across >= 3.85 and across <= 4.135) or (across >= 10.865 and across <= 11.135):
 		return 0.0 # kerb
+	var formation := Formation.floor_height(x, z)
+	if not is_nan(formation):
+		return formation
 	var entry := Mgn.floor_height(x, z)
 	if not is_nan(entry):
 		return entry
@@ -217,6 +221,7 @@ func build(parent: Node3D) -> void:
 	Mgn.new().build(self)
 	MiddleRoad.new().build(self)
 	StudentCenter.new().build(self)
+	Formation.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -1234,6 +1239,41 @@ func _shed(x: float, z: float) -> void:
 		for dz in [-0.62, 0.62]:
 			box(Vector3(0.05, 0.43, 0.05), Vector3(x + dx, 0.22, z + dz), dark)
 
+## A picnic kiosk: a gabled roof of green ribbed sheet on four posts, its ridge running
+## along x, open gables with a tie and a king post, a table and two benches under it
+## (the kiosks by the Formation Center).
+func _kiosk(x: float, z: float) -> void:
+	var green := material("plain", Color("2f7a55"))
+	var dark := material("plain", Color("245f43"))
+	var trim := material("plain", Color("4f9a6c"))
+	var sheet := material("ribbed", Color("3d8a60"))
+	var eave := 2.2
+	var ridge := 2.9
+	var run := 1.45
+	var slope := atan2(ridge - eave, run)
+	var length := run / cos(slope)
+	for dx in [-1.35, 1.35]:
+		for dz in [-1.15, 1.15]:
+			box(Vector3(0.08, eave, 0.08), Vector3(x + dx, eave / 2.0, z + dz), green)
+	for side in [-1.0, 1.0]:
+		box(Vector3(3.3, 0.05, length + 0.04), Vector3(x, (eave + ridge) / 2.0 + 0.03, z + side * run / 2.0), sheet, 0.0, side * slope)
+		for end in [-1.65, 1.65]:
+			box(Vector3(0.06, 0.12, length), Vector3(x + end, (eave + ridge) / 2.0, z + side * run / 2.0), trim, 0.0, side * slope)
+	box(Vector3(3.36, 0.09, 0.2), Vector3(x, ridge + 0.05, z), dark)
+	for end in [-1.6, 1.6]:
+		box(Vector3(0.06, 0.08, 2.9), Vector3(x + end, eave, z), trim)
+		box(Vector3(0.06, ridge - eave, 0.08), Vector3(x + end, (eave + ridge) / 2.0, z), trim)
+	for dz in [-1.15, 1.15]:
+		box(Vector3(2.8, 0.08, 0.06), Vector3(x, eave, z + dz), dark)
+	box(Vector3(2.4, 0.05, 0.8), Vector3(x, 0.76, z), green)
+	for dz in [-0.62, 0.62]:
+		box(Vector3(2.4, 0.045, 0.3), Vector3(x, 0.45, z + dz), green)
+	for dx in [-1.0, 1.0]:
+		box(Vector3(0.06, 0.74, 0.06), Vector3(x + dx, 0.37, z), dark)
+		box(Vector3(0.06, 0.06, 1.55), Vector3(x + dx, 0.4, z), dark)
+		for dz in [-0.62, 0.62]:
+			box(Vector3(0.05, 0.43, 0.05), Vector3(x + dx, 0.22, z + dz), dark)
+
 # --- Left of the wing ------------------------------------------------------------
 
 ## The garden outside the road's turn at the wing's west end, from the "APS LEFT
@@ -1349,7 +1389,7 @@ func _grasses() -> void:
 			if not ChapelSouth.grassy(x, z) and random.randf() > 0.15:
 				return false # only thin grass on the dirt under the trees
 		var at := Vector2(x, z)
-		if not Geometry2D.is_point_in_polygon(at, inner) or Chapel.walkable(x, z) or Sjh.on_parking(x, z):
+		if not Geometry2D.is_point_in_polygon(at, inner) or Chapel.walkable(x, z) or Sjh.on_parking(x, z) or Formation.covers(x, z):
 			return false
 		return not Geometry2D.is_point_in_polygon(at, Chapel.outline()) and not Plots.occupied(x, z)
 	var scatter := func(from: Vector2, to: Vector2, count: int, y: float, scale: float, test: Callable) -> void:

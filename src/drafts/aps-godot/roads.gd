@@ -30,8 +30,10 @@ const PIECES := [
 ]
 
 ## Where the building-side sidewalk and kerb stop for a side road (world x/z rects):
-## the middle road's mouth on the west road and its curved corner on MGN's side (areas/middle_road.gd).
-const OPENINGS: Array[Rect2] = [Rect2(-64.0, 59.9, 3.0, 9.4 + 2.5)] # to the end of the plaza's curved corner (middle_road.gd)
+## the middle road's mouth on the west road and its curved corner on MGN's side (areas/middle_road.gd);
+## on the lawn side, the Formation Center's ways in and out of its drop-off (areas/formation.gd).
+const OPENINGS: Array[Rect2] = [Rect2(-64.0, 59.9, 3.0, 9.4 + 2.5), # to the end of the plaza's curved corner (middle_road.gd)
+	Rect2(36.5, 47.0, 1.0, 9.8), Rect2(36.5, 69.4, 1.0, 3.4)]
 
 static var _points := PackedVector2Array()
 static var _left := PackedVector2Array()

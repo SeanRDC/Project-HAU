@@ -1,5 +1,12 @@
 # Project Context
 
+**Formation Center, 2026-10-22.** `areas/formation.gd`: the Sister Josefina G. Nepomuceno
+Formation Center behind the chapel, facing the east road, set back so the new lawn-side
+sidewalk runs round the bend north of it. The colonnade under its steel name, the roof
+canopy, the stair tower's green strips, two curved wings; a drop-off round the tree
+island; gabled kiosks in a row along the road south of it. In front of it the camera faces
+it from over the road (`--view=formation`). See `sessions/2026-10-22-formation-center.md`.
+
 **SJH and MGN apart, 2026-10-21.** MGN's south wing is flush with its long block (it stood
 ~1 m from SJH) and SJH is 2 m east of its outline (`EAST_SHIFT`): a ~4.7 m drive runs
 between them under the bridge, ~9 m wall to wall, as in the photos. A concrete drive off the road's bend curves round Mary's big lawn into
