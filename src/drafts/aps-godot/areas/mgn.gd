@@ -52,6 +52,22 @@ const NORTH_BACK := -17.25
 const SOUTH_WING := Vector2(-28.9, -17.96)
 const SOUTH_FRONT := 0.0
 const SOUTH_BACK := -23.0
+## MGN's other entrance, on the north block's face to the west road (IMG_6063 and "mgn
+## rightside to sidewalk.jpg"): a raised forecourt (FORECOURT, local x, z) of pale grey
+## squares in dark grout bands behind a white kerb, under the first floor's overhang on two
+## square pillars, a grated drain along the road, bins and potted plants; north of it red
+## octagon pavers (CORNER, local x) to the boulevard's covered walkway, the road kerb yellow.
+const FORECOURT := Rect2(31.0, -2.4, 6.6, 5.8)
+const FORECOURT_Y := 0.25
+const FORECOURT_PILLARS: Array[float] = [32.6, 36.0]
+const PILLAR_Z := 0.6
+const OVERHANG := 1.0
+const DRAIN := 0.45
+const CORNER := Vector2(37.6, NORTH_END)
+## Things standing on the forecourt (local x, z): the bins, the potted plants.
+const BINS: Array[Vector2] = [Vector2(37.05, 1.4), Vector2(37.05, 1.95), Vector2(37.05, 2.5)]
+const POTS: Array[Vector2] = [Vector2(31.5, 2.9), Vector2(31.5, -1.7), Vector2(37.0, -1.7)]
+
 ## The raised garden between the corridor front and the road, behind a white kerb wall,
 ## from the south wing's far end (GARDEN_FROM) to the long block's north end.
 const GARDEN := 3.9
@@ -114,7 +130,16 @@ static func view_for(x: float, z: float) -> float:
 	return reach(x, z) * (1.0 - Sjh.view_for(x, z))
 
 static func walkable(x: float, z: float) -> bool:
-	return in_entry(x, z) or in_walk(x, z)
+	return in_entry(x, z) or in_walk(x, z) or in_forecourt(x, z) or on_corner(x, z)
+
+## On the north entrance's raised forecourt (its drain strip is at the ground).
+static func in_forecourt(x: float, z: float) -> bool:
+	return FORECOURT.has_point(local(x, z))
+
+static func on_corner(x: float, z: float) -> bool:
+	var at := local(x, z)
+	var drain := at.x > FORECOURT.position.x and at.x < FORECOURT.end.x and at.y >= FORECOURT.end.y and at.y < FORECOURT.end.y + DRAIN
+	return drain or (at.x >= CORNER.x and at.x < CORNER.y and at.y > PORCH_BACK and at.y < FORECOURT.end.y + DRAIN)
 
 ## On the paver walk through the garden.
 static func in_walk(x: float, z: float) -> bool:
@@ -130,13 +155,25 @@ static func blocked(x: float, z: float) -> bool:
 		return at.y < TURNSTILE_Z + 0.35 # the turnstile and the guard's desk
 	if inside(at.x, at.y):
 		return true
-	if in_walk(x, z):
+	if in_walk(x, z) or on_corner(x, z):
+		return false
+	if in_forecourt(x, z):
+		for pillar in FORECOURT_PILLARS:
+			if absf(at.x - pillar) < 0.4 and absf(at.y - PILLAR_Z) < 0.4:
+				return true
+		for spot in BINS + POTS:
+			if at.distance_to(spot) < 0.4:
+				return true
 		return false
 	return at.x > GARDEN_FROM and at.x < LONG and at.y > 0.0 and at.y < GARDEN + 0.05 # the raised garden
 
 static func floor_height(x: float, z: float) -> float:
 	if in_entry(x, z):
 		return FLOOR_Y
+	if in_forecourt(x, z):
+		return FORECOURT_Y
+	if on_corner(x, z):
+		return 0.0
 	return WALK_Y if in_walk(x, z) else NAN
 
 var w: RefCounted
@@ -159,6 +196,7 @@ func build(world_builder: RefCounted) -> void:
 	_south_wing()
 	_garden()
 	_walk()
+	_forecourt()
 	w._flush()
 	w.root = saved
 	_planting()
@@ -475,6 +513,47 @@ func _garden() -> void:
 		if Geometry2D.get_closest_point_to_segment(Vector2(x, lz), WALK_FROM, WALK_TO).distance_to(Vector2(x, lz)) < WALK_HALF + 0.5:
 			continue # not on the walk
 		w.box(Vector3(size, size * 0.7, size * 0.9), Vector3(x, 0.3 + size * 0.3, lz), rock, random.randf() * PI)
+
+## The north entrance's forecourt, its overhang, pillars and lobby, the drain, the bins and
+## pots, and the paver corner beside it.
+func _forecourt() -> void:
+	var court := FORECOURT
+	var middle := court.get_center()
+	var grout: Material = w.material("plain", Color("5d6164"))
+	var white: Material = w.material("stucco", Color("eceae3"))
+	w.box(Vector3(court.size.x, FORECOURT_Y + 0.1, court.size.y), Vector3(middle.x, (FORECOURT_Y - 0.1) / 2.0, middle.y), w.material("slab", Color("e2e3df")))
+	var x := court.position.x + 0.5
+	while x < court.end.x - 0.2:
+		w.box(Vector3(0.13, 0.012, court.size.y - 0.2), Vector3(x, FORECOURT_Y + 0.006, middle.y), grout)
+		x += 1.0
+	var z := court.position.y + 0.5
+	while z < court.end.y - 0.2:
+		w.box(Vector3(court.size.x - 0.2, 0.012, 0.13), Vector3(middle.x, FORECOURT_Y + 0.006, z), grout)
+		z += 1.0
+	# The white kerb along its front and south side, weathered.
+	w.box(Vector3(court.size.x + 0.2, FORECOURT_Y + 0.12, 0.2), Vector3(middle.x, (FORECOURT_Y + 0.12) / 2.0 - 0.06, court.end.y), white)
+	w.box(Vector3(0.2, FORECOURT_Y + 0.12, court.size.y), Vector3(court.position.x, (FORECOURT_Y + 0.12) / 2.0 - 0.06, middle.y), white)
+	# The grated drain along the road.
+	w.box(Vector3(court.size.x, 0.04, DRAIN), Vector3(middle.x, 0.0, court.end.y + DRAIN / 2.0), w.material("ribbed", Color("6d7173")))
+	# The first floor's overhang on two square pillars, the dark lobby behind them.
+	w.box(Vector3(court.size.x + 0.8, 0.45, OVERHANG - PORCH_BACK), Vector3(middle.x, GROUND - 0.225, (OVERHANG + PORCH_BACK) / 2.0), white)
+	for pillar in FORECOURT_PILLARS:
+		w.box(Vector3(0.55, GROUND - 0.45 - FORECOURT_Y, 0.55), Vector3(pillar, (GROUND - 0.45 + FORECOURT_Y) / 2.0, PILLAR_Z), white)
+		w.box(Vector3(0.6, 0.12, 0.6), Vector3(pillar, FORECOURT_Y + 0.06, PILLAR_Z), w.material("plain", Color("b48a6a")))
+	w.box(Vector3(4.2, GROUND - 0.45 - FORECOURT_Y, 0.06), Vector3(34.3, (GROUND - 0.45 + FORECOURT_Y) / 2.0, PORCH_BACK + 0.05), w.material("plain", Color("2b2e31")))
+	w.box(Vector3(1.6, 0.06, 0.1), Vector3(34.3, GROUND - 0.55, PORCH_BACK + 0.4), w.glow(Color("f4f1e6"), 0.6, 2.0))
+	# The bins: yellow, green, blue.
+	for i in BINS.size():
+		var spot: Vector2 = BINS[i]
+		w.box(Vector3(0.42, 0.9, 0.48), Vector3(spot.x, FORECOURT_Y + 0.45, spot.y), w.material("plain", [Color("e1bf22"), Color("2f7a3c"), Color("2b4f9b")][i]))
+	# Terracotta pots with leafy plants.
+	for spot in POTS:
+		w.box(Vector3(0.6, 0.5, 0.6), Vector3(spot.x, FORECOURT_Y + 0.25, spot.y), w.material("plain", Color("b5653f")))
+		w._shrub(Vector3(spot.x, FORECOURT_Y + 0.5, spot.y), 0.8, 1460 + roundi(spot.y * 10.0)) # in MGN's frame, like the rest here
+	# The corner: red octagon pavers to the covered walkway, the road kerb painted yellow.
+	var depth := FORECOURT.end.y + DRAIN - PORCH_BACK
+	w.box(Vector3(CORNER.y - CORNER.x, 0.06, depth), Vector3((CORNER.x + CORNER.y) / 2.0, -0.02, PORCH_BACK + depth / 2.0), w.material("octagon"))
+	w.box(Vector3(CORNER.y - CORNER.x, 0.06, 0.22), Vector3((CORNER.x + CORNER.y) / 2.0, 0.02, FORECOURT.end.y + DRAIN + 0.11), w.material("plain", Color("e3c13b")))
 
 ## The paver walk, laid over the garden from the kerb to the corridor, with its kerbs.
 func _walk() -> void:

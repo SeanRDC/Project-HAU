@@ -1754,6 +1754,20 @@ func _verify_and_capture() -> void:
 			var p := Mgn.world(spot.x, spot.y)
 			mgn_solid = mgn_solid and World.blocked(p.x, p.y)
 		checks.mgn_solid_and_garden = mgn_solid
+		# the north entrance's forecourt: walkable at its height, its pillars and bins solid, the
+		# paver corner and the drain at the ground beside it
+		var court := Mgn.world(Mgn.FORECOURT.get_center().x, 2.0)
+		var court_pillar := Mgn.world(Mgn.FORECOURT_PILLARS[0], Mgn.PILLAR_Z)
+		var bin := Mgn.world(Mgn.BINS[0].x, Mgn.BINS[0].y)
+		var corner := Mgn.world((Mgn.CORNER.x + Mgn.CORNER.y) / 2.0, 1.0)
+		checks.mgn_north_entrance = not World.blocked(court.x, court.y) and absf(World.floor_height(court.x, court.y) - Mgn.FORECOURT_Y) < 0.01 			and World.blocked(court_pillar.x, court_pillar.y) and World.blocked(bin.x, bin.y) and not World.blocked(corner.x, corner.y) 			and absf(World.floor_height(corner.x, corner.y)) < 0.05
+		# the drive off the road's bend round the Mary lawn into the lane: walkable all along,
+		# the lawn solid round her
+		var drive_open := true
+		for at in Sjh.drive_line():
+			drive_open = drive_open and not World.blocked(at.x, at.y)
+		var lawn_mid := Vector2(-55.0, 122.5)
+		checks.mary_drive_and_lawn = drive_open and World.blocked(lawn_mid.x, lawn_mid.y) 			and Geometry2D.is_point_in_polygon(Sjh.MARY, Sjh.lawn())
 		# the paver walk through the garden: walkable at its height from the drive to the corridor
 		var walk_mid := Mgn.world((Mgn.WALK_FROM.x + Mgn.WALK_TO.x) / 2.0, (Mgn.WALK_FROM.y + Mgn.WALK_TO.y) / 2.0)
 		var walk_in := Mgn.world(Mgn.WALK_FROM.x, Mgn.WALK_FROM.y - 0.3)
