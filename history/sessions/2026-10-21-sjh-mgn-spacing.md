@@ -36,6 +36,24 @@ side.JPG.
   captures did not catch it (that stretch is between camera views); it is checked, not
   seen.
 
+- **Then the middle and MGN's north end** (Mikko, with "mgn and Sjh middle.jpg", "mgn
+  rightside to sidewalk.jpg" and IMG_6063). Asked first: the drive starts off the road's
+  bend; Mary gets the big lawn; IMG_6063 is "another MGN entrance"; where the north-end
+  forecourt is, Mikko was not sure.
+  - **The drive** (`Sjh.DRIVE`, a curve from the bend's kerb to the lane, 4.4 m) runs round
+    the Mary lawn along MGN's garden kerb, in concrete, walkable.
+  - **The Mary lawn** (`Sjh.lawn()`): one lawn from the drive's kerb round the road's
+    sidewalk to the SJH front strip and the ramp, behind a yellow-painted kerb, replacing
+    the small island; her bed of shrubs stays. Solid.
+  - **MGN's north entrance**, my reading of the photos: the forecourt with the bins is on
+    the north block's face to the west road, between the wing's open stair and the
+    boulevard's covered walkway (the photo's covered walkway and red pavers are the
+    boulevard's). A raised forecourt (`FORECOURT`, 0.25 m) of pale grey squares in dark
+    grout bands behind a white kerb, the first floor's overhang on two square pillars with
+    the dark lobby behind, a grated drain at the road, yellow/green/blue bins and potted
+    plants; red octagon pavers (`CORNER`) to the walkway with the road kerb painted yellow.
+  - New checks `mgn_north_entrance`, `mary_drive_and_lawn`.
+
 ## What changed
 
 - `areas/sjh.gd`: `EAST_SHIFT`, `LANE`, `LANE_BACK`, `ENTRANCE_GAP`, the end wall.
@@ -49,6 +67,9 @@ end (before and after): before, SJH's stair tower and MGN's south wing nearly to
 the bridge was hidden; after, the gap is open and the bridge shows across it.
 
 ## Left unfinished
+
+- The forecourt's place on the north block is a reading of the photos (Mikko was not sure); the lobby behind it is a dark panel, not walkable.
+- The drive's kerb with the lawn is one polygon: its corners by the road are not rounded as in the photo.
 
 - The walk's pavers are the `brick` texture tinted brown, not the photo's zigzag pattern, and it ends at the corridor's face (the ground floor is not walkable).
 - Near the lane the camera is between views (SJH's cutaway and the overview), so the spot is hard to see in play.
