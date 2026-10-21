@@ -86,7 +86,7 @@ const PAGES := [
 	]},
 	{"panels": [
 		{"id": "mata", "rect": [0.0, 0.1, 1.0, 0.8], "dark": true, "draw": "Close-up ng mga mata ng bida, may luha sa gilid",
-			"lines": [["Kung pwede lang bumalik...", "L"], ["...hindi na kita pababayaan.", "R"]]},
+			"lines": [["Labindalawang taon ka nang naghihintay ng \"bukas.\"", "C"]]},
 	]},
 ]
 
