@@ -74,7 +74,7 @@ func _ready() -> void:
 	rainfall.name = "Rainfall"
 	rainfall.bus = "Rain"
 	rainfall.volume_db = -60.0
-	rainfall.stream = _wav(_seamless(_noise(RATE * 4), RATE / 2, 0.11 * MASTER), true)
+	rainfall.stream = _wav(_seamless(_rain(), RATE, 0.11 * MASTER), true)
 	add_child(rainfall)
 	rainfall.play()
 	# the murmur takes about a quarter of a second to render, so it is made on a
@@ -239,40 +239,86 @@ func _bass(root: float) -> AudioStreamWAV:
 	return _cached("bass:%s" % root, func() -> PackedFloat32Array:
 		return _tone(PackedFloat32Array(), root / 2.0, 0.0, 4.0, 0.06 * MUSIC, "sine"))
 
+## A foot landing: a low thud of the heel and a short scuff, a crisp tick on tiles and
+## steps. (A plain burst of noise, as before, read as a flap of wind.)
 func _footstep(hard: bool, variant: int) -> AudioStreamWAV:
 	return _cached("step:%s:%d" % [hard, variant], func() -> PackedFloat32Array:
-		var buffer := _filter(_noise(int(RATE * 0.08)), "bandpass", (1500.0 if hard else 800.0) + randf() * 300.0, 1.0)
-		var gain := 0.09 if hard else 0.06
-		for i in buffer.size():
-			buffer[i] *= gain * MASTER * pow(0.0001 / gain, minf(float(i) / RATE / 0.07, 1.0))
+		var count := int(RATE * 0.09)
+		var scuff := _filter(_noise(count), "lowpass", 900.0 if hard else 500.0, 0.7)
+		var tick := _filter(_noise(count), "bandpass", 2600.0 + variant * 250.0, 1.4)
+		var body := (150.0 if hard else 95.0) * (1.0 + variant * 0.06)
+		var buffer := PackedFloat32Array()
+		buffer.resize(count)
+		var phase := 0.0
+		for i in count:
+			var t := float(i) / RATE
+			phase += lerpf(body * 1.4, body, minf(t / 0.03, 1.0)) / RATE
+			var thud := sin(TAU * phase) * exp(-t / 0.022)
+			var rub := scuff[i] * exp(-t / 0.03) * 0.6
+			var click := tick[i] * exp(-t / 0.004) * (0.8 if hard else 0.15)
+			buffer[i] = (thud * 0.7 + rub + click) * (0.11 if hard else 0.09) * MASTER * minf(t / 0.002, 1.0)
 		return buffer)
 
-## Students talking: a few voices of filtered noise shaped into syllables, looped.
+## Students talking a little way off: voiced babble, not noise. Each voice is a buzz at
+## its own pitch, rising and falling through a phrase, shaped into soft syllables with
+## pauses between phrases and passed through two vowel formants; many overlap, so the
+## level stays even, and the mix is muffled as if across the lawn. (Bursts of filtered
+## noise, as before, flickered like wind.)
 func _murmur() -> AudioStreamWAV:
-	var count := RATE * 7
+	var count := RATE * 8
 	var mix := PackedFloat32Array()
 	mix.resize(count)
-	for v in 5:
-		var low := randf_range(320.0, 700.0)
-		var voice := _filter(_noise(count), "bandpass", low, 1.6)
-		var bright := _filter(_noise(count), "bandpass", low * 2.4, 2.2)
-		var gain := randf_range(0.6, 1.0)
-		var at := randi_range(0, RATE / 2)
+	for v in 7:
+		var pitch := randf_range(105.0, 150.0) if v % 2 == 0 else randf_range(180.0, 250.0)
+		var source := PackedFloat32Array()
+		source.resize(count)
+		var level := PackedFloat32Array()
+		level.resize(count)
+		# Phrases of syllables, then a breath.
+		var at := randi_range(0, RATE)
 		while at < count:
-			var length := int(randf_range(0.08, 0.24) * RATE)
-			for i in length:
-				if at + i >= count:
+			var phrase := randi_range(3, 9)
+			for s in phrase:
+				var length := int(randf_range(0.11, 0.26) * RATE)
+				var loud := randf_range(0.55, 1.0)
+				for i in length:
+					if at + i >= count:
+						break
+					var t := float(i) / length
+					level[at + i] = loud * pow(sin(PI * t), 0.6)
+				at += length + int(randf_range(0.01, 0.06) * RATE)
+				if at >= count:
 					break
-				var t := float(i) / length
-				var env := sin(PI * t) * gain
-				mix[at + i] += (voice[at + i] + bright[at + i] * 0.5) * env
-			at += length + int(randf_range(0.04, 0.45) * RATE)
+			at += int(randf_range(0.35, 1.2) * RATE)
+		var phase := 0.0
+		var drift := randf() * TAU
+		for i in count:
+			var t := float(i) / RATE
+			var f := pitch * (1.0 + 0.08 * sin(TAU * 0.6 * t + drift) + 0.03 * sin(TAU * 2.3 * t))
+			phase = fposmod(phase + f / RATE, 1.0)
+			source[i] = (2.0 * phase - 1.0) * level[i]
+		var vowel := randf_range(450.0, 800.0)
+		var first := _filter(source, "bandpass", vowel, 3.0)
+		var second := _filter(source, "bandpass", vowel * randf_range(1.9, 2.8), 4.0)
+		var gain := randf_range(0.6, 1.0)
+		for i in count:
+			mix[i] += (first[i] + second[i] * 0.6) * gain
+	mix = _filter(mix, "lowpass", 1800.0, 0.7)
 	var peak := 0.0001
 	for x in mix:
 		peak = maxf(peak, absf(x))
 	for i in count:
 		mix[i] /= peak
-	return _wav(_seamless(mix, RATE, 0.07 * MASTER), true)
+	return _wav(_seamless(mix, RATE, 0.06 * MASTER), true)
+
+## Rain: a soft, mostly low hiss (white noise thinned at the top), for the loop.
+func _rain() -> PackedFloat32Array:
+	var count := RATE * 6
+	var white := _noise(count)
+	var soft := _filter(white, "lowpass", 2400.0, 0.7)
+	for i in count:
+		soft[i] = soft[i] * 1.3 + white[i] * 0.25
+	return soft
 
 ## A few quick bird calls, sliding down.
 func _birds(variant: int) -> AudioStreamWAV:
@@ -364,13 +410,15 @@ func _filter(input: PackedFloat32Array, kind: String, freq: float, q: float) -> 
 		output[i] = y
 	return output
 
-## Crossfades the tail into the head so the loop has no click, and sets its level.
+## Crossfades the tail into the head so the loop has no click, and sets its level. The
+## crossfade keeps the power even (sine and cosine), so noise and babble do not dip as
+## the loop comes round: a plain linear one dipped them by half and they pulsed.
 func _seamless(buffer: PackedFloat32Array, fade: int, gain: float) -> PackedFloat32Array:
 	var count := buffer.size() - fade
 	var output := buffer.slice(0, count)
 	for i in fade:
-		var mix := float(i) / fade
-		output[i] = buffer[i] * mix + buffer[count + i] * (1.0 - mix)
+		var mix := float(i) / fade * PI / 2.0
+		output[i] = buffer[i] * sin(mix) + buffer[count + i] * cos(mix)
 	for i in count:
 		output[i] *= gain
 	return output
