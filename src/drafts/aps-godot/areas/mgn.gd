@@ -56,7 +56,7 @@ const SOUTH_BACK := -23.0
 ## rightside to sidewalk.jpg"): a raised forecourt (FORECOURT, local x, z) of pale grey
 ## squares in dark grout bands behind a white kerb, under the first floor's overhang on two
 ## square pillars, a grated drain along the road, bins and potted plants; north of it red
-## octagon pavers (CORNER, local x) to the boulevard's covered walkway, the road kerb yellow.
+## octagon pavers (CORNER, local x) to the boulevard's covered walkway.
 const FORECOURT := Rect2(31.0, -2.4, 6.6, 5.8)
 const FORECOURT_Y := 0.25
 const FORECOURT_PILLARS: Array[float] = [32.6, 36.0]
@@ -72,11 +72,12 @@ const POTS: Array[Vector2] = [Vector2(31.5, 2.9), Vector2(31.5, -1.7), Vector2(3
 ## from the south wing's far end (GARDEN_FROM) to the long block's north end.
 const GARDEN := 3.9
 const GARDEN_FROM := SOUTH_WING.x
-## The brown paver walk through the garden (MGN FRONT.JPG): from the drive's kerb at
-## WALK_FROM in at a slant to the corridor front at WALK_TO, 2 * WALK_HALF wide, between
-## low kerbs, laid just over the grass (the photo's is a little below it).
-const WALK_FROM := Vector2(-13.0, GARDEN + 0.6)
-const WALK_TO := Vector2(-8.5, 0.0)
+## The brown paver walk through the garden (MGN FRONT.JPG): from the drive's kerb opposite
+## the Mary statue (mgn and Sjh middle.jpg) at WALK_FROM in at a slant to the corridor front
+## at WALK_TO, 2 * WALK_HALF wide, between low kerbs, laid just over the grass (the
+## photo's is a little below it).
+const WALK_FROM := Vector2(0.5, GARDEN + 0.6)
+const WALK_TO := Vector2(-1.5, 0.0)
 const WALK_HALF := 0.8
 const WALK_Y := 0.32
 ## Facing MGN the camera cuts away everything east of this world x (the chapel lawn,
@@ -550,10 +551,10 @@ func _forecourt() -> void:
 	for spot in POTS:
 		w.box(Vector3(0.6, 0.5, 0.6), Vector3(spot.x, FORECOURT_Y + 0.25, spot.y), w.material("plain", Color("b5653f")))
 		w._shrub(Vector3(spot.x, FORECOURT_Y + 0.5, spot.y), 0.8, 1460 + roundi(spot.y * 10.0)) # in MGN's frame, like the rest here
-	# The corner: red octagon pavers to the covered walkway, the road kerb painted yellow.
+	# The corner: red octagon pavers to the covered walkway; they run on along the road to the
+	# boulevard's curved corner (middle_road.gd).
 	var depth := FORECOURT.end.y + DRAIN - PORCH_BACK
 	w.box(Vector3(CORNER.y - CORNER.x, 0.06, depth), Vector3((CORNER.x + CORNER.y) / 2.0, -0.02, PORCH_BACK + depth / 2.0), w.material("octagon"))
-	w.box(Vector3(CORNER.y - CORNER.x, 0.06, 0.22), Vector3((CORNER.x + CORNER.y) / 2.0, 0.02, FORECOURT.end.y + DRAIN + 0.11), w.material("plain", Color("e3c13b")))
 
 ## The paver walk, laid over the garden from the kerb to the corridor, with its kerbs.
 func _walk() -> void:
@@ -573,9 +574,9 @@ func _planting() -> void:
 	for tree in [Vector3(12.5, 2.0, 13.5), Vector3(-5.0, 1.8, 12.0), Vector3(-15.0, 2.2, 10.5)]:
 		var at := world(tree.x, tree.y)
 		w._tree(Vector3(at.x, 0.3, at.y), tree.z, 1400 + roundi(tree.x))
-	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(1.5, 2.8), Vector2(-15.5, 1.3)]:
+	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(1.5, 2.8), Vector2(-10.5, 1.3)]:
 		var at := world(spot.x, spot.y)
 		palms._palm(Vector3(at.x, 0.3, at.y), 4.2 + absf(spot.x) * 0.05, 1420 + roundi(spot.x))
-	for lx in [15.0, 10.0, 5.5, 3.0, -2.0, -8.0, -14.5, -16.5, -20.5, -24.0, -27.5]:
+	for lx in [15.0, 10.0, 5.5, 3.0, -2.0, -8.0, -12.5, -16.5, -20.5, -24.0, -27.5]:
 		var at := world(lx, 2.2 + fmod(absf(lx), 1.5))
 		w._shrub(Vector3(at.x, 0.3, at.y), 1.1, 1440 + roundi(lx))
