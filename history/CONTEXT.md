@@ -1,5 +1,10 @@
 # Project Context
 
+**SJH and MGN apart, 2026-10-21.** MGN's south wing is flush with its long block (it stood
+~1 m from SJH) and SJH is 2 m east of its outline (`EAST_SHIFT`): a ~4.7 m drive runs
+between them under the bridge, ~9 m wall to wall, as in the photos. See
+`sessions/2026-10-21-sjh-mgn-spacing.md`.
+
 **Atmosphere, 2026-10-21.** T now steps through dawn, morning, noon, afternoon, golden hour,
 dusk and night (`PRESETS` in `aps.gd`); windows and lamps light at dusk and dawn. G steps
 through the weather (clear, overcast, rain, thunderstorm with lightning and thunder, windy), which also changes on its own. Golden-hour shafts and dust. See
