@@ -56,6 +56,13 @@ const SOUTH_BACK := -23.0
 ## from the south wing's far end (GARDEN_FROM) to the long block's north end.
 const GARDEN := 3.9
 const GARDEN_FROM := SOUTH_WING.x
+## The brown paver walk through the garden (MGN FRONT.JPG): from the drive's kerb at
+## WALK_FROM in at a slant to the corridor front at WALK_TO, 2 * WALK_HALF wide, between
+## low kerbs, laid just over the grass (the photo's is a little below it).
+const WALK_FROM := Vector2(-13.0, GARDEN + 0.6)
+const WALK_TO := Vector2(-8.5, 0.0)
+const WALK_HALF := 0.8
+const WALK_Y := 0.32
 ## Facing MGN the camera cuts away everything east of this world x (the chapel lawn,
 ## its trees and the chapel), the way the SJH view cuts away everything north of its parking.
 ## It stops just east of SJH's terracotta end block (world x -50.3), so that block stays whole.
@@ -107,7 +114,12 @@ static func view_for(x: float, z: float) -> float:
 	return reach(x, z) * (1.0 - Sjh.view_for(x, z))
 
 static func walkable(x: float, z: float) -> bool:
-	return in_entry(x, z)
+	return in_entry(x, z) or in_walk(x, z)
+
+## On the paver walk through the garden.
+static func in_walk(x: float, z: float) -> bool:
+	var at := local(x, z)
+	return at.y > 0.05 and Geometry2D.get_closest_point_to_segment(at, WALK_FROM, WALK_TO).distance_to(at) < WALK_HALF
 
 static func blocked(x: float, z: float) -> bool:
 	var at := local(x, z)
@@ -118,10 +130,14 @@ static func blocked(x: float, z: float) -> bool:
 		return at.y < TURNSTILE_Z + 0.35 # the turnstile and the guard's desk
 	if inside(at.x, at.y):
 		return true
+	if in_walk(x, z):
+		return false
 	return at.x > GARDEN_FROM and at.x < LONG and at.y > 0.0 and at.y < GARDEN + 0.05 # the raised garden
 
 static func floor_height(x: float, z: float) -> float:
-	return FLOOR_Y if in_entry(x, z) else NAN
+	if in_entry(x, z):
+		return FLOOR_Y
+	return WALK_Y if in_walk(x, z) else NAN
 
 var w: RefCounted
 
@@ -142,6 +158,7 @@ func build(world_builder: RefCounted) -> void:
 	_north_block()
 	_south_wing()
 	_garden()
+	_walk()
 	w._flush()
 	w.root = saved
 	_planting()
@@ -454,7 +471,21 @@ func _garden() -> void:
 	for i in 14:
 		var x := random.randf_range(GARDEN_FROM + 1.0, LONG - 1.0)
 		var size := random.randf_range(0.35, 0.7)
-		w.box(Vector3(size, size * 0.7, size * 0.9), Vector3(x, 0.3 + size * 0.3, random.randf_range(0.8, GARDEN - 0.7)), rock, random.randf() * PI)
+		var lz := random.randf_range(0.8, GARDEN - 0.7)
+		if Geometry2D.get_closest_point_to_segment(Vector2(x, lz), WALK_FROM, WALK_TO).distance_to(Vector2(x, lz)) < WALK_HALF + 0.5:
+			continue # not on the walk
+		w.box(Vector3(size, size * 0.7, size * 0.9), Vector3(x, 0.3 + size * 0.3, lz), rock, random.randf() * PI)
+
+## The paver walk, laid over the garden from the kerb to the corridor, with its kerbs.
+func _walk() -> void:
+	var along := WALK_TO - WALK_FROM
+	var turn := atan2(-along.y, along.x)
+	var middle := (WALK_FROM + WALK_TO) / 2.0
+	var side := Vector2(-along.y, along.x).normalized()
+	w.box(Vector3(along.length(), 0.08, 2.0 * WALK_HALF), Vector3(middle.x, WALK_Y - 0.04, middle.y), w.material("brick", Color("8a5446")), turn)
+	for k in [-1.0, 1.0]:
+		var edge: Vector2 = middle + side * k * (WALK_HALF + 0.08)
+		w.box(Vector3(along.length() - 0.4, 0.36, 0.16), Vector3(edge.x, 0.18, edge.y), w.material("stucco", Color("e5e1d6")), turn)
 
 ## The big shade trees, short palms and shrubs in the garden (world coordinates).
 func _planting() -> void:
@@ -463,9 +494,9 @@ func _planting() -> void:
 	for tree in [Vector3(12.5, 2.0, 13.5), Vector3(-5.0, 1.8, 12.0), Vector3(-15.0, 2.2, 10.5)]:
 		var at := world(tree.x, tree.y)
 		w._tree(Vector3(at.x, 0.3, at.y), tree.z, 1400 + roundi(tree.x))
-	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(1.5, 2.8), Vector2(-10.5, 1.3)]:
+	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(1.5, 2.8), Vector2(-15.5, 1.3)]:
 		var at := world(spot.x, spot.y)
 		palms._palm(Vector3(at.x, 0.3, at.y), 4.2 + absf(spot.x) * 0.05, 1420 + roundi(spot.x))
-	for lx in [15.0, 10.0, 5.5, 3.0, -2.0, -8.0, -12.5, -16.5, -20.5, -24.0, -27.5]:
+	for lx in [15.0, 10.0, 5.5, 3.0, -2.0, -8.0, -14.5, -16.5, -20.5, -24.0, -27.5]:
 		var at := world(lx, 2.2 + fmod(absf(lx), 1.5))
 		w._shrub(Vector3(at.x, 0.3, at.y), 1.1, 1440 + roundi(lx))
