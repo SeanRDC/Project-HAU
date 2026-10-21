@@ -210,17 +210,17 @@ func thunder() -> void:
 			buffer[k] = (low[k] * 3.2 * roll + mid[k] * 1.4 * crack) * 0.55 * MASTER
 		return buffer), _effects)
 
-## A flock taking off: a quick flutter of wingbeats.
+## A flock taking off: a short, soft flutter of a few wingbeats.
 func flutter() -> void:
 	_play(_cached("flutter:%d" % (randi() % 2), func() -> PackedFloat32Array:
 		var buffer := PackedFloat32Array()
-		for i in randi_range(6, 9):
-			var beat := _filter(_noise(int(RATE * 0.03)), "bandpass", randf_range(900.0, 1500.0), 0.9)
-			var start := int(i * randf_range(0.035, 0.05) * RATE)
+		for i in randi_range(3, 4):
+			var beat := _filter(_noise(int(RATE * 0.025)), "bandpass", randf_range(700.0, 1100.0), 0.9)
+			var start := int(i * randf_range(0.04, 0.05) * RATE)
 			if buffer.size() < start + beat.size():
 				buffer.resize(start + beat.size())
 			for k in beat.size():
-				buffer[start + k] += beat[k] * sin(PI * float(k) / beat.size()) * 0.12 * MASTER * (1.0 - i * 0.08)
+				buffer[start + k] += beat[k] * sin(PI * float(k) / beat.size()) * 0.035 * MASTER * (1.0 - i * 0.2)
 		return buffer), _effects)
 
 func select() -> void:
@@ -239,31 +239,19 @@ func _bass(root: float) -> AudioStreamWAV:
 	return _cached("bass:%s" % root, func() -> PackedFloat32Array:
 		return _tone(PackedFloat32Array(), root / 2.0, 0.0, 4.0, 0.06 * MUSIC, "sine"))
 
-## A foot landing: a low thud of the heel and a short scuff, a crisp tick on tiles and
-## steps. (A plain burst of noise, as before, read as a flap of wind.)
 func _footstep(hard: bool, variant: int) -> AudioStreamWAV:
 	return _cached("step:%s:%d" % [hard, variant], func() -> PackedFloat32Array:
-		var count := int(RATE * 0.09)
-		var scuff := _filter(_noise(count), "lowpass", 900.0 if hard else 500.0, 0.7)
-		var tick := _filter(_noise(count), "bandpass", 2600.0 + variant * 250.0, 1.4)
-		var body := (150.0 if hard else 95.0) * (1.0 + variant * 0.06)
-		var buffer := PackedFloat32Array()
-		buffer.resize(count)
-		var phase := 0.0
-		for i in count:
-			var t := float(i) / RATE
-			phase += lerpf(body * 1.4, body, minf(t / 0.03, 1.0)) / RATE
-			var thud := sin(TAU * phase) * exp(-t / 0.022)
-			var rub := scuff[i] * exp(-t / 0.03) * 0.6
-			var click := tick[i] * exp(-t / 0.004) * (0.8 if hard else 0.15)
-			buffer[i] = (thud * 0.7 + rub + click) * (0.11 if hard else 0.09) * MASTER * minf(t / 0.002, 1.0)
+		var buffer := _filter(_noise(int(RATE * 0.08)), "bandpass", (1500.0 if hard else 800.0) + randf() * 300.0, 1.0)
+		var gain := 0.09 if hard else 0.06
+		for i in buffer.size():
+			buffer[i] *= gain * MASTER * pow(0.0001 / gain, minf(float(i) / RATE / 0.07, 1.0))
 		return buffer)
 
-## Students talking a little way off: voiced babble, not noise. Each voice is a buzz at
-## its own pitch, rising and falling through a phrase, shaped into soft syllables with
-## pauses between phrases and passed through two vowel formants; many overlap, so the
+## Students talking a little way off, faintly: each voice a soft rounded tone (a sine with
+## a little of its octave and twelfth) at its own pitch, rising and falling through a
+## phrase, shaped into soft syllables with pauses between phrases; many overlap, so the
 ## level stays even, and the mix is muffled as if across the lawn. (Bursts of filtered
-## noise, as before, flickered like wind.)
+## noise flickered like wind; a buzz through vowel formants, tried next, buzzed.)
 func _murmur() -> AudioStreamWAV:
 	var count := RATE * 8
 	var mix := PackedFloat32Array()
@@ -296,20 +284,17 @@ func _murmur() -> AudioStreamWAV:
 			var t := float(i) / RATE
 			var f := pitch * (1.0 + 0.08 * sin(TAU * 0.6 * t + drift) + 0.03 * sin(TAU * 2.3 * t))
 			phase = fposmod(phase + f / RATE, 1.0)
-			source[i] = (2.0 * phase - 1.0) * level[i]
-		var vowel := randf_range(450.0, 800.0)
-		var first := _filter(source, "bandpass", vowel, 3.0)
-		var second := _filter(source, "bandpass", vowel * randf_range(1.9, 2.8), 4.0)
+			source[i] = (sin(TAU * phase) + 0.3 * sin(TAU * phase * 2.0) + 0.1 * sin(TAU * phase * 3.0)) * level[i]
 		var gain := randf_range(0.6, 1.0)
 		for i in count:
-			mix[i] += (first[i] + second[i] * 0.6) * gain
-	mix = _filter(mix, "lowpass", 1800.0, 0.7)
+			mix[i] += source[i] * gain
+	mix = _filter(mix, "lowpass", 900.0, 0.7)
 	var peak := 0.0001
 	for x in mix:
 		peak = maxf(peak, absf(x))
 	for i in count:
 		mix[i] /= peak
-	return _wav(_seamless(mix, RATE, 0.06 * MASTER), true)
+	return _wav(_seamless(mix, RATE, 0.025 * MASTER), true)
 
 ## Rain: a soft, mostly low hiss (white noise thinned at the top), for the loop.
 func _rain() -> PackedFloat32Array:
