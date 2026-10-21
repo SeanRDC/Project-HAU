@@ -74,6 +74,14 @@ side.JPG.
     white). Her arms held out and down in bell sleeves were already as in the photos.
   - **Her lawn's kerb is rounded** (the outline's corners cut twice), as in the photos.
 
+- **"Fix this, merge it well and polish"** (screenshot 1176, the free cam over the drive):
+  the walk was a dark slab lying on the garden behind its kerb wall, not joined to the drive.
+  Now it runs straight in (`WALK_X`, opposite Mary) so the garden splits cleanly into two
+  beds, each with its own kerb wall, and the walk is sunk between their white-kerbed faces,
+  rising from the drive's level to the corridor floor (`WALK_Y`, `walk_height`), in a lighter
+  red-brown, as in MGN FRONT.JPG. The palm beside it moved 1.5 m off its line. The garden's
+  rocks were black cubes: grey now, lower and tilted.
+
 ## What changed
 
 - `areas/sjh.gd`: `EAST_SHIFT`, `LANE`, `LANE_BACK`, `ENTRANCE_GAP`, the end wall.
