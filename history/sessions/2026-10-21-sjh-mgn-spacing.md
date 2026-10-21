@@ -27,6 +27,15 @@ side.JPG.
 - **The lane is the drive** from the stair tower to the garden kerb (`LANE` 4.75 m,
   `LANE_BACK` to the same kerb line), with the wall at its far end as wide as the lane.
 
+- **Then MGN's front walk (Mikko: "continue").** MGN FRONT.JPG: a brown zigzag-paver walk
+  runs from the drive's kerb in at a slant through the garden to the corridor, between
+  low white kerbs. Built in `_walk()` (`WALK_FROM`, `WALK_TO`, 1.6 m wide), laid just
+  over the grass at 0.32 m (the garden is one grass box, so it cannot sit below it as in
+  the photo), walkable from the drive (`in_walk`; the garden stays solid either side). A
+  palm, a shrub and any rocks on its line moved off it. New check `mgn_front_walk`. The
+  captures did not catch it (that stretch is between camera views); it is checked, not
+  seen.
+
 ## What changed
 
 - `areas/sjh.gd`: `EAST_SHIFT`, `LANE`, `LANE_BACK`, `ENTRANCE_GAP`, the end wall.
@@ -41,5 +50,6 @@ the bridge was hidden; after, the gap is open and the bridge shows across it.
 
 ## Left unfinished
 
-- MGN's brick walk along its front (MGN FRONT.JPG) is still plain garden.
+- The walk's pavers are the `brick` texture tinted brown, not the photo's zigzag pattern, and it ends at the corridor's face (the ground floor is not walkable).
+- Near the lane the camera is between views (SJH's cutaway and the overview), so the spot is hard to see in play.
 - The road behind SJH (sjh back right side.JPG) is not built; the lane still ends at a wall.
