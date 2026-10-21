@@ -1,8 +1,8 @@
 # Project Context
 
 **Audio fixes, 2026-10-22.** The looping sounds no longer pulse as they come round (an even
-crossfade), the students' murmur is a faint babble of soft tones rather than noise bursts
-that sounded like wind, and the birds' take-off flutter is softer and shorter. The footsteps are
+crossfade), the students' murmur is gone (every version was heard as a buzz by
+APS), the rain loop pauses in dry weather, and the birds' take-off flutter is softer and shorter. The footsteps are
 unchanged. See `sessions/2026-10-22-audio-fixes.md`.
 
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or

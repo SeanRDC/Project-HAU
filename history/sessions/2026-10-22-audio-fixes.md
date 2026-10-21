@@ -37,6 +37,13 @@ Asked, Mikko chose:
 - Footsteps: the old ones, back exactly as they were.
 - The flock's flutter: softer and shorter, 3-4 wingbeats at under a third of the level.
 
+## The crowd taken out
+
+Mikko still heard a soft buzz "like cotton", by the APS front (the busiest spot, where
+the crowd sound is loudest), and chose "find and silence it". The crowd murmur is gone
+(`murmur`, `_murmur`); `crowd` is still set, for a crowd sound later. The rain loop also
+pauses once it has faded out in dry weather, rather than idling at -80 dB.
+
 ## Checks
 
 `--test`: all true (`campus_sounds`, `footsteps_while_walking`). `npm run check` and `npm run build` pass.
