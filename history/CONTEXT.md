@@ -1,5 +1,51 @@
 # Project Context
 
+**Atmosphere, 2026-10-21.** T now steps through dawn, morning, noon, afternoon, golden hour,
+dusk and night (`PRESETS` in `aps.gd`); windows and lamps light at dusk and dawn. G steps
+through the weather (clear, overcast, rain, thunderstorm with lightning and thunder, windy), which also changes on its own. Golden-hour shafts and dust. See
+`sessions/2026-10-21-atmosphere.md`.
+
+**Chapel parking from the road, 2026-10-21.** The lawn between the west road and the chapel's
+oval parking is walkable (`Chapel.roadside`, z 42..78), so the parking can be reached from the
+road anywhere along it, not only by the drive. The planted island stays solid.
+
+**Cats and birds, 2026-10-21.** `critters.gd`: a dozen campus cats (five named spots, seven scattered)
+who sit, stroll, sleep, visit you and can be petted (E), and maya flocks scattered over the open ground that peck by day, groups flying over,
+and flutter off when you come close. PixelLab frames cleaned in pxl
+(`assets/drafts/characters/critters/pxl/`, `build.ps1`; Node 22.18+). See `sessions/2026-10-21-cats-and-birds.md`.
+
+**NPCs say hello, 2026-10-21.** As they wave, some NPCs say hi (each with its own chance, `CHATTY`) in a small bubble (their own
+line, another once you've met, or one for the hour or the rain, some in Kapampangan);
+standing about, they look your way from 6 m. `HELLOS` in `npcs.gd`. See
+`sessions/2026-10-21-npc-hellos.md`.
+
+**Camera turn, 2026-10-21.** A ±45° turn was tried and taken back (the views broke down
+turned that far): Q/E and right-drag turn ±0.25 rad as before (`ORBIT_MAX`), and the turn
+now eases after the mouse (`orbit_goal`). See `sessions/2026-10-21-wider-turn.md`.
+
+**The camera centres the student top to bottom, 2026-10-21.** Dead centre close up;
+zoomed out it stops where the frame's lower edge would go under the ground, so the
+student sits a little low there (centring fully would need steeper angles than the
+style's). See `sessions/2026-10-21-camera-centre.md`.
+
+**The night sky, 2026-10-21.** `shaders/sky.gdshader`: varied, tinted, slowly twinkling
+stars (the brightest with a pixel cross), a faint Milky Way band and the moon with a
+glow where the night light comes from; rain hides them. In the F2 free cam the sky is laid
+out by direction (`free_look`), so it stays put as the camera turns. `--free-cam=<yaw>,<pitch>`
+for captures. See `sessions/2026-10-21-night-sky.md`.
+
+**SJH's ground floor, 2026-10-20.** `areas/sjh.gd`: the cars park at road level and the
+ground floor is raised 0.9 m (`WALK_Y`) on a plinth behind an unbroken railing; along
+the whole front grass, shrubs and bamboo (0.5 m) with the brown paver sidewalk winding
+through it, a low wall at the kerb, the front row of cars parked against it. SJH now stands 12 m back (`SETBACK`, was 10).
+Clad piers, bar tables, bins, a diamond-tiled floor (`diamond` in world.gd). The centre
+tower opens into the elevator lobby up a long stair from the kerb: 5 steps (between the
+handrails, grass either side), a 2 m landing, 4 steps.
+At the west end a passage through the terracotta block leads to steps, a ramp, a yard
+and the lane to MGN under the bridge (MGN's, from #33; this branch's own bridge was
+dropped in the merge). `--view=sjh-walkway`, `sjh-lobby`,
+`sjh-west`, `sjh-steps`. See `sessions/2026-10-20-sjh-ground-floor.md`.
+
 **Hold Space to skip the opening, 2026-10-20.** Holding Space for 0.9 s skips the
 opening (a tap still moves on; Esc still skips at once), with a "HOLD SPACE TO SKIP"
 hint and a filling pen line in the page's bottom-right margin. See
