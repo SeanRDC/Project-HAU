@@ -1,5 +1,11 @@
 # Project Context
 
+**PGN, 2026-10-22.** `areas/pgn.gd`: the Peter G. Nepomuceno Building, a tall white L
+along the boulevard and beside APS. It has a dark ground floor and nine white banded floors
+with blue windows and grey louvres, the stair screen, the gold name and the box on the
+roof. The paver lane along its west end opens off the boulevard's covered walkway. See
+`sessions/2026-10-22-pgn.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
