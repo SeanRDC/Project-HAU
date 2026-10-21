@@ -2074,7 +2074,23 @@ func _verify_and_capture() -> void:
 			if kiko.state == "sleep" and kiko.sprite.texture == kiko.sheets.breathe[0]:
 				breaths[kiko.sprite.frame] = true
 			stretched = stretched or (kiko.state == "stretch" and kiko.sprite.texture == kiko.sheets.stretch[0])
-		var cat_animates: bool = leans.size() >= 3 and leans.values().all(func(v: bool) -> bool: return v) and fidgeted 			and breaths.size() >= 3 and stretched and kiko.state in ["walk", "sit"]
+		var woke: bool = kiko.state in ["walk", "sit"]
+		# run at a cat and it gallops off; a feeding maya hops with its own frames
+		kiko.state = "sit"
+		var galloped := false
+		for i in 20:
+			critters._update_cat(kiko, 1.0 / 30.0, kiko.at + Vector2(1.0, 0.0), false, true, side)
+			galloped = galloped or (kiko.state == "dash" and kiko.sprite.texture == kiko.sheets.gallop[0])
+		var hopper: Dictionary = critters.flocks[1].birds[0]
+		hopper.hop = 0.0
+		hopper.from = hopper.at
+		hopper.to = hopper.at + Vector2(0.2, 0.0)
+		var hops := {}
+		for i in 6:
+			critters._feed(hopper, 1.0 / 30.0, critters.flocks[1].spot, side)
+			if hopper.sprite.texture == critters._birds().hop[0]:
+				hops[hopper.sprite.frame] = true
+		var cat_animates: bool = galloped and hops.size() >= 3 and leans.size() >= 3 and leans.values().all(func(v: bool) -> bool: return v) and fidgeted 			and breaths.size() >= 3 and stretched and woke
 		# birds flying over cross between the camera and the student, above the ground
 		var screen_right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
 		critters._launch(Vector2(student.position.x, student.position.z), screen_right)

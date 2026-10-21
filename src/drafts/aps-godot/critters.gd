@@ -8,7 +8,7 @@ extends Node3D
 ## campus's open ground. They sit (now and then flicking the tail, blinking, grooming a paw or
 ## yawning), stroll, and curl up asleep, breathing (more at noon, at night and in the rain),
 ## and wake with a stretch. Stand still near one and it may come over; press E beside it to
-## pet it (eyes closed, it leans into the hand and purrs). Run at one and it dashes off.
+## pet it (eyes closed, it leans into the hand and purrs). Run at one and it gallops off.
 ## Birds: flocks of maya (tree sparrows) hopping and pecking on the open ground by day.
 ## Come close, or run, and the whole flock flutters up and away; it lands again a while
 ## later. More flocks are scattered over the open ground, and small groups fly over the
@@ -131,7 +131,7 @@ func _pick(open: Array[Vector2], taken: Array[Vector2], spacing: float) -> Vecto
 ## PixelLab frames, cleaned and on one palette per animal; the cats' coats are palette swaps.
 ## Frames per sheet, side by side.
 const FRAMES := {"walk": 8, "sit": 1, "sleep": 1, "tail": 7, "blink": 4, "groom": 9, "yawn": 7, "petted": 5,
-	"breathe": 6, "stretch": 12, "ground": 3, "fly": 4}
+	"breathe": 6, "stretch": 12, "gallop": 5, "ground": 2, "hop": 3, "fly": 4}
 ## Frames a second of the cats' animations.
 const FPS := {"tail": 8.0, "blink": 8.0, "groom": 6.0, "yawn": 6.0, "petted": 4.0, "breathe": 3.0, "stretch": 6.0}
 ## While it sits, a cat now and then flicks its tail, blinks, grooms a paw or yawns
@@ -144,14 +144,15 @@ static func _load(name: String, frames: int) -> Array:
 
 static func _cat_sheets(coat: String) -> Dictionary:
 	var sheets := {}
-	for pose in ["walk", "sit", "sleep", "tail", "blink", "groom", "yawn", "petted", "breathe", "stretch"]:
+	for pose in ["walk", "gallop", "sit", "sleep", "tail", "blink", "groom", "yawn", "petted", "breathe", "stretch"]:
 		sheets[pose] = _load("cat_%s_%s" % [pose, coat], FRAMES[pose])
 	return sheets
 
 static var _bird_sheets: Dictionary = {}
 static func _birds() -> Dictionary:
 	if _bird_sheets.is_empty():
-		_bird_sheets = {"ground": _load("maya_ground", FRAMES.ground), "fly": _load("maya_fly", FRAMES.fly)}
+		_bird_sheets = {"ground": _load("maya_ground", FRAMES.ground), "hop": _load("maya_hop", FRAMES.hop),
+			"fly": _load("maya_fly", FRAMES.fly)}
 	return _bird_sheets
 
 static func _sprite(texture: Texture2D, frames: int) -> Sprite3D:
@@ -288,7 +289,11 @@ func _walk(cat: Dictionary, delta: float, speed: float, right: Vector2) -> bool:
 	cat.walked += step.length()
 	if absf(step.dot(right)) > 0.0001:
 		cat.facing = signf(step.dot(right))
-	_show(cat.sprite, cat.sheets.walk, int(cat.walked / 0.09))
+	# dashing off it gallops, a longer stride per frame
+	if cat.state == "dash":
+		_show(cat.sprite, cat.sheets.gallop, int(cat.walked / 0.2))
+	else:
+		_show(cat.sprite, cat.sheets.walk, int(cat.walked / 0.09))
 	_place(cat.node, cat.at, 0.0)
 	return false
 
@@ -444,17 +449,18 @@ func _off_screen(from: Vector3, dir: Vector3) -> Vector3:
 		d += 4.0
 	return from + dir * (d + 4.0)
 
-## A feeding bird: pecks, now and then hops a little way, a small arc off the ground.
+## A feeding bird: pecks, now and then hops a little way (its own frames), a small arc off the ground.
 func _feed(bird: Dictionary, delta: float, spot: Vector2, right: Vector2) -> void:
 	bird.timer -= delta
 	if bird.hop < 1.0:
 		bird.hop = minf(1.0, bird.hop + delta * 5.0)
 		bird.at = (bird.from as Vector2).lerp(bird.to, bird.hop)
-		_place(bird.node, bird.at, sin(PI * bird.hop) * 0.12)
-		_show(bird.sprite, _birds().ground, 1)
+		# crouch, legs tucked, landing (the frames lift the bird a little themselves)
+		_place(bird.node, bird.at, sin(PI * bird.hop) * 0.06)
+		_show(bird.sprite, _birds().hop, mini(int(bird.hop * FRAMES.hop), FRAMES.hop - 1))
 	else:
 		bird.peck -= delta
-		_show(bird.sprite, _birds().ground, 2 if bird.peck > 0.0 else 0)
+		_show(bird.sprite, _birds().ground, 1 if bird.peck > 0.0 else 0)
 		if bird.timer <= 0.0:
 			bird.timer = _rng.randf_range(0.4, 2.2)
 			if _rng.randf() < 0.45:

@@ -663,8 +663,9 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   `cats.px.js` and `maya.px.js`; the other cat coats are **palette swaps** of the orange
   tabby (fur and pale ramps per coat). `build.ps1` builds them with pxl into
   `sprites/critters/` (one strip per pose: cat walk 8 x 44x32; sit, tail 7, blink 4, groom 9,
-  yawn 7 and petted 5, all 26x34; sleep and breathe 6, 32x17; stretch 12 x 51x31; maya
-  ground 3 x 24x17, fly 4 x 24x28), at the characters' density, side-on facing right and
+  yawn 7 and petted 5, all 26x34; sleep and breathe 6, 32x17; stretch 12 x 51x31; gallop 5 x
+  46x30; maya ground 2 (standing, pecking) and hop 3 (crouch, tucked, landing), 24x24, fly 4 x
+  24x28), at the characters' density, side-on facing right and
   flipped, lit and shadowed like the cast. Twelve cats: five at their own spots (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
   Kiko tuxedo by the canteen, Tisay grey tabby on the chapel plaza, Itim black at SJH,
   Puti white at the Student Center) and seven more (`MORE_CATS`, the coats in turn) scattered over
@@ -673,9 +674,9 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   (15% each) once through (`FIDGETS`), stroll within
   5 m of home, curl up asleep breathing (more at noon, at night and in the rain) and wake with
   a stretch before strolling off, walk over to a
-  student standing still within 4.5 m, dash off from a running one, and lean into a pet, eyes closed
+  student standing still within 4.5 m, gallop off from a running one (a 0.2 m stride per frame), and lean into a pet, eyes closed
   (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). Flocks
-  (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop and peck on open ground from 6:00 to 18:00 when
+  (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop (its own frames, with a 0.06 m arc) and peck on open ground from 6:00 to 18:00 when
   it is not raining, and the whole flock flutters up and away when the student comes
   within 2.4 m (4.5 m running): up, across the screen away from the student and towards the
   camera (the open side of every view), each bird hidden only once it is off the screen
