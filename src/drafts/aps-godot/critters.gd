@@ -5,10 +5,10 @@ extends Node3D
 ## cast, and lit and shadowed like them.
 ##
 ## Cats: a dozen strays with names: five at their own spots, the rest scattered over the
-## campus's open ground. They sit and flick their tail,
-## stroll, and curl up asleep (more at noon, at night and in the rain). Stand still near
-## one and it may come over; press E beside it to pet it (it purrs). Run at one and it
-## dashes off.
+## campus's open ground. They sit (now and then flicking the tail, blinking, grooming a paw or
+## yawning), stroll, and curl up asleep, breathing (more at noon, at night and in the rain),
+## and wake with a stretch. Stand still near one and it may come over; press E beside it to
+## pet it (eyes closed, it leans into the hand and purrs). Run at one and it gallops off.
 ## Birds: flocks of maya (tree sparrows) hopping and pecking on the open ground by day.
 ## Come close, or run, and the whole flock flutters up and away; it lands again a while
 ## later. More flocks are scattered over the open ground, and small groups fly over the
@@ -130,21 +130,29 @@ func _pick(open: Array[Vector2], taken: Array[Vector2], spacing: float) -> Vecto
 ## The sheets come from pxl (assets/drafts/characters/critters/pxl/, built by its build.ps1):
 ## PixelLab frames, cleaned and on one palette per animal; the cats' coats are palette swaps.
 ## Frames per sheet, side by side.
-const FRAMES := {"walk": 8, "sit": 1, "sleep": 1, "ground": 3, "fly": 4}
+const FRAMES := {"walk": 8, "sit": 1, "sleep": 1, "tail": 7, "blink": 4, "groom": 9, "yawn": 7, "petted": 5,
+	"breathe": 6, "stretch": 12, "gallop": 5, "ground": 2, "hop": 3, "fly": 4}
+## Frames a second of the cats' animations.
+const FPS := {"tail": 8.0, "blink": 8.0, "groom": 6.0, "yawn": 6.0, "petted": 4.0, "breathe": 3.0, "stretch": 6.0}
+## While it sits, a cat now and then flicks its tail, blinks, grooms a paw or yawns
+## (each played once): the chances, and the seconds between.
+const FIDGETS := {"tail": 0.35, "blink": 0.35, "groom": 0.15, "yawn": 0.15}
+const FIDGET_EVERY := Vector2(2.5, 6.0)
 
 static func _load(name: String, frames: int) -> Array:
 	return [load("res://sprites/critters/%s.png" % name), frames]
 
 static func _cat_sheets(coat: String) -> Dictionary:
 	var sheets := {}
-	for pose in ["walk", "sit", "sleep"]:
+	for pose in ["walk", "gallop", "sit", "sleep", "tail", "blink", "groom", "yawn", "petted", "breathe", "stretch"]:
 		sheets[pose] = _load("cat_%s_%s" % [pose, coat], FRAMES[pose])
 	return sheets
 
 static var _bird_sheets: Dictionary = {}
 static func _birds() -> Dictionary:
 	if _bird_sheets.is_empty():
-		_bird_sheets = {"ground": _load("maya_ground", FRAMES.ground), "fly": _load("maya_fly", FRAMES.fly)}
+		_bird_sheets = {"ground": _load("maya_ground", FRAMES.ground), "hop": _load("maya_hop", FRAMES.hop),
+			"fly": _load("maya_fly", FRAMES.fly)}
 	return _bird_sheets
 
 static func _sprite(texture: Texture2D, frames: int) -> Sprite3D:
@@ -179,7 +187,8 @@ func _add_cat(data: Dictionary) -> void:
 	add_child(body)
 	var home := Npcs.free_spot(data.home)
 	var cat := {"name": data.name, "node": body, "sprite": sprite, "sheets": sheets, "home": home, "at": home,
-		"state": "sit", "timer": _rng.randf_range(2.0, 6.0), "target": home, "facing": 1.0, "phase": 0.0, "walked": 0.0}
+		"state": "sit", "timer": _rng.randf_range(2.0, 6.0), "target": home, "facing": 1.0, "phase": 0.0, "walked": 0.0,
+		"fidget": "", "fidget_t": 0.0, "next_fidget": _rng.randf_range(FIDGET_EVERY.x, FIDGET_EVERY.y), "fidgets": 0}
 	_place(body, home, 0.0)
 	cats.append(cat)
 
@@ -194,19 +203,31 @@ func _update_cat(cat: Dictionary, delta: float, at: Vector2, still: bool, runnin
 		cat.state = "dash"
 		cat.timer = 1.4
 		cat.target = _clear_spot(cat.at, cat.at - toward.normalized() * 3.5)
+	# seconds in this state; a fidget stops when the cat does something else
+	if cat.state != cat.get("was", ""):
+		cat.was = cat.state
+		cat.t = 0.0
+		cat.fidget = ""
+	cat.t += delta
 	match cat.state:
 		"petted":
-			_show(cat.sprite, cat.sheets.sit, 0)
+			# eyes closed, the head lifting into the hand and back
+			_show(cat.sprite, cat.sheets.petted, 1 + int(cat.t * FPS.petted) % 4)
 			if cat.timer <= 0.0:
 				cat.state = "sit"
 				cat.timer = _rng.randf_range(2.0, 5.0)
 		"sleep":
-			_show(cat.sprite, cat.sheets.sleep, 0)
+			_show(cat.sprite, cat.sheets.breathe, int(cat.t * FPS.breathe))
 			if cat.timer <= 0.0:
-				cat.state = "sit"
-				cat.timer = _rng.randf_range(3.0, 7.0)
+				cat.state = "stretch" # it wakes with a stretch, then strolls off
+		"stretch":
+			var frame := int(cat.t * FPS.stretch)
+			_show(cat.sprite, cat.sheets.stretch, mini(frame, FRAMES.stretch - 1))
+			if frame >= FRAMES.stretch:
+				cat.state = "walk"
+				cat.target = _clear_spot(cat.at, cat.home + Vector2(_rng.randf_range(-5.0, 5.0), _rng.randf_range(-3.0, 3.0)))
 		"sit":
-			_show(cat.sprite, cat.sheets.sit, 0)
+			_sit(cat, delta)
 			if near < 6.0 and absf(toward.dot(right)) > 0.05:
 				cat.facing = signf(toward.dot(right))
 			if still and near < 4.5 and near > 1.0 and _rng.randf() < delta * 0.25:
@@ -233,6 +254,28 @@ func _update_cat(cat: Dictionary, delta: float, at: Vector2, still: bool, runnin
 				cat.state = "sit"
 				cat.timer = _rng.randf_range(3.0, 8.0)
 
+## Sitting: still, with now and then a tail flick, a blink, a groom or a yawn, played once.
+func _sit(cat: Dictionary, delta: float) -> void:
+	if cat.fidget != "":
+		cat.fidget_t += delta
+		var frame := int(cat.fidget_t * FPS[cat.fidget])
+		if frame < FRAMES[cat.fidget]:
+			_show(cat.sprite, cat.sheets[cat.fidget], frame)
+			return
+		cat.fidget = ""
+		cat.next_fidget = _rng.randf_range(FIDGET_EVERY.x, FIDGET_EVERY.y)
+	_show(cat.sprite, cat.sheets.sit, 0)
+	cat.next_fidget -= delta
+	if cat.next_fidget <= 0.0:
+		var roll := _rng.randf()
+		for fidget in FIDGETS:
+			roll -= FIDGETS[fidget]
+			if roll <= 0.0 or fidget == FIDGETS.keys()[-1]:
+				cat.fidget = fidget
+				break
+		cat.fidget_t = 0.0
+		cat.fidgets += 1
+
 ## Steps the cat towards its target; true once it has arrived (or is stuck).
 func _walk(cat: Dictionary, delta: float, speed: float, right: Vector2) -> bool:
 	var to: Vector2 = cat.target - cat.at
@@ -246,7 +289,11 @@ func _walk(cat: Dictionary, delta: float, speed: float, right: Vector2) -> bool:
 	cat.walked += step.length()
 	if absf(step.dot(right)) > 0.0001:
 		cat.facing = signf(step.dot(right))
-	_show(cat.sprite, cat.sheets.walk, int(cat.walked / 0.09))
+	# dashing off it gallops, a longer stride per frame
+	if cat.state == "dash":
+		_show(cat.sprite, cat.sheets.gallop, int(cat.walked / 0.2))
+	else:
+		_show(cat.sprite, cat.sheets.walk, int(cat.walked / 0.09))
 	_place(cat.node, cat.at, 0.0)
 	return false
 
@@ -402,17 +449,18 @@ func _off_screen(from: Vector3, dir: Vector3) -> Vector3:
 		d += 4.0
 	return from + dir * (d + 4.0)
 
-## A feeding bird: pecks, now and then hops a little way, a small arc off the ground.
+## A feeding bird: pecks, now and then hops a little way (its own frames), a small arc off the ground.
 func _feed(bird: Dictionary, delta: float, spot: Vector2, right: Vector2) -> void:
 	bird.timer -= delta
 	if bird.hop < 1.0:
 		bird.hop = minf(1.0, bird.hop + delta * 5.0)
 		bird.at = (bird.from as Vector2).lerp(bird.to, bird.hop)
-		_place(bird.node, bird.at, sin(PI * bird.hop) * 0.12)
-		_show(bird.sprite, _birds().ground, 1)
+		# crouch, legs tucked, landing (the frames lift the bird a little themselves)
+		_place(bird.node, bird.at, sin(PI * bird.hop) * 0.06)
+		_show(bird.sprite, _birds().hop, mini(int(bird.hop * FRAMES.hop), FRAMES.hop - 1))
 	else:
 		bird.peck -= delta
-		_show(bird.sprite, _birds().ground, 2 if bird.peck > 0.0 else 0)
+		_show(bird.sprite, _birds().ground, 1 if bird.peck > 0.0 else 0)
 		if bird.timer <= 0.0:
 			bird.timer = _rng.randf_range(0.4, 2.2)
 			if _rng.randf() < 0.45:
@@ -490,7 +538,6 @@ func update(delta: float, still: bool, running: bool, talking: bool, npc_near: b
 	for cat in cats:
 		_update_cat(cat, delta, at, still, running, right)
 		cat.sprite.flip_h = cat.facing < 0.0
-		cat.sprite.scale.y = 1.0 + (0.03 * sin(cat.phase * 2.2) if cat.state == "sleep" else 0.0)
 		cat.sprite.rotation.y = atan2(-forward.x, -forward.z)
 	for flock in flocks:
 		_update_flock(flock, delta, at, running, right)

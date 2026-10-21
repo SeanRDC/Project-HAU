@@ -1,0 +1,3 @@
+{"first_frame": {"type": "base64", "base64": "@cat-sleep.png", "format": "png"}, "pad": [48, 32],
+ "action": "the curled up cat sleeps peacefully, its side gently rises and falls as it breathes; eyes stay closed, it stays curled in place",
+ "frame_count": 4, "seed": 13, "no_background": true}

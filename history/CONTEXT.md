@@ -1,5 +1,11 @@
 # Project Context
 
+**Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
+yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
+cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
+pxl (`pixellab/run.mjs` sends a request; the blink is drawn in `convert.mjs`). See
+`sessions/2026-10-21-cat-animations.md`.
+
 **Atmosphere, 2026-10-21.** T now steps through dawn, morning, noon, afternoon, golden hour,
 dusk and night (`PRESETS` in `aps.gd`); windows and lamps light at dusk and dawn. G steps
 through the weather (clear, overcast, rain, thunderstorm with lightning and thunder, windy), which also changes on its own. Golden-hour shafts and dust. See

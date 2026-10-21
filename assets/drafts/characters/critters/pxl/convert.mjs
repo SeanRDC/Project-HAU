@@ -6,7 +6,8 @@
 //   - near-black edge pixels become a darker tone of the colour beside them (the cast are
 //     edged in their own colour, never black);
 //   - lone pixels are dropped;
-//   - every frame of an animal is trimmed to one shared box, feet on the bottom row.
+//   - every frame of a pose is trimmed to one box (shared by poses that follow each other in
+//     place), feet on the bottom row.
 // usage: node convert.mjs
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
@@ -75,24 +76,59 @@ function palette(frames, K) {
 }
 
 // --- Frames -------------------------------------------------------------------------------
-const source = (name) => clean(readPng(`${here}source/${name}.png`));
+// pad: [W, H] sets a frame on the canvas PixelLab animated it on (pixellab/run.mjs pads the same
+// way: centred, paws on the bottom row), so a pose and the animations made from it line up.
+function pad(img, W, H) {
+  const px = new Uint8Array(W * H * 4), ox = Math.floor((W - img.w) / 2), oy = H - img.h;
+  for (let y = 0; y < img.h; y++) for (let x = 0; x < img.w; x++)
+    for (let k = 0; k < 4; k++) px[((y + oy) * W + x + ox) * 4 + k] = img.px[(y * img.w + x) * 4 + k];
+  return { w: W, h: H, px };
+}
+const source = (name, size) => { const img = readPng(`${here}source/${name}.png`); return clean(size ? pad(img, ...size) : img); };
 const files = readdirSync(`${here}source`);
 const series = (prefix) => files.filter((f) => f.startsWith(prefix)).sort().map((f) => source(f.replace('.png', '')));
-const CAT = { walk: series('cat-walk-'), sit: [source('cat-sit')], sleep: [source('cat-sleep')] };
-const MAYA = { ground: [source('maya-stand'), source('maya-stand'), ...series('maya-peck-').slice(1, 2)], fly: series('maya-fly-') };
+// The blink is drawn here, not generated (PixelLab kept giving the eyes a new colour): the eye,
+// two dark pixels, becomes fur and the lid a short darker line just under it.
+function closeEyes(g) {
+  const out = g.map((row) => row.map((c) => c && [...c]));
+  const fur = out[14][19], lid = darken(fur, 0.4);   // the eye: (20, 14) and (21, 14) on the 40x40 canvas
+  out[14][20] = fur; out[14][21] = fur; out[15][20] = lid; out[15][21] = lid;
+  return out;
+}
+const sit = source('cat-sit', [40, 40]), shut = closeEyes(sit);
+const breathe = series('cat-breathe-'), rise = series('cat-rise-');
+const CAT = {
+  walk: series('cat-walk-'), sit: [sit], sleep: [source('cat-sleep', [48, 32])],
+  // the dash away from a running student: a fast stride, looped
+  gallop: series('cat-gallop-'),
+  // while sitting, now and then (one-shots, back to sit): a tail flick, a blink, grooming, a yawn
+  tail: series('cat-tail-'), blink: [sit, shut, shut, sit], groom: series('cat-groom-'), yawn: series('cat-yawn-'),
+  // petted: eyes closed, head lifting into the hand (frames 2-5 loop)
+  petted: series('cat-petted-'),
+  // asleep, the side rising and falling
+  breathe: [...breathe, breathe[2], breathe[1]],
+  // waking: down into the stretch, held, and back up to standing
+  stretch: [...[...rise].reverse(), rise[0], rise[0], ...rise],
+};
+// poses that follow each other in place share one box, so the cat does not shift between them
+const TOGETHER = [['sit', 'tail', 'blink', 'groom', 'yawn', 'petted'], ['sleep', 'breathe']];
+const MAYA = { ground: [source('maya-stand'), ...series('maya-peck-').slice(1, 2)], hop: series('maya-hop-'), fly: series('maya-fly-') };
 
-// Trims every frame of each pose to the poses' shared box (feet stay on the bottom row).
-function boxes(poses) {
+// Trims every frame of each pose to the pose's shared box (feet stay on the bottom row); the
+// poses in one `together` group share theirs.
+function boxes(poses, together = []) {
   const out = {};
-  for (const [pose, frames] of Object.entries(poses)) {
+  for (const pose of Object.keys(poses)) {
+    const group = together.find((g) => g.includes(pose)) ?? [pose];
     let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
-    for (const g of frames) g.forEach((row, y) => row.forEach((c, x) => { if (c) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }));
-    out[pose] = frames.map((g) => g.slice(y0, y1 + 1).map((row) => row.slice(x0, x1 + 1)));
+    for (const g of group.flatMap((p) => poses[p])) g.forEach((row, y) => row.forEach((c, x) => { if (c) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }));
+    out[pose] = poses[pose].map((g) => g.slice(y0, y1 + 1).map((row) => row.slice(x0, x1 + 1)));
   }
   return out;
 }
 
-const KEYS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+// pxl keys are one character (not . _ # or space); the cats' 16 colours and four coats need more than letters and digits
+const KEYS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!%&*+-=?@^~:;<>/|,()[]';
 const hex = (c) => '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
 function grids(poses, pal) {
   return Object.fromEntries(Object.entries(poses).map(([pose, frames]) => [pose,
@@ -101,8 +137,8 @@ function grids(poses, pal) {
 const block = (rows) => '`\n' + rows.map((r) => '    ' + r).join('\n') + '`';
 
 // --- The cats: the orange tabby, and four coats as swaps ------------------------------------
-const catPoses = boxes(CAT);
-const catPal = palette(Object.values(catPoses).flat(), 12);
+const catPoses = boxes(CAT, TOGETHER);
+const catPal = palette(Object.values(catPoses).flat(), 16);
 const catGrids = grids(catPoses, catPal);
 // Each colour is fur (orange), pale (the white chest, paws, muzzle) or a feature (eyes, nose,
 // ear pink). Fur takes the coat's ramp by lightness; pale the coat's pale ramp.
@@ -136,7 +172,7 @@ for (const [coat, { fur, pale }] of Object.entries(COATS)) {
   });
 }
 const catPalette = Object.fromEntries([...catPal.centres.map((c, i) => [KEYS[i], hex(c)]), ...Object.entries(extra)]);
-const FPS = { walk: 8, sit: 1, sleep: 1 };
+const FPS = { walk: 8, sit: 1, sleep: 1, tail: 8, blink: 8, groom: 6, yawn: 6, petted: 4, breathe: 3, stretch: 6, gallop: 12 };
 let cats = `// The campus cats in pxl (generated by convert.mjs from source/*.png, the PixelLab frames;
 // edit the art here or in convert.mjs, then run build.ps1). Side-on, facing right, feet on the
 // bottom row, one shared ${catPal.centres.length}-colour palette. The orange tabby is the drawing; the other coats
@@ -155,16 +191,16 @@ for (const [coat, swap] of Object.entries(COATS))
 writeFileSync(`${here}cats.px.js`, cats);
 
 // --- The maya --------------------------------------------------------------------------------
-const mayaPoses = boxes(MAYA);
+const mayaPoses = boxes(MAYA, [['ground', 'hop']]);
 const mayaPal = palette(Object.values(mayaPoses).flat(), 12);
 const mayaGrids = grids(mayaPoses, mayaPal);
 let maya = `// The maya (Eurasian tree sparrow) in pxl (generated by convert.mjs from source/*.png, the
 // PixelLab frames; run build.ps1). Side-on, facing right, feet on the bottom row, one shared
-// ${mayaPal.centres.length}-colour palette. ground: standing, standing (the hop), pecking; fly: four wingbeats.
+// ${mayaPal.centres.length}-colour palette. ground: standing, pecking; hop: crouch, legs tucked, landing; fly: four wingbeats.
 pal(${JSON.stringify(Object.fromEntries(mayaPal.centres.map((c, i) => [KEYS[i], hex(c)])))})
 `;
 for (const [pose, frames] of Object.entries(mayaGrids))
-  maya += `anim("maya_${pose}", { fps: ${pose === 'fly' ? 14 : 4} },\n  ${frames.map((g) => `frame(${block(g)})`).join(',\n  ')})\n`;
+  maya += `anim("maya_${pose}", { fps: ${{ fly: 14, hop: 15 }[pose] ?? 4} },\n  ${frames.map((g) => `frame(${block(g)})`).join(',\n  ')})\n`;
 writeFileSync(`${here}maya.px.js`, maya);
 console.log('cats', Object.fromEntries(Object.entries(catGrids).map(([p, f]) => [p, `${f.length} x ${f[0][0].length}x${f[0].length}`])),
   'maya', Object.fromEntries(Object.entries(mayaGrids).map(([p, f]) => [p, `${f.length} x ${f[0][0].length}x${f[0].length}`])));

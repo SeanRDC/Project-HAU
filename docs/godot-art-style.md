@@ -650,23 +650,33 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   the way Migo is: `assets/drafts/characters/critters/pxl/` keeps the PixelLab frames
   (`source/`) and requests (`pixellab/`: generate-image-v2 from Mikko's side-view cat and
   sparrow reference, with a Bea frame or the chosen cat as the style image; animate-with-
-  text-v3 for the walk, the peck and the flight). `convert.mjs` makes alpha solid, lifts
+  text-v3 for the walk, the peck and the flight, and from the sitting cat the tail flick,
+  grooming, yawn and petted lean, from the sleeper the breathing, and from a generated stretch
+  pose the rise; `pixellab/run.mjs` sends a request, padding the first frame so the pose has
+  room). The blink is drawn in `convert.mjs` (the eye's two pixels shut to a lid line), as
+  PixelLab kept recolouring the eyes. `convert.mjs` makes alpha solid, lifts
   near-black edge pixels to a darker tone of the colour beside them (no black outlines),
-  drops lone pixels, trims each animal's frames to one box (feet on the bottom row) and
-  puts each animal on one palette (12 colours for the cats, 12 for the maya), writing
+  drops lone pixels, trims each pose's frames to one box (feet on the bottom row; the poses
+  that follow each other in place, sit with its fidgets and petting, and sleep with breathing,
+  share one) and puts each animal on one palette (16 colours for the cats, 12 for the maya;
+  fewer flattened the tabby stripes), writing
   `cats.px.js` and `maya.px.js`; the other cat coats are **palette swaps** of the orange
   tabby (fur and pale ramps per coat). `build.ps1` builds them with pxl into
-  `sprites/critters/` (one strip per pose: cat walk 8 x 44x32, sit 20x31, sleep 32x16; maya
-  ground 3 x 24x17, fly 4 x 24x28), at the characters' density, side-on facing right and
+  `sprites/critters/` (one strip per pose: cat walk 8 x 44x32; sit, tail 7, blink 4, groom 9,
+  yawn 7 and petted 5, all 26x34; sleep and breathe 6, 32x17; stretch 12 x 51x31; gallop 5 x
+  46x30; maya ground 2 (standing, pecking) and hop 3 (crouch, tucked, landing), 24x24, fly 4 x
+  24x28), at the characters' density, side-on facing right and
   flipped, lit and shadowed like the cast. Twelve cats: five at their own spots (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
   Kiko tuxedo by the canteen, Tisay grey tabby on the chapel plaza, Itim black at SJH,
   Puti white at the Student Center) and seven more (`MORE_CATS`, the coats in turn) scattered over
   the open ground (`_open_ground`: a 4 m grid, walkable, at ground level, off the roads; 22 m
-  apart): sit with a tail flick, stroll within
-  5 m of home, curl up asleep (more at noon, at night and in the rain), walk over to a
-  student standing still within 4.5 m, dash off from a running one, and sit to be petted
+  apart): sit, every 2.5-6 s flicking the tail or blinking (35% each), grooming or yawning
+  (15% each) once through (`FIDGETS`), stroll within
+  5 m of home, curl up asleep breathing (more at noon, at night and in the rain) and wake with
+  a stretch before strolling off, walk over to a
+  student standing still within 4.5 m, gallop off from a running one (a 0.2 m stride per frame), and lean into a pet, eyes closed
   (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). Flocks
-  (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop and peck on open ground from 6:00 to 18:00 when
+  (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop (its own frames, with a 0.06 m arc) and peck on open ground from 6:00 to 18:00 when
   it is not raining, and the whole flock flutters up and away when the student comes
   within 2.4 m (4.5 m running): up, across the screen away from the student and towards the
   camera (the open side of every view), each bird hidden only once it is off the screen
