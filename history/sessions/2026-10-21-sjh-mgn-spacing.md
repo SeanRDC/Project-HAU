@@ -88,6 +88,14 @@ side.JPG.
 - `areas/mgn.gd`: `SOUTH_FRONT`, `GARDEN_FROM`, `CUT_X`, the garden and its shrubs.
 - `docs/godot-art-style.md` (the SJH and MGN rows).
 
+## The walk angled, the bridge on the third floors
+
+Mikko marked the walk on screenshot 1178: it runs at an angle, not straight in. It now
+leaves the drive opposite Mary and slants 3 m north to the corridor (`WALK_SLANT`); the
+beds' ends by it are filled with grass wedges and its kerbs follow the slant. The
+bridge is on the third floor (Mikko); it already sat on MGN's (7.0 m) but SJH's third
+floor is 7.5 m, so the deck now rises between the two.
+
 ## Checks
 
 `--test`: all true. `npm run check`, `npm run build` pass. Captures from the lane's north
@@ -99,6 +107,7 @@ the bridge was hidden; after, the gap is open and the bridge shows across it.
 - The forecourt's place on the north block is a reading of the photos (Mikko was not sure); the lobby behind it is a dark panel, not walkable.
 - The drive's kerb with the lawn is one polygon: its corners by the road are not rounded as in the photo.
 
+- The walk's slant (3 m) is read off a screenshot sketch, not measured.
 - The walk's pavers are the `brick` texture tinted brown, not the photo's zigzag pattern, and it ends at the corridor's face (the ground floor is not walkable).
 - Near the lane the camera is between views (SJH's cutaway and the overview), so the spot is hard to see in play.
 - The road behind SJH (sjh back right side.JPG) is not built; the lane still ends at a wall.
