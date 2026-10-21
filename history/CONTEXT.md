@@ -1,8 +1,9 @@
 # Project Context
 
 **Audio fixes, 2026-10-22.** The looping sounds no longer pulse as they come round (an even
-crossfade), the students' murmur is voiced babble rather than noise bursts that sounded
-like wind, and footsteps are a thud and a tick. See `sessions/2026-10-22-audio-fixes.md`.
+crossfade), the students' murmur is a faint babble of soft tones rather than noise bursts
+that sounded like wind, and the birds' take-off flutter is softer and shorter. The footsteps are
+unchanged. See `sessions/2026-10-22-audio-fixes.md`.
 
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
