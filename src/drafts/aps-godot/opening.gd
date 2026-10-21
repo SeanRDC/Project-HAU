@@ -89,12 +89,6 @@ const PAGES := [
 		{"id": "mata", "rect": [0.0, 0.1, 1.0, 0.8], "dark": true, "draw": "Close-up ng mga mata ng bida, may luha sa gilid",
 			"lines": [["Kung pwede lang bumalik...", "L"], ["...hindi na kita pababayaan.", "R"]]},
 	]},
-	# he wakes in the classroom, and the game starts there in June 2026
-	{"panels": [
-		{"id": "klase", "rect": [0.0, 0.0, 1.0, 0.48]},
-		{"id": "gising", "rect": [0.0, 0.52, 1.0, 0.48], "draw": "Ang bida, inaangat ang ulo mula sa mesa, dumidilat",
-			"lines": [["...Huy. Gising na. Late ka na naman.", "R"], ["Hunyo.", "BL"]]},
-	]},
 ]
 
 var sound: Node

@@ -33,8 +33,6 @@ manga shader), else a grey card naming what to draw.
 | 7 | `tagulan` (photo, rain drawn over) | Pagdating ng tag-ulan... / ...ikaw na lang ang hindi sumisilong. | When the rainy season came... you were the only one who didn't run for shelter. |
 | 8 | blank page, specks | Nobyembre 11. / Sana nagtanong ako. / Sana nakinig ako. / Sana hindi kita iniwan mag-isa. / ...sana sinagot ko. | November 11. I wish I'd asked. I wish I'd listened. I wish I hadn't left you alone. ...I wish I'd answered. |
 | 9 | `mata` (to draw), on black | Kung pwede lang bumalik... / ...hindi na kita pababayaan. | If only I could go back... I would never leave you alone again. |
-| 10 | `klase` (photo), silence | | |
-| 10 | `gising` (to draw) | ...Huy. Gising na. Late ka na naman. / Hunyo. | Hey. Wake up. You're late again. / June. |
 
 Then the title card, "PROJECT HAU", and the game starts.
 

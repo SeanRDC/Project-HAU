@@ -19,7 +19,7 @@ To look at one page without playing it all:
 tools\run-aps-godot.cmd -- --opening-capture=page.png --opening-page=2
 ```
 
-(`--opening-page=10` is the title card.)
+(`--opening-page=9` is the title card.)
 
 ## Where each panel's picture comes from
 
@@ -48,11 +48,10 @@ with that name and it replaces the photo.
 | `alaala.png` | 1 | 2000 x 490, no frame | Pencil only, soft grey: the side silhouette of Lance's face lying down, looking up; pencil dust above. |
 | `langit.png` | 2 | 2000 x 390 | Drawn: thin wispy clouds of short broken pen strokes. |
 | `mata.png` | 9 | 2000 x 860, on black | Extreme close-up of Lance's eyes, wide open, a tear at the corner, heavy hatching. |
-| `gising.png` | 10 | 2000 x 520 | Lance lifting his head off a classroom desk, eyes opening, afternoon light. (No placeholder file: a grey card shows until drawn.) |
 | `fountain.png` | 2 | 2000 x 650 | **photo** HAU Boulevard from the angel fountain. |
 | `walkway.png` | 3 | 2000 x 500 | **photo** The covered walkway on PGN's side. |
 | `chapel.png` | 3 | 2000 x 1100 | **photo** Down the boulevard to the chapel. |
-| `klase.png` | 3, 10 | 2000 x 1100 | **photo** Their classroom, empty, in the afternoon light. |
+| `klase.png` | 3 | 2000 x 1100 | **photo** Their classroom, empty, in the afternoon light. |
 | `corridor.png` | 4 | 900 x 1660 | **photo** The fifth-floor open corridor. |
 | `stairs.png` | 4 | 900 x 1660 | **photo** The stairs going up. |
 | `hallway.png` | 4 | 1100 x 1550 | **photo** The APS hallway, students walking to the canteen. |
@@ -72,7 +71,7 @@ A prompt that works as a base (add the row's "what it shows"):
 > seinen slice-of-life style, quiet and nostalgic, lots of white paper, no colour, no text,
 > Holy Angel University campus in Angeles City, Philippines, ...
 
-Faces (`alaala`, `mata`, `gising`) should match Lance, the player boy: his look is in
+Faces (`alaala`, `mata`) should match Lance, the player boy: his look is in
 `assets/drafts/characters/boy/pxl-new/source/`.
 
 ## Changing the story
