@@ -21,6 +21,7 @@ const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
+const Pgn := preload("res://areas/pgn.gd")
 const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
@@ -74,7 +75,7 @@ const MIDDLE_PITCH := 16.0
 ## APS wing and the corner garden, which would stand in front at the mouth); PGN's side of
 ## the road fades instead (MiddleRoad.NORTH_GROUP), so the ground up to the plot stays.
 ## Facing north it cuts everything south of the Main Building's face (MGN, the plots).
-const MIDDLE_CUT_Z := 30.0
+const MIDDLE_CUT_Z := 50.4
 ## Sprite texels per metre (85 px over 1.83 m). Auto mode renders near this density.
 const SPRITE_DENSITY := 46.4
 const PIXEL_MODES := ["auto", "crisp", "pixel"]
@@ -474,7 +475,7 @@ static func perch_for(x: float, z: float, level: float) -> float:
 
 static func chapel_for(x: float, z: float) -> float:
 	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z)) \
-		* (1.0 - MiddleRoad.view_for(x, z))
+		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Pgn.lane_for(x, z))
 
 ## The MGN view (facing west from the west road) yields to the middle road's.
 static func mgn_for(x: float, z: float) -> float:
@@ -1799,6 +1800,14 @@ func _verify_and_capture() -> void:
 		_set_zoom(MIN_WIDTH, true)
 		_update_camera(1.0)
 		checks.mgn_close_shows_student = _all_visible([student.position.x], [student.position.y, student.position.y + 1.83], [student.position.z])
+		# PGN: built on its plot, solid, the lane along its west end open from the boulevard's
+		# covered walkway (through the planter) up to the courtyard, the planter still solid
+		# elsewhere; in the lane the camera looks north up it; facing south across the
+		# boulevard the cut is in front of PGN's face, so PGN never stands in the way.
+		checks.pgn_built = scene.find_child("PGN NAME", true, false) != null and not Plots.shapes().has("pgn") 			and World.blocked(-100.0, 35.0) and World.blocked(-75.0, 0.0) and World.blocked(-110.0, 49.7) 			and not World.blocked(-134.0, 49.7) and not World.blocked(-134.0, 30.0) and not World.blocked(-125.0, 17.0) 			and is_equal_approx(World.floor_height(-134.0, 30.0), Pgn.LANE_Y) and World.blocked(Pgn.POTS[0].x, Pgn.POTS[0].y)
+		student.place(-134.0, 30.0)
+		_snap_follow()
+		checks.pgn_lane_view = chapel < 0.01 and _turns() < 0.01 and MIDDLE_CUT_Z > Pgn.FACE + Pgn.BAND_OUT
 		# HAU Boulevard: walkable from the west road to the fountain, both lanes, both covered
 		# walkways, both open walks and the crossings; the strips, median, planters, pillars
 		# and the fountain solid.
