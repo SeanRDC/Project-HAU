@@ -2110,7 +2110,7 @@ func _verify_and_capture() -> void:
 			npcs.update(1.0 / 30.0)
 		checks.npc_umbrellas = checks.npc_umbrellas and not bea.umbrella.visible
 		student.position = student_was
-		# the campus sounds: a murmur by the APS front, and birds by day
+		# the campus sounds: busy by the APS front, and birds by day
 		sound.warm_all()
 		student.place(0.7, 5.3)
 		_listen()
@@ -2152,7 +2152,7 @@ func _verify_and_capture() -> void:
 		checks.weather_and_light = stormy and dull and stepped and hours_ok and environment.fog_height_density < 0.05
 		# light: every tree drops leaves and (by day) casts shafts
 		checks.leaves_and_shafts = world.trees.size() > 10 and atmosphere.leaves.size() == world.trees.size() 			and (night_now() or atmosphere.shafts.get_child_count() >= world.trees.size())
-		checks.campus_sounds = sound.murmur.playing and sound.crowd > 0.9 and (sound.night or sound.bird_calls > calls)
+		checks.campus_sounds = sound.crowd > 0.9 and (sound.night or sound.bird_calls > calls)
 		# Fast travel (dev): every place is walkable and the jump lands there, framed.
 		var travelled := travel.panel.get_child(0).get_child(1).get_child_count() == travel_places().size()
 		for i in travel_places().size():

@@ -1,5 +1,10 @@
 # Project Context
 
+**Audio fixes, 2026-10-22.** The looping sounds no longer pulse as they come round (an even
+crossfade), the students' murmur is gone (every version was heard as a buzz by
+APS), the rain loop pauses in dry weather, and the birds' take-off flutter is softer and shorter. The footsteps are
+unchanged. See `sessions/2026-10-22-audio-fixes.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
