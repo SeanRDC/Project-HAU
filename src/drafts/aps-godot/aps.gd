@@ -154,6 +154,9 @@ var _zoom_before := -1.0
 var sjh := 0.0
 ## 0..1: how far the camera has turned right round to look west at MGN from the west road.
 var mgn := 0.0
+## 0..1: how far it has turned to look west at PGN's east face from the west road beside it
+## (a quarter turn back from north, not three on: from APS's road it turns the short way).
+var pgn_east := 0.0
 ## 0..1: how far the student is on the walk along the chapel's south side (the camera,
 ## facing north at the chapel, cuts away the parking and SJH behind it).
 var south_walk := 0.0
@@ -475,7 +478,7 @@ static func perch_for(x: float, z: float, level: float) -> float:
 
 static func chapel_for(x: float, z: float) -> float:
 	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z)) \
-		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Pgn.lane_for(x, z))
+		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Pgn.lane_for(x, z)) * (1.0 - Pgn.east_for(x, z))
 
 ## The MGN view (facing west from the west road) yields to the middle road's.
 static func mgn_for(x: float, z: float) -> float:
@@ -493,6 +496,7 @@ func _snap_follow() -> void:
 	hall = Hallway.hall_for(student.position.x, student.position.z)
 	sjh = Sjh.view_for(student.position.x, student.position.z)
 	mgn = mgn_for(student.position.x, student.position.z)
+	pgn_east = Pgn.east_for(student.position.x, student.position.z)
 	south_walk = ChapelSouth.view_for(student.position.x, student.position.z)
 	var on_middle := MiddleRoad.view_for(student.position.x, student.position.z)
 	middle = on_middle * MiddleRoad.south_for(student.position.z)
@@ -514,7 +518,7 @@ func _yaw() -> float:
 ## The camera's turn in quarter turns (SJH's and the boulevard's south half turns count
 ## two, MGN's three; the boulevard's north view adds none); the controls use it too.
 func _turns() -> float:
-	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle
+	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle - pgn_east
 
 ## The turn the controls use: the camera's, except that on the boulevard the side it faces
 ## stays the one it faced when the current direction was pressed, until it is let go or
@@ -549,6 +553,7 @@ func _update_camera(delta: float) -> void:
 	face = lerpf(face, face_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	sjh = lerpf(sjh, Sjh.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	mgn = lerpf(mgn, mgn_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	pgn_east = lerpf(pgn_east, Pgn.east_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	south_walk = lerpf(south_walk, ChapelSouth.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var on_middle := MiddleRoad.view_for(student.position.x, student.position.z)
 	var south := on_middle * MiddleRoad.south_for(student.position.z)
@@ -609,9 +614,12 @@ func _update_camera(delta: float) -> void:
 	var middle_focus := Vector3(middle_x, lerpf(target_y, target_y + 2.0, wide), roundf(middle_z / pixel) * pixel)
 	var north_z := lerpf(lerpf(follow.y, MiddleRoad.LANE_N.y - 1.0, wide), MiddleRoad.WALK_N.y, campus)
 	var north_focus := Vector3(middle_x, lerpf(target_y, target_y + 2.0, wide), roundf(north_z / pixel) * pixel)
-	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north)
+	# Facing PGN's east face it frames that face (sliding along it); close up, the student's
+	# own depth on the road.
+	var pgn_focus := Vector3(lerpf(Pgn.EAST, follow.x, close), lerpf(target_y, target_y + 3.0, wide), roundf(follow.y / pixel) * pixel)
+	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
-	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle + north_focus * middle_north
+	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle + north_focus * middle_north + pgn_focus * pgn_east
 	# Every framing, the wide ones too, keeps the student in the middle across the screen:
 	# the focus slides sideways onto them and keeps the depth its view frames.
 	var yaw := _yaw()
@@ -665,7 +673,7 @@ func _update_camera(delta: float) -> void:
 	# the road and SJH: everything past the road (SJH and its row of cars) is cut away, so
 	# the cars nosed in to the grass stay in front, as in the photos. It fades out as the
 	# chapel's or the gym's view takes over at either end.
-	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north, 0.0, 1.0)
+	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east, 0.0, 1.0)
 	if south_walk * facing_north > 0.0:
 		# (through the ground line, as the plane leans with the camera: then nothing of the
 		# front row's cars stands above it)
@@ -676,6 +684,11 @@ func _update_camera(delta: float) -> void:
 	if mgn > 0.0:
 		var lawn_edge := (Vector3(Mgn.CUT_X, focus.y, focus.z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, lawn_edge * smoothstep(0.0, 1.0, mgn))
+	# Facing PGN's east face it stands over the corner garden: everything east of the west
+	# road's middle (the bamboo, the chapel lawn's trees) is cut away.
+	if pgn_east > 0.0:
+		var garden_edge := (Vector3(Pgn.CUT_X, focus.y, focus.z) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, garden_edge * smoothstep(0.0, 1.0, pgn_east))
 	# Facing south across the boulevard the camera stands over PGN's plot: everything
 	# north of it (the APS wing, the corner garden) is cut away. Facing north it stands
 	# over the Main Building and MGN: everything south of their faces is cut away.
@@ -937,7 +950,7 @@ func _choose_framing(index: int) -> void:
 	elif value == 64.0:
 		student.place(SJH_SPOT.x, SJH_SPOT.y)
 		_snap_follow()
-	elif value <= 56.0 and value > 10.0 and (leg > 0.5 or chapel > 0.5 or gym > 0.5 or sjh > 0.5 or mgn > 0.5):
+	elif value <= 56.0 and value > 10.0 and (leg > 0.5 or chapel > 0.5 or gym > 0.5 or sjh > 0.5 or mgn > 0.5 or pgn_east > 0.5):
 		student.place(0.7, 5.3)
 		_snap_follow()
 	_set_zoom(value)
@@ -1808,6 +1821,17 @@ func _verify_and_capture() -> void:
 		student.place(-134.0, 30.0)
 		_snap_follow()
 		checks.pgn_lane_view = chapel < 0.01 and _turns() < 0.01 and MIDDLE_CUT_Z > Pgn.FACE + Pgn.BAND_OUT
+		# The east face's ground floor: the raised walk walkable behind its railing (open at
+		# the steps), the columns solid; on the west road beside it the camera faces it from
+		# over the road, standing outside PGN, not inside it facing the chapel.
+		checks.pgn_east_ground = not World.blocked(-64.8, 30.0) and is_equal_approx(World.floor_height(-64.8, 30.0), Pgn.EAST_WALK_Y) 			and World.blocked(Pgn.RAIL_X, 30.0) and not World.blocked(Pgn.RAIL_X, Pgn.DOOR_Z) and World.blocked(Pgn.EAST, Pgn.east_columns()[2])
+		student.place(-58.5, 35.0)
+		_set_zoom(40.0, true)
+		_snap_follow()
+		_update_camera(1.0)
+		checks.pgn_east_view = pgn_east > 0.99 and chapel < 0.01 and (-camera.global_basis.z).dot(Vector3.LEFT) > 0.9 			and camera.position.x > Pgn.EAST + Pgn.BAND_OUT
+		_set_zoom(MIN_WIDTH, true)
+		_update_camera(1.0)
 		# HAU Boulevard: walkable from the west road to the fountain, both lanes, both covered
 		# walkways, both open walks and the crossings; the strips, median, planters, pillars
 		# and the fountain solid.
