@@ -47,19 +47,23 @@ def material(name):
     return m
 
 class Part:
-    """One mesh being built: vertices and faces, each face with a material slot."""
+    """One mesh being built: vertices and faces, each face with a material slot. Faces added
+    with crease=True keep sharp edges when the model is smoothed (lance_hd.py): the collar,
+    tie, bag and straps are flat things, not blobs."""
     def __init__(self, name):
-        self.name, self.verts, self.faces, self.mats, self.slots = name, [], [], [], []
+        self.name, self.verts, self.faces, self.mats, self.slots, self.creased = name, [], [], [], [], []
 
     def slot(self, mat):
         if mat not in self.slots:
             self.slots.append(mat)
         return self.slots.index(mat)
 
-    def add(self, verts, faces, mat):
+    def add(self, verts, faces, mat, crease=False):
         o, s = len(self.verts), self.slot(mat)
         self.verts += [Vector(v) for v in verts]
         for f in faces:
+            if crease:
+                self.creased.append(len(self.faces))
             self.faces.append([o + i for i in f])
             self.mats.append(s)
 
@@ -78,6 +82,12 @@ class Part:
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0005)
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
         bm.to_mesh(me); bm.free()
+        if self.creased:
+            crease = me.attributes.get("crease_edge") or me.attributes.new("crease_edge", "FLOAT", "EDGE")
+            keys = {k for i in self.creased for k in me.polygons[i].edge_keys}
+            for e in me.edges:
+                if e.key in keys:
+                    crease.data[e.index].value = 1.0
         return ob
 
 # --- shapes -----------------------------------------------------------------------------
@@ -120,7 +130,7 @@ def limb(part, a, b, ra, rb, sides, mat):
     faces += [[2 * sides + 1, sides + i, sides + (i + 1) % sides] for i in range(sides)]
     part.add(verts, faces, mat)
 
-def box(part, centre, size, mat, rot_x=0.0):
+def box(part, centre, size, mat, rot_x=0.0, crease=True):
     c, (sx, sy, sz) = Vector(centre), size
     vs = []
     for x in (-1, 1):
@@ -130,7 +140,7 @@ def box(part, centre, size, mat, rot_x=0.0):
                 p.rotate(__import__("mathutils").Euler((rot_x, 0, 0)))
                 vs.append(tuple(c + p))
     faces = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
-    part.add(vs, faces, mat)
+    part.add(vs, faces, mat, crease)
 
 def strip(part, points, width, thick, mat, side=Vector((1, 0, 0))):
     """A flat band (a strap) along points, width across `side`."""
@@ -146,7 +156,7 @@ def strip(part, points, width, thick, mat, side=Vector((1, 0, 0))):
         a, b = i * 4, (i + 1) * 4
         faces += [[a + 0, b + 0, b + 2, a + 2], [a + 1, a + 3, b + 3, b + 1], [a + 0, a + 1, b + 1, b + 0], [a + 2, b + 2, b + 3, a + 3]]
     faces += [[0, 2, 3, 1], [(n - 1) * 4 + 0, (n - 1) * 4 + 1, (n - 1) * 4 + 3, (n - 1) * 4 + 2]]
-    part.add(verts, faces, mat)
+    part.add(verts, faces, mat, crease=True)
 
 # --- the head -----------------------------------------------------------------------------
 
@@ -310,20 +320,21 @@ for sx in (-1, 1):
     box(body, (sx * 0.040, -0.072, 1.433), (0.060, 0.012, 0.05), "shirt", rot_x=0.35)
     body.add([(sx * 0.010, -0.080, 1.455), (sx * 0.075, -0.060, 1.458), (sx * 0.030, -0.106, 1.375),
               (sx * 0.010, -0.090, 1.455), (sx * 0.075, -0.070, 1.458), (sx * 0.030, -0.114, 1.378)],
-             [[0, 1, 2], [3, 5, 4], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "shirt")
+             [[0, 1, 2], [3, 5, 4], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "shirt", crease=True)
 # tie: knot and blade, down the front of the shirt
 box(body, (0, -0.096, 1.425), (0.030, 0.020, 0.030), "tie")
 body.add([(-0.018, -0.110, 1.41), (0.018, -0.110, 1.41), (0.026, -0.108, 1.15), (0, -0.108, 1.125), (-0.026, -0.108, 1.15),
           (-0.018, -0.100, 1.41), (0.018, -0.100, 1.41), (0.026, -0.098, 1.15), (0, -0.098, 1.125), (-0.026, -0.098, 1.15)],
-         [[0, 1, 2, 3, 4], [9, 8, 7, 6, 5], [0, 5, 6, 1], [1, 6, 7, 2], [2, 7, 8, 3], [3, 8, 9, 4], [4, 9, 5, 0]], "tie")
-# arms: short sleeves, then bare arms to the hands, hanging a little away from the body
+         [[0, 1, 2, 3, 4], [9, 8, 7, 6, 5], [0, 5, 6, 1], [1, 6, 7, 2], [2, 7, 8, 3], [3, 8, 9, 4], [4, 9, 5, 0]], "tie", crease=True)
+# arms: short sleeves, then each bare arm one piece from under the sleeve to the fingertips
+# (the hand flat, its palm to the leg), hanging a little away from the body
 for sx in (-1, 1):
     sh, el, wr = Vector((sx * 0.200, 0.0, 1.375)), Vector((sx * 0.245, 0.012, 1.105)), Vector((sx * 0.262, -0.02, 0.855))
     limb(body, sh, sh.lerp(el, 0.55), 0.064, 0.058, 8, "shirt")
-    limb(body, sh.lerp(el, 0.3), el, 0.044, 0.040, 8, "skin")
-    limb(body, el, wr, 0.040, 0.032, 8, "skin")
-    tube(body, [((wr.x, wr.y, wr.z), 0.022, 0.036), ((wr.x + sx * 0.004, wr.y - 0.004, wr.z - 0.06), 0.024, 0.040),
-                ((wr.x + sx * 0.004, wr.y - 0.008, wr.z - 0.10), 0.016, 0.028)], 6, "skin")
+    tube(body, [(tuple(p), rx, ry) for p, rx, ry in (
+        (sh.lerp(el, 0.3), 0.044, 0.044), (el, 0.040, 0.039), (el.lerp(wr, 0.5), 0.037, 0.034), (wr, 0.029, 0.026),
+        (wr + Vector((sx * 0.004, -0.004, -0.045)), 0.027, 0.047), (wr + Vector((sx * 0.004, -0.008, -0.100)), 0.019, 0.034))],
+        8, "skin")
 # trousers and shoes
 tube(body, [((0, 0.006, 0.80), 0.170, 0.108), ((0, 0.006, 0.93), 0.168, 0.106)], 12, "pants", phase=0.5)
 for sx in (-1, 1):
