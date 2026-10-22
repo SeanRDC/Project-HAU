@@ -608,7 +608,9 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
   front, three-quarter, side and back looks. Lance is about 3,200 triangles.
 - **The design is the portrait sheet:** `assets/drafts/characters/portraits/src/<id>-sheet.png`.
   Lance: a round, messy mop of wavy brown hair (short, wide locks lying along a cap, a few
-  thin wisps, bangs to the brows with one lock between the eyes), the white shirt with a
+  thin wisps, bangs stopping just above the brows with one lock between the eyes, the side
+  hair stopping at the ears), a round, full face with a soft U chin (no pointed anime
+  jaw), the white shirt with a
   pointed collar and short sleeves, the dark tie, the dark red backpack with straps over
   both shoulders, black trousers and shoes.
 - **Parts are material names:** `skin`, `face`, `hair`, `shirt`, `tie`, `bag`, `pants`,
@@ -617,11 +619,13 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
   bag `#7d2c33`/`#511f26`, tie `#3d3436`/`#2a2326`, trousers `#2e2a31`/`#1c191e`), the
   `toon` shading and the one-pixel black `outline`.
 - **Faces are pixel textures:** the face is a front patch of the head mapped flat to a
-  32 x 36 texture (7 mm a pixel), one per expression in a strip, `models/<id>_faces.png`,
+  32 x 36 texture (7.4 mm a pixel), one per expression in a strip, `models/<id>_faces.png`,
   drawn by `assets/drafts/characters/portraits/<id>-face.mjs`: neutral, smile, laugh,
   sad, surprised, worried, annoyed, away (the portrait sheet's order).
-  `set_expression("laugh")` swaps them. Eyes are 6 px wide with a black lid and a lash at
-  the outer corner, a skin-coloured highlight, and the lower two rows lighter.
+  `set_expression("laugh")` swaps them. The eyes are small dark ovals, 5 px wide and 7 high,
+  with a full black outline and the lower part lighter, under a thick black lid (wider than
+  the eye) that flicks up at the outer corner. They sit about a third of the face width
+  apart, with thin brows showing under the bangs and a one-pixel nose.
 - **Close-ups at the portraits' density:** 136 px a metre (`Actor.CLOSE_DENSITY`; a
   0.6 m bust is 82 px, like the portraits). In the world at the game's zoom they render
   at the world's own density like everything else.
