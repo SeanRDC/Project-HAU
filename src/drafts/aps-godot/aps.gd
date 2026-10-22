@@ -24,6 +24,7 @@ const StudentCenter := preload("res://areas/student_center.gd")
 const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
+const Actor := preload("res://actor.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
 const HOURS: Array[float] = [5.75, 8.0, 12.0, 16.5, 17.75, 18.5, 21.0]
@@ -184,6 +185,12 @@ func _ready() -> void:
 	for argument in OS.get_cmdline_user_args():
 		var parts := argument.trim_prefix("--").split("=", true, 1)
 		_args[parts[0]] = parts[1] if parts.size() > 1 else "true"
+	if Actor.wanted(_args):
+		set_process(false)
+		set_process_input(false)
+		set_process_unhandled_input(false)
+		Actor.capture(self, String(_args["actor-capture"])) # the cutscene cast alone, then quit
+		return
 	_build_display()
 	_build_lighting()
 	Atmosphere.add_wind()
@@ -258,6 +265,8 @@ func _ready() -> void:
 	# --level= starts the student on an upper storey inside the gym (the stands, the stage).
 	student.place(float(_args.get("x", str(spot.x))), float(_args.get("z", str(spot.y))), float(_args["level"]) if _args.has("level") else NAN)
 	_set_zoom(float(_args.get("zoom", str(start[1]))), true)
+	if _args.has("lance"):
+		_stand_lance.call_deferred() # --lance: the 3D cutscene Lance beside the student, to see him in the world
 	if _args.has("hide-help"):
 		help.visible = false
 	_snap_follow()
@@ -272,6 +281,15 @@ func _ready() -> void:
 		_verify_and_capture.call_deferred()
 	elif Opening.wanted(_args):
 		_play_opening()
+
+## The 3D cutscene Lance (actor.gd) a step to the student's side, facing the camera.
+func _stand_lance() -> void:
+	var lance := Actor.new("lance")
+	scene.add_child(lance)
+	var side := Vector3(cos(_yaw()), 0.0, -sin(_yaw()))
+	lance.position = student.position + side * 0.9
+	lance.rotation.y = _yaw()
+	lance.set_expression(String(_args.get("face", "smile")))
 
 ## The opening plays over the game, which waits paused behind it (the music keeps playing).
 func _play_opening() -> void:
@@ -1590,6 +1608,13 @@ func _verify_and_capture() -> void:
 		checks.footsteps_while_walking = sound.steps - steps_before >= 3
 		checks.ambience_playing = AudioServer.get_bus_index("Music") >= 0
 		checks.opening_panels = Opening.panels_ready() and not Opening.wanted(_args)
+		# The 3D cutscene Lance: every part in its palette, and the faces swap.
+		var lance := Actor.new("lance")
+		scene.add_child(lance)
+		lance.set_expression("laugh")
+		checks.actor_lance = lance.parts().size() == Actor.CAST["lance"]["parts"].size() and lance.expression == "laugh" \
+			and not Actor.wanted(_args)
+		lance.queue_free()
 		# Holding D from the APS front walks round the corner onto the patio.
 		student.place(14.0, 2.5)
 		_snap_follow()
