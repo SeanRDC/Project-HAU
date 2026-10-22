@@ -79,15 +79,20 @@ class Part:
         ob = bpy.data.objects.new(self.name, me)
         scene.collection.objects.link(ob)
         bm = bmesh.new(); bm.from_mesh(me)
+        flag = bm.faces.layers.int.new("creased")            # marked before welding moves faces about
+        bm.faces.ensure_lookup_table()
+        for i in self.creased:
+            bm.faces[i][flag] = 1
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0005)
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-        bm.to_mesh(me); bm.free()
         if self.creased:
-            crease = me.attributes.get("crease_edge") or me.attributes.new("crease_edge", "FLOAT", "EDGE")
-            keys = {k for i in self.creased for k in me.polygons[i].edge_keys}
-            for e in me.edges:
-                if e.key in keys:
-                    crease.data[e.index].value = 1.0
+            crease = bm.edges.layers.float.get("crease_edge") or bm.edges.layers.float.new("crease_edge")
+            for face in bm.faces:
+                if face[flag]:
+                    for e in face.edges:
+                        e[crease] = 1.0
+        bm.faces.layers.int.remove(flag)
+        bm.to_mesh(me); bm.free()
         return ob
 
 # --- shapes -----------------------------------------------------------------------------
@@ -193,7 +198,7 @@ for sx in (-1, 1):
     tube(head, [((sx * ex * 0.95, 0.004, ez - 0.046), 0.012, 0.022), ((sx * ex * 1.07, 0.006, ez - 0.016), 0.013, 0.027),
                 ((sx * ex * 0.99, 0.008, ez + 0.016), 0.008, 0.018)], 6, "skin")
 # neck
-tube(head, [((0, 0.006, 1.40), 0.048, 0.046), ((0, 0.010, 1.52), 0.045, 0.043)], 8, "skin")
+tube(head, [((0, 0.006, 1.40), 0.042, 0.040), ((0, 0.010, 1.52), 0.040, 0.038)], 8, "skin")
 head_ob = head.build()
 
 # planar UVs for the face: x across, z up, over the face patch
@@ -309,47 +314,50 @@ for i in range(10):
 hair.build()
 
 # --- the body -------------------------------------------------------------------------------
+# A slim, young build: shoulders only a little wider than the head, a narrow, straight chest,
+# fitted short sleeves, thin arms hanging close to the sides with the hands at mid-thigh,
+# slim legs, and big, round shoes.
 
 body = Part("Body")
 # shirt: hem to shoulders, closing in to the collar
-tube(body, [((0, 0.004, 0.90), 0.175, 0.112), ((0, 0.004, 1.02), 0.168, 0.104), ((0, 0.0, 1.16), 0.170, 0.100),
-            ((0, -0.004, 1.28), 0.186, 0.108), ((0, 0.0, 1.37), 0.196, 0.104), ((0, 0.004, 1.425), 0.150, 0.082),
-            ((0, 0.006, 1.452), 0.070, 0.058)], 12, "shirt", cap_top=False, phase=0.5)
+tube(body, [((0, 0.004, 0.90), 0.148, 0.094), ((0, 0.004, 1.02), 0.142, 0.090), ((0, 0.0, 1.16), 0.144, 0.088),
+            ((0, -0.002, 1.28), 0.152, 0.092), ((0, 0.0, 1.36), 0.160, 0.088), ((0, 0.004, 1.418), 0.124, 0.072),
+            ((0, 0.006, 1.452), 0.062, 0.054)], 12, "shirt", cap_top=False, phase=0.5)
 # the collar: two pointed flaps either side of the tie, standing a little off the neck
 for sx in (-1, 1):
-    box(body, (sx * 0.040, -0.072, 1.433), (0.060, 0.012, 0.05), "shirt", rot_x=0.35)
-    body.add([(sx * 0.010, -0.080, 1.455), (sx * 0.075, -0.060, 1.458), (sx * 0.030, -0.106, 1.375),
-              (sx * 0.010, -0.090, 1.455), (sx * 0.075, -0.070, 1.458), (sx * 0.030, -0.114, 1.378)],
+    box(body, (sx * 0.036, -0.066, 1.433), (0.054, 0.012, 0.05), "shirt", rot_x=0.35)
+    body.add([(sx * 0.010, -0.074, 1.455), (sx * 0.066, -0.056, 1.458), (sx * 0.028, -0.098, 1.378),
+              (sx * 0.010, -0.084, 1.455), (sx * 0.066, -0.066, 1.458), (sx * 0.028, -0.106, 1.381)],
              [[0, 1, 2], [3, 5, 4], [0, 3, 4, 1], [1, 4, 5, 2], [2, 5, 3, 0]], "shirt", crease=True)
 # tie: knot and blade, down the front of the shirt
-box(body, (0, -0.096, 1.425), (0.030, 0.020, 0.030), "tie")
-body.add([(-0.018, -0.110, 1.41), (0.018, -0.110, 1.41), (0.026, -0.108, 1.15), (0, -0.108, 1.125), (-0.026, -0.108, 1.15),
-          (-0.018, -0.100, 1.41), (0.018, -0.100, 1.41), (0.026, -0.098, 1.15), (0, -0.098, 1.125), (-0.026, -0.098, 1.15)],
+box(body, (0, -0.088, 1.425), (0.028, 0.020, 0.028), "tie")
+body.add([(-0.016, -0.100, 1.41), (0.016, -0.100, 1.41), (0.023, -0.098, 1.16), (0, -0.098, 1.136), (-0.023, -0.098, 1.16),
+          (-0.016, -0.092, 1.41), (0.016, -0.092, 1.41), (0.023, -0.090, 1.16), (0, -0.090, 1.136), (-0.023, -0.090, 1.16)],
          [[0, 1, 2, 3, 4], [9, 8, 7, 6, 5], [0, 5, 6, 1], [1, 6, 7, 2], [2, 7, 8, 3], [3, 8, 9, 4], [4, 9, 5, 0]], "tie", crease=True)
-# arms: short sleeves, then each bare arm one piece from under the sleeve to the fingertips
-# (the hand flat, its palm to the leg), hanging a little away from the body
+# arms: fitted short sleeves, then each thin arm one piece from under the sleeve to the
+# fingertips (the hand flat, its palm to the leg), hanging close to the body
 for sx in (-1, 1):
-    sh, el, wr = Vector((sx * 0.200, 0.0, 1.375)), Vector((sx * 0.245, 0.012, 1.105)), Vector((sx * 0.262, -0.02, 0.855))
-    limb(body, sh, sh.lerp(el, 0.55), 0.064, 0.058, 8, "shirt")
+    sh, el, wr = Vector((sx * 0.158, 0.0, 1.365)), Vector((sx * 0.178, 0.008, 1.100)), Vector((sx * 0.186, -0.012, 0.860))
+    limb(body, sh, sh.lerp(el, 0.45), 0.046, 0.043, 8, "shirt")
     tube(body, [(tuple(p), rx, ry) for p, rx, ry in (
-        (sh.lerp(el, 0.3), 0.044, 0.044), (el, 0.040, 0.039), (el.lerp(wr, 0.5), 0.037, 0.034), (wr, 0.029, 0.026),
-        (wr + Vector((sx * 0.004, -0.004, -0.045)), 0.027, 0.047), (wr + Vector((sx * 0.004, -0.008, -0.100)), 0.019, 0.034))],
+        (sh.lerp(el, 0.25), 0.033, 0.033), (el, 0.030, 0.029), (el.lerp(wr, 0.5), 0.028, 0.026), (wr, 0.022, 0.020),
+        (wr + Vector((sx * 0.003, -0.004, -0.040)), 0.020, 0.036), (wr + Vector((sx * 0.003, -0.008, -0.088)), 0.014, 0.026))],
         8, "skin")
 # trousers and shoes
-tube(body, [((0, 0.006, 0.80), 0.170, 0.108), ((0, 0.006, 0.93), 0.168, 0.106)], 12, "pants", phase=0.5)
+tube(body, [((0, 0.006, 0.80), 0.146, 0.094), ((0, 0.006, 0.93), 0.144, 0.092)], 12, "pants", phase=0.5)
 for sx in (-1, 1):
-    limb(body, (sx * 0.088, 0.006, 0.86), (sx * 0.094, 0.010, 0.46), 0.082, 0.064, 8, "pants")
-    limb(body, (sx * 0.094, 0.010, 0.46), (sx * 0.098, 0.022, 0.07), 0.064, 0.056, 8, "pants")
-    tube(body, [((sx * 0.098, -0.012, 0.0), 0.052, 0.120), ((sx * 0.098, -0.012, 0.045), 0.050, 0.116),
-                ((sx * 0.098, 0.004, 0.085), 0.044, 0.070)], 8, "shoes")
+    limb(body, (sx * 0.074, 0.006, 0.86), (sx * 0.078, 0.010, 0.46), 0.066, 0.054, 8, "pants")
+    limb(body, (sx * 0.078, 0.010, 0.46), (sx * 0.080, 0.020, 0.08), 0.054, 0.048, 8, "pants")
+    tube(body, [((sx * 0.080, -0.020, 0.0), 0.058, 0.128), ((sx * 0.080, -0.020, 0.055), 0.058, 0.126),
+                ((sx * 0.080, -0.004, 0.100), 0.050, 0.085)], 10, "shoes")
 # the backpack and its straps over both shoulders
-box(body, (0, 0.175, 1.150), (0.300, 0.140, 0.380), "bag")
-box(body, (0, 0.250, 1.090), (0.230, 0.040, 0.180), "bag")            # front pocket
-tube(body, [((0, 0.175, 1.34), 0.150, 0.070), ((0, 0.165, 1.37), 0.110, 0.050)], 8, "bag")  # the rounded top
+box(body, (0, 0.160, 1.150), (0.260, 0.130, 0.360), "bag")
+box(body, (0, 0.230, 1.090), (0.200, 0.040, 0.170), "bag")            # front pocket
+tube(body, [((0, 0.160, 1.33), 0.130, 0.065), ((0, 0.150, 1.36), 0.095, 0.045)], 8, "bag")  # the rounded top
 for sx in (-1, 1):
-    strip(body, [(sx * 0.105, 0.110, 1.300), (sx * 0.112, 0.075, 1.425), (sx * 0.118, 0.000, 1.452), (sx * 0.124, -0.090, 1.395),
-                 (sx * 0.128, -0.112, 1.300), (sx * 0.134, -0.106, 1.140), (sx * 0.150, -0.080, 1.010), (sx * 0.150, 0.060, 0.985)],
-          0.052, 0.014, "bag")
+    strip(body, [(sx * 0.092, 0.100, 1.300), (sx * 0.098, 0.068, 1.418), (sx * 0.104, 0.000, 1.448), (sx * 0.110, -0.082, 1.390),
+                 (sx * 0.114, -0.098, 1.300), (sx * 0.118, -0.094, 1.140), (sx * 0.130, -0.072, 1.010), (sx * 0.132, 0.055, 0.985)],
+          0.046, 0.013, "bag")
 body.build()
 
 # --- out ----------------------------------------------------------------------------------
