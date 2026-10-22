@@ -18,26 +18,28 @@ const PAL = {
 };
 const EXPRESSIONS = ["neutral", "smile", "laugh", "sad", "surprised", "worried", "annoyed", "away"];
 // where things are, in face pixels (row 0 is the top of the patch, at the hairline)
-const EYE_X = [9, 22], EYE_Y = 15, BROW_Y = 9, NOSE = [16, 21], MOUTH_Y = 26;
+const EYE_X = [8, 23], EYE_Y = 17, BROW_Y = 11, NOSE = [16, 22], MOUTH_Y = 28;
 
 function face(kind) {
   const g = Array.from({ length: H }, () => Array(W).fill("S"));
   const set = (x, y, k) => { if (x >= 0 && y >= 0 && x < W && y < H) g[y][x] = k; };
   const line = (pts, k) => pts.forEach(([x, y]) => set(x, y, k));
-  // an open eye: a dark oval, 6 wide and `tall` high, under a black lid that runs out past
-  // the outer corner; `look` shifts the eye sideways, `lid` lowers the lid (half-closed)
-  const eye = (cx, side, { tall = 8, look = 0, lid = 0 } = {}) => {
-    const x0 = cx - 3 + look, top = EYE_Y - Math.floor(tall / 2) + lid, bottom = EYE_Y + Math.ceil(tall / 2);
-    for (let y = top; y < bottom; y++) {
-      const edge = y === top + 0 || y === bottom - 1;
-      for (let x = x0; x < x0 + 6; x++) {
-        if (edge && (x === x0 || x === x0 + 5)) continue;          // rounded corners
-        set(x, y, y >= bottom - 2 ? "e" : "E");
-      }
+  // an open eye, like the reference: a small dark oval, 5 wide and `tall` high, with a full
+  // black outline, its lower part lighter; over it a thick black lid, wider than the eye,
+  // that flicks up at the outer corner. Set wide apart. `look` shifts the eye sideways,
+  // `lid` lowers the lid (half-closed).
+  const eye = (cx, side, { tall = 7, look = 0, lid = 0 } = {}) => {
+    const x0 = cx - 2 + look, top = EYE_Y - Math.floor(tall / 2) + lid, bottom = EYE_Y + Math.ceil(tall / 2);
+    for (let y = top; y < bottom; y++) for (let x = x0; x < x0 + 5; x++) {
+      const side_ = x === x0 || x === x0 + 4, last = y === bottom - 1;
+      if ((last || y === top) && side_) continue;                   // an oval: rounded top and bottom
+      set(x, y, side_ || last ? "Z" : y >= bottom - 3 ? "e" : "E");
     }
-    for (let x = x0 - (side < 0 ? 1 : 0); x < x0 + 6 + (side > 0 ? 1 : 0); x++) set(x, top - 1, "Z");
-    set(side < 0 ? x0 - 1 : x0 + 6, top, "Z");                      // the lash at the outer corner
-    set(x0 + 1 + (side > 0 ? 3 : 0), top + 1, "S");                 // the highlight
+    const outer = side < 0 ? x0 - 1 : x0 + 5, inner = side < 0 ? x0 + 5 : x0 - 1;
+    for (let x = Math.min(outer, inner); x <= Math.max(outer, inner); x++) set(x, top - 1, "Z");
+    for (let x = x0; x < x0 + 5; x++) set(x, top - 2, "Z");          // the lid is two pixels thick
+    set(inner, top - 1, "S");                                        // ...thinning at the inner end
+    set(outer, top - 2, "Z"); set(outer + side, top - 3, "Z");       // the flick at the outer corner
   };
   // a closed, happy eye: an arch
   const happy = (cx) => line([[cx - 2, EYE_Y + 1], [cx - 1, EYE_Y], [cx, EYE_Y - 1], [cx + 1, EYE_Y], [cx + 2, EYE_Y + 1]], "Z");
@@ -58,7 +60,7 @@ function face(kind) {
       line([[15, MOUTH_Y], [16, MOUTH_Y]], "Z");
       break;
     case "smile":
-      eye(L, -1, { tall: 7 }); eye(R, 1, { tall: 7 }); brow(L, -1); brow(R, 1);
+      eye(L, -1, { tall: 6 }); eye(R, 1, { tall: 6 }); brow(L, -1); brow(R, 1);
       line([[14, MOUTH_Y - 1], [15, MOUTH_Y], [16, MOUTH_Y], [17, MOUTH_Y - 1]], "Z");
       break;
     case "laugh":
@@ -74,7 +76,7 @@ function face(kind) {
       line([[14, MOUTH_Y + 1], [15, MOUTH_Y], [16, MOUTH_Y], [17, MOUTH_Y + 1]], "Z");
       break;
     case "surprised":
-      eye(L, -1, { tall: 9 }); eye(R, 1, { tall: 9 }); brow(L, -1, 0, -2); brow(R, 1, 0, -2);
+      eye(L, -1, { tall: 8 }); eye(R, 1, { tall: 8 }); brow(L, -1, 0, -2); brow(R, 1, 0, -2);
       line([[15, MOUTH_Y - 1], [16, MOUTH_Y - 1], [14, MOUTH_Y], [17, MOUTH_Y], [15, MOUTH_Y + 1], [16, MOUTH_Y + 1]], "Z");
       set(15, MOUTH_Y, "M"); set(16, MOUTH_Y, "M");
       break;

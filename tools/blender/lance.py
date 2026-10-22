@@ -18,9 +18,9 @@ BLEND = os.path.join(ROOT, "assets", "models", "lance.blend")
 
 # Blender: z up, the front is -y (the glTF export turns it to Godot's +z).
 HEAD_C = Vector((0.0, -0.008, 1.606))
-HEAD_R = Vector((0.127, 0.132, 0.150))
+HEAD_R = Vector((0.134, 0.132, 0.148))
 # the face patch: where the pixel face texture sits (x across, z up), in metres
-FACE_X = (-0.112, 0.112)
+FACE_X = (-0.118, 0.118)
 FACE_Z = (1.448, 1.694)
 
 PALETTE = {  # the portraits' palette (assets/drafts/characters/portraits), for viewing in Blender
@@ -157,13 +157,14 @@ for r in range(RINGS + 1):
     for s in range(SEG):
         th = 2 * math.pi * s / SEG + math.pi / SEG  # a column either side of the middle
         x, y, z = math.sin(phi) * math.cos(th), math.sin(phi) * math.sin(th), math.cos(phi)
-        # the jaw: below the cheekbones the head narrows to a soft, pointed chin
+        # the jaw: the face stays wide and full down the cheeks, then rounds off to a small, soft chin
         if z < -0.05:
             t = min(1.0, (-z - 0.05) / 0.95)
-            x *= 1.0 - 0.5 * t ** 1.2
-            y *= 1.0 - 0.28 * t
-            if y < 0:
-                y -= 0.10 * t                       # the chin comes forward
+            full = (math.sin(phi) ** 0.45) / max(math.sin(phi), 1e-4)  # cheeks round out: a U, not a V
+            x *= full * (1.0 - 0.10 * t ** 2)
+            y *= full
+            z = -0.05 + (z + 0.05) * 0.95           # the lower face long and full, the eyes near the middle
+            y *= 1.0 - 0.16 * t
         hv.append(HEAD_C + Vector((x * HEAD_R.x, y * HEAD_R.y, z * HEAD_R.z)))
 for r in range(RINGS):
     for s in range(SEG):
@@ -173,7 +174,7 @@ head.add(hv, hf, "skin")
 # the face: front quads, between the brow and the chin, take the face material
 for i, f in enumerate(head.faces):
     c = sum((head.verts[k] for k in f), Vector()) / 4
-    if c.y < HEAD_C.y - 0.055 and FACE_Z[0] < c.z < FACE_Z[1] and FACE_X[0] < c.x < FACE_X[1]:
+    if c.y < HEAD_C.y - 0.045 and FACE_Z[0] < c.z < FACE_Z[1] and FACE_X[0] < c.x < FACE_X[1]:
         head.mats[i] = head.slot("face")
 # ears
 for sx in (-1, 1):
@@ -261,9 +262,13 @@ for el_deg in (78, 62, 46, 30, 14, -2, -18, -32):
             continue                                # below the hairline
         if math.cos(az) > 0.45 and el_deg < 40:
             continue                                # the bangs cover the front
+        if math.cos(az) > 0.05 and el_deg < 20 or math.cos(az) > -0.35 and el_deg < -10:
+            continue                                # the cheeks and jaw stay clear: the side hair stops at the ears
         n = normal_at(az, el)
         down = Vector((0, 0, -1)) - n * (-n.z)
         down = down.normalized() if down.length > 0.2 else Vector((n.x, n.y, 0)).normalized()
+        if el < 0:
+            down = Vector((n.x * 0.6, n.y * 0.6, -1.0)).normalized()  # low locks fall straight, not in under the jaw
         back = max(0.0, -math.cos(az))
         d = down + n * (0.5 + 0.45 * abs(math.sin(az))) + Vector((jit(0.25), jit(0.25), jit(0.15)))
         clump(on_cap(az, el), d, 0.075 + 0.04 * back * (el_deg < 10) + jit(0.018), 0.056 + jit(0.006), 0.012, twist=jit(1))
@@ -277,12 +282,12 @@ for i in range(9):
     el = math.radians(random.uniform(15, 65))
     n = normal_at(az, el)
     clump(on_cap(az, el, 1.06), n + Vector((jit(0.4), jit(0.4), -0.6)), 0.045 + jit(0.01), 0.016, 0.008, sides=4)
-# bangs over the brow, down to the eyebrows; the middle lock reaches between the eyes
+# bangs over the brow, stopping just above the eyebrows; the middle lock reaches between the eyes
 for i, az in enumerate([-1.05, -0.75, -0.47, -0.2, 0.07, 0.34, 0.62, 0.92]):
     el = math.radians(30 + jit(4))
     longer = 0.028 if i == 3 else 0.0
     d = Vector((math.sin(az) * 0.38 + jit(0.1), -0.30, -1.0))
-    clump(on_cap(az, el), d, 0.072 + abs(az) * 0.03 + longer + jit(0.008), 0.042, 0.010, twist=jit(0.6), flat=0.45)
+    clump(on_cap(az, el), d, 0.058 + abs(az) * 0.03 + longer + jit(0.008), 0.042, 0.010, twist=jit(0.6), flat=0.45)
 hair.build()
 
 # --- the body -------------------------------------------------------------------------------
