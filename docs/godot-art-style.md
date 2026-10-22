@@ -611,7 +611,9 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
   (loose, lumpy low-poly balls about 5 cm across, piled high on top and standing out so the
   outline is bumpy, a curly fringe down to the brows sweeping lower to his left, the ears
   showing, and from just behind the ears down to the jaw at the back), a round, full face with a soft
-  U chin (no pointed anime jaw), the white shirt with a pointed collar and short sleeves, the dark tie, the dark red backpack with straps over
+  U chin (no pointed anime jaw), a slim, young build (shoulders only a little wider than
+  the head, a narrow chest, thin arms close to the sides, slim legs, big round shoes), the
+  white shirt with a pointed collar and fitted short sleeves, the dark tie, the dark red backpack with straps over
   both shoulders, black trousers and shoes.
 - **Parts are material names:** `skin`, `face`, `hair`, `shirt`, `tie`, `bag`, `pants`,
   `shoes`. `actor.gd` gives each one its two tones from `Actor.CAST` (`base`, `shade`, and optional `wrap`, `light`, `line`, `gap`) (the portraits'
