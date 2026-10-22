@@ -604,7 +604,7 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
 
 - **Built in Blender by script:** `tools/blender/<id>.py` (`blender --background
   --factory-startup --python tools/blender/lance.py`) writes `models/<id>.glb` and
-  `assets/models/<id>.blend` to open and edit. `tools/blender/preview.py` renders quick
+  `assets/drafts/3d/<id>.blend` to open and edit. `tools/blender/preview.py` renders quick
   front, three-quarter, side and back looks. Lance is about 3,200 triangles.
 - **The design is the portrait sheet:** `assets/drafts/characters/portraits/src/<id>-sheet.png`;
   Lance's hair is the game's student sprite (`sprites/boy`). Lance: a mop of round curls
@@ -637,7 +637,7 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
   game world. The `actor_lance` check loads him with every part in its palette and swaps
   a face.
 - **A full, smooth version (not pixel art):** `tools/blender/lance_hd.py` opens the
-  low-poly model and makes `assets/models/lance-hd.blend`: every part smoothed
+  low-poly model and makes `assets/drafts/3d/lance-hd.blend`: every part smoothed
   (subdivision; the collar, tie, bag and straps keep creased edges), the curls melted into
   one sculpted mass, the face drawn smooth at 512 x 576 (`lance_face_hd.png`), the same
   two-tone cel shading by the light's direction with the curls' highlight, and an ink

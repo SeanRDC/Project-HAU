@@ -1,20 +1,20 @@
 # Lance as a full, smooth 3D model (not pixel art): opens the low-poly model that
-# tools/blender/lance.py builds (assets/models/lance.blend), smooths every part with a
+# tools/blender/lance.py builds (assets/drafts/3d/lance.blend), smooths every part with a
 # subdivision surface, draws his face as a smooth high-resolution texture, gives each part
 # clean two-tone cel shading (and the curls their highlight) with an ink outline, and lights
 # and renders him from every side.
 #
 #   blender --background --factory-startup --python tools/blender/lance_hd.py
-# writes assets/models/lance-hd.blend (open it in Blender to turn him round) and renders into
+# writes assets/drafts/3d/lance-hd.blend (open it in Blender to turn him round) and renders into
 # builds/lance-3d/ (front, three-quarter, side, back, and two close-ups).
 import bpy, math, os
 import numpy as np
 from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-SRC = os.path.join(ROOT, "assets", "models", "lance.blend")
-OUT_BLEND = os.path.join(ROOT, "assets", "models", "lance-hd.blend")
-FACE_PNG = os.path.join(ROOT, "assets", "models", "lance_face_hd.png")
+SRC = os.path.join(ROOT, "assets", "drafts", "3d", "lance.blend")
+OUT_BLEND = os.path.join(ROOT, "assets", "drafts", "3d", "lance-hd.blend")
+FACE_PNG = os.path.join(ROOT, "assets", "drafts", "3d", "lance_face_hd.png")
 RENDERS = os.path.join(ROOT, "builds", "lance-3d")
 
 bpy.ops.wm.open_mainfile(filepath=SRC)

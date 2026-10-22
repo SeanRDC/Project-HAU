@@ -8,13 +8,13 @@
 # is a flat front patch mapped to a pixel texture, so his expressions swap like portraits.
 #
 #   blender --background --factory-startup --python tools/blender/lance.py
-# writes src/drafts/aps-godot/models/lance.glb and assets/models/lance.blend (to edit).
+# writes src/drafts/aps-godot/models/lance.glb and assets/drafts/3d/lance.blend (to edit).
 import bpy, bmesh, math, os, random
 from mathutils import Vector
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 GLB = os.path.join(ROOT, "src", "drafts", "aps-godot", "models", "lance.glb")
-BLEND = os.path.join(ROOT, "assets", "models", "lance.blend")
+BLEND = os.path.join(ROOT, "assets", "drafts", "3d", "lance.blend")
 
 # Blender: z up, the front is -y (the glTF export turns it to Godot's +z).
 HEAD_C = Vector((0.0, -0.008, 1.606))
