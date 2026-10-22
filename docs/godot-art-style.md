@@ -573,8 +573,8 @@ anything is wet or has specular other than glass.
 | `shaft.gdshader` | Light shafts under trees and the lamp reflections on wet ground: an additive card, brightest in the middle, fading at its edges and ends | `color`, `strength` (0.08) | Unshaded, no fog, never writes depth |
 | `display.gdshader` | Final grade on the enlarged image: shade towards `shade_tint`, light towards `light_tint`, soft vignette | `warmth 0.06`, `vignette 0.22`, tints from `_set_hour` | Keep this the only colour grade |
 | `manga.gdshader` | The opening's panels only (a canvas shader, not the world). A stand-in photo becomes pen and ink: Sobel edges as ink lines, deep shadow black, shadow diagonal hatching, mid-tones screentone dots, the rest paper | `ink` 1 (photos) or 0 (drawn panels: greyed onto the paper only), `paper #f4f1ea`, `pen #1c1b19`, `tone 4.0` px | Tone and hatching are in screen pixels, like real screentone. Keep it mostly paper: light lines, few blacks |
-| `toon.gdshader` | The 3D cutscene characters (`actor.gd`): every part is exactly its base colour where the light reaches it and its shadow colour where it does not (turned away, or in the sun's cast shadow). The light's colour and strength still tint both, so a character sits in the hour; lamps fall off with distance. The face is a strip of expression textures; `face` picks one | `base_color`, `shade_color` (from `Actor.CAST`), `threshold 0.12` (skin and face -0.35: an anime face stays lit but for its edge), `textured`, `faces`, `face`, `face_count 8` | Two tones a part, never a gradient. Colours come from the portraits' palette |
-| `outline.gdshader` | The 3D cutscene characters' black line: the model again, inside out (`cull_front`), pushed out along its normals by whole screen pixels and set back from the camera by `depth_gap`, so touching parts (lock on lock of hair) draw no line, only real steps in depth | `width_px 1.0`, `depth_gap 0.035` m, `color #000000` | The `next_pass` of every `toon` material. Only for the cutscene characters |
+| `toon.gdshader` | The 3D cutscene characters (`actor.gd`): every part is exactly its base colour where the light reaches it and its shadow colour where it does not (turned away, or in the sun's cast shadow). The light's colour and strength still tint both, so a character sits in the hour; lamps fall off with distance. The face is a strip of expression textures; `face` picks one | `base_color`, `shade_color` (from `Actor.CAST`), `threshold 0.12` (skin and face -0.35: an anime face stays lit but for its edge; curls 0.3: each curl gets a dark crescent), `textured`, `faces`, `face`, `face_count 8` | Two tones a part, never a gradient. Colours come from the portraits' palette |
+| `outline.gdshader` | The 3D cutscene characters' black line: the model again, inside out (`cull_front`), pushed out along its normals by whole screen pixels and set back from the camera by `depth_gap`, so touching parts (lock on lock of hair) draw no line, only real steps in depth | `width_px 1.0`, `depth_gap 0.035` m (curls 0.006 m: a line round every curl, as the sprite has), `color #000000` | The `next_pass` of every `toon` material. Only for the cutscene characters |
 
 ---
 
@@ -606,16 +606,16 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
   --factory-startup --python tools/blender/lance.py`) writes `models/<id>.glb` and
   `assets/models/<id>.blend` to open and edit. `tools/blender/preview.py` renders quick
   front, three-quarter, side and back looks. Lance is about 3,200 triangles.
-- **The design is the portrait sheet:** `assets/drafts/characters/portraits/src/<id>-sheet.png`.
-  Lance: a round, messy mop of wavy brown hair (short, wide locks lying along a cap, a few
-  thin wisps, bangs stopping just above the brows with one lock between the eyes, the side
-  hair stopping at the ears), a round, full face with a soft U chin (no pointed anime
-  jaw), the white shirt with a
-  pointed collar and short sleeves, the dark tie, the dark red backpack with straps over
+- **The design is the portrait sheet:** `assets/drafts/characters/portraits/src/<id>-sheet.png`;
+  Lance's hair is the game's student sprite (`sprites/boy`). Lance: a mop of round curls
+  (loose, lumpy low-poly balls about 5 cm across, piled high on top and standing out so the
+  outline is bumpy, a curly fringe down to the brows sweeping lower to his left, short at
+  the sides with the ears showing, rounded off at the nape), a round, full face with a soft
+  U chin (no pointed anime jaw), the white shirt with a pointed collar and short sleeves, the dark tie, the dark red backpack with straps over
   both shoulders, black trousers and shoes.
 - **Parts are material names:** `skin`, `face`, `hair`, `shirt`, `tie`, `bag`, `pants`,
   `shoes`. `actor.gd` gives each one its two tones from `Actor.CAST` (the portraits'
-  palette: hair `#7a4034`/`#55302b`, skin `#ecbba1`/`#cf9580`, shirt `#efe3d6`/`#cdb2a5`,
+  palette, the hair the sprite's own: hair `#7f4733`/`#572b23`, skin `#ecbba1`/`#cf9580`, shirt `#efe3d6`/`#cdb2a5`,
   bag `#7d2c33`/`#511f26`, tie `#3d3436`/`#2a2326`, trousers `#2e2a31`/`#1c191e`), the
   `toon` shading and the one-pixel black `outline`.
 - **Faces are pixel textures:** the face is a front patch of the head mapped flat to a
