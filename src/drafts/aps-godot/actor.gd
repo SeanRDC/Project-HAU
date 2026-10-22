@@ -15,15 +15,17 @@ const EXPRESSIONS := ["neutral", "smile", "laugh", "sad", "surprised", "worried"
 const CLOSE_DENSITY := 136.0
 
 ## Each character's parts, by material name: [base, shadow], the portraits' palette
-## (assets/drafts/characters/portraits), and for skin how far the light wraps round before
-## the shadow starts (-0.35: an anime face stays lit but for its edge).
+## (assets/drafts/characters/portraits); then, if given, how far the light wraps round before
+## the shadow starts (skin -0.35: an anime face stays lit but for its edge; curls 0.3: each
+## curl gets its dark crescent) and the outline's depth gap (curls 0.006 m: a line round
+## every curl, as the game's sprite has).
 const CAST := {
 	"lance": {
 		"model": "res://models/lance.glb",
 		"faces": "res://models/lance_faces.png",
 		"parts": {
 			"skin": ["#ecbba1", "#cf9580", -0.35], "face": ["#ecbba1", "#cf9580", -0.35],
-			"hair": ["#7a4034", "#55302b"], "shirt": ["#efe3d6", "#cdb2a5"],
+			"hair": ["#7f4733", "#572b23", 0.3, 0.006], "shirt": ["#efe3d6", "#cdb2a5"],
 			"tie": ["#3d3436", "#2a2326"], "bag": ["#7d2c33", "#511f26"],
 			"pants": ["#2e2a31", "#1c191e"], "shoes": ["#33292a", "#1f1819"],
 		},
@@ -70,6 +72,8 @@ func _material(colours: Array, faces: Texture2D) -> ShaderMaterial:
 		material.set_shader_parameter("face_count", float(EXPRESSIONS.size()))
 	var line := ShaderMaterial.new()
 	line.shader = OUTLINE
+	if colours.size() > 3:
+		line.set_shader_parameter("depth_gap", colours[3])
 	material.next_pass = line
 	return material
 

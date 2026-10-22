@@ -1,6 +1,6 @@
 # Builds Lance as a low-poly 3D model for the cutscenes, from his expression sheet
-# (assets/drafts/characters/portraits/src/lance-sheet.png): messy, wavy brown hair in
-# clumps, a white collared shirt with short sleeves and a dark tie, the dark red backpack
+# (assets/drafts/characters/portraits/src/lance-sheet.png) and the game's student sprite:
+# a mop of round curls as the sprite has, a white collared shirt with short sleeves and a dark tie, the dark red backpack
 # with its straps over both shoulders, black trousers and shoes.
 #
 # Every part is a named material slot (skin, face, hair, shirt, tie, bag, pants, shoes);
@@ -24,7 +24,7 @@ FACE_X = (-0.118, 0.118)
 FACE_Z = (1.448, 1.694)
 
 PALETTE = {  # the portraits' palette (assets/drafts/characters/portraits), for viewing in Blender
-    "skin": "#ecbba1", "face": "#ecbba1", "hair": "#7a4034", "shirt": "#efe3d6", "tie": "#3d3436",
+    "skin": "#ecbba1", "face": "#ecbba1", "hair": "#7f4733", "shirt": "#efe3d6", "tie": "#3d3436",
     "bag": "#7d2c33", "pants": "#2a262c", "shoes": "#2f2624",
 }
 
@@ -197,14 +197,16 @@ for p in me.polygons:
         else:
             uv.data[li].uv = (0.5, 0.5)
 
-# --- the hair: a round, messy mop -----------------------------------------------------------
-# A cap a little bigger than the head, then short, wide locks lying along it and falling out
-# and down, so the outline is round and full like the sheet's; a few thin wisps stick out,
-# and the bangs come over the brow down to the eyebrows, one lock longer between the eyes.
+# --- the hair: curls, like the game's boy sprite ---------------------------------------------
+# The student sprite (src/drafts/aps-godot/sprites/boy) has a mop of round curls: piled high
+# and puffy on top, a curly fringe sweeping across the forehead, lower on one side with a curl
+# down to the brow, short at the sides with the ears showing, and rounded off at the nape.
+# Every curl is a small, slightly squashed ball; the toon shading gives each one its lit side
+# and its shadow, and the outline marks it off from the curls behind, as the sprite's do.
 
 hair = Part("Hair")
-CAP_C = HEAD_C + Vector((0.0, 0.008, 0.012))
-CAP = Vector((HEAD_R.x * 1.16, HEAD_R.y * 1.14, HEAD_R.z * 1.10))
+CAP_C = HEAD_C + Vector((0.0, 0.006, 0.016))
+CAP = Vector((HEAD_R.x * 1.06, HEAD_R.y * 1.07, HEAD_R.z * 1.05))
 
 def on_cap(az, el, grow=1.0):
     """A point on the hair cap: az round from the front (0 = front, +x = 90 deg), el up from level."""
@@ -215,10 +217,11 @@ def normal_at(az, el):
     return Vector((p.x / CAP.x ** 2, p.y / CAP.y ** 2, p.z / CAP.z ** 2)).normalized()
 
 def hairline(az):
-    f = math.cos(az)                                # 1 at the front, -1 at the back
-    return math.radians(-5 + 27 * f) if f > 0 else math.radians(-5 + 40 * f)
+    """Where the hair starts: high over the brow, just above the ears, low at the nape."""
+    f = math.cos(az)
+    return math.radians(10 + 14 * f) if f > 0 else math.radians(10 - 48 * -f)
 
-# the cap
+# the cap under the curls
 cv, cf, SEGC, RC = [], [], 18, 8
 for r in range(RC + 1):
     for s in range(SEGC):
@@ -231,63 +234,62 @@ for r in range(RC):
         cf.append([a, a + SEGC, b + SEGC, b])
 hair.add(cv, cf, "hair")
 
-def clump(base, direction, length, radius, droop, sides=5, twist=0.0, flat=0.6):
-    """A lock of hair: a five-sided cone, flattened against the head, bending down as it goes."""
-    d = direction.normalized()
-    u = d.cross(Vector((0, 0, 1)) if abs(d.z) < 0.95 else Vector((1, 0, 0))).normalized()
-    v = d.cross(u)
-    mid = base + d * length * 0.5 + Vector((0, 0, -droop * 0.3))
-    tip = base + d * length + Vector((0, 0, -droop))
-    verts, faces = [], []
-    for c, r in ((base - d * 0.02, radius), (mid, radius * 0.7)):
-        for i in range(sides):
-            t = 2 * math.pi * i / sides + twist
-            verts.append(tuple(c + u * math.cos(t) * r + v * math.sin(t) * r * flat))
-    verts.append(tuple(tip))
-    for i in range(sides):
-        j = (i + 1) % sides
-        faces.append([i, j, sides + j, sides + i])
-        faces.append([sides + i, sides + j, 2 * sides])
-    faces.append(list(range(sides - 1, -1, -1)))
+jit = lambda a: random.uniform(-a, a)
+
+def curl(c, r, squash=0.82, seg=7, rings=4, spin=0.0):
+    """One curl: a small low-poly ball, a little flattened."""
+    verts, faces = [tuple(c + Vector((0, 0, r * squash)))], []
+    for i in range(1, rings):
+        phi = math.pi * i / rings
+        for s in range(seg):
+            th = 2 * math.pi * s / seg + spin
+            lump = 1.0 + jit(0.14)                  # not a perfect ball: a loose curl
+            verts.append(tuple(c + Vector((math.sin(phi) * math.cos(th) * r * lump, math.sin(phi) * math.sin(th) * r * lump, math.cos(phi) * r * squash * lump))))
+    verts.append(tuple(c + Vector((0, 0, -r * squash))))
+    bottom = len(verts) - 1
+    for s in range(seg):
+        faces.append([0, 1 + s, 1 + (s + 1) % seg])
+        faces.append([bottom, 1 + (rings - 2) * seg + (s + 1) % seg, 1 + (rings - 2) * seg + s])
+    for i in range(rings - 2):
+        for s in range(seg):
+            a, b = 1 + i * seg + s, 1 + i * seg + (s + 1) % seg
+            faces.append([a, a + seg, b + seg, b])
     hair.add(verts, faces, "hair")
 
-jit = lambda a: random.uniform(-a, a)
-# the mop: rows of short, wide locks from the crown down, falling along the head
-for el_deg in (78, 62, 46, 30, 14, -2, -18, -32):
-    el = math.radians(el_deg)
-    count = max(4, round(20 * math.cos(el)))
-    for i in range(count):
-        az = 2 * math.pi * (i + 0.5 * (el_deg // 16 % 2)) / count + jit(0.12)
-        if el < hairline(az) + math.radians(4):
-            continue                                # below the hairline
-        if math.cos(az) > 0.45 and el_deg < 40:
-            continue                                # the bangs cover the front
-        if math.cos(az) > 0.05 and el_deg < 20 or math.cos(az) > -0.35 and el_deg < -10:
-            continue                                # the cheeks and jaw stay clear: the side hair stops at the ears
-        n = normal_at(az, el)
-        down = Vector((0, 0, -1)) - n * (-n.z)
-        down = down.normalized() if down.length > 0.2 else Vector((n.x, n.y, 0)).normalized()
-        if el < 0:
-            down = Vector((n.x * 0.6, n.y * 0.6, -1.0)).normalized()  # low locks fall straight, not in under the jaw
-        back = max(0.0, -math.cos(az))
-        d = down + n * (0.5 + 0.45 * abs(math.sin(az))) + Vector((jit(0.25), jit(0.25), jit(0.15)))
-        clump(on_cap(az, el), d, 0.075 + 0.04 * back * (el_deg < 10) + jit(0.018), 0.056 + jit(0.006), 0.012, twist=jit(1))
-# the crown: a few locks turning out from the top
-for i in range(5):
-    az = 2 * math.pi * i / 5 + jit(0.3)
-    clump(on_cap(az, math.radians(86)), Vector((math.sin(az), -math.cos(az), 0.35)), 0.07, 0.05, 0.0, twist=jit(1))
-# wisps: thin strands sticking out of the mop (the sheet's flyaway tips)
-for i in range(9):
-    az = random.uniform(0.7, 2 * math.pi - 0.7)
-    el = math.radians(random.uniform(15, 65))
+# the mop: curls spread evenly over the cap (a Fibonacci spiral), bigger and standing further
+# out towards the top, so the hair piles up high and round like the sprite's
+N = 64
+for i in range(N):
+    z = 1 - 2 * (i + 0.5) / N
+    el = math.asin(z)
+    az = (i * math.pi * (3 - math.sqrt(5))) % (2 * math.pi)
+    if el < hairline(az) + math.radians(4):
+        continue
+    if math.cos(az) > 0.35 and el < math.radians(42):
+        continue                                    # the fringe covers the front
+    up = max(0.0, math.sin(el))
+    r = 0.048 + 0.010 * up + jit(0.006)
     n = normal_at(az, el)
-    clump(on_cap(az, el, 1.06), n + Vector((jit(0.4), jit(0.4), -0.6)), 0.045 + jit(0.01), 0.016, 0.008, sides=4)
-# bangs over the brow, stopping just above the eyebrows; the middle lock reaches between the eyes
-for i, az in enumerate([-1.05, -0.75, -0.47, -0.2, 0.07, 0.34, 0.62, 0.92]):
-    el = math.radians(30 + jit(4))
-    longer = 0.028 if i == 3 else 0.0
-    d = Vector((math.sin(az) * 0.38 + jit(0.1), -0.30, -1.0))
-    clump(on_cap(az, el), d, 0.058 + abs(az) * 0.03 + longer + jit(0.008), 0.042, 0.010, twist=jit(0.6), flat=0.45)
+    curl(on_cap(az, el) + n * r * (0.38 + 0.22 * up), r, spin=jit(1))   # standing out: a bumpy outline
+# the fringe: a row of curls over the forehead down to the brows, sweeping lower towards his
+# left (+x)
+for i in range(6):
+    t = i / 5
+    az = -1.0 + 2.05 * t + jit(0.04)
+    el = math.radians(22 - 12 * t + jit(2))
+    r = 0.047 + jit(0.004)
+    n = normal_at(az, el)
+    curl(on_cap(az, el) + n * r * 0.35 + Vector((0, -0.006, -0.014)), r, spin=jit(1))
+# ...and the curls that fall from it to the brow on that side
+for az, el, r in ((0.30, 2, 0.036), (0.66, 0, 0.034)):
+    el = math.radians(el)
+    curl(on_cap(az, el) + normal_at(az, el) * r * 0.45, r, spin=jit(1))
+# above the ears and round the nape: smaller curls, keeping the sides short
+for i in range(10):
+    az = math.radians(80) + (2 * math.pi - math.radians(160)) * i / 9 + jit(0.06)
+    el = hairline(az) + math.radians(8)
+    r = 0.038 + jit(0.004)
+    curl(on_cap(az, el) + normal_at(az, el) * r * 0.25, r, spin=jit(1))
 hair.build()
 
 # --- the body -------------------------------------------------------------------------------
