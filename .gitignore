@@ -27,3 +27,6 @@ desktop.ini
 .godot/
 *.import
 export_presets.cfg
+
+# Blender backups
+*.blend1

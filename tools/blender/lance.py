@@ -31,6 +31,7 @@ PALETTE = {  # the portraits' palette (assets/drafts/characters/portraits), for 
 random.seed(20260611)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
+bpy.context.preferences.filepaths.save_version = 0   # no lance.blend1 backups
 scene = bpy.context.scene
 scene.unit_settings.system = "METRIC"
 
