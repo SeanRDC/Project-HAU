@@ -4,8 +4,8 @@
 3D models drawn like the pixel portraits, so cutscenes need no generated pictures. Lance is
 first: built by `tools/blender/lance.py` into `models/lance.glb`, shown by `actor.gd` with
 two tones a part (`toon.gdshader`), a one-pixel black line (`outline.gdshader`) and eight
-swappable pixel faces. `--actor-capture=<dir>` renders him alone; `--lance` stands him in
-the world. No rig yet; Pat and Ysha next. The three portrait sheets were also rebuilt to one
+swappable pixel faces. `tools\view-actor.cmd` shows him alone to turn and zoom;
+`--actor-capture=<dir>` renders him to pictures. He is not in the game world. No rig yet; Pat and Ysha next. The three portrait sheets were also rebuilt to one
 grid and palette (`assets/drafts/characters/portraits/`). See `docs/godot-art-style.md`
 ("Cutscene characters (3D)") and `sessions/2026-10-23-lance-3d.md`.
 

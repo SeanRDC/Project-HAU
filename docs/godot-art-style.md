@@ -627,9 +627,11 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
   at the world's own density like everything else.
 - **Check them:** `--actor-capture=<dir>` renders the cast alone into `<dir>` (each
   expression in a close-up, a turned close-up, and the body from the front, turned and
-  from the side); `--lance` (with `--face=<expression>`) stands Lance beside the student
-  in the world. The `actor_lance` check loads him with every part in its palette and
-  swaps a face.
+  from the side). `tools\view-actor.cmd` (`--actor-view=<id>`, `actor_viewer.gd`) shows
+  one model alone to look round: drag or A/D to turn, the wheel or W/S from the whole
+  body to a close-up, 1-8 for the faces, L to swing the light. The models are not in the
+  game world. The `actor_lance` check loads him with every part in its palette and swaps
+  a face.
 - Not yet: a rig and animation (the plan: a skeleton, played stepped at about 12 fps so
   it moves like hand-drawn frames), and Pat and Ysha.
 
