@@ -636,6 +636,14 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
   body to a close-up, 1-8 for the faces, L to swing the light. The models are not in the
   game world. The `actor_lance` check loads him with every part in its palette and swaps
   a face.
+- **A full, smooth version (not pixel art):** `tools/blender/lance_hd.py` opens the
+  low-poly model and makes `assets/models/lance-hd.blend`: every part smoothed
+  (subdivision; the collar, tie, bag and straps keep creased edges), the curls melted into
+  one sculpted mass, the face drawn smooth at 512 x 576 (`lance_face_hd.png`), the same
+  two-tone cel shading by the light's direction with the curls' highlight, and an ink
+  outline (an inverted hull; dark brown on the hair). It renders front, three-quarter,
+  side, back and two close-ups into `builds/lance-3d/`. It is for looking at and for
+  illustrations; the game uses the low-poly model.
 - Not yet: a rig and animation (the plan: a skeleton, played stepped at about 12 fps so
   it moves like hand-drawn frames), and Pat and Ysha.
 
