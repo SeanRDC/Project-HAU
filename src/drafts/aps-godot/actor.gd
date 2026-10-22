@@ -14,20 +14,27 @@ const EXPRESSIONS := ["neutral", "smile", "laugh", "sad", "surprised", "worried"
 ## Pixels per metre in a cutscene close-up: the portraits' own (82 px for a 0.6 m bust).
 const CLOSE_DENSITY := 136.0
 
-## Each character's parts, by material name: [base, shadow], the portraits' palette
-## (assets/drafts/characters/portraits); then, if given, how far the light wraps round before
-## the shadow starts (skin -0.35: an anime face stays lit but for its edge; curls 0.3: each
-## curl gets its dark crescent) and the outline's depth gap (curls 0.006 m: a line round
-## every curl, as the game's sprite has).
+## Each character's parts, by material name. `base` and `shade` are the two tones, from the
+## portraits' palette (assets/drafts/characters/portraits). If given: `wrap`, how far the light
+## goes round before the shadow starts (skin -0.35: an anime face stays lit but for its edge;
+## curls 0.3: each curl gets its dark side); `light`, a third tone where the light hits
+## straight on (the tops of the curls); `line`, the outline's colour (black otherwise); `gap`,
+## the outline's depth gap (curls 0.006 m: a line round every curl).
+## Lance's hair is the game's student sprite's (sprites/boy): its four colours, base, shadow,
+## highlight and the dark brown it is drawn in.
 const CAST := {
 	"lance": {
 		"model": "res://models/lance.glb",
 		"faces": "res://models/lance_faces.png",
 		"parts": {
-			"skin": ["#ecbba1", "#cf9580", -0.35], "face": ["#ecbba1", "#cf9580", -0.35],
-			"hair": ["#7f4733", "#572b23", 0.3, 0.006], "shirt": ["#efe3d6", "#cdb2a5"],
-			"tie": ["#3d3436", "#2a2326"], "bag": ["#7d2c33", "#511f26"],
-			"pants": ["#2e2a31", "#1c191e"], "shoes": ["#33292a", "#1f1819"],
+			"skin": {"base": "#ecbba1", "shade": "#cf9580", "wrap": -0.35},
+			"face": {"base": "#ecbba1", "shade": "#cf9580", "wrap": -0.35},
+			"hair": {"base": "#7f4733", "shade": "#572b23", "light": "#ac5b3d", "line": "#46201f", "wrap": 0.3, "gap": 0.006},
+			"shirt": {"base": "#efe3d6", "shade": "#cdb2a5"},
+			"tie": {"base": "#3d3436", "shade": "#2a2326"},
+			"bag": {"base": "#7d2c33", "shade": "#511f26"},
+			"pants": {"base": "#2e2a31", "shade": "#1c191e"},
+			"shoes": {"base": "#33292a", "shade": "#1f1819"},
 		},
 	},
 }
@@ -53,27 +60,32 @@ func _ready() -> void:
 		for surface in mesh.mesh.get_surface_count():
 			var part := mesh.mesh.surface_get_material(surface).resource_name
 			if not _parts.has(part):
-				_parts[part] = _material(info["parts"].get(part, ["#ff00ff", "#800080"]), faces if part == "face" else null)
+				_parts[part] = _material(info["parts"].get(part, {"base": "#ff00ff", "shade": "#800080"}), faces if part == "face" else null)
 			mesh.set_surface_override_material(surface, _parts[part])
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_face = _parts.get("face")
 	set_expression(expression)
 
-func _material(colours: Array, faces: Texture2D) -> ShaderMaterial:
+func _material(part: Dictionary, faces: Texture2D) -> ShaderMaterial:
 	var material := ShaderMaterial.new()
 	material.shader = TOON
-	material.set_shader_parameter("base_color", Color(colours[0]))
-	material.set_shader_parameter("shade_color", Color(colours[1]))
-	if colours.size() > 2:
-		material.set_shader_parameter("threshold", colours[2])
+	material.set_shader_parameter("base_color", Color(part["base"]))
+	material.set_shader_parameter("shade_color", Color(part["shade"]))
+	if part.has("wrap"):
+		material.set_shader_parameter("threshold", part["wrap"])
+	if part.has("light"):
+		material.set_shader_parameter("light_color", Color(part["light"]))
+		material.set_shader_parameter("highlight", 0.72)
 	if faces:
 		material.set_shader_parameter("textured", true)
 		material.set_shader_parameter("faces", faces)
 		material.set_shader_parameter("face_count", float(EXPRESSIONS.size()))
 	var line := ShaderMaterial.new()
 	line.shader = OUTLINE
-	if colours.size() > 3:
-		line.set_shader_parameter("depth_gap", colours[3])
+	if part.has("gap"):
+		line.set_shader_parameter("depth_gap", part["gap"])
+	if part.has("line"):
+		line.set_shader_parameter("color", Color(part["line"]))
 	material.next_pass = line
 	return material
 

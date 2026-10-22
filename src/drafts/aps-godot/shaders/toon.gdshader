@@ -14,6 +14,10 @@ uniform float face = 0.0;
 uniform float face_count = 8.0;
 // how far round from the light a surface still counts as lit
 uniform float threshold = 0.12;
+// an optional third tone where the light hits straight on (above `highlight`; off at 2.0):
+// the tops of Lance's curls, as the game's sprite draws them
+uniform vec3 light_color : source_color = vec3(1.0);
+uniform float highlight = 2.0;
 
 void fragment() {
 	vec3 colour = base_color;
@@ -34,5 +38,9 @@ void light() {
 		reach = ATTENUATION; // lamps fall off with distance
 	}
 	vec3 shade = shade_color / max(base_color, vec3(0.01));
-	DIFFUSE_LIGHT += LIGHT_COLOR / PI * mix(shade, vec3(1.0), lit) * reach;
+	vec3 tone = mix(shade, vec3(1.0), lit);
+	if (lit > 0.5 && dot(NORMAL, LIGHT) > highlight) {
+		tone = light_color / max(base_color, vec3(0.01));
+	}
+	DIFFUSE_LIGHT += LIGHT_COLOR / PI * tone * reach;
 }

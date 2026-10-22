@@ -218,9 +218,14 @@ def normal_at(az, el):
     return Vector((p.x / CAP.x ** 2, p.y / CAP.y ** 2, p.z / CAP.z ** 2)).normalized()
 
 def hairline(az):
-    """Where the hair starts: high over the brow, just above the ears, low at the nape."""
+    """Where the hair starts: high over the brow, just above the ears, and from just behind the
+    ears down to the jaw at the back, as the sprite's hangs."""
     f = math.cos(az)
-    return math.radians(10 + 14 * f) if f > 0 else math.radians(10 - 48 * -f)
+    if f > 0:
+        return math.radians(10 + 14 * f)
+    if f > -0.22:
+        return math.radians(10)                     # over the ear
+    return math.radians(10 - 68 * min(1.0, (-f - 0.22) / 0.4))
 
 # the cap under the curls
 cv, cf, SEGC, RC = [], [], 18, 8
@@ -269,9 +274,9 @@ for i in range(N):
     if math.cos(az) > 0.35 and el < math.radians(42):
         continue                                    # the fringe covers the front
     up = max(0.0, math.sin(el))
-    r = 0.048 + 0.010 * up + jit(0.006)
+    r = 0.048 + 0.014 * up + jit(0.006)
     n = normal_at(az, el)
-    curl(on_cap(az, el) + n * r * (0.38 + 0.22 * up), r, spin=jit(1))   # standing out: a bumpy outline
+    curl(on_cap(az, el) + n * r * (0.35 + 0.75 * up ** 2), r, spin=jit(1))   # standing out: a bumpy outline, piled high on top
 # the fringe: a row of curls over the forehead down to the brows, sweeping lower towards his
 # left (+x)
 for i in range(6):
