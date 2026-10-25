@@ -460,7 +460,7 @@ See `sessions/2026-10-12-minimap-teleport-and-plans.md` for the details.
 * The plaza and the main gate scenes are not to scale (see `docs/campus-layout.md`).
 * The other gates on the gate-area diagram: Guardian Angel, St. Raphael and St. Uriel. (The pedestrian gate is the side gate.)
 * No touch controls (it loads on a phone but you cannot move).
-* Real sprite art and recorded audio. `assets/drafts/girl-test/` is a test of sprite sheets made from one AI-generated girl image (idle, front walk, talking with expressions). The game does not use it.
+* Real sprite art and recorded audio. `assets/drafts/girl-test/` is a test of sprite sheets made from one AI-generated girl image (idle, front walk, talking with expressions). The game does not use it. `assets/drafts/girl-walk/` is a side-view walk cycle for a girl from frames generated one at a time in ChatGPT and cleaned into a sprite sheet by its `build.mjs`; its README lists what is still wrong. The game does not use that either.
 * The Godot 4 port.
 * The photos in `assets/APS WALK FROM CHAPEL LAWN/`, `assets/SJH BUILDING/`, `assets/MGN BUILDING/` and `assets/CHAPEL/` are kept local, not committed: they show number plates and people. Ask Mikko for them.
 * The reference images in `assets/images/` are committed as of 2026-10-12, at Sean's decision, so the team shares them. They are Google Earth, university and found-online material, references only: the game does not load them.

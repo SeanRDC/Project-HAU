@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Girl walk preview</title>
+<style>
+  body { margin: 0; background: #1b1724; color: #eee6f2; font: 14px "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 16px; }
+  canvas { image-rendering: pixelated; display: block; max-width: 100%; border-radius: 6px; margin: 8px 0 16px; }
+  .row { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; color: #b9aec8; }
+</style>
+</head>
+<body>
+<main>
+  <h2>Walking</h2>
+  <div class="row">
+    <label>Speed <input id="speed" type="range" min="4" max="16" value="10" /> <span id="fps"></span> frames a second</label>
+    <label><input id="still" type="checkbox" /> Walk on the spot</label>
+    <label><input id="even" type="checkbox" /> Old way (same step and time every frame), to compare</label>
+  </div>
+  <canvas id="walk" width="630" height="220" style="width:1260px"></canvas>
+  <h2>The frames</h2>
+  <p style="color:#b9aec8">Standing, then walk frames 1 to 8. Each cell is 140 × 200; her feet are on row 196. The head is the same in every frame.</p>
+  <canvas id="frames" width="1260" height="200" style="width:1260px"></canvas>
+</main>
+<script>
+const CW = 140, CH = 200, FEET = 196, FACE = 80;
+// from girl_walk.json: how far her planted foot slides back from each walk frame to the next,
+// and how long each frame is held, so her feet stay on the ground and her body keeps an even pace
+const ADVANCE = [17, 13, 36, 5, 12, 21, 39, 7];
+const HOLD = [0.96, 0.73, 1.6, 0.6, 0.61, 1.06, 1.6, 0.6];
+const sheet = new Image();
+sheet.src = 'girl_walk_sheet.png';
+sheet.onload = () => {
+  const f = document.getElementById('frames').getContext('2d');
+  f.fillStyle = '#d9d2c4';
+  f.fillRect(0, 0, 1260, 200);
+  f.drawImage(sheet, 0, 0);
+  const c = document.getElementById('walk').getContext('2d');
+  c.imageSmoothingEnabled = false;
+  const speed = document.getElementById('speed');
+  const still = document.getElementById('still');
+  const even = document.getElementById('even');
+  const fps = document.getElementById('fps');
+  let x = 90, ground = 0, dir = 1, frame = 0, t = 0, pause = 0, last = performance.now();
+  function draw(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    fps.textContent = speed.value;
+    let cell = 0;
+    if (pause > 0 && !still.checked) {
+      pause -= dt;
+    } else {
+      // walk through the frames, each held for its own time, moving her by its own step along the way
+      const base = 1 / Number(speed.value);
+      let left = dt;
+      while (left > 0) {
+        const hold = (even.checked ? 1 : HOLD[frame]) * base;
+        const step = even.checked ? 15 : ADVANCE[frame];
+        const use = Math.min(left, hold - t);
+        const moved = step * (use / hold);
+        if (still.checked) ground -= moved; else x += dir * moved;
+        t += use; left -= use;
+        if (t >= hold - 1e-9) { t = 0; frame = (frame + 1) % 8; }
+      }
+      if (!still.checked && (x > 540 || x < 90)) { dir = -dir; x = Math.max(90, Math.min(540, x)); pause = 1.4; }
+      cell = frame + 1;
+    }
+    c.fillStyle = '#c3bccd'; c.fillRect(0, 0, 630, 220);
+    c.fillStyle = '#8f879c'; c.fillRect(0, 206, 630, 14);
+    c.fillStyle = '#a49cb0';
+    for (let i = -1; i < 18; i++) c.fillRect((((i * 40 + ground) % 680) + 680) % 680 - 20, 206, 2, 14);
+    const px = still.checked ? 315 : x;
+    c.fillStyle = 'rgba(30,20,50,0.25)';
+    c.beginPath(); c.ellipse(px, 206, 34, 5, 0, 0, Math.PI * 2); c.fill();
+    c.save();
+    c.translate(Math.round(px), 0);
+    if (dir < 0 && !still.checked) c.scale(-1, 1);
+    c.drawImage(sheet, cell * CW, 0, CW, CH, -FACE + 20, 206 - FEET, CW, CH);
+    c.restore();
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+};
+</script>
+</body>
+</html>
