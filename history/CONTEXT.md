@@ -1,10 +1,75 @@
 # Project Context
 
+**Every branch in main, 2026-10-25.** Canteen layout, Covered Court, Aero Hall, Formation Center, the SJH back lane, the audio fixes, the opening and story work and the girl walk test are all merged. Aero Hall's edge wall now leaves a gateway into SJH's back lane (`GATEWAY_X`). See `sessions/2026-10-25-merge-all-branches.md`.
+
+**PGN merged with main, 2026-10-25.** The `pgn` branch (PR #44) now has every branch in
+main: PGN sits beside the Formation Center, Aero Hall and the Covered Court, and all checks
+pass. See `sessions/2026-10-25-pgn-merge-main.md`.
+
 **PGN, 2026-10-22.** `areas/pgn.gd`: the Peter G. Nepomuceno Building, a tall white L
 along the boulevard and beside APS. It has a dark ground floor and nine white banded floors
 with blue windows and grey louvres, the stair screen, the gold name and the box on the
 roof. The paver lane along its west end opens off the boulevard's covered walkway. See
 `sessions/2026-10-22-pgn.md`.
+
+**Aero Hall, 2026-10-22.** `areas/aero.gd`: the navy corrugated hall in front of the gym's
+south end, between SJH and the gym, with its gabled front block, the HAU seal, aircon
+units and signs, and the yard behind the green wall. The camera cuts SJH away when
+facing the gym from there. See `sessions/2026-10-22-aero-hall.md`.
+
+**Audio fixes, 2026-10-22.** The looping sounds no longer pulse as they come round (an even
+crossfade), the students' murmur is gone (every version was heard as a buzz by
+APS), the rain loop pauses in dry weather, and the birds' take-off flutter is softer and shorter. The footsteps are
+unchanged. See `sessions/2026-10-22-audio-fixes.md`.
+
+**Formation Center, 2026-10-22.** `areas/formation.gd`: the Sister Josefina G. Nepomuceno
+Formation Center behind the chapel, facing the east road, set back so the new lawn-side
+sidewalk runs round the bend north of it. The colonnade under its steel name, the roof
+canopy, the stair tower's green strips, two curved wings; a drop-off round the tree
+island; gabled kiosks in a row along the road south of it. In front of it the camera faces
+it from over the road (`--view=formation`). See `sessions/2026-10-22-formation-center.md`.
+
+**SJH and MGN apart, 2026-10-21.** MGN's south wing is flush with its long block (it stood
+~1 m from SJH) and SJH is 2 m east of its outline (`EAST_SHIFT`): a ~4.7 m drive runs
+between them under the bridge, ~9 m wall to wall, as in the photos. A concrete drive off the road's bend curves round Mary's big lawn into
+that lane; MGN's garden walk slants from opposite Mary to the corridor, and the bridge
+joins both third floors. MGN's north block has its forecourt entrance on the west road. See
+`sessions/2026-10-21-sjh-mgn-spacing.md`.
+
+**Canteen layout, 2026-10-22.** The APS canteen now follows Mikko's sketch: two islands of
+four stalls and a row of four by the tip, with blue tables and benches between them on a
+grey tile floor (`stalls()` and `CANTEEN_TABLES` in `world.gd`). Its back is open, with stone
+pillars, a low wall with two gaps out to the strip, and the scalloped awning; HAU COOP and RINA'S FOOD face it. See
+`sessions/2026-10-22-canteen-layout.md`.
+
+**Covered Court, 2026-10-22.** `areas/court.gd`: the open shed beside the gym, with a low
+gable roof on white steel columns, a clerestory in the west gable, the court with its
+bleachers, and the ramp up from the gym's lane. The camera cuts its roof away when facing
+the gym from the lane. See `sessions/2026-10-22-covered-court.md`.
+
+**The opening's story, 2026-10-21.** The opening now tells the game's story (draft in
+`src/drafts/aps-godot/opening/STORY.md`): Lance remembers the campus and Ysha, the girl he
+lost on November 11, 2026, and wakes in his old classroom in June 2026. Ten pages, campus
+photos standing in for drawn panels; `opening/SCRIPT.md` has every line. Contains
+depression and suicide themes (nothing shown; content warning and help line required).
+`tools\preview-opening.cmd` shows every screen on one sheet. See
+`sessions/2026-10-21-opening-story.md`.
+
+**The opening can't be skipped the first time, 2026-10-21.** Space and Esc only move on
+until the opening has been watched to the end once on that computer (`user://opening.cfg`);
+after that, hold Space (or Esc) skips it as below. `--opening-first` replays the first
+time. See `sessions/2026-10-21-opening-first-time.md`.
+
+**SJH's back, 2026-10-21.** `areas/sjh.gd` builds St. Joseph Hall's rear facade from the
+rear photos (`assets/SJH BUILDING/rear/`, east to west): slab sunshades over cream walls,
+brown-framed windows with AC hoods, louvre bays; and on the lane behind it the basement
+ramp, the yellow shed, the HAU VEHICLE ONLY carport, the utility block, the back entrance
+and the sheds. The lane is walkable, reached round SJH's east end from the south road; the
+outer bound is now z 162. The camera faces north at the back (`Sjh.rear_for`). Fast travel:
+"SJH back lane", `--view=sjh-rear`. At the east corner a planted bed on a round kerb wraps
+round to the east end (`Sjh.bed()`), and past it the east end's side entrance (red block,
+tiled steps, handrails; `_east_entrance()`, the corridor not built). Godot no longer aborts
+on quit (`audio.gd` waits for its worker task). See `sessions/2026-10-21-sjh-rear-facade.md`.
 
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
@@ -107,6 +172,12 @@ tables, the BDO ATM, and a brick apron past the west end out to the fountain. Th
 boulevard's south view carries on inside; under the roof it is the walkway's cutaway,
 with the roof faded and daylight fill lights. `--view=student-center`. See
 `sessions/2026-10-19-student-center.md`.
+
+**The friend, 2026-10-19.** The player's friend from the opening is in the game as
+"Kaibigan" (no name yet) in front of APS 104-105: drawn in pxl over the redesigned boy
+(black curtain hair, black hoodie, navy bag), idle and portrait only, with a short talk.
+Sources in `assets/drafts/characters/npcs/pxl/friend/`. See
+`sessions/2026-10-19-friend-character.md`.
 
 **The opening, 2026-10-19 (test).** A plain launch now plays `opening.gd` first: a
 black-and-white manga memory of the campus in Tagalog, page by page, ending on the
@@ -401,7 +472,7 @@ See `sessions/2026-10-12-minimap-teleport-and-plans.md` for the details.
 * The plaza and the main gate scenes are not to scale (see `docs/campus-layout.md`).
 * The other gates on the gate-area diagram: Guardian Angel, St. Raphael and St. Uriel. (The pedestrian gate is the side gate.)
 * No touch controls (it loads on a phone but you cannot move).
-* Real sprite art and recorded audio. `assets/drafts/girl-test/` is a test of sprite sheets made from one AI-generated girl image (idle, front walk, talking with expressions). The game does not use it.
+* Real sprite art and recorded audio. `assets/drafts/girl-test/` is a test of sprite sheets made from one AI-generated girl image (idle, front walk, talking with expressions). The game does not use it. `assets/drafts/girl-walk/` is a side-view walk cycle for a girl from frames generated one at a time in ChatGPT and cleaned into a sprite sheet by its `build.mjs`; its README lists what is still wrong. The game does not use that either.
 * The Godot 4 port.
 * The photos in `assets/APS WALK FROM CHAPEL LAWN/`, `assets/SJH BUILDING/`, `assets/MGN BUILDING/` and `assets/CHAPEL/` are kept local, not committed: they show number plates and people. Ask Mikko for them.
 * The reference images in `assets/images/` are committed as of 2026-10-12, at Sean's decision, so the team shares them. They are Google Earth, university and found-online material, references only: the game does not load them.

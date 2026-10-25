@@ -46,15 +46,48 @@ const STAIR := Vector2(24.6, 29.2)
 ## The north block (on the chapel walkway side) and the south wing (beside SJH).
 const NORTH_END := 39.5
 const NORTH_BACK := -17.25
+## The south wing's front is flush with the long block's (it stood 5.7 m forward on the plan,
+## ~1 m from SJH; in the photos the drive and MGN's planting run between them, ~9 m wall to
+## wall under the bridge), and the garden runs on in front of it.
 const SOUTH_WING := Vector2(-28.9, -17.96)
-const SOUTH_FRONT := 5.7
+const SOUTH_FRONT := 0.0
 const SOUTH_BACK := -23.0
-## The raised garden between the corridor front and the road, behind a white kerb wall.
+## MGN's other entrance, on the north block's face to the west road (IMG_6063 and "mgn
+## rightside to sidewalk.jpg"): a raised forecourt (FORECOURT, local x, z) of pale grey
+## squares in dark grout bands behind a white kerb, under the first floor's overhang on two
+## square pillars, a grated drain along the road, bins and potted plants; north of it red
+## octagon pavers (CORNER, local x) to the boulevard's covered walkway.
+const FORECOURT := Rect2(31.0, -2.4, 6.6, 5.8)
+const FORECOURT_Y := 0.25
+const FORECOURT_PILLARS: Array[float] = [32.6, 36.0]
+const PILLAR_Z := 0.6
+const OVERHANG := 1.0
+const DRAIN := 0.45
+const CORNER := Vector2(37.6, NORTH_END)
+## Things standing on the forecourt (local x, z): the bins, the potted plants.
+const BINS: Array[Vector2] = [Vector2(37.05, 1.4), Vector2(37.05, 1.95), Vector2(37.05, 2.5)]
+const POTS: Array[Vector2] = [Vector2(31.5, 2.9), Vector2(31.5, -1.7), Vector2(37.0, -1.7)]
+
+## The raised garden between the corridor front and the road, behind a white kerb wall,
+## from the south wing's far end (GARDEN_FROM) to the long block's north end.
 const GARDEN := 3.9
+const GARDEN_FROM := SOUTH_WING.x
+## The brown paver walk through the garden (MGN FRONT.JPG): from the drive's kerb opposite
+## the Mary statue (mgn and Sjh middle.jpg, local x WALK_X) in to the corridor front,
+## angled north by WALK_SLANT on the way (screenshot 1178), 2 * WALK_HALF wide, sunk
+## between the garden's two beds and their white kerbs, rising from the drive's level
+## (WALK_Y.x) to the corridor floor (WALK_Y.y).
+const WALK_X := 0.9
+const WALK_SLANT := 3.0
+const WALK_FROM := Vector2(WALK_X, GARDEN + 0.6)
+const WALK_TO := Vector2(WALK_X + WALK_SLANT, 0.0)
+const WALK_HALF := 0.8
+const WALK_Y := Vector2(-0.02, 0.15)
+const WALK_KERB := 0.16
 ## Facing MGN the camera cuts away everything east of this world x (the chapel lawn,
 ## its trees and the chapel), the way the SJH view cuts away everything north of its parking.
-## It stops just east of SJH's terracotta end block (world x -52.3), so that block stays whole.
-const CUT_X := -51.8
+## It stops just east of SJH's terracotta end block (world x -50.3), so that block stays whole.
+const CUT_X := -49.8
 
 static func origin() -> Vector2:
 	return (EDGE_NORTH + EDGE_SOUTH) / 2.0
@@ -102,7 +135,21 @@ static func view_for(x: float, z: float) -> float:
 	return reach(x, z) * (1.0 - Sjh.view_for(x, z))
 
 static func walkable(x: float, z: float) -> bool:
-	return in_entry(x, z)
+	return in_entry(x, z) or in_walk(x, z) or in_forecourt(x, z) or on_corner(x, z)
+
+## On the north entrance's raised forecourt (its drain strip is at the ground).
+static func in_forecourt(x: float, z: float) -> bool:
+	return FORECOURT.has_point(local(x, z))
+
+static func on_corner(x: float, z: float) -> bool:
+	var at := local(x, z)
+	var drain := at.x > FORECOURT.position.x and at.x < FORECOURT.end.x and at.y >= FORECOURT.end.y and at.y < FORECOURT.end.y + DRAIN
+	return drain or (at.x >= CORNER.x and at.x < CORNER.y and at.y > PORCH_BACK and at.y < FORECOURT.end.y + DRAIN)
+
+## On the paver walk through the garden.
+static func in_walk(x: float, z: float) -> bool:
+	var at := local(x, z)
+	return at.y > 0.05 and Geometry2D.get_closest_point_to_segment(at, WALK_FROM, WALK_TO).distance_to(at) < WALK_HALF
 
 static func blocked(x: float, z: float) -> bool:
 	var at := local(x, z)
@@ -113,10 +160,31 @@ static func blocked(x: float, z: float) -> bool:
 		return at.y < TURNSTILE_Z + 0.35 # the turnstile and the guard's desk
 	if inside(at.x, at.y):
 		return true
-	return absf(at.x) < LONG and at.y > 0.0 and at.y < GARDEN + 0.05 # the raised garden
+	if in_walk(x, z) or on_corner(x, z):
+		return false
+	if in_forecourt(x, z):
+		for pillar in FORECOURT_PILLARS:
+			if absf(at.x - pillar) < 0.4 and absf(at.y - PILLAR_Z) < 0.4:
+				return true
+		for spot in BINS + POTS:
+			if at.distance_to(spot) < 0.4:
+				return true
+		return false
+	return at.x > GARDEN_FROM and at.x < LONG and at.y > 0.0 and at.y < GARDEN + 0.05 # the raised garden
 
 static func floor_height(x: float, z: float) -> float:
-	return FLOOR_Y if in_entry(x, z) else NAN
+	if in_entry(x, z):
+		return FLOOR_Y
+	if in_forecourt(x, z):
+		return FORECOURT_Y
+	if on_corner(x, z):
+		return 0.0
+	return walk_height(x, z) if in_walk(x, z) else NAN
+
+## The walk's surface height: rising from the drive to the corridor.
+static func walk_height(x: float, z: float) -> float:
+	var at := local(x, z)
+	return lerpf(WALK_Y.y, WALK_Y.x, clampf(at.y / WALK_FROM.y, 0.0, 1.0))
 
 var w: RefCounted
 
@@ -137,6 +205,8 @@ func build(world_builder: RefCounted) -> void:
 	_north_block()
 	_south_wing()
 	_garden()
+	_walk()
+	_forecourt()
 	w._flush()
 	w.root = saved
 	_planting()
@@ -366,28 +436,34 @@ func _south_wing() -> void:
 	_tank(Vector3(SOUTH_WING.y - 2.8, block_top + 0.3, SOUTH_FRONT - 2.4), 1.6)
 	_bridge(SOUTH_WING.y - 2.8)
 
-## The covered bridge from the service block's third floor across to SJH's west end, from
-## IMG_1542: a concrete deck with solid parapets and a steel rail, under a ribbed tin roof
-## on four steel posts.
+## The covered bridge between the third floors, from the service block across to SJH's
+## west end, from IMG_1542: a concrete deck with solid parapets and a steel rail, under a
+## ribbed tin roof on four steel posts. SJH's storeys are taller, so the deck rises a
+## little from MGN's third floor to SJH's.
 func _bridge(x: float) -> void:
 	var white: Material = w.material("stucco", Color("ecebe4"))
 	var steel: Material = w.material("metal", Color("4a4e52"))
-	var floor_y := GROUND + STOREY
 	# Where SJH's west face crosses the bridge's line, in this frame.
 	var mid := world(x, SOUTH_FRONT)
 	var face := Sjh.world(Sjh.HALF, Sjh.local(mid.x, mid.y).y)
 	var far := local(face.x, face.y).y + 0.1
 	var span := far - SOUTH_FRONT
 	var centre := (SOUTH_FRONT + far) / 2.0
-	w.box(Vector3(2.6, 0.6, span), Vector3(x, floor_y - 0.3, centre), white)
+	var low := GROUND + STOREY
+	var high := Sjh.GROUND + Sjh.STOREY
+	var floor_y := (low + high) / 2.0
+	var tilt := -atan2(high - low, span)
+	var run := span / cos(tilt)
+	w.box(Vector3(2.6, 0.6, run), Vector3(x, floor_y - 0.3, centre), white, 0.0, tilt)
 	for side in [-1.0, 1.0]:
-		w.box(Vector3(0.16, 1.0, span), Vector3(x + side * 1.22, floor_y + 0.5, centre), white)
-		w.box(Vector3(0.05, 0.05, span), Vector3(x + side * 1.22, floor_y + 1.2, centre), steel)
+		w.box(Vector3(0.16, 1.0, run), Vector3(x + side * 1.22, floor_y + 0.5, centre), white, 0.0, tilt)
+		w.box(Vector3(0.05, 0.05, run), Vector3(x + side * 1.22, floor_y + 1.2, centre), steel, 0.0, tilt)
 		for z in [SOUTH_FRONT + 0.2, far - 0.2]:
-			w.box(Vector3(0.08, 2.6, 0.08), Vector3(x + side * 1.22, floor_y + 1.3, z), steel)
+			var y := lerpf(low, high, (z - SOUTH_FRONT) / span)
+			w.box(Vector3(0.08, 2.6, 0.08), Vector3(x + side * 1.22, y + 1.3, z), steel)
 	# The ribbed roof, pitched a little for the rain, and its steel eave on MGN's side.
-	w.box(Vector3(3.0, 0.05, span + 0.6), Vector3(x, floor_y + 2.65, centre), w.material("ribbed", Color("9ea4a6")), 0.0, -0.06)
-	w.box(Vector3(3.0, 0.14, 0.06), Vector3(x, floor_y + 2.55, SOUTH_FRONT), steel)
+	w.box(Vector3(3.0, 0.05, span + 0.6), Vector3(x, floor_y + 2.65, centre), w.material("ribbed", Color("9ea4a6")), 0.0, tilt - 0.06)
+	w.box(Vector3(3.0, 0.14, 0.06), Vector3(x, low + 2.55, SOUTH_FRONT), steel)
 
 ## Thin white bands along a face at every floor line, standing a little proud of it, as on
 ## the APS wing: `span` runs along the face (local x for a ±Z face, local z for ±X),
@@ -438,16 +514,103 @@ func _tank(at: Vector3, radius: float) -> void:
 ## The raised garden along the corridor front behind a weathered white kerb wall, with
 ## rocks in the planting (the closeup photo).
 func _garden() -> void:
-	w.box(Vector3(2.0 * LONG, 0.5, GARDEN - 0.1), Vector3(0, 0.05, GARDEN / 2.0 + 0.05), w.material("grass", Color("e9f0dc")))
-	w.box(Vector3(2.0 * LONG + 0.3, 0.7, 0.28), Vector3(0, 0.15, GARDEN - 0.1), w.material("stucco", Color("e5e1d6")))
-	w.box(Vector3(2.0 * LONG + 0.4, 0.08, 0.34), Vector3(0, 0.52, GARDEN - 0.1), w.material("stucco", Color("eeebe2")))
-	var rock: Material = w.material("stone", Color("6d6a66"))
+	# Two beds, either side of the walk, each with its kerb wall and cap; the walk's slant
+	# leaves a wedge of grass on each bed, filled at the beds' height.
+	var gap := (WALK_HALF + WALK_KERB) / cos(walk_turn())
+	var near := walk_centre(GARDEN) # where the walk leaves the front kerb
+	var far := walk_centre(0.0) # and meets the corridor
+	var grass: Material = w.material("grass", Color("e9f0dc"))
+	for bed in [Vector3(GARDEN_FROM, near - gap, near - gap), Vector3(far + gap, LONG, near + gap)]:
+		var length: float = bed.y - bed.x
+		var middle: float = (bed.x + bed.y) / 2.0
+		w.box(Vector3(length, 0.5, GARDEN - 0.1), Vector3(middle, 0.05, GARDEN / 2.0 + 0.05), grass)
+		var from: float = minf(bed.x, bed.z)
+		var to: float = maxf(bed.y, bed.z)
+		w.box(Vector3(to - from + 0.15, 0.7, 0.28), Vector3((from + to) / 2.0, 0.15, GARDEN - 0.1), w.material("stucco", Color("e5e1d6")))
+		w.box(Vector3(to - from + 0.2, 0.08, 0.34), Vector3((from + to) / 2.0, 0.52, GARDEN - 0.1), w.material("stucco", Color("eeebe2")))
+	w._ground(PackedVector2Array([Vector2(near - gap, GARDEN), Vector2(near - gap, 0.1), Vector2(far - gap, 0.1)]), 0.3, grass)
+	w._ground(PackedVector2Array([Vector2(near + gap, GARDEN), Vector2(far + gap, GARDEN), Vector2(far + gap, 0.1)]), 0.3, grass)
+	var rock: Material = w.material("stone", Color("8e8b85"))
 	var random := RandomNumberGenerator.new()
 	random.seed = 1414
 	for i in 14:
-		var x := random.randf_range(-LONG + 1.0, LONG - 1.0)
+		var x := random.randf_range(GARDEN_FROM + 1.0, LONG - 1.0)
 		var size := random.randf_range(0.35, 0.7)
-		w.box(Vector3(size, size * 0.7, size * 0.9), Vector3(x, 0.3 + size * 0.3, random.randf_range(0.8, GARDEN - 0.7)), rock, random.randf() * PI)
+		var lz := random.randf_range(0.8, GARDEN - 0.7)
+		if Geometry2D.get_closest_point_to_segment(Vector2(x, lz), WALK_FROM, WALK_TO).distance_to(Vector2(x, lz)) < WALK_HALF + 0.5:
+			continue # not on the walk
+		w.box(Vector3(size, size * 0.45, size * 0.8), Vector3(x, 0.3 + size * 0.12, lz), rock, random.randf() * PI, random.randf_range(-0.2, 0.2))
+
+## The north entrance's forecourt, its overhang, pillars and lobby, the drain, the bins and
+## pots, and the paver corner beside it.
+func _forecourt() -> void:
+	var court := FORECOURT
+	var middle := court.get_center()
+	var grout: Material = w.material("plain", Color("5d6164"))
+	var white: Material = w.material("stucco", Color("eceae3"))
+	w.box(Vector3(court.size.x, FORECOURT_Y + 0.1, court.size.y), Vector3(middle.x, (FORECOURT_Y - 0.1) / 2.0, middle.y), w.material("slab", Color("e2e3df")))
+	var x := court.position.x + 0.5
+	while x < court.end.x - 0.2:
+		w.box(Vector3(0.13, 0.012, court.size.y - 0.2), Vector3(x, FORECOURT_Y + 0.006, middle.y), grout)
+		x += 1.0
+	var z := court.position.y + 0.5
+	while z < court.end.y - 0.2:
+		w.box(Vector3(court.size.x - 0.2, 0.012, 0.13), Vector3(middle.x, FORECOURT_Y + 0.006, z), grout)
+		z += 1.0
+	# The white kerb along its front and south side, weathered.
+	w.box(Vector3(court.size.x + 0.2, FORECOURT_Y + 0.12, 0.2), Vector3(middle.x, (FORECOURT_Y + 0.12) / 2.0 - 0.06, court.end.y), white)
+	w.box(Vector3(0.2, FORECOURT_Y + 0.12, court.size.y), Vector3(court.position.x, (FORECOURT_Y + 0.12) / 2.0 - 0.06, middle.y), white)
+	# The grated drain along the road.
+	w.box(Vector3(court.size.x, 0.04, DRAIN), Vector3(middle.x, 0.0, court.end.y + DRAIN / 2.0), w.material("ribbed", Color("6d7173")))
+	# The first floor's overhang on two square pillars, the dark lobby behind them.
+	w.box(Vector3(court.size.x + 0.8, 0.45, OVERHANG - PORCH_BACK), Vector3(middle.x, GROUND - 0.225, (OVERHANG + PORCH_BACK) / 2.0), white)
+	for pillar in FORECOURT_PILLARS:
+		w.box(Vector3(0.55, GROUND - 0.45 - FORECOURT_Y, 0.55), Vector3(pillar, (GROUND - 0.45 + FORECOURT_Y) / 2.0, PILLAR_Z), white)
+		w.box(Vector3(0.6, 0.12, 0.6), Vector3(pillar, FORECOURT_Y + 0.06, PILLAR_Z), w.material("plain", Color("b48a6a")))
+	w.box(Vector3(4.2, GROUND - 0.45 - FORECOURT_Y, 0.06), Vector3(34.3, (GROUND - 0.45 + FORECOURT_Y) / 2.0, PORCH_BACK + 0.05), w.material("plain", Color("2b2e31")))
+	w.box(Vector3(1.6, 0.06, 0.1), Vector3(34.3, GROUND - 0.55, PORCH_BACK + 0.4), w.glow(Color("f4f1e6"), 0.6, 2.0))
+	# The bins: yellow, green, blue.
+	for i in BINS.size():
+		var spot: Vector2 = BINS[i]
+		w.box(Vector3(0.42, 0.9, 0.48), Vector3(spot.x, FORECOURT_Y + 0.45, spot.y), w.material("plain", [Color("e1bf22"), Color("2f7a3c"), Color("2b4f9b")][i]))
+	# Terracotta pots with leafy plants.
+	for spot in POTS:
+		w.box(Vector3(0.6, 0.5, 0.6), Vector3(spot.x, FORECOURT_Y + 0.25, spot.y), w.material("plain", Color("b5653f")))
+		w._shrub(Vector3(spot.x, FORECOURT_Y + 0.5, spot.y), 0.8, 1460 + roundi(spot.y * 10.0)) # in MGN's frame, like the rest here
+	# The corner: red octagon pavers to the covered walkway; they run on along the road to the
+	# boulevard's curved corner (middle_road.gd).
+	var depth := FORECOURT.end.y + DRAIN - PORCH_BACK
+	w.box(Vector3(CORNER.y - CORNER.x, 0.06, depth), Vector3((CORNER.x + CORNER.y) / 2.0, -0.02, PORCH_BACK + depth / 2.0), w.material("octagon"))
+
+## The paver walk between the beds, sloping up from the drive to the corridor, and the white
+## kerbs that edge it (the beds' faces).
+func _walk() -> void:
+	var turn := walk_turn()
+	var half := WALK_HALF / cos(turn)
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	tool.set_normal(Vector3.UP)
+	var corners: Array[Vector3] = []
+	for z in [0.0, WALK_FROM.y]:
+		var y := lerpf(WALK_Y.y, WALK_Y.x, z / WALK_FROM.y)
+		corners.append(Vector3(walk_centre(z) - half, y, z))
+		corners.append(Vector3(walk_centre(z) + half, y, z))
+	for order in [[0, 1, 2, 1, 3, 2], [0, 2, 1, 1, 2, 3]]:
+		for k in order:
+			tool.add_vertex(corners[k])
+	w._mesh(tool.commit(), Vector3.ZERO, w.material("brick", Color("b07466")))
+	# The kerbs, along the walk's edges from the corridor to the front kerb wall.
+	var reach := GARDEN + 0.05
+	for k in [-1.0, 1.0]:
+		var edge: float = walk_centre(reach / 2.0) + k * (WALK_HALF + WALK_KERB / 2.0) / cos(turn)
+		w.box(Vector3(WALK_KERB, 0.4, reach / cos(turn)), Vector3(edge, 0.12, reach / 2.0), w.material("stucco", Color("e9e6dc")), turn)
+
+## The walk's centre line (local x) at local z, and its turn off straight-in.
+static func walk_centre(z: float) -> float:
+	return lerpf(WALK_TO.x, WALK_FROM.x, z / WALK_FROM.y)
+
+static func walk_turn() -> float:
+	return atan2(WALK_FROM.x - WALK_TO.x, WALK_FROM.y - WALK_TO.y)
 
 ## The big shade trees, short palms and shrubs in the garden (world coordinates).
 func _planting() -> void:
@@ -456,9 +619,9 @@ func _planting() -> void:
 	for tree in [Vector3(12.5, 2.0, 13.5), Vector3(-5.0, 1.8, 12.0), Vector3(-15.0, 2.2, 10.5)]:
 		var at := world(tree.x, tree.y)
 		w._tree(Vector3(at.x, 0.3, at.y), tree.z, 1400 + roundi(tree.x))
-	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(1.5, 2.8), Vector2(-10.5, 1.3)]:
+	for spot in [Vector2(16.4, 2.6), Vector2(8.0, 1.4), Vector2(-0.8, 2.8), Vector2(-10.5, 1.3)]: # (-0.8, 2.8): beside the walk
 		var at := world(spot.x, spot.y)
 		palms._palm(Vector3(at.x, 0.3, at.y), 4.2 + absf(spot.x) * 0.05, 1420 + roundi(spot.x))
-	for lx in [15.0, 10.0, 5.5, 3.0, -2.0, -8.0, -12.5, -16.5]:
+	for lx in [15.0, 10.0, 5.5, 4.6, -2.0, -8.0, -12.5, -16.5, -20.5, -24.0, -27.5]:
 		var at := world(lx, 2.2 + fmod(absf(lx), 1.5))
 		w._shrub(Vector3(at.x, 0.3, at.y), 1.1, 1440 + roundi(lx))

@@ -11,7 +11,61 @@ extends RefCounted
 const COLUMN_X: Array[float] = [-7.5, -3.4, 3.4, 7.5]
 ## Canteen piers, stalls and steps are in the wing's own frame (see canteen_local).
 const CANTEEN_PIERS: Array[float] = [36.8, 46.25, 55.75, 65.2]
-const STALL_X: Array[float] = [41.0, 50.8, 60.6]
+## The canteen's stalls (canteen frame: x along the hall, z from the back wall at -7 to the
+## patio): each [centre, facing, name, sign colour, ink]. The three named ones keep their
+## signs; the rest are plain. Ate Lorna (npcs.gd) stands at GRANNY JINGS's counter.
+const STALL_SIZE := Vector2(2.3, 1.6)
+const STALL_ISLANDS: Array[float] = [44.4, 52.6]
+const STALL_ROW_X := 64.25
+## Each stall in the end-wall row is narrower, so four fit along the hall's depth.
+const ROW_STALL := 1.8
+const STALL_LIGHTS: Array[Vector2] = [Vector2(44.4, -1.2), Vector2(52.6, -1.2), Vector2(61.6, -2.7), Vector2(48.5, -6.0)]
+## The blue tables between the stalls (canteen frame).
+const CANTEEN_TABLES: Array[Vector2] = [Vector2(48.5, -4.2), Vector2(48.5, -1.1), Vector2(57.2, -4.2), Vector2(57.2, -1.1),
+	Vector2(60.6, -4.2), Vector2(60.6, -1.1)]
+## The hall's back is open (the photos from inside): stone-clad pillars at the back edge
+## (local z -7.0), a low wall with a steel rail between them, and two gaps (x from..to) with
+## a step down to the strip outside; a scalloped awning outside over the back.
+const BACK_EDGE := -7.0
+const BACK_GAPS: Array[Vector2] = [Vector2(42.0, 43.8), Vector2(58.4, 60.2)]
+
+static func in_back_gap(x: float) -> bool:
+	for gap in BACK_GAPS:
+		if x >= gap.x and x <= gap.y:
+			return true
+	return false
+
+static func stalls() -> Array:
+	var list := []
+	var plain := ["e2b04a", "6f9a5a", "c9763f", "7a8fb8", "b8a07a", "8e5a8a", "d9c7a0", "5f8f8a", "c75a5a"]
+	var n := 0
+	for island in STALL_ISLANDS.size():
+		var x: float = STALL_ISLANDS[island]
+		for row in [[-4.6, Vector2(0, -1)], [-3.0, Vector2(0, 1)]]:
+			for side in [-1.0, 1.0]:
+				var sign := ["", plain[n % plain.size()], "1d1d1d"]
+				if row[0] == -4.6 and side < 0.0:
+					sign = [["HAU COOP", "f2d23a", "c8222e"], ["RINA'S FOOD", "7a1f1f", "f6e7c8"]][island]
+				if row[0] == -3.0 and side < 0.0:
+					sign = [["YUM-YUMS", "eee3cc", "34528a"], ["GRANNY JINGS", "c36f59", "fff3da"]][island]
+				list.append([Vector2(x + side * STALL_SIZE.x / 2.0, row[0]), row[1], STALL_SIZE, sign[0], sign[1], sign[2]])
+				n += 1
+	for k in 4:
+		var sign := ["BYFROST", "426db4", "ffffff"] if k == 0 else ["", plain[(n + k) % plain.size()], "1d1d1d"]
+		list.append([Vector2(STALL_ROW_X, 0.05 - k * ROW_STALL), Vector2(-1, 0), Vector2(ROW_STALL, STALL_SIZE.y), sign[0], sign[1], sign[2]])
+	return list
+
+## Inside a stall or a table and its benches (canteen frame).
+static func in_stall(x: float, z: float) -> bool:
+	for x0 in STALL_ISLANDS:
+		if absf(x - x0) < STALL_SIZE.x + 0.1 and z > -5.4 - 0.1 and z < -2.2 + 0.55:
+			return true
+	if x > STALL_ROW_X - STALL_SIZE.y / 2.0 - 0.55 and z < 0.95 + 0.1:
+		return true
+	for table in CANTEEN_TABLES:
+		if absf(x - table.x) < 0.95 and absf(z - table.y) < 0.95:
+			return true
+	return false
 ## The wing's frame: world x = CANTEEN_ORIGIN.x - local z, world z = CANTEEN_ORIGIN.y + local x.
 ## Its tip lands on the plan's z 24.9 (OSM); its first 4.7 m sit inside the stair
 ## tower's footprint, where the real wing meets the main block.
@@ -52,6 +106,9 @@ const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
 const Pgn := preload("res://areas/pgn.gd")
+const Formation := preload("res://areas/formation.gd")
+const Aero := preload("res://areas/aero.gd")
+const CoveredCourt := preload("res://areas/court.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
@@ -115,13 +172,13 @@ static func walkable_ground(x: float, z: float) -> bool:
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
 	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
-			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z):
+			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
 static func in_canteen(x: float, z: float) -> bool:
 	var local := canteen_local(x, z)
-	return local.x > 36.5 and local.x < 65.5 and local.y > -7.3 and local.y < 3.3
+	return local.x > 36.5 and local.x < 65.5 and local.y > -7.45 and local.y < 3.3
 
 ## level is the height the walker stands at now (NAN: the ground, for a jump or a
 ## teleport); it picks the storey inside the gym, where the lobby and the stands overlap.
@@ -133,12 +190,14 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 		return true # solid stair tower
 	var local := canteen_local(x, z)
 	if in_canteen(x, z):
-		if local.y < -6.4 or local.x < 41.5 or local.x > 65.3:
-			return true # rear wall, end walls, and the part inside the tower
+		if local.x < 41.5 or local.x > 65.3:
+			return true # the end walls, and the part inside the tower
+		if local.y < BACK_EDGE + 0.2 and not in_back_gap(local.x):
+			return true # the low wall along the open back
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
-			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z):
+			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -151,9 +210,8 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 			return true
 	if local.x > 36.3 and local.x < 65.7 and (local.x < 48.8 or local.x > 53.2) and absf(local.y - 2.68) < 0.22:
 		return true # patio rail, open at the steps
-	for stall in STALL_X:
-		if absf(local.x - stall) < 2.75 and absf(local.y + 3.15) < 0.8:
-			return true
+	if in_canteen(x, z) and in_stall(local.x, local.y):
+		return true
 	for table in PATIO_TABLES:
 		if Vector2(x, z).distance_to(table) < 1.12:
 			return true
@@ -161,13 +219,19 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 
 static func floor_height(x: float, z: float, level := NAN) -> float:
 	var local := canteen_local(x, z)
-	if local.x >= 36.5 and local.x <= 65.5 and local.y < 2.45 and local.y > -7.3:
-		return 0.45
+	if local.x >= 36.5 and local.x <= 65.5 and local.y < 2.45 and local.y > -7.45:
+		return 0.45 if local.y > BACK_EDGE - 0.1 else 0.2 # the step down out of the back
 	if local.x > 49.0 and local.x < 53.0 and local.y <= 3.26 and local.y >= 2.45:
 		return 0.15 if local.y > 2.8 else 0.3
+	var court := CoveredCourt.floor_height(x, z)
+	if not is_nan(court):
+		return court
 	var gym := Gym.floor_height(x, z, level)
 	if not is_nan(gym):
 		return gym
+	var yard := Aero.floor_height(x, z)
+	if not is_nan(yard):
+		return yard
 	var middle := MiddleRoad.floor_height(x, z)
 	if not is_nan(middle):
 		return middle
@@ -182,6 +246,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return -0.19 # carriageway
 	if (across >= 3.85 and across <= 4.135) or (across >= 10.865 and across <= 11.135):
 		return 0.0 # kerb
+	var formation := Formation.floor_height(x, z)
+	if not is_nan(formation):
+		return formation
 	var entry := Mgn.floor_height(x, z)
 	if not is_nan(entry):
 		return entry
@@ -203,7 +270,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 
 ## The outer bounds; blocked() shapes the walkable campus inside them.
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -192.0, 101.0), clampf(z, Hallway.BACK, 140.0))
+	return Vector2(clampf(x, -192.0, 101.0), clampf(z, Hallway.BACK, 162.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -222,6 +289,9 @@ func build(parent: Node3D) -> void:
 	MiddleRoad.new().build(self)
 	StudentCenter.new().build(self)
 	Pgn.new().build(self)
+	Formation.new().build(self)
+	Aero.new().build(self)
+	CoveredCourt.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -1239,6 +1309,41 @@ func _shed(x: float, z: float) -> void:
 		for dz in [-0.62, 0.62]:
 			box(Vector3(0.05, 0.43, 0.05), Vector3(x + dx, 0.22, z + dz), dark)
 
+## A picnic kiosk: a gabled roof of green ribbed sheet on four posts, its ridge running
+## along x, open gables with a tie and a king post, a table and two benches under it
+## (the kiosks by the Formation Center).
+func _kiosk(x: float, z: float) -> void:
+	var green := material("plain", Color("2f7a55"))
+	var dark := material("plain", Color("245f43"))
+	var trim := material("plain", Color("4f9a6c"))
+	var sheet := material("ribbed", Color("3d8a60"))
+	var eave := 2.2
+	var ridge := 2.9
+	var run := 1.45
+	var slope := atan2(ridge - eave, run)
+	var length := run / cos(slope)
+	for dx in [-1.35, 1.35]:
+		for dz in [-1.15, 1.15]:
+			box(Vector3(0.08, eave, 0.08), Vector3(x + dx, eave / 2.0, z + dz), green)
+	for side in [-1.0, 1.0]:
+		box(Vector3(3.3, 0.05, length + 0.04), Vector3(x, (eave + ridge) / 2.0 + 0.03, z + side * run / 2.0), sheet, 0.0, side * slope)
+		for end in [-1.65, 1.65]:
+			box(Vector3(0.06, 0.12, length), Vector3(x + end, (eave + ridge) / 2.0, z + side * run / 2.0), trim, 0.0, side * slope)
+	box(Vector3(3.36, 0.09, 0.2), Vector3(x, ridge + 0.05, z), dark)
+	for end in [-1.6, 1.6]:
+		box(Vector3(0.06, 0.08, 2.9), Vector3(x + end, eave, z), trim)
+		box(Vector3(0.06, ridge - eave, 0.08), Vector3(x + end, (eave + ridge) / 2.0, z), trim)
+	for dz in [-1.15, 1.15]:
+		box(Vector3(2.8, 0.08, 0.06), Vector3(x, eave, z + dz), dark)
+	box(Vector3(2.4, 0.05, 0.8), Vector3(x, 0.76, z), green)
+	for dz in [-0.62, 0.62]:
+		box(Vector3(2.4, 0.045, 0.3), Vector3(x, 0.45, z + dz), green)
+	for dx in [-1.0, 1.0]:
+		box(Vector3(0.06, 0.74, 0.06), Vector3(x + dx, 0.37, z), dark)
+		box(Vector3(0.06, 0.06, 1.55), Vector3(x + dx, 0.4, z), dark)
+		for dz in [-0.62, 0.62]:
+			box(Vector3(0.05, 0.43, 0.05), Vector3(x + dx, 0.22, z + dz), dark)
+
 # --- Left of the wing ------------------------------------------------------------
 
 ## The garden outside the road's turn at the wing's west end, from the "APS LEFT
@@ -1354,7 +1459,7 @@ func _grasses() -> void:
 			if not ChapelSouth.grassy(x, z) and random.randf() > 0.15:
 				return false # only thin grass on the dirt under the trees
 		var at := Vector2(x, z)
-		if not Geometry2D.is_point_in_polygon(at, inner) or Chapel.walkable(x, z) or Sjh.on_parking(x, z):
+		if not Geometry2D.is_point_in_polygon(at, inner) or Chapel.walkable(x, z) or Sjh.on_parking(x, z) or Formation.covers(x, z):
 			return false
 		return not Geometry2D.is_point_in_polygon(at, Chapel.outline()) and not Plots.occupied(x, z)
 	var scatter := func(from: Vector2, to: Vector2, count: int, y: float, scale: float, test: Callable) -> void:
@@ -1390,9 +1495,10 @@ func _grasses() -> void:
 	# The strip by the Covered Court: grass along its edges and round the posts.
 	scatter.call(STRIP.position, STRIP.end, 70, -0.05, 0.8,
 		func(x: float, _z: float) -> bool: return x < 43.8 or x > 47.1 or random.randf() < 0.2)
-	# Lush grass on the Mary statue's island, clear of her pedestal.
-	scatter.call(Sjh.ISLAND.position + Vector2(0.35, 0.35), Sjh.ISLAND.end - Vector2(0.35, 0.35), 140, 0.08, 0.95,
-		func(x: float, z: float) -> bool: return Vector2(x, z).distance_to(Sjh.MARY) > 0.8)
+	# Lush grass on the Mary lawn, clear of her pedestal and the kerb.
+	var mary_lawn := Sjh.lawn()
+	scatter.call(Vector2(-61.0, 114.0), Vector2(Sjh.LAWN_EAST, Sjh.LAWN_SOUTH), 320, 0.08, 0.95,
+		func(x: float, z: float) -> bool: return Vector2(x, z).distance_to(Sjh.MARY) > 0.8 			and Geometry2D.is_point_in_polygon(Vector2(x, z), mary_lawn))
 	# Moss and short grass where the patio meets the walls, the rail and the sidewalk.
 	scatter.call(Vector2(18.3, 0.35), Vector2(30.9, 0.75), 40, -0.05, 0.5, anywhere)
 	scatter.call(Vector2(32.45, 0.8), Vector2(32.7, 24.5), 50, -0.05, 0.5,
@@ -1459,14 +1565,9 @@ func _canteen() -> void:
 		box(Vector3(0.23, 12.4, 0.28), Vector3(36.5 + bay * 4.83, 11.65, 0.4), white)
 
 	box(Vector3(29.1, 0.3, 8.5), Vector3(51, 5.3, -2.7), white)
-	# The hall is open to the patio; the building's rear wall closes it behind the stalls.
-	box(Vector3(29, 4.9, 0.3), Vector3(51, 2.9, -7.0), material("stucco", Color("e9e0cc")))
-	box(Vector3(29, 1.2, 0.04), Vector3(51, 0.95, -6.83), material("plain", Color("c3b8a2")))
-	for x in [38.4, 45.9, 55.9, 63.4]:
-		box(Vector3(1.6, 2.4, 0.1), Vector3(x, 1.65, -6.82), material("plain", Color("5d5a52")))
-	for x in [41.0, 50.8, 60.6]:
-		box(Vector3(3.6, 0.7, 0.06), Vector3(x, 3.6, -6.83), material("plain", Color("c9b79a")))
-	box(Vector3(29, 0.2, 9.8), Vector3(51, 0.35, -2.4), material("tile"))
+	# The hall is open to the patio and, at the back, to the strip behind the wing.
+	_canteen_back()
+	box(Vector3(29, 0.2, 9.8), Vector3(51, 0.35, -2.4), material("tile", Color("b8b8b4"))) # grey tiles, as in the photo
 	for i in CANTEEN_PIERS.size():
 		var x := CANTEEN_PIERS[i]
 		box(Vector3(0.65, 4.75, 0.65), Vector3(x, 2.825, 1.45), white)
@@ -1498,19 +1599,14 @@ func _canteen() -> void:
 	_valance()
 	panel("APS CANTEEN", Vector3(51, 4.8, 3.3), 3.5, 0.52, Color("fff4dc"), Color("526e75"))
 
-	var stalls := [["YUM-YUMS", "eee3cc", "34528a"], ["GRANNY JINGS", "c36f59", "fff3da"], ["BYFROST", "426db4", "ffffff"]]
-	var trays: Array[Color] = [Color("b57738"), Color("d8b55e"), Color("984c35")]
-	for i in 3:
-		var x := STALL_X[i]
-		box(Vector3(5, 1.05, 1.1), Vector3(x, 0.975, -3.15), material("stucco", Color("f5e5c5")))
-		box(Vector3(4.8, 0.45, 0.7), Vector3(x, 1.72, -3.15), material("glass", Color("d7eee5")))
-		box(Vector3(5.1, 0.08, 1.18), Vector3(x, 1.5, -3.15), material("plain", Color("b95442")))
-		for tray in 5:
-			box(Vector3(0.65, 0.08, 0.44), Vector3(x - 1.7 + tray * 0.85, 1.99, -3.15), material("plain", trays[tray % 3]))
-		panel(stalls[i][0], Vector3(x, 3.25, -3.03), 4.4, 0.7, Color(stalls[i][2]), Color(stalls[i][1]))
-		for dx in [-2.35, 2.35]:
-			box(Vector3(0.035, 1.8, 0.035), Vector3(x + dx, 2.7, -3.2), steel)
-		_omni(Vector3(x, 3.8, -1.2), Color("ffd79d"), 1.6, 7.5)
+	# The stalls (Mikko's layout): two islands of four back to back, and a row of four along
+	# the end wall by the tip facing into the hall; the blue tables and benches between them.
+	for stall in stalls():
+		_stall(stall)
+	for i in STALL_LIGHTS.size():
+		_omni(Vector3(STALL_LIGHTS[i].x, 3.8, STALL_LIGHTS[i].y), Color("ffd79d"), 1.6, 7.5)
+	for table in CANTEEN_TABLES:
+		_canteen_table(table)
 
 	for x in [37.6, 64.2]:
 		pot(x, 2.1)
@@ -1537,6 +1633,92 @@ func _canteen() -> void:
 		box(Vector3(1.2, 0.09, 2), Vector3(66.3, y, -1.2), steel)
 		rod(Vector3(66.6, y, -2.1), Vector3(66.6, y + 3, -0.3), 0.035, Color("414b50"))
 		rod(Vector3(66.6, y + 0.8, -2.1), Vector3(66.6, y + 3.8, -0.3), 0.025, Color("414b50"))
+
+## The hall's open back, from the photos: ledgestone-clad pillars on the back edge, a low
+## grey wall with a steel rail between them (open at the gaps, a step down outside each),
+## the scalloped awning outside over the back, round downlights under the slab.
+func _canteen_back() -> void:
+	var stone := material("stone")
+	var white := material("stucco", Color("efece4"))
+	var wall := material("stucco", Color("d9d6cd"))
+	var steel := Color("6b7175")
+	for x in CANTEEN_PIERS:
+		box(Vector3(0.7, 2.2, 0.7), Vector3(x, 1.55, BACK_EDGE), stone)
+		box(Vector3(0.62, 2.6, 0.62), Vector3(x, 3.95, BACK_EDGE), white)
+	var from := 41.5
+	var runs: Array[Vector2] = []
+	for gap in BACK_GAPS:
+		runs.append(Vector2(from, gap.x))
+		from = gap.y
+	runs.append(Vector2(from, 65.5))
+	for run in runs:
+		box(Vector3(run.y - run.x, 1.0, 0.25), Vector3((run.x + run.y) / 2.0, 0.95, BACK_EDGE), wall)
+		rod(Vector3(run.x, 1.75, BACK_EDGE), Vector3(run.y, 1.75, BACK_EDGE), 0.025, steel)
+	for gap in BACK_GAPS:
+		box(Vector3(gap.y - gap.x, 0.25, 0.45), Vector3((gap.x + gap.y) / 2.0, 0.08, BACK_EDGE - 0.25), material("tile", Color("b8b8b4")))
+	# The scalloped awning: a pale sheet on a steel frame along the back, its edge cut in scallops.
+	var sheet := material("plain", Color("d8d2c6"))
+	box(Vector3(29.0, 0.04, 1.6), Vector3(51.0, 4.75, BACK_EDGE - 0.85), sheet, 0.0, -0.12)
+	var x := 36.7
+	while x < 65.4:
+		box(Vector3(0.36, 0.16, 0.03), Vector3(x, 4.58, BACK_EDGE - 1.65), sheet)
+		x += 0.45
+	var post := 36.8
+	while post <= 65.3:
+		rod(Vector3(post, 4.85, BACK_EDGE), Vector3(post, 4.62, BACK_EDGE - 1.6), 0.02, steel)
+		post += 2.4
+	# Round downlights under the slab over the hall.
+	var lamp := glow(Color("f7f3e8"), 0.5, 2.0)
+	for lx in [43.0, 48.5, 54.0, 59.5, 64.0]:
+		for lz in [-5.8, -1.0]:
+			box(Vector3(0.3, 0.03, 0.3), Vector3(lx, 5.13, lz), lamp)
+
+## One stall in the canteen's frame: [centre, facing (unit, x/z), size (across, deep), sign
+## name or "", sign colour, ink]. Built square, its counter on the facing side, then turned:
+## a cream body, the counter with its red top, the glass guard and trays, the sign above.
+func _stall(stall: Array) -> void:
+	var at: Vector2 = stall[0]
+	var facing: Vector2 = stall[1]
+	var size: Vector2 = stall[2]
+	var turn := atan2(facing.x, facing.y)
+	var place := func(u: float, v: float) -> Vector2:
+		return at + Vector2(u, v).rotated(-turn) # u across, v out towards the counter's front
+	var piece := func(dims: Vector3, u: float, y: float, v: float, made: Material) -> void:
+		var p: Vector2 = place.call(u, v)
+		box(dims, Vector3(p.x, y, p.y), made, turn)
+	var deep := size.y
+	piece.call(Vector3(size.x, 2.6, deep - 0.7), 0.0, 0.45 + 1.3, -0.35, material("stucco", Color("f5e5c5")))
+	piece.call(Vector3(size.x, 1.05, 0.6), 0.0, 0.975, deep / 2.0 - 0.3, material("stucco", Color("efdcb8")))
+	piece.call(Vector3(size.x + 0.08, 0.08, 0.68), 0.0, 1.5, deep / 2.0 - 0.3, material("plain", Color("b95442")))
+	piece.call(Vector3(size.x - 0.2, 0.45, 0.06), 0.0, 1.78, deep / 2.0 - 0.45, material("glass", Color("d7eee5")))
+	var trays: Array[Color] = [Color("b57738"), Color("d8b55e"), Color("984c35")]
+	for tray in 3:
+		piece.call(Vector3(0.45, 0.08, 0.32), (tray - 1) * 0.6, 2.04, deep / 2.0 - 0.3, material("plain", trays[tray]))
+	piece.call(Vector3(size.x, 0.6, 0.06), 0.0, 3.25, deep / 2.0 - 0.67, material("plain", Color(stall[4])))
+	if stall[3] == "HAU COOP":
+		var snacks: Array[Color] = [Color("e8c22c"), Color("d2362c"), Color("2f7fd0"), Color("f08a2a"), Color("6aae3a")]
+		for k in 10:
+			piece.call(Vector3(0.18, 0.22, 0.12), -size.x / 2.0 + 0.2 + k * 0.21, 2.45 + (k % 2) * 0.24, deep / 2.0 - 0.5, material("plain", snacks[k % snacks.size()]))
+	if stall[3] != "":
+		var p: Vector2 = place.call(0.0, deep / 2.0 - 0.63)
+		var label: Label3D = panel(stall[3], Vector3(p.x, 3.25, p.y), size.x - 0.2, 0.55, Color(stall[5]))
+		label.rotation.y = turn
+	for side in [-1.0, 1.0]:
+		piece.call(Vector3(0.04, 1.2, 0.04), side * (size.x / 2.0 - 0.05), 2.55, deep / 2.0 - 0.1, material("plain", Color("414b50")))
+
+## A blue fibreglass canteen table with its two benches on a black steel frame (the photo):
+## at (x, z) in the canteen's frame, the table along x.
+func _canteen_table(at: Vector2) -> void:
+	var blue := material("plain", Color("d3437a") if posmod(roundi(at.x), 3) == 0 else Color("2f6fd1")) # some pink, as in the photos
+	var frame := material("plain", Color("1f2224"))
+	box(Vector3(1.7, 0.06, 0.8), Vector3(at.x, 1.2, at.y), blue)
+	for side in [-1.0, 1.0]:
+		box(Vector3(1.7, 0.06, 0.34), Vector3(at.x, 0.88, at.y + side * 0.7), blue)
+		for end in [-0.65, 0.65]:
+			box(Vector3(0.05, 0.43, 0.05), Vector3(at.x + end, 0.66, at.y + side * 0.7), frame)
+			box(Vector3(0.05, 0.72, 0.05), Vector3(at.x + end * 0.45, 0.81, at.y + side * 0.28), frame, 0.0, side * 0.45)
+	for end in [-0.65, 0.65]:
+		box(Vector3(0.05, 0.05, 1.45), Vector3(at.x + end, 0.6, at.y), frame)
 
 func _valance() -> void:
 	var image := Image.create(256, 16, false, Image.FORMAT_RGBA8)

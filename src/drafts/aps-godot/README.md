@@ -61,6 +61,12 @@ closes in the same way, the roof fades so you see the whole back wall (Cafe Juan
 tall windows and doorway, the courtyard gate, the offices), and the posts and planter
 in front are cut away (`--view=student-center`).
 
+Behind the chapel, the Formation Center faces the east road: walk up from the road onto
+its drop-off, round the island with the big tree, and up the steps into the colonnade;
+the camera turns to face its front from over the road (`--view=formation`). The sidewalk
+on the lawn side runs round the bend north of it, and south of it the green kiosks stand
+in a row along the road.
+
 The IH Gym down the east road can be walked into, through either front doorway
 or the side entrance (the back has two open doorways too). Inside, the camera is
 a low 2.5D view that faces the student's own half of the hall: the west stand
@@ -172,10 +178,13 @@ because their kernel grows with zoom.
 | `areas/gym.gd` | The Immaculate Heart Gymnasium from outside at its real size (41 x 69.5 m, about 12 m to the fascia, 16.6 m to the ridge): the front with HOLY ANGEL UNIVERSITY, both open doorways, the north gable and side entrance, the back, the solar roof, its walk, apron and lane |
 | `areas/gym_interior.gd` | Inside the gym, walkable everywhere a student could go: the court with the seal, the bleachers upstairs on both sides, the balcony, the lobby, equipment room and corridors, the stage and backstage, the roof structure; its storeys, collision and cutaway groups |
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
-| `areas/sjh.gd` | St. Joseph Hall: the slab, its raised ground floor (the walkway behind its railing, the planter, brown sidewalk and grass strip in front, the elevator lobby up the long stair in the middle, the side entrance and ramp at the west end, the lane to MGN under the bridge), the Mary statue garden, the parking and cars |
+| `areas/sjh.gd` | St. Joseph Hall: the slab, its raised ground floor (the walkway behind its railing, the planter, brown sidewalk and grass strip in front, the elevator lobby up the long stair in the middle, the side entrance and ramp at the west end, the lane to MGN under the bridge), the Mary statue garden, the parking and cars; the back facade and the lane behind it (sheds, carports, the HAU vans, the basement ramp), reached round the east end |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside: the open-corridor block, the box-window wing over the entrance (walk in up to the turnstile), the open stair, the north block, the south wing with its roof tank, the raised garden. The camera turns to face it on the west road |
 | `areas/student_center.gd` | The Student Center, the open arcade between the boulevard and the Main Building: the planter and rail (open at the crossings), the cream posts and the roof (it fades while you are under it), Cafe Juan's windows and doorway, the courtyard gate, the offices, the study tables, the ATM and cafe tables at the west end, the brick apron out to the fountain, the lawn at the east end. Its camera weights |
 | `areas/pgn.gd` | The Peter G. Nepomuceno Building: the tall white L along the boulevard and beside APS, its dark ground floor, nine banded floors with blue windows and grey louvres, the stair screen, the gold name, the box on the roof, the blue glass stair tower and the paver lane with potted trees along its west end |
+| `areas/formation.gd` | The Sister Josefina G. Nepomuceno Formation Center, facing the east road behind the chapel: the colonnade under the steel name, two window floors, the roof canopy, the stair tower with its green strips, the curved wings, the drop-off round the tree island, the north lawn's kiosk, the lawn-side sidewalk round the bend and down the road, and its camera view |
+| `areas/aero.gd` | Aero Hall, between SJH and the gym: the navy corrugated hall in front of the gym's south end (gabled front block with the HAU seal, windows with aircon units, the NO PARKING sign, a planter), the signs on the concrete, and the yard behind the green wall with the skip, bins and shelter |
+| `areas/court.gd` | The Covered Court beside the gym: the open shed with its low gable roof on white steel columns, the clerestory of window grids in its west gable, the court and its hoops, steel bleachers, the ramp up from the gym's lane, and in front the picnic shed, potted tree, bell post and RESERVED CMO GUEST-PRIEST board |
 | `areas/middle_road.gd` | HAU Boulevard between PGN and the Main Building, from the west road to the angel fountain: the lanes and grass median, the hedge strips and poles, the octagon-paver walks and bronze lampposts, the shrub strips and trees, both covered walkways (pillars, slatted roofs, benches), the zebras, signs, bins and urns, and the fountain. Its camera weights (which side it faces, the covered walkway cutaway) |
 | `student.gd` | Sprite, animation, contact shadow, movement, footstep timing |
 | `critters.gd` | Ambient life: a dozen campus cats (Mingming, Kiko, Tisay, Itim, Puti and seven more scattered about) who sit (flicking the tail, blinking, grooming, yawning), stroll, sleep breathing and wake with a stretch, come to a student standing still, gallop off from a running one and lean into a pet (E), flocks of maya birds scattered over the open ground that hop and peck by day and flutter off when you come close, and little groups flying over; their side-on sheets are PixelLab frames cleaned in pxl (`assets/drafts/characters/critters/pxl/`, `build.ps1`) |
@@ -204,7 +213,7 @@ the frontage, and the gym inside (walking in through a doorway and the side entr
 writes review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=5.75|8|12|16.5|17.75|18.5|21`, `--weather=clear|overcast|rain|storm|windy`, `--girl`, `--x=`, `--z=`,
-`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|mgn|middle|middle-north|fountain|student-center`, `--pixel=auto|crisp|pixel`,
+`--level=` (an upper storey inside the gym), `--zoom=`, `--angle=`, `--view=canteen|gym|gym-side|gym-in|sjh|sjh-rear|mgn|middle|middle-north|fountain|student-center|formation`, `--pixel=auto|crisp|pixel`,
 `--walk=<seconds>`, `--rain`, `--talk` (start a conversation with whoever is in reach), `--travel` (open the fast-travel panel), `--hide-help`, `--capture=<absolute PNG path>`.
 
 Geometry is approximate, from the walk photos, not a survey. The far sidewalk,

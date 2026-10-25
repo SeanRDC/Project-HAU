@@ -26,7 +26,7 @@ const BUNDLE = new URL('builds/godot-plan.mjs', ROOT);
 export const OFFSET = { x: 4.7, z: 58.8 };
 
 /** Buildings the Godot scene already draws; every other one gets a reserved plot. */
-const BUILT = new Set(['aps', 'chapel', 'gym', 'sjh', 'mgn', 'student', 'pgn']);
+const BUILT = new Set(['aps', 'chapel', 'gym', 'sjh', 'mgn', 'student', 'pgn', 'formation', 'annex', 'court']);
 
 await build({
   entryPoints: [fileURLToPath(new URL('src/game/campus/plan.ts', ROOT))],

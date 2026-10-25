@@ -83,7 +83,7 @@ const CAST := [
 			]},
 		]},
 	]},
-	{"id": "ate-lorna", "name": "Ate Lorna", "home": Vector2(0, 0), "roam": 0.0, "facing": -1.0, "canteen_stall": 50.8, "talks": [
+	{"id": "ate-lorna", "name": "Ate Lorna", "home": Vector2(0, 0), "roam": 0.0, "facing": -1.0, "canteen_stall": 51.45, "talks": [
 		{"when": ["lorna.ordered"], "say": ["O, ikaw ulit! Balik ka bukas, may turon na."]},
 		{"when": ["bea.turon"], "not": ["met.ate-lorna"], "say": [
 			"Ikaw pala 'yung mahilig sa turon, sabi ni Bea!",
@@ -104,6 +104,18 @@ const CAST := [
 	# idle only, nothing to say yet (no prompt shows over them)
 	{"id": "gf", "name": "GF (prototype)", "home": Vector2(-33.5, 5.2), "roam": 0.0, "facing": 1.0, "talks": []},
 	{"id": "blonde", "name": "Blonde short hair", "home": Vector2(-28.5, 5.4), "roam": 0.0, "facing": -1.0, "umbrella": Color("c98a3a"), "talks": []},
+	# the player's friend from the opening (idle and portrait so far; no name yet)
+	{"id": "friend", "name": "Kaibigan", "home": Vector2(-23.5, 5.4), "roam": 0.0, "facing": -1.0, "umbrella": Color("1d2640"), "talks": [
+		{"when": ["friend.game"], "say": ["Mamaya sa gym, ha? 'Wag kang male-late."]},
+		{"when": ["met.friend"], "say": ["Uy, ikaw ulit. Sasama ka na ba sa laro next time?"]},
+		{"say": [
+			"Mayap a abak! Uy, ikaw pala.",
+			{"ask": "Laro tayo sa gym mamaya?", "choices": [
+				{"text": "Sige, tara!", "remember": "friend.game", "reply": ["Ayos! Dala ka ng tubig, ha."]},
+				{"text": "Next time na lang.", "reply": ["Sige, sige. Pero sasama ka next time, promise 'yan."]},
+			]},
+		]},
+	]},
 	{"id": "coach-gab", "name": "Coach Gab", "home": Vector2(53.0, 90.5), "roam": 2.0, "umbrella": Color("245a3c"), "talks": [
 		{"when": ["gab.joined"], "say": ["O, nandito ka na! Tatlong ikot muna sa court bago laro. Walang reklamo!"]},
 		{"when": ["met.coach-gab"], "say": ["Bukas pa rin ang slot sa team. Isip-isip ka."]},

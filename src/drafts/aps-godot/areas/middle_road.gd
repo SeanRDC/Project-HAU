@@ -90,6 +90,13 @@ const NORTH_GROUP := "MiddleRoadNorth"
 const SOUTH_GROUP := "MiddleRoadSouth"
 ## Kerb half-width either side of a kerb line.
 const KERB := 0.135
+## The plaza's corner on MGN's side ("mgn rightside to sidewalk.jpg"): the kerb curves from
+## the west road round into the south lane (radius CORNER_R, painted yellow), and the red
+## pavers run on over the west road's sidewalk down to MGN's north entrance (to PAVED_TO).
+const LOOP_KERB_X := -62.0
+const CORNER_R := 2.5
+const CORNER := Vector2(LOOP_KERB_X - CORNER_R, LANE_S.y + CORNER_R)
+const PAVED_TO := 82.4
 ## Lampposts in the open walks, every four bays; tall white poles in the hedge strips
 ## between them, and in the median.
 const LAMP_EAST := -72.1
@@ -123,7 +130,13 @@ static func in_median(x: float) -> bool:
 ## Ground the student may stand on: the whole width between the two buildings' planters
 ## from the mouth to END_X, the lanes across the west road's sidewalk, and the apron.
 ## blocked() then takes out the planters, strips, median, pillars and props.
+## In the corner's square but outside its curve: the lane's road surface.
+static func in_corner_road(x: float, z: float) -> bool:
+	return x <= LOOP_KERB_X + 0.2 and x >= CORNER.x and z >= LANE_S.y and z <= CORNER.y 		and Vector2(x, z).distance_to(CORNER) > CORNER_R + KERB
+
 static func walkable(x: float, z: float) -> bool:
+	if in_corner_road(x, z):
+		return true
 	if x > MOUTH_X:
 		return false
 	if x >= END_X and x <= EAST_X:
@@ -200,6 +213,8 @@ static func blocked(x: float, z: float) -> bool:
 	return false
 
 static func floor_height(x: float, z: float) -> float:
+	if in_corner_road(x, z):
+		return -0.19
 	if not walkable(x, z):
 		return NAN
 	if x < END_X or x > EAST_X:
@@ -381,11 +396,15 @@ func _walks() -> void:
 		_slab(ROOF_WEST, END_X, walk.x, walk.y, -0.04, 0.16, pavers)
 	for edge in [EDGE_N, EDGE_S]:
 		_slab(EAST_X, END_X, edge.x, edge.y, -0.03, 0.16, edging)
-	for pave in [PAVE_N, PAVE_S]:
-		_slab(EAST_X, END_X, pave.x, pave.y, -0.04, 0.16, pavers)
+	# (on the south side, the bands in the corner's square start west of it: _corner paves it)
+	_slab(EAST_X, END_X, PAVE_N.x, PAVE_N.y, -0.04, 0.16, pavers)
+	_slab(CORNER.x, END_X, PAVE_S.x, CORNER.y, -0.04, 0.16, pavers)
+	_slab(EAST_X, END_X, CORNER.y, PAVE_S.y, -0.04, 0.16, pavers)
 	# The plazas at the mouth: the shrub and hedge bands paved up to the lane's kerb.
-	for band in [SHRUB_N, Vector2(HEDGE_N.x, HEDGE_N.y - 2.0 * KERB), SHRUB_S, Vector2(HEDGE_S.x + 2.0 * KERB, HEDGE_S.y)]:
+	for band in [SHRUB_N, Vector2(HEDGE_N.x, HEDGE_N.y - 2.0 * KERB), SHRUB_S]:
 		_slab(EAST_X, PLAZA_X, band.x, band.y, -0.04, 0.16, pavers)
+	_slab(CORNER.x, PLAZA_X, HEDGE_S.x + 2.0 * KERB, HEDGE_S.y, -0.04, 0.16, pavers)
+	_corner(pavers)
 	# The crossings' gaps through the strips and the median, and the walkways' west ends.
 	for crossing in CROSSINGS.slice(1):
 		for band in [SHRUB_N, Vector2(HEDGE_N.x, HEDGE_N.y - 2.0 * KERB), Vector2(HEDGE_S.x + 2.0 * KERB, HEDGE_S.y), SHRUB_S, MEDIAN]:
@@ -407,6 +426,34 @@ func _walks() -> void:
 			w.box(Vector3(0.75, 0.014, 0.5), Vector3(x, WALK_Y + 0.006, middle), cream)
 			w.box(Vector3(0.32, 0.016, 0.32), Vector3(x, WALK_Y + 0.008, middle), green, PI / 4.0)
 
+## The corner on MGN's side: inside the curve red pavers, outside it the lane's road, the
+## curved kerb painted yellow; and the pavers on over the west road's sidewalk to MGN.
+func _corner(pavers: Material) -> void:
+	var inside := PackedVector2Array()
+	var outside := PackedVector2Array()
+	var steps := 12
+	for k in steps:
+		var a0 := PI / 2.0 * k / steps
+		var a1 := PI / 2.0 * (k + 1) / steps
+		var p0 := CORNER + Vector2(cos(a0), -sin(a0)) * CORNER_R
+		var p1 := CORNER + Vector2(cos(a1), -sin(a1)) * CORNER_R
+		inside.append_array([CORNER, p0, p1])
+		# the road beyond the curve, out to the square's corner at the lanes' kerb lines
+		outside.append_array([Vector2(LOOP_KERB_X + 0.2, LANE_S.y), p0, p1])
+		var middle := (p0 + p1) / 2.0
+		var turn := atan2(-(p1 - p0).y, (p1 - p0).x)
+		w.box(Vector3(p0.distance_to(p1) + 0.06, 0.21, 2.0 * KERB), Vector3(middle.x, -0.105, middle.y), w.material("plain", Color("e3c13b")), turn)
+	# the square's edges past the curve's ends
+	outside.append_array([Vector2(LOOP_KERB_X + 0.2, LANE_S.y), CORNER + Vector2(CORNER_R, 0.0), Vector2(LOOP_KERB_X + 0.2, CORNER.y)])
+	outside.append_array([Vector2(LOOP_KERB_X + 0.2, LANE_S.y), Vector2(CORNER.x, LANE_S.y), CORNER + Vector2(0.0, -CORNER_R)])
+	w._ground(inside, -0.04, pavers)
+	w._ground(outside, -0.19, w.material("road"))
+	var strip := PackedVector2Array([Vector2(LOOP_KERB_X, CORNER.y), Vector2(EAST_X, CORNER.y), Vector2(EAST_X, PAVED_TO),
+		Vector2(LOOP_KERB_X, CORNER.y), Vector2(EAST_X, PAVED_TO), Vector2(LOOP_KERB_X, PAVED_TO)])
+	w._ground(strip, -0.035, pavers)
+	# the west road's kerb from the curve down to MGN, its first metres yellow as in the photo
+	w.box(Vector3(2.0 * KERB, 0.21, 2.0), Vector3(LOOP_KERB_X - KERB, -0.105, CORNER.y + 1.0), w.material("plain", Color("e3c13b")))
+
 # --- Hedge strips, the median, the shrub strips and the planters -----------------------------
 
 ## The hedge strips along the lanes: a kerb at the lane, soil, a low kerb at the walk and a
@@ -418,7 +465,7 @@ func _hedges() -> void:
 	var hedge: Material = w.material("grass", Color("8fb06a"))
 	# The lane-edge kerbs, from the loop's kerb line to the walks' end, yellow at each crossing.
 	for z in [LANE_N.x, LANE_S.y]:
-		_kerb(MOUTH_X, END_X, z, kerb)
+		_kerb(MOUTH_X if z == LANE_N.x else CORNER.x, END_X, z, kerb) # the south one starts at the corner's curve
 		for crossing in CROSSINGS:
 			w.box(Vector3(crossing.y - crossing.x + 1.2, 0.215, 2.0 * KERB + 0.01), Vector3((crossing.x + crossing.y) / 2.0, -0.1, z), yellow)
 	for strip in [HEDGE_N, HEDGE_S]:
