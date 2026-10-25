@@ -67,7 +67,7 @@ const PLOTS := {
 	"sh": {"name": "Sacred Heart Building", "short": "SH", "no": 18, "kind": "building", "built": false,
 		"label": Vector2(76.8, -7.1),
 		"outline": [Vector2(72.9, 17), Vector2(51.2, 16.8), Vector2(51.2, -7.6), Vector2(54.4, -7.5), Vector2(54.4, -9.5), Vector2(54.4, -13.6), Vector2(54.4, -24.4), Vector2(105.2, -23.9), Vector2(105.1, -8.6), Vector2(107.9, -8.6), Vector2(107.9, 6.6), Vector2(94.1, 6.5), Vector2(94.1, -5.6), Vector2(64.6, -5.9), Vector2(64.6, -1.3), Vector2(73, -1.3)]},
-	"court": {"name": "Covered Court", "short": "Covered Court", "no": 19, "kind": "building", "built": false,
+	"court": {"name": "Covered Court", "short": "Covered Court", "no": 19, "kind": "building", "built": true,
 		"label": Vector2(72.6, 38.8),
 		"outline": [Vector2(48.4, 56.4), Vector2(48.6, 17.8), Vector2(89.8, 18.2), Vector2(89.8, 42.8), Vector2(105.4, 43), Vector2(105.4, 57)]},
 	"annex": {"name": "Aero Hall", "short": "Aero Hall", "no": 21, "kind": "building", "built": true,

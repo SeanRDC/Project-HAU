@@ -107,6 +107,7 @@ const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
+const CoveredCourt := preload("res://areas/court.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
@@ -170,7 +171,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
 	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
-			or StudentCenter.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z):
+			or StudentCenter.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
@@ -195,7 +196,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
-			or StudentCenter.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z):
+			or StudentCenter.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -221,6 +222,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return 0.45 if local.y > BACK_EDGE - 0.1 else 0.2 # the step down out of the back
 	if local.x > 49.0 and local.x < 53.0 and local.y <= 3.26 and local.y >= 2.45:
 		return 0.15 if local.y > 2.8 else 0.3
+	var court := CoveredCourt.floor_height(x, z)
+	if not is_nan(court):
+		return court
 	var gym := Gym.floor_height(x, z, level)
 	if not is_nan(gym):
 		return gym
@@ -282,6 +286,7 @@ func build(parent: Node3D) -> void:
 	StudentCenter.new().build(self)
 	Formation.new().build(self)
 	Aero.new().build(self)
+	CoveredCourt.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()

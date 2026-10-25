@@ -30,6 +30,11 @@ grey tile floor (`stalls()` and `CANTEEN_TABLES` in `world.gd`). Its back is ope
 pillars, a low wall with two gaps out to the strip, and the scalloped awning; HAU COOP and RINA'S FOOD face it. See
 `sessions/2026-10-22-canteen-layout.md`.
 
+**Covered Court, 2026-10-22.** `areas/court.gd`: the open shed beside the gym, with a low
+gable roof on white steel columns, a clerestory in the west gable, the court with its
+bleachers, and the ramp up from the gym's lane. The camera cuts its roof away when facing
+the gym from the lane. See `sessions/2026-10-22-covered-court.md`.
+
 **Cat animations, 2026-10-21.** Sitting cats now and then flick the tail, blink, groom or
 yawn (`FIDGETS` in `critters.gd`); asleep they breathe, they wake with a stretch, and a petted
 cat leans into the hand with its eyes closed. Run at one and it gallops off; maya hop with their own frames. PixelLab frames from the existing cat, cleaned in
