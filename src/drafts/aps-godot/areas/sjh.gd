@@ -32,9 +32,13 @@ const Roads := preload("res://roads.gd")
 ## from it. Mikko's map (2026-10-16) has SJH further from the road than the OSM outline,
 ## with a second row of parked cars and the Mary statue between it and the road; 2 m
 ## more (2026-10-20) leave room for the brown sidewalk and the grass strip in front.
+## EAST_SHIFT moves it east of the outline: on the plan it stood ~1 m from MGN's south
+## wing and 3 m from its garden kerb; the photos (sjh front right to back connector*.JPG)
+## have a one-lane drive about 5 m wide between SJH's west wall and that kerb (2026-10-21).
 const SETBACK := 12.0
-const EDGE_EAST := Vector2(36.5, 118.3 + SETBACK)
-const EDGE_WEST := Vector2(-59.3, 115.1 + SETBACK)
+const EAST_SHIFT := 2.0
+const EDGE_EAST := Vector2(36.5 + EAST_SHIFT, 118.3 + SETBACK)
+const EDGE_WEST := Vector2(-59.3 + EAST_SHIFT, 115.1 + SETBACK)
 const HALF := 47.9
 const DEPTH := 19.4
 ## Storeys: a tall ground floor, then eight floors.
@@ -107,8 +111,9 @@ const RAMP := Vector2(0.7, 2.3)
 const RAMP_FOOT := 49.5
 const LANDING := 38.4
 const YARD_END := 51.0
-const LANE := Rect2(49.95, -11.05, 2.65, 13.65)
-const LANE_BACK := Rect2(48.05, -19.2, 2.85, 8.15)
+## The lane is the drive from the stair tower's west wall to MGN's garden kerb (~4.7 m).
+const LANE := Rect2(49.95, -11.05, 4.75, 13.65)
+const LANE_BACK := Rect2(48.05, -19.2, 6.65, 8.15)
 ## Where the camera cuts inside the walkway: this far in front of the corridor's middle.
 const CUT_OFFSET := 1.2
 ## The parking: one row north of the south road (by the chapel), one south of it in
@@ -121,11 +126,23 @@ const SLANT := 0.44
 const SLANT_BAY := 2.9
 const FRONT_ROW := Rect2(-48.0, 115.2, 82.0, 5.4)
 ## The gap in the front row at the entrance steps (world x).
-const ENTRANCE_GAP := Vector2(-18.5, -4.5)
-## The Mary statue's grass island at the building's right (west) end, as seen from the
-## front: between the cream stair tower and the road's turn up the west road (world).
+const ENTRANCE_GAP := Vector2(-18.5 + EAST_SHIFT, -4.5 + EAST_SHIFT)
+## The Mary statue at the building's right (west) end, as seen from the front, and the
+## bed of shrubs round her plinth (world).
 const ISLAND := Rect2(-57.0, 115.6, 6.0, 7.0)
 const MARY := Vector2(-54.0, 119.3)
+## The drive off the road's bend (mgn and Sjh middle.jpg): it curves round the Mary lawn
+## along MGN's garden kerb into the lane, through DRIVE (from, bend, to; world), 2 *
+## DRIVE_HALF wide.
+const DRIVE: Array[Vector2] = [Vector2(-60.4, 108.9), Vector2(-62.0, 115.5), Vector2(-61.7, 125.2)]
+const DRIVE_HALF := 2.2
+## The Mary lawn, one big lawn behind a curved kerb: from the drive to the road's sidewalk
+## (LAWN_ROAD from the bend's centre BEND), east to LAWN_EAST by the SJH front strip, south
+## to LAWN_SOUTH by the ramp (world).
+const BEND := Vector2(-50.5, 102.0)
+const LAWN_ROAD := 13.6
+const LAWN_EAST := -49.8
+const LAWN_SOUTH := 124.2
 
 static func origin() -> Vector2:
 	return (EDGE_EAST + EDGE_WEST) / 2.0
@@ -242,10 +259,58 @@ static func in_front(x: float, z: float) -> bool:
 
 static func walkable(x: float, z: float) -> bool:
 	var at := local(x, z)
-	return _deck(at.x, at.y) or not is_nan(_stair(at.x, at.y)) or _yard(at.x, at.y) or on_parking(x, z) or in_front(x, z)
+	return _deck(at.x, at.y) or not is_nan(_stair(at.x, at.y)) or _yard(at.x, at.y) or on_parking(x, z) or in_front(x, z) 		or in_drive(x, z)
+
+## The drive's centre line, sampled along its curve.
+static var _drive := PackedVector2Array()
+static func drive_line() -> PackedVector2Array:
+	if _drive.is_empty():
+		for i in 17:
+			var t := i / 16.0
+			_drive.append(DRIVE[0].lerp(DRIVE[1], t).lerp(DRIVE[1].lerp(DRIVE[2], t), t))
+	return _drive
+
+static func in_drive(x: float, z: float) -> bool:
+	var line := drive_line()
+	var at := Vector2(x, z)
+	for i in line.size() - 1:
+		if Geometry2D.get_closest_point_to_segment(at, line[i], line[i + 1]).distance_to(at) < DRIVE_HALF:
+			return true
+	return false
+
+## The Mary lawn's outline (world): up the drive's east kerb, round the road's sidewalk,
+## down by the front strip and back along the ramp.
+static var _lawn := PackedVector2Array()
+static func lawn() -> PackedVector2Array:
+	if _lawn.is_empty():
+		var line := drive_line()
+		var start := 0.0
+		for i in range(line.size() - 1, -1, -1):
+			var ahead := line[mini(i + 1, line.size() - 1)] - line[maxi(i - 1, 0)]
+			var edge: Vector2 = line[i] + Vector2(ahead.y, -ahead.x).normalized() * (DRIVE_HALF + 0.2)
+			if edge.distance_to(BEND) < LAWN_ROAD:
+				break
+			if edge.y < LAWN_SOUTH:
+				_lawn.append(edge)
+				start = atan2(edge.y - BEND.y, edge.x - BEND.x)
+		var to := atan2(sqrt(LAWN_ROAD * LAWN_ROAD - pow(LAWN_EAST - BEND.x, 2.0)), LAWN_EAST - BEND.x)
+		for k in range(1, 9):
+			var a := lerpf(start, to, k / 8.0)
+			_lawn.append(BEND + Vector2(cos(a), sin(a)) * LAWN_ROAD)
+		_lawn.append(Vector2(LAWN_EAST, LAWN_SOUTH))
+		_lawn.append(Vector2(_lawn[0].x, LAWN_SOUTH))
+		# the kerb's corners rounded, as in the photos (two passes of corner cutting)
+		for cut in 2:
+			var rounded := PackedVector2Array()
+			for i in _lawn.size():
+				var a := _lawn[i]
+				var b := _lawn[(i + 1) % _lawn.size()]
+				rounded.append_array([a.lerp(b, 0.25), a.lerp(b, 0.75)])
+			_lawn = rounded
+	return _lawn
 
 static func blocked(x: float, z: float) -> bool:
-	if ISLAND.has_point(Vector2(x, z)):
+	if Geometry2D.is_point_in_polygon(Vector2(x, z), lawn()):
 		return true
 	var at := local(x, z)
 	var u := at.x
@@ -300,7 +365,7 @@ static func floor_height(x: float, z: float) -> float:
 		return stair
 	if _deck(at.x, at.y):
 		return WALK_Y
-	if on_parking(x, z) or in_front(x, z) or _yard(at.x, at.y):
+	if on_parking(x, z) or in_front(x, z) or _yard(at.x, at.y) or in_drive(x, z):
 		return -0.04
 	return NAN
 
@@ -984,7 +1049,7 @@ func _west_end() -> void:
 	while y < 3.0:
 		w.box(Vector3(0.1, 0.04, 1.3), Vector3(HALF + 1.97, y, -3.2), w.material("plain", Color("5b6064")))
 		y += 0.14
-	w.box(Vector3(4.6, 2.4, 0.25), Vector3(50.3, 1.0, LANE_BACK.position.y - 0.2), w.material("concrete", Color("b3afa4")))
+	w.box(Vector3(LANE_BACK.size.x, 2.4, 0.25), Vector3(LANE_BACK.get_center().x, 1.0, LANE_BACK.position.y - 0.2), w.material("concrete", Color("b3afa4")))
 
 # --- North of the road: the parking and its cars ---------------------------------------
 
@@ -1035,17 +1100,21 @@ func _car(at: Vector3, colour: Color, nose := 1.0, turn := 0.0) -> void:
 # --- The Mary statue garden ------------------------------------------------------------
 
 func _garden() -> void:
-	# A rounded grass island with a yellow-edged kerb.
-	var middle := ISLAND.get_center()
-	var shape := PackedVector2Array()
-	for i in 32:
-		var a := TAU * i / 32.0
-		var c := cos(a)
-		var s := sin(a)
-		shape.append(middle + Vector2(signf(c) * pow(absf(c), 0.4) * ISLAND.size.x / 2.0, signf(s) * pow(absf(s), 0.4) * ISLAND.size.y / 2.0))
+	# The drive in concrete, from the bend to the lane.
+	var line := drive_line()
+	var strip := PackedVector2Array()
+	for i in line.size() - 1:
+		var ahead := (line[i + 1] - line[i]).normalized()
+		var next := (line[mini(i + 2, line.size() - 1)] - line[i + 1]).normalized()
+		var side := Vector2(ahead.y, -ahead.x) * DRIVE_HALF
+		var side_next := Vector2(next.y, -next.x) * DRIVE_HALF
+		strip.append_array([line[i] - side, line[i] + side, line[i + 1] + side_next, line[i] - side, line[i + 1] + side_next, line[i + 1] - side_next])
+	w._ground(strip, 0.01, w.material("concrete", Color("c4c2bb")))
+	# The Mary lawn behind a curved kerb, painted yellow along its top.
+	var shape := lawn()
 	var triangles := PackedVector2Array()
-	for i in shape.size():
-		triangles.append_array([middle, shape[i], shape[(i + 1) % shape.size()]])
+	for index in Geometry2D.triangulate_polygon(shape):
+		triangles.append(shape[index])
 	w._ground(triangles, 0.08, w.material("grass"))
 	for i in shape.size():
 		var a := shape[i]
@@ -1098,29 +1167,24 @@ func _profile(points: Array) -> PackedVector2Array:
 	return out
 
 ## The Mary statue, from the "CLOSE UP RIGHT SIDE" photo: Our Lady with her unborn child
-## on an octagonal white pedestal with a black plaque ("A Mother's Prayer for Her Unborn
+## on a square white pedestal with a moulded cap with a black plaque ("A Mother's Prayer for Her Unborn
 ## Child") and a ring of yellow and white flowers. A white robe with a gentle belly; a
 ## pale-blue mantle over her head, open at the front and falling down her back; arms held
-## out and down with wide bell sleeves and open palms; a pink heart on her chest. A ground
+## out and down with wide bell sleeves and open palms; a white rose with a blush-pink heart on her chest. A ground
 ## lamp in the lawn lights her at night.
 func _mary() -> void:
 	var white: Material = w.material("stucco", Color("f3f3ef"))
 	var stone: Material = w.material("stucco", Color("eceae3"))
-	var blue := (w.material("plain", Color("b3c9de")) as StandardMaterial3D).duplicate() as StandardMaterial3D
+	var blue := (w.material("plain", Color("9dbde0")) as StandardMaterial3D).duplicate() as StandardMaterial3D
 	blue.cull_mode = BaseMaterial3D.CULL_DISABLED
 	var face: Material = w.material("plain", Color("ebe5dc"))
 	var at := Vector3(MARY.x, 0.0, MARY.y)
-	# The pedestal: a wide base, the octagonal shaft (a flat face to the road), a capping slab.
-	for part in [[0.64, 0.66, 0.14, 0.15, stone], [0.55, 0.55, 1.0, 0.72, white], [0.68, 0.66, 0.1, 1.27, stone]]:
-		var octagon := CylinderMesh.new()
-		octagon.top_radius = part[0]
-		octagon.bottom_radius = part[1]
-		octagon.height = part[2]
-		octagon.radial_segments = 8
-		var block: MeshInstance3D = w._mesh(octagon, at + Vector3(0, part[3], 0), part[4])
-		block.rotation.y = PI / 8.0
+	# The pedestal, square (CLOSE UP RIGHT SIDE, mgn and Sjh middle.jpg): a wider plinth, the
+	# white shaft, a cap moulded in two steps.
+	for part in [[1.04, 0.14, 0.15, stone], [0.86, 1.0, 0.72, white], [1.0, 0.05, 1.245, stone], [0.94, 0.05, 1.295, stone]]:
+		w.box(Vector3(part[0], part[1], part[0]), at + Vector3(0, part[2], 0), part[3])
 	# The plaque on the front face, its title and lines of the prayer.
-	var front := at + Vector3(0, 0, -0.505)
+	var front := at + Vector3(0, 0, -0.44)
 	w.box(Vector3(0.44, 0.56, 0.02), front + Vector3(0, 0.74, 0), w.material("plain", Color("1d2022")))
 	w.box(Vector3(0.32, 0.03, 0.01), front + Vector3(0, 0.95, -0.012), w.material("plain", Color("d9d4c6")))
 	for line in 7:
@@ -1132,7 +1196,7 @@ func _mary() -> void:
 	var blooms: Array[Color] = [Color("f2d43a"), Color("f6f6f0"), Color("f0a030"), Color("f2d43a"), Color("fbfbf6")]
 	for i in 34:
 		var a := TAU * i / 34.0 + random.randf_range(-0.05, 0.05)
-		var r := random.randf_range(0.46, 0.6)
+		var r := random.randf_range(0.36, 0.47)
 		var spot := at + Vector3(cos(a) * r, 1.36 + random.randf_range(0.0, 0.08), sin(a) * r)
 		if i % 3 == 0:
 			w.box(Vector3(0.14, 0.08, 0.1), spot - Vector3(0, 0.04, 0), w.material("plain", Color("4f7a3a")), a)
@@ -1184,15 +1248,21 @@ func _mary() -> void:
 		var palm: MeshInstance3D = w._mesh(hand, wrist + Vector3(side * 0.08, -0.03, -0.05), face)
 		palm.scale = Vector3(1.0, 1.4, 0.55)
 		palm.rotation = Vector3(0.3, 0, side * 0.5)
-	# The Immaculate Heart on her chest: a pink heart with a small gold flame.
-	var chest := figure + Vector3(0, 1.5, -0.205)
-	var heart := BoxMesh.new()
-	heart.size = Vector3(0.1, 0.1, 0.03)
-	var shape: MeshInstance3D = w._mesh(heart, chest, w.material("plain", Color("d77f8f")))
-	shape.rotation.z = PI / 4.0
+	# On her chest a white rose with a blush-pink heart and two leaves (the close-up photos).
+	var chest := figure + Vector3(0, 1.5, -0.215)
+	var bloom := SphereMesh.new()
+	bloom.radius = 0.06
+	bloom.height = 0.12
+	var rose: MeshInstance3D = w._mesh(bloom, chest, w.material("plain", Color("f6f2ee")))
+	rose.scale = Vector3(1.0, 1.0, 0.6)
+	for k in 5:
+		var a := TAU * k / 5.0
+		var petal: MeshInstance3D = w._mesh(bloom, chest + Vector3(cos(a) * 0.045, sin(a) * 0.045, 0.01), w.material("plain", Color("f1dfe0")))
+		petal.scale = Vector3(0.55, 0.55, 0.4)
+	var middle: MeshInstance3D = w._mesh(bloom, chest + Vector3(0, 0, -0.03), w.material("plain", Color("d9909c")))
+	middle.scale = Vector3(0.4, 0.4, 0.3)
 	for side in [-1.0, 1.0]:
-		w.box(Vector3(0.05, 0.05, 0.03), chest + Vector3(side * 0.03, 0.035, -0.002), w.material("plain", Color("d77f8f")))
-	w.box(Vector3(0.03, 0.06, 0.02), chest + Vector3(0, 0.1, -0.01), w.material("plain", Color("e3b54a")))
+		w.box(Vector3(0.07, 0.025, 0.015), chest + Vector3(side * 0.07, -0.055, 0.012), w.material("plain", Color("7c9a6a")), side * 0.5)
 	# The ground lamp in the lawn in front, lighting her at night.
 	var lamp_at := at + Vector3(0.3, 0.12, -1.85)
 	w.box(Vector3(0.2, 0.16, 0.2), lamp_at, w.material("plain", Color("26282a")))
