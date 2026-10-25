@@ -105,6 +105,7 @@ const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
+const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
 const CoveredCourt := preload("res://areas/court.gd")
@@ -171,7 +172,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
 	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
-			or StudentCenter.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z):
+			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
@@ -196,7 +197,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
-			or StudentCenter.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z):
+			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS + PERGOLA_POSTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -234,6 +235,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 	var middle := MiddleRoad.floor_height(x, z)
 	if not is_nan(middle):
 		return middle
+	var lane := Pgn.floor_height(x, z)
+	if not is_nan(lane):
+		return lane
 	var arcade := StudentCenter.floor_height(x, z)
 	if not is_nan(arcade):
 		return arcade
@@ -284,6 +288,7 @@ func build(parent: Node3D) -> void:
 	Mgn.new().build(self)
 	MiddleRoad.new().build(self)
 	StudentCenter.new().build(self)
+	Pgn.new().build(self)
 	Formation.new().build(self)
 	Aero.new().build(self)
 	CoveredCourt.new().build(self)

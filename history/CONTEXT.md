@@ -2,6 +2,16 @@
 
 **Every branch in main, 2026-10-25.** Canteen layout, Covered Court, Aero Hall, Formation Center, the SJH back lane, the audio fixes, the opening and story work and the girl walk test are all merged. Aero Hall's edge wall now leaves a gateway into SJH's back lane (`GATEWAY_X`). See `sessions/2026-10-25-merge-all-branches.md`.
 
+**PGN merged with main, 2026-10-25.** The `pgn` branch (PR #44) now has every branch in
+main: PGN sits beside the Formation Center, Aero Hall and the Covered Court, and all checks
+pass. See `sessions/2026-10-25-pgn-merge-main.md`.
+
+**PGN, 2026-10-22.** `areas/pgn.gd`: the Peter G. Nepomuceno Building, a tall white L
+along the boulevard and beside APS. It has a dark ground floor and nine white banded floors
+with blue windows and grey louvres, the stair screen, the gold name and the box on the
+roof. The paver lane along its west end opens off the boulevard's covered walkway. See
+`sessions/2026-10-22-pgn.md`.
+
 **Aero Hall, 2026-10-22.** `areas/aero.gd`: the navy corrugated hall in front of the gym's
 south end, between SJH and the gym, with its gabled front block, the HAU seal, aircon
 units and signs, and the yard behind the green wall. The camera cuts SJH away when

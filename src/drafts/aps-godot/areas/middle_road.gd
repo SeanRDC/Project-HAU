@@ -38,6 +38,8 @@ const SHRUB_WEST := -152.6
 ## The median's noses (east, past the mouth's zebra; west, at the apron).
 const NOSE_E := -69.6
 const NOSE_W := -155.8
+## Where the north planter opens onto PGN's lane along its west end (x from..to, areas/pgn.gd).
+const PGN_LANE := Vector2(-137.0, -131.2)
 ## The bands across the road (world z, from..to), north to south, about the centre line.
 const CENTRE := 64.6
 const FACE_N := 49.3
@@ -119,6 +121,9 @@ static func in_crossing(x: float) -> bool:
 static func on_apron(x: float, z: float) -> bool:
 	return Vector2(x, z).distance_to(FOUNTAIN) <= APRON
 
+static func in_pgn_lane(x: float) -> bool:
+	return x >= PGN_LANE.x and x <= PGN_LANE.y
+
 static func in_median(x: float) -> bool:
 	return x <= NOSE_E and x >= NOSE_W and not in_crossing(x)
 
@@ -160,6 +165,8 @@ static func benches() -> Array[Vector2]:
 		at.append(Vector2(x, BACK_N + 0.48))
 		if not StudentCenter.in_opening(x - 0.9) and not StudentCenter.in_opening(x + 0.9):
 			at.append(Vector2(x, BACK_S - 0.48))
+		if in_pgn_lane(x - 0.9) or in_pgn_lane(x + 0.9):
+			at.erase(Vector2(x, BACK_N + 0.48)) # not across the mouth of PGN's lane
 	return at
 
 static func lamps() -> Array[Vector2]:
@@ -179,8 +186,8 @@ static func blocked(x: float, z: float) -> bool:
 		return true
 	if x < END_X or x > EAST_X:
 		return false
-	if z < WALK_N.x or z > WALK_S.y and not StudentCenter.in_opening(x):
-		return true # the planters at the buildings (the south one open into the Student Center)
+	if z < WALK_N.x and not in_pgn_lane(x) or z > WALK_S.y and not StudentCenter.in_opening(x):
+		return true # the planters at the buildings (open into PGN's lane and the Student Center)
 	var open := in_crossing(x)
 	if not open and x < PLAZA_X:
 		if x > SHRUB_WEST and (z > SHRUB_N.x and z < SHRUB_N.y or z > SHRUB_S.x and z < SHRUB_S.y):
@@ -214,8 +221,8 @@ static func floor_height(x: float, z: float) -> float:
 		return -0.19 # the apron, and the lanes across the west road's sidewalk
 	if (_in(z, WALK_N) or _in(z, WALK_S)) and x >= ROOF_WEST:
 		return WALK_Y # the covered walkways' tiles
-	if z > WALK_S.y and StudentCenter.in_opening(x):
-		return WALK_Y # tiled through the south planter's openings
+	if z > WALK_S.y and StudentCenter.in_opening(x) or z < WALK_N.x and in_pgn_lane(x):
+		return WALK_Y # tiled through the planters' openings
 	# The kerb lines: along both lanes' outer edges, and round the median.
 	if absf(z - LANE_N.x) < KERB or absf(z - LANE_S.y) < KERB:
 		return 0.0
@@ -525,8 +532,15 @@ func _shrub_beds() -> void:
 func _planters() -> void:
 	var soil: Material = w.material("dirt", Color("a8926f"))
 	var kerb: Material = w.material("concrete", Color("c9c8c0"))
-	_slab(EAST_X, END_X, FACE_N, WALK_N.x, 0.1, 0.3, soil)
-	w.box(Vector3(EAST_X - END_X, 0.3, 0.12), Vector3((EAST_X + END_X) / 2.0, 0.0, WALK_N.x), kerb)
+	# The north planter stops at PGN's lane, tiled through like the walkway.
+	for run in [[EAST_X, PGN_LANE.y], [PGN_LANE.x, END_X]]:
+		var east: float = run[0]
+		var west: float = run[1]
+		_slab(east, west, FACE_N, WALK_N.x, 0.1, 0.3, soil)
+		w.box(Vector3(east - west, 0.3, 0.12), Vector3((east + west) / 2.0, 0.0, WALK_N.x), kerb)
+	for end in [PGN_LANE.x, PGN_LANE.y]:
+		w.box(Vector3(0.12, 0.3, WALK_N.x - FACE_N), Vector3(end, 0.0, (FACE_N + WALK_N.x) / 2.0), kerb)
+	_slab(PGN_LANE.y, PGN_LANE.x, FACE_N, WALK_N.x, WALK_Y, 0.2, w.material("slab"))
 	# The south planter stops at the Student Center's openings, tiled through like the walkway.
 	for run in StudentCenter.runs(EAST_X, END_X):
 		var east: float = run[0]
@@ -882,7 +896,7 @@ func _planter_planting(north: bool) -> void:
 	var x := EAST_X - 2.0
 	var n := 0
 	while x > END_X + 1.0:
-		if not north and (StudentCenter.in_opening(x - 0.7) or StudentCenter.in_opening(x + 0.7)):
+		if not north and (StudentCenter.in_opening(x - 0.7) or StudentCenter.in_opening(x + 0.7)) 				or north and (in_pgn_lane(x - 0.7) or in_pgn_lane(x + 0.7)):
 			x -= 4.1
 			n += 1
 			continue
