@@ -15,6 +15,7 @@ If you bring in a new tool, tell the team first so we stay compatible.
   * `tools\run-aps-godot.cmd` plays the game.
   * `tools\run-aps-godot.cmd -e` (or `--editor`) opens it in the editor.
   * `tools\run-aps-godot.cmd --headless -- --test` runs the checks and prints a JSON report; every check must be `true`. A broken script can make it hang, so give it a timeout and read the first Parse Error.
+* `preview-opening.cmd` - saves every screen of the opening cutscene (each page finished, then the title) into `builds/opening-preview/` in one Godot run, puts them on one numbered sheet (`opening-preview.png`) and opens it, so you can check the opening without playing it. `-NoOpen` only makes the files.
   * After pulling new sprites, run Godot once with `--headless --import` (or open the editor) so the new images load.
 * `capture-aps-godot.sh` - `sh tools/capture-aps-godot.sh [name ...]` takes review shots on the GPU into the ignored `builds/aps-godot-review/port/` (all of them with no names). Each shot's options are in the script.
 * `export-godot-plan.mjs` - `npm run export:godot-plan` writes `src/drafts/aps-godot/campus_plan.gd` from the campus plan (`src/game/campus/plan.ts` and `osm.ts`): every building's real outline and the named places, in Godot metres, and which ones Godot already draws (`BUILT`). Run it whenever the plan changes or a building is merged. Uses the esbuild that comes with Vite.
