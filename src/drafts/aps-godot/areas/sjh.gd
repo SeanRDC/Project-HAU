@@ -144,6 +144,45 @@ const LAWN_ROAD := 13.6
 const LAWN_EAST := -49.8
 const LAWN_SOUTH := 124.2
 
+## The back, from the SJH rear photos (local z): the back facade's face, the far kerb of
+## the lane behind it, and the campus's perimeter wall. The lane runs from past the east end
+## (local x -LANE_EAST, world x ~46) to the building's west end, under MGN.
+const BACK := -DEPTH
+const LANE_EDGE := BACK - 10.6
+const BOUNDARY := BACK - 13.2
+const LANE_EAST := HALF + 10.0
+## The gate pillar across the lane from the east corner (local x), where the perimeter wall
+## turns from grey to maroon (photo 2).
+const GATE := -49.2
+## The lane round SJH's east end, from the south road's corner to the back (world): between
+## the building and Aero Hall's reserved plot (x 44.5), where photo 3 has the road bending in.
+const ACCESS := Rect2(37.0, 112.0, 7.4, 37.0)
+## Bays of brown louvres instead of windows on the back, by bay index (x = (bay + 0.5) * 4.2).
+const LOUVRE_BAYS: Array[int] = [-8, -3, 1, 5]
+## What stands against the back wall, east (the gym's end) to west, as in the photos:
+## local x from, x to, and how far out from the wall. The basement ramp,
+## the motorcycles, the yellow shed, the HAU carport's closed east end, the utility block,
+## the back entrance's steps, the patched shed's side.
+const REAR_SOLID: Array[Vector3] = [Vector3(-38.4, -33.0, 6.2), Vector3(-31.6, -29.4, 2.2),
+	Vector3(-27.8, -22.0, 4.6), Vector3(-9.7, -9.5, 6.0), Vector3(3.4, 8.4, 4.2), Vector3(9.2, 11.8, 1.6), Vector3(12.2, 12.5, 5.2)]
+## The planted bed at the east corner (photo 2): BED deep along the back from the ramp
+## (BED_END), round the corner on a kerb of that radius, and BED_SIDE up the east end.
+const BED := 3.2
+const BED_SIDE := 8.0
+const BED_END := -38.6
+## The side entrance on the east end, just past the bed (photo "east entrance"): the
+## opening's local z from, to, its floor (five risers up) and its top.
+const ENTRY := Vector2(-9.9, -6.8)
+const ENTRY_FLOOR := 0.75
+const ENTRY_TOP := 3.4
+## The vehicles parked nose out along the back: local x, kind (0 car, 1 van, 2 pickup), colour.
+const REAR_CARS := [[-19.8, 2, "f1f1ec"], [-17.2, 0, "3a3f44"], [-14.0, 0, "b9bcbd"], [-11.3, 0, "c9cac6"],
+	[-8.2, 1, "e9e2d2"], [-5.4, 1, "e9e2d2"], [-2.5, 2, "f2f2ee"], [0.3, 2, "f2f2ee"], [15.2, 0, "b8322c"],
+	[20.4, 0, "1c2128"], [23.2, 1, "f1f1ec"], [26.0, 1, "e6dcc6"], [28.8, 0, "b9bcbd"], [31.6, 0, "e9e9e6"]]
+## The carports: local x from, x to, roof height, depth out from the wall. The sedans' lean-to,
+## HAU VEHICLE ONLY, the low one to the west.
+const CARPORTS: Array[Vector4] = [Vector4(-15.4, -9.8, 2.8, 5.8), Vector4(-9.6, 1.8, 3.2, 6.0), Vector4(19.0, 33.4, 2.6, 5.8)]
+
 static func origin() -> Vector2:
 	return (EDGE_EAST + EDGE_WEST) / 2.0
 
@@ -238,10 +277,49 @@ static func walkway_for(x: float, z: float) -> float:
 static func view_for(x: float, z: float) -> float:
 	var front := smoothstep(99.0, 104.0, z) * smoothstep(-57.0, -51.0, x) * (1.0 - smoothstep(37.0, 42.0, x))
 	var west := smoothstep(119.5, 122.5, z) * smoothstep(-66.0, -64.0, x) * (1.0 - smoothstep(-52.0, -50.0, x))
-	return maxf(front, west)
+	return maxf(front, west) * (1.0 - rear_for(x, z))
 
+## 1 on the lane behind SJH: the camera keeps its plain north view there, facing the back
+## like the APS front; the other zones yield to it. 0 past the east end, by the gym.
+static func rear_for(x: float, z: float) -> float:
+	var at := local(x, z)
+	return (1.0 - smoothstep(BACK - 1.0, BACK + 1.0, at.y)) * (1.0 - smoothstep(HALF + 2.0, HALF + 6.0, absf(at.x)))
+
+## The lane behind SJH and the lane down to it round the east end.
+static func on_lane(x: float, z: float) -> bool:
+	var at := local(x, z)
+	return ACCESS.has_point(Vector2(x, z)) or (at.x > -LANE_EAST and at.x < HALF and at.y > LANE_EDGE and at.y < BACK - 0.6)
+
+## The front's two car rows and the paved lane behind (no grass grows on either).
 static func on_parking(x: float, z: float) -> bool:
-	return PARKING.has_point(Vector2(x, z)) or FRONT_ROW.has_point(Vector2(x, z))
+	return PARKING.has_point(Vector2(x, z)) or FRONT_ROW.has_point(Vector2(x, z)) or on_lane(x, z)
+
+static var _bed := PackedVector2Array()
+
+## The bed's outline (local x, z), closed along the walls: its first points, up to the
+## east end's wall, are the kerb.
+static func bed() -> PackedVector2Array:
+	if _bed.is_empty():
+		_bed.append(Vector2(BED_END, BACK))
+		for i in 7: # a small round turn off the wall by the ramp
+			var a := PI / 2.0 * i / 6.0
+			_bed.append(Vector2(BED_END - 1.0 + cos(a), BACK - BED + 1.0 - sin(a)))
+		for i in 13: # round the corner
+			var a := PI / 2.0 * i / 12.0
+			_bed.append(Vector2(-HALF - BED * sin(a), BACK - BED * cos(a)))
+		_bed.append(Vector2(-HALF - BED, BACK + BED_SIDE))
+		_bed.append(Vector2(-HALF, BACK + BED_SIDE))
+		_bed.append(Vector2(-HALF, BACK))
+	return _bed
+
+## The carports' front posts (local x, z).
+static func carport_posts() -> Array[Vector2]:
+	var posts: Array[Vector2] = []
+	for port in CARPORTS:
+		var count := ceili((port.y - port.x) / 3.0)
+		for i in count + 1:
+			posts.append(Vector2(lerpf(port.x + 0.1, port.y - 0.1, float(i) / count), BACK - port.w + 0.2))
+	return posts
 
 ## The paved ground between the road's sidewalk and SJH's front: the front car row and
 ## the walk up to the foot of the front's steps (at the ends, up to the terracotta blocks
@@ -345,6 +423,22 @@ static func blocked(x: float, z: float) -> bool:
 			return true # the landing's railing
 	if u > WALK_END and u < RAMP_FOOT and (absf(v - RAMP.x) < 0.12 or absf(v - RAMP.y) < 0.12):
 		return true # the ramp's railings
+	if Geometry2D.is_point_in_polygon(at, bed()):
+		return true
+	if at.x < -HALF - 2.1 and at.x > -HALF - 3.7 and at.y > ENTRY.x - 0.45 and at.y < ENTRY.y + 0.4:
+		return true # the side entrance's steps
+	if at.y < BACK - 0.5:
+		if not on_lane(x, z):
+			return true # the perimeter wall and past it
+		for solid in REAR_SOLID:
+			if at.x > solid.x and at.x < solid.y and at.y > BACK - solid.z:
+				return true
+		for car in REAR_CARS:
+			if absf(at.x - car[0]) < 1.05 and at.y > BACK - 5.4:
+				return true
+		for post in carport_posts():
+			if at.distance_to(post) < 0.25:
+				return true
 	for car in cars():
 		# In the car's own frame: the chapel-side row is turned by SLANT.
 		var turn := slant_for(car.y)
@@ -399,6 +493,8 @@ static func cars() -> Array[Vector3]:
 	return _cars
 
 var w: RefCounted
+## The cut-branch piles by the gate pillar (local), planted with the world's shrubs.
+var _pile_at := []
 
 func build(world_builder: RefCounted) -> void:
 	w = world_builder
@@ -420,11 +516,15 @@ func build(world_builder: RefCounted) -> void:
 	_lobby()
 	_west_end()
 	_details()
+	_rear()
+	_rear_ground()
+	_east_entrance()
 	w._flush()
 	w.root = saved
 	_parking()
 	_garden()
 	_planting()
+	_rear_planting()
 	w._flush()
 
 # --- The slab ---------------------------------------------------------------------
@@ -510,7 +610,14 @@ func _end_towers() -> void:
 		w.box(Vector3(0.5, ROOF + 1.0, 0.4), Vector3(x0 - end * 2.3, (ROOF + 1.0) / 2.0, 0.6), silver)
 		w.box(Vector3(4.5, GROUND, 0.08), Vector3(x0, GROUND / 2.0, 0.54), w.material("brick", Color("e1876a")))
 		var cx: float = end * (HALF - 0.3)
-		w.box(Vector3(4.4, ROOF + 3.4, 9.0), Vector3(cx, (ROOF + 3.4) / 2.0, -6.5), cream)
+		if end > 0.0:
+			w.box(Vector3(4.4, ROOF + 3.4, 9.0), Vector3(cx, (ROOF + 3.4) / 2.0, -6.5), cream)
+		else:
+			# The east tower stands over the side entrance (_east_entrance): its ground floor is
+			# open between the red block and the louvred wall.
+			w.box(Vector3(4.4, ROOF, 9.0), Vector3(cx, ENTRY_TOP + ROOF / 2.0, -6.5), cream)
+			w.box(Vector3(4.4, ENTRY_TOP, 1.0), Vector3(cx, ENTRY_TOP / 2.0, -10.5), cream)
+			w.box(Vector3(4.4, ENTRY_TOP, ENTRY.y + 2.05), Vector3(cx, ENTRY_TOP / 2.0, (ENTRY.y - 0.05 - 2.0) / 2.0), cream)
 		for k in range(1, FLOORS + 1):
 			var y := GROUND + (k - 1) * STOREY + 1.6
 			w.box(Vector3(2.4, 1.6, 0.06), Vector3(cx, y, -1.98), pane)
@@ -694,7 +801,347 @@ func _roofline() -> void:
 	for i in 3:
 		w.box(Vector3(0.25, 0.9, 0.12), foot + Vector3(0.3 - i * 0.3, height - 1.0, 0.4), w.material("plain", Color("dfe1df")))
 
-# --- The raised walkway -------------------------------------------------------------
+# --- The back (from the SJH rear photos) -------------------------------------------------
+
+## The back facade: on every floor a white slab standing out as a sunshade over a cream
+## wall between white piers, brown-framed windows with silver window-AC hoods, a few bays
+## of brown louvres; the plinth with its basement louvres; rusticated end blocks with a
+## vent; downpipes and a dark eave. Built over the body's plain back face.
+func _rear() -> void:
+	var out := Vector3(0, 0, -1)
+	var white: Material = w.material("stucco", Color("f4f4ef"))
+	var cream: Material = w.material("stucco", Color("f6ecd0"))
+	var brown := Color("5b4334")
+	var hood: Material = w.material("metal", Color("d3d6d4"))
+	var grille: Material = w.material("plain", Color("3f4446"))
+	var louvre: Material = w.material("wood", Color("6e4a3a"))
+	var slat: Material = w.material("plain", Color("4a3328"))
+	var span := 2.0 * (HALF - 5.9)
+	for k in range(0, FLOORS + 1):
+		var y := 1.0 if k == 0 else GROUND + (k - 1) * STOREY
+		var tall := GROUND - 1.0 if k == 0 else STOREY - 0.3
+		w.box(Vector3(span, tall, 0.06), Vector3(0, y + tall / 2.0, BACK - 0.04), cream)
+		if k > 0:
+			w.box(Vector3(span + 0.4, 0.3, 0.9), Vector3(0, y - 0.15, BACK - 0.45), white) # the slab's sunshade
+		var px := -42.0
+		while px <= 42.0:
+			w.box(Vector3(0.5, tall, 0.3), Vector3(px, y + tall / 2.0, BACK - 0.15), white)
+			px += 4.2
+		for bay in range(-10, 10):
+			var x := (bay + 0.5) * 4.2
+			if k == 0:
+				# The ground floor, behind the sheds and carports: windows where nothing tall stands.
+				var hidden := absf(x - 10.5) < 2.0
+				for solid in REAR_SOLID:
+					hidden = hidden or (solid.z > 4.0 and x > solid.x - 1.5 and x < solid.y + 1.5)
+				if not hidden:
+					w.framed_window(Vector3(x, 2.6, BACK - 0.07), 3.0, 1.4, out, false, 3, brown)
+				for dx in [-0.9, 0.9]:
+					w.box(Vector3(1.5, 0.55, 0.04), Vector3(x + dx, 0.5, BACK - 0.27), grille) # basement louvres
+				continue
+			if bay in LOUVRE_BAYS:
+				w.box(Vector3(3.2, 2.4, 0.08), Vector3(x, y + 1.4, BACK - 0.08), louvre)
+				for s in 8:
+					w.box(Vector3(3.2, 0.05, 0.1), Vector3(x, y + 0.35 + s * 0.3, BACK - 0.14), slat)
+				continue
+			w.framed_window(Vector3(x, y + 1.6, BACK - 0.07), 3.0, 1.4, out, posmod(bay * 7 + k * 3, 5) == 0, 3, brown)
+			if posmod(bay * 3 + k * 5, 4) != 0:
+				# A window AC unit in its silver hood, at one side of the window.
+				var hx := x - 0.85 + 1.7 * posmod(bay + k, 2)
+				w.box(Vector3(0.75, 0.55, 0.6), Vector3(hx, y + 1.15, BACK - 0.38), hood)
+				w.box(Vector3(0.6, 0.4, 0.02), Vector3(hx, y + 1.15, BACK - 0.69), grille)
+				w.streak(Vector3(hx, y + 0.85, BACK - 0.07), 0.7, out)
+	w.box(Vector3(span, 1.0, 0.25), Vector3(0, 0.5, BACK - 0.12), white) # the plinth
+	# The end blocks: rusticated, a square vent low down.
+	for side in [-1.0, 1.0]:
+		var cx: float = side * (HALF - 2.95)
+		var groove := 0.75
+		while groove < ROOF:
+			w.box(Vector3(5.9, 0.05, 0.04), Vector3(cx, groove, BACK - 0.02), w.material("plain", Color("cfccc2")))
+			groove += 0.75
+		w.box(Vector3(0.8, 0.8, 0.05), Vector3(cx, 2.2, BACK - 0.03), grille)
+	for x in [-41.0, -21.0, 0.0, 21.0, 41.0]:
+		w.rod(Vector3(x, 0.0, BACK - 0.35), Vector3(x, ROOF, BACK - 0.35), 0.06, Color("e9e9e3"))
+	w.box(Vector3(2.0 * HALF + 0.4, 0.45, 0.2), Vector3(0, ROOF + 0.2, BACK - 0.3), w.material("plain", Color("5d6062")))
+	# The back entrance: a dark opening up five steps from a terracotta landing, a steel
+	# handrail, a pipe across and a split AC unit over it.
+	w.box(Vector3(2.6, 2.6, 0.05), Vector3(10.5, 0.75 + 1.3, BACK - 0.09), w.material("plain", Color("2a2c2d")))
+	for s in 5:
+		var deep := 0.3 * (5 - s)
+		var step: Material = w.material("stone", Color("bdb3a6")) if s > 0 else w.material("brick", Color("c0745c"))
+		w.box(Vector3(2.6, 0.15, deep), Vector3(10.5, 0.075 + 0.15 * s, BACK - deep / 2.0), step)
+	w.rod(Vector3(9.3, 0.9, BACK - 1.5), Vector3(9.3, 1.65, BACK - 0.2), 0.03, Color("b9bcbc"))
+	w.rod(Vector3(6.0, 3.3, BACK - 0.2), Vector3(14.0, 3.3, BACK - 0.2), 0.07, Color("e9e9e3"))
+	w.box(Vector3(0.9, 0.6, 0.35), Vector3(11.4, 3.7, BACK - 0.2), w.material("plain", Color("e8e8e2")))
+
+## On the ground along the back, east (the gym's end) to west, in the photos' order: the
+## planted bed round the corner, the basement ramp under its pergola, motorcycles, the yellow shed, the parked
+## cars and carports (HAU VEHICLE ONLY), the louvred utility block, the patched shed and its
+## red vehicle, the low carport. Across the lane: the trench grate, the dirt strip, the
+## power poles and the perimeter wall.
+func _rear_ground() -> void:
+	var length := LANE_EAST + HALF
+	var middle := (HALF - LANE_EAST) / 2.0
+	var lot: Material = w.material("concrete", Color("c9c7c0"))
+	var dark: Material = w.material("plain", Color("3a3633"))
+	var rust: Material = w.material("plain", Color("6b3f2c"))
+	var roof: Material = w.material("ribbed", Color("5a5f62"))
+	w.box(Vector3(length, 0.1, BACK - LANE_EDGE), Vector3(middle, -0.09, (BACK + LANE_EDGE) / 2.0), lot)
+	w.box(Vector3(length, 0.012, 0.3), Vector3(middle, -0.035, BACK - 5.6), w.material("brick", Color("c0745c")))
+	w.box(Vector3(length, 0.012, 0.4), Vector3(middle, -0.035, LANE_EDGE + 0.25), dark)
+	w.box(Vector3(length, 0.1, LANE_EDGE - BOUNDARY), Vector3(middle, -0.12, (LANE_EDGE + BOUNDARY) / 2.0), w.material("dirt"))
+	# The perimeter wall: grey west of the gate pillar, maroon with a white iron railing on
+	# top east of it (photo 2).
+	var grey := HALF + 0.5 - GATE
+	w.box(Vector3(grey, 2.6, 0.3), Vector3(GATE + grey / 2.0, 1.1, BOUNDARY), w.material("stucco", Color("aeaba1")))
+	var maroon := GATE + LANE_EAST + 0.5
+	w.box(Vector3(maroon, 2.2, 0.3), Vector3(GATE - maroon / 2.0, 0.9, BOUNDARY), w.material("stucco", Color("6e2a35")))
+	var iron: Material = w.material("plain", Color("e6e4dc"))
+	for y in [2.05, 2.75]:
+		w.box(Vector3(maroon, 0.05, 0.05), Vector3(GATE - maroon / 2.0, y, BOUNDARY), iron)
+	var bar := GATE - 0.2
+	while bar > -LANE_EAST - 0.5:
+		w.box(Vector3(0.03, 0.7, 0.03), Vector3(bar, 2.4, BOUNDARY), iron)
+		w.box(Vector3(0.12, 0.03, 0.03), Vector3(bar, 2.55 + 0.1 * posmod(roundi(bar * 5.0), 2), BOUNDARY), iron)
+		bar -= 0.2
+	w.box(Vector3(0.3, 2.6, BACK - BOUNDARY), Vector3(HALF + 0.3, 1.1, (BACK + BOUNDARY) / 2.0), w.material("stucco", Color("aeaba1")))
+	# The planted bed at the east corner (photo 2): grass inside a round concrete kerb that
+	# wraps the corner, a garden hose across it, and the wet stain the hose leaves down the
+	# lane's edge of the kerb.
+	var kerb: Material = w.material("stucco", Color("cfc9b8"))
+	var outline := bed()
+	var triangles := PackedVector2Array()
+	var order := Geometry2D.triangulate_polygon(outline)
+	for i in order:
+		triangles.append(outline[i])
+	w._ground(triangles, -0.02, w.material("grass"))
+	for i in outline.size() - 2: # the last two edges run along the walls
+		var a := outline[i]
+		var b := outline[i + 1]
+		var mid := (a + b) / 2.0
+		w.box(Vector3(a.distance_to(b) + 0.06, 0.22, 0.2), Vector3(mid.x, 0.0, mid.y), kerb, atan2(-(b - a).y, (b - a).x))
+	var hose := [Vector3(-46.8, 0.0, BACK - 0.3), Vector3(-45.2, 0.0, BACK - 1.9), Vector3(-42.5, 0.0, BACK - 2.8),
+		Vector3(-41.6, 0.14, BACK - 3.2), Vector3(-41.0, -0.03, BACK - 3.5), Vector3(-37.4, -0.03, BACK - 3.8)]
+	for i in hose.size() - 1:
+		w.rod(hose[i], hose[i + 1], 0.012, Color("ecebe4"))
+	var wet: Material = w.material("plain", Color("4f5352"))
+	for stain in [Vector3(-46.0, 3.2, 0.5), Vector3(-43.0, 2.6, 0.7), Vector3(-40.6, 2.0, 0.9), Vector3(-37.4, 1.4, 0.6)]:
+		w.box(Vector3(stain.y, 0.006, stain.z), Vector3(stain.x, -0.034, BACK - BED - 0.12 - stain.z / 2.0), wet)
+	# The basement ramp: low walls, a dark mouth, the grate, the rusty pergola and its screens.
+	# shortcut: the ramp only dips 0.15 m (the lawn under the scene sits at -0.2); cut a real pit if one is ever walked into.
+	w.box(Vector3(5.0, 0.02, 6.0), Vector3(-35.7, -0.03, BACK - 3.0), w.material("concrete", Color("8f9089")), 0.0, -0.025)
+	w.box(Vector3(4.8, 2.4, 0.05), Vector3(-35.7, 1.0, BACK - 0.1), w.material("plain", Color("16181a")))
+	w.box(Vector3(5.0, 0.012, 0.5), Vector3(-35.7, -0.025, BACK - 6.0), dark)
+	for sx in [-2.6, 2.6]:
+		w.box(Vector3(0.25, 0.9, 6.0), Vector3(-35.7 + sx, 0.45, BACK - 3.0), w.material("concrete", Color("d6d4cc")))
+		w.box(Vector3(0.06, 1.1, 5.6), Vector3(-35.7 + sx, 1.5, BACK - 3.0), w.material("wood", Color("6e4a3a")))
+		w.box(Vector3(0.15, 0.22, 6.6), Vector3(-35.7 + sx, 3.6, BACK - 3.1), rust)
+		for z in [BACK - 0.3, BACK - 6.0]:
+			w.box(Vector3(0.12, 3.6, 0.12), Vector3(-35.7 + sx, 1.8, z), rust)
+	for i in 11:
+		w.box(Vector3(5.8, 0.1, 0.14), Vector3(-35.7, 3.76, BACK - 0.4 - i * 0.6), rust)
+	# Motorcycles, nosed to the wall.
+	for bike in [[-31.1, Color("3fb6b0")], [-30.4, Color("1d2024")], [-29.7, Color("1d2024")]]:
+		var at := Vector3(bike[0], 0.0, BACK - 1.2)
+		w.box(Vector3(0.3, 0.45, 1.5), at + Vector3(0, 0.6, 0), w.material("plain", bike[1]))
+		w.box(Vector3(0.26, 0.1, 0.7), at + Vector3(0, 0.88, 0.1), w.material("plain", Color("1b1b1b")))
+		for dz in [-0.6, 0.6]:
+			w.box(Vector3(0.1, 0.55, 0.55), at + Vector3(0, 0.28, dz), w.material("plain", Color("1b1b1b")))
+	# The yellow shed: ribbed cream-yellow sheet on a dark lean-to roof.
+	w.box(Vector3(5.8, 3.4, 4.6), Vector3(-24.9, 1.6, BACK - 2.3), w.material("metal", Color("e2cf97")))
+	var rib := -27.7
+	while rib < -22.0:
+		w.box(Vector3(0.06, 3.3, 0.05), Vector3(rib, 1.6, BACK - 4.62), w.material("plain", Color("cbb882")))
+		rib += 0.45
+	w.box(Vector3(6.2, 0.08, 5.0), Vector3(-24.9, 3.36, BACK - 2.4), roof)
+	# The carports: dark ribbed roofs on steel posts with braces.
+	for port in CARPORTS:
+		var at := Vector3((port.x + port.y) / 2.0, port.z, BACK - port.w / 2.0)
+		w.box(Vector3(port.y - port.x, 0.1, port.w), at, roof)
+	for post in carport_posts():
+		var port := CARPORTS[0]
+		for each in CARPORTS:
+			if post.x >= each.x and post.x <= each.y:
+				port = each
+		w.rod(Vector3(post.x, 0.0, post.y), Vector3(post.x, port.z, post.y), 0.05, Color("9aa0a2"))
+		w.rod(Vector3(post.x, port.z - 0.9, post.y), Vector3(post.x, port.z, post.y + 1.2), 0.03, Color("9aa0a2"))
+	w.box(Vector3(0.06, 3.1, 6.0), Vector3(-9.6, 1.55, BACK - 3.0), roof) # HAU carport's closed east end
+	for x in [-6.6, -0.8]:
+		w.box(Vector3(2.2, 0.32, 0.03), Vector3(x, 2.8, BACK - 5.88), w.material("plain", Color("f2f2ee")))
+		var hau := w.panel("HAU VEHICLE ONLY", Vector3(x, 2.8, BACK - 5.91), 2.0, 0.26, Color("1d2022")) as Label3D
+		hau.rotation.y = PI # facing the lane (-z)
+	# The utility block: white, three tall dark louvres.
+	w.box(Vector3(5.0, 3.6, 4.2), Vector3(5.9, 1.8, BACK - 2.1), w.material("stucco", Color("eceae3")))
+	for i in 3:
+		w.box(Vector3(0.8, 2.6, 0.05), Vector3(4.4 + i * 1.5, 1.7, BACK - 4.23), w.material("plain", Color("3f4446")))
+	# The patched shed: corrugated panels in white, yellow and blue-grey, a green post.
+	var patches: Array[Color] = [Color("e4e2da"), Color("d9b65a"), Color("8794a0")]
+	for i in 3:
+		w.box(Vector3(0.06, 3.0, 1.7), Vector3(12.35, 1.5, BACK - 0.9 - i * 1.7), w.material("metal", patches[i]))
+	w.box(Vector3(6.2, 0.08, 5.4), Vector3(15.2, 3.1, BACK - 2.7), roof)
+	w.box(Vector3(0.25, 3.1, 0.25), Vector3(12.35, 1.55, BACK - 5.2), w.material("plain", Color("2f5b3a")))
+	# The NO PARKING sign in front of the back entrance.
+	var sign_at := Vector3(10.5, 0.95, BACK - 4.6)
+	w.box(Vector3(0.8, 0.6, 0.03), sign_at + Vector3(0, 0, 0.02), w.material("plain", Color("efe39a")))
+	var no_parking := w.panel("NO PARKING", sign_at + Vector3(0, 0, -0.01), 0.7, 0.4, Color("1d2022")) as Label3D
+	no_parking.rotation.y = PI
+	for dx in [-0.38, 0.38]:
+		w.rod(sign_at + Vector3(dx, -0.95, -0.15), sign_at + Vector3(dx, 0.3, 0.02), 0.02, Color("c9b85a"))
+	for car in REAR_CARS:
+		var at := Vector3(car[0], -0.04, BACK - 2.8)
+		if car[1] == 0:
+			_car(at, Color(car[2]), -1.0)
+		else:
+			_van(at, Color(car[2]), car[1] == 2)
+	# Power poles along the wall, two transformers on the east one, the wires between.
+	var tops: Array[Vector3] = []
+	for px in [-50.2, -8.0, 30.0]:
+		var foot := Vector3(px, 0.0, LANE_EDGE - 0.9)
+		w.rod(foot, foot + Vector3(0, 9.5, 0), 0.14, Color("9a9a94"))
+		tops.append(foot + Vector3(0, 9.2, 0))
+	# At the east pole (photo 2): two grey transformers hung on brackets, one above the
+	# other; the gate pillar beside it with the yellow meter box at its foot, and a pile of
+	# cut branches on the dirt.
+	var drum := CylinderMesh.new()
+	drum.top_radius = 0.34
+	drum.bottom_radius = 0.34
+	drum.height = 0.85
+	drum.radial_segments = 12
+	var grey_metal: Material = w.material("metal", Color("b4b8b8"))
+	for hang in [Vector3(-0.5, -1.0, 0.0), Vector3(0.45, -2.3, 0.1)]:
+		w._mesh(drum, tops[0] + hang, grey_metal)
+		w.box(Vector3(0.72, 0.06, 0.72), tops[0] + hang + Vector3(0, 0.45, 0), grey_metal)
+		w.box(Vector3(0.5, 0.08, 0.08), tops[0] + hang * Vector3(0.5, 1, 1) + Vector3(0, 0.3, 0), grey_metal)
+	var pillar := Vector3(GATE, 0.0, LANE_EDGE - 0.7)
+	w.box(Vector3(0.75, 4.2, 0.75), pillar + Vector3(0, 2.1, 0), w.material("concrete", Color("b8b6ae")))
+	w.box(Vector3(0.55, 1.0, 0.35), pillar + Vector3(-0.1, 0.5, 0.58), w.material("plain", Color("e3b32e")))
+	var cut: Array[Color] = [Color("3d5a2a"), Color("56763a"), Color("7a8c48"), Color("a39a5c"), Color("6a6a40")]
+	for heap in [Vector2(-1.6, 0.9), Vector2(-2.6, 0.8), Vector2(-3.4, 0.7)]:
+		_pile_at.append([pillar + Vector3(heap.x, 0.0, -0.6), heap.y, cut])
+	w.rod(pillar + Vector3(-3.6, 0.15, -0.2), pillar + Vector3(-0.8, 0.05, 0.4), 0.03, Color("b9a06a"))
+	# The wires: three runs along the wall, two drops from the east pole to the corner.
+	for i in tops.size() - 1:
+		for dy in [0.0, 0.4, -0.5]:
+			w.rod(tops[i] + Vector3(0, dy, 0), tops[i + 1] + Vector3(0, dy - 0.3, 0), 0.015, Color("26282a"))
+	for dy in [0.2, -0.3]:
+		w.rod(tops[0] + Vector3(0, dy, 0), Vector3(-HALF + 0.3, 8.6 + dy, BACK - 0.1), 0.015, Color("26282a"))
+
+## The side entrance on the east end, from its photo: a red block with grooves and a cream
+## cornice over a deep opening into the ground-floor corridor (cream walls, a tiled floor
+## with its diamond inlay, a maroon mat, a tube light), five tiled steps with dark nosings
+## out to a wide bottom step with cut corners, brown handrails with steel tops and bars,
+## and a tall dark louvre on the cream wall to the north. The corridor itself is not built.
+func _east_entrance() -> void:
+	var face := -HALF - 2.2 # the red block's face (local x); the tower's is at -HALF - 1.9
+	var mid := (ENTRY.x + ENTRY.y) / 2.0
+	var wide := ENTRY.y - ENTRY.x
+	var red: Material = w.material("stucco", Color("e48d82"))
+	var cream: Material = w.material("stucco", Color("eeeadf"))
+	w.box(Vector3(-face - HALF + 0.1, 5.6, 1.3), Vector3((face - HALF + 0.1) / 2.0, 2.8, ENTRY.x - 0.65), red)
+	w.box(Vector3(-face - HALF + 0.1, 5.6 - ENTRY_TOP + 0.02, wide), Vector3((face - HALF + 0.1) / 2.0, (5.6 + ENTRY_TOP - 0.02) / 2.0, mid), red)
+	var groove := 0.7
+	while groove < 5.6:
+		var cut := ENTRY.x if groove < ENTRY_TOP else ENTRY.y
+		w.box(Vector3(0.04, 0.05, cut - ENTRY.x + 1.3), Vector3(face - 0.01, groove, (ENTRY.x - 1.3 + cut) / 2.0), w.material("plain", Color("b5665e")))
+		groove += 0.7
+	w.box(Vector3(0.45, 0.3, 7.0), Vector3(face - 0.1, 5.75, -7.9), cream) # the cornice
+	# Inside the opening: cream walls, the tiled floor and mat, the dark corridor beyond.
+	var depth := -face - HALF
+	for z in [ENTRY.x + 0.02, ENTRY.y - 0.02]:
+		w.box(Vector3(depth, ENTRY_TOP - ENTRY_FLOOR, 0.04), Vector3((face - HALF) / 2.0, (ENTRY_TOP + ENTRY_FLOOR) / 2.0, z), cream)
+	w.box(Vector3(depth + 0.1, ENTRY_FLOOR, wide), Vector3((face - HALF) / 2.0, ENTRY_FLOOR / 2.0, mid), w.material("tile"))
+	w.box(Vector3(0.9, 0.012, wide - 0.6), Vector3(face + 0.7, ENTRY_FLOOR + 0.006, mid), w.material("plain", Color("8a1f35")))
+	w.box(Vector3(0.02, ENTRY_TOP - ENTRY_FLOOR - 0.3, 2.2), Vector3(-HALF - 0.02, (ENTRY_TOP + ENTRY_FLOOR - 0.3) / 2.0, mid), w.material("plain", Color("7d807d")))
+	w.box(Vector3(0.18, 0.05, 1.1), Vector3(face + 1.0, ENTRY_TOP - 0.05, mid), w.glow(Color("f4f1e6"), 0.6, 2.2))
+	# The steps: four down from the floor's edge, the bottom one wide with cut corners.
+	var tread: Material = w.material("slab", Color("eee6d6"))
+	var nosing: Material = w.material("plain", Color("4a4440"))
+	for k in range(1, 5):
+		var top := ENTRY_FLOOR - 0.15 * k
+		var out := 0.34 * k
+		var across := wide + 0.5 if k < 4 else wide + 0.9
+		w.box(Vector3(out, top + 0.1, across), Vector3(face - out / 2.0, (top - 0.1) / 2.0, mid), tread)
+		w.box(Vector3(0.05, 0.04, across), Vector3(face - out + 0.02, top, mid), nosing)
+	for side in [-1.0, 1.0]:
+		var corner := Vector3(face - 1.2, 0.0, mid + side * (wide + 0.9) / 2.0)
+		w.box(Vector3(0.4, 0.25, 0.4), corner, tread, PI / 4.0)
+	# The handrails: brown posts, a steel top rail, four bars along the slope.
+	for z in [ENTRY.x - 0.05, ENTRY.y + 0.05]:
+		var top_post := Vector3(face - 0.15, ENTRY_FLOOR, z)
+		var foot_post := Vector3(face - 1.25, 0.15, z)
+		for post in [top_post, foot_post]:
+			w.rod(post, post + Vector3(0, 0.95, 0), 0.025, Color("6b4a35"))
+		w.rod(top_post + Vector3(0, 0.95, 0), foot_post + Vector3(0, 0.95, 0), 0.03, Color("c9cdcf"))
+		for bar in 4:
+			var lift := 0.2 + bar * 0.18
+			w.rod(top_post + Vector3(0, lift, 0), foot_post + Vector3(0, lift, 0), 0.012, Color("6b4a35"))
+	# The louvre on the cream wall to the north.
+	var louvre: Material = w.material("plain", Color("33373a"))
+	w.box(Vector3(0.04, 2.2, 1.3), Vector3(-HALF - 1.92, 2.4, -4.9), louvre)
+	for i in 11:
+		w.box(Vector3(0.06, 0.04, 1.3), Vector3(-HALF - 1.95, 1.4 + i * 0.2, -4.9), w.material("plain", Color("4c5155")))
+
+## A van or a pickup nosed out from the wall (-z): a tall body with the vans' brown and
+## orange stripe, or a cab and an open bed; a dark windscreen, wheels and lights.
+func _van(at: Vector3, colour: Color, pickup: bool) -> void:
+	var paint: Material = w.material("plain", colour)
+	if pickup:
+		w.box(Vector3(1.8, 1.25, 1.9), at + Vector3(0, 1.2, -1.45), paint)
+		w.box(Vector3(1.8, 0.75, 3.0), at + Vector3(0, 0.8, 0.95), paint)
+	else:
+		w.box(Vector3(1.85, 1.6, 4.9), at + Vector3(0, 1.15, 0), paint)
+		w.box(Vector3(1.87, 0.12, 4.2), at + Vector3(0, 1.0, 0.2), w.material("plain", Color("8a4a2c")))
+	w.box(Vector3(1.6, 0.6, 0.05), at + Vector3(0, 1.55, -2.45), w.material("glass", Color("2d3a42")))
+	var wheel := CylinderMesh.new()
+	wheel.top_radius = 0.36
+	wheel.bottom_radius = 0.36
+	wheel.height = 0.24
+	wheel.radial_segments = 10
+	for dx in [-0.85, 0.85]:
+		for dz in [-1.6, 1.6]:
+			var tyre: MeshInstance3D = w._mesh(wheel, at + Vector3(dx, 0.36, dz), w.material("plain", Color("1b1b1b")))
+			tyre.rotation = Vector3(0, 0, PI / 2.0)
+	for dx in [-0.62, 0.62]:
+		w.box(Vector3(0.36, 0.14, 0.04), at + Vector3(dx, 0.9, -2.45), w.glow(Color("f2efe2"), 0.2, 1.0))
+
+## The paving of the lane round the east end (5 mm under the road's sidewalk), and the
+## palm and shrubs at the east corner (world). The photos' trees along the perimeter wall
+## are left out: the camera always looks across them, and its cut cannot hold them back.
+func _rear_planting() -> void:
+	w.box(Vector3(ACCESS.size.x, 0.1, ACCESS.size.y), Vector3(ACCESS.get_center().x, -0.095, ACCESS.get_center().y),
+		w.material("concrete", Color("c9c7c0")))
+	var palms := Chapel.new()
+	palms.w = w
+	var palm := world(-44.5, BACK - 1.2)
+	palms._palm(Vector3(palm.x, 0.0, palm.y), 5.6, 801)
+	# The photo's palm arches its fronds up and lets them droop: the chapel palm's near-level
+	# fronds read edge-on from the lane, so add a ring rising and a ring hanging.
+	var crown := Vector3(palm.x, 5.6, palm.y)
+	var fronds: ShaderMaterial = w._leaf_material(801, crown, Chapel.PALM_COLORS, true)
+	var card: ArrayMesh = w._cards(1.2, 3.0, 0.0, 1)
+	for i in 12:
+		var frond := MeshInstance3D.new()
+		frond.mesh = card
+		frond.material_override = fronds
+		var tilt := deg_to_rad(55.0 if i % 2 == 0 else 115.0)
+		frond.transform = Transform3D(Basis(Vector3.UP, TAU * i / 12.0) * Basis(Vector3.RIGHT, tilt), crown)
+		frond.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+		w.root.add_child(frond)
+	# Along the bed as in photo 2: big clipped lime ficus, golden bushes and small dark round
+	# ones, along the back, round the corner and up the east end.
+	var ficus: Array[Color] = [Color("6f9a2e"), Color("8fb83a"), Color("a9cc4a"), Color("c3dc6a"), Color("7fa832")]
+	var golden: Array[Color] = [Color("8a9a3a"), Color("aab448"), Color("c8c45a"), Color("9aa83e"), Color("dcd47a")]
+	for bush in [[-46.4, -1.5, 1.9, ficus], [-45.5, -0.6, 1.0, w.HEDGE_COLORS], [-43.4, -2.1, 1.4, golden],
+			[-42.3, -0.9, 1.1, w.HEDGE_COLORS], [-41.0, -2.2, 1.6, ficus], [-39.9, -0.9, 1.2, w.HEDGE_COLORS],
+			[-39.8, -2.4, 0.9, golden], [-48.9, -1.6, 1.5, ficus], [-49.9, -0.4, 1.0, w.HEDGE_COLORS],
+			[-49.5, 1.5, 1.3, golden], [-49.9, 3.4, 1.6, ficus], [-49.3, 5.4, 1.0, w.HEDGE_COLORS], [-49.8, 7.0, 1.2, ficus]]:
+		var at := world(bush[0], BACK + bush[1])
+		w._shrub(Vector3(at.x, 0.05, at.y), bush[2], 802 + roundi(bush[0] * 10.0), bush[3])
+	for pile in _pile_at:
+		var at := world(pile[0].x, pile[0].z)
+		w._shrub(Vector3(at.x, -0.25, at.y), pile[1], 830 + roundi(pile[0].x * 10.0), pile[2])
+
+# --- The raised walkway --------------------------------------------------------------
 
 ## The cream plinth the ground floor stands on, its diamond-tiled floor, the awning on
 ## its slanted struts, the railing (open at the steps), the clad piers and the tube lights.
