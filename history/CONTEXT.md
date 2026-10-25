@@ -1,5 +1,7 @@
 # Project Context
 
+**Every branch in main, 2026-10-25.** Canteen layout, Covered Court, Aero Hall, Formation Center, the SJH back lane, the audio fixes, the opening and story work and the girl walk test are all merged. Aero Hall's edge wall now leaves a gateway into SJH's back lane (`GATEWAY_X`). See `sessions/2026-10-25-merge-all-branches.md`.
+
 **Aero Hall, 2026-10-22.** `areas/aero.gd`: the navy corrugated hall in front of the gym's
 south end, between SJH and the gym, with its gabled front block, the HAU seal, aircon
 units and signs, and the yard behind the green wall. The camera cuts SJH away when
