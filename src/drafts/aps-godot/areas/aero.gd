@@ -32,6 +32,9 @@ const PLANTER := Rect2(44.0, 121.2, 1.4, 3.8)
 const SIGNS: Array[Vector2] = [Vector2(42.8, 127.2), Vector2(41.6, 129.0), Vector2(40.2, 134.2)]
 const GREEN_WALL := Vector3(48.6, 137.0, 143.2)
 const EDGE_Z := 145.8
+## Where the grey wall at the edge starts: west of it the concrete beside the hall runs on
+## into the lane behind SJH (`Sjh.ACCESS`), its gate slid open against the wall.
+const GATEWAY_X := 44.4
 const BIN := Vector2(61.0, 143.9)
 const SKIP := Rect2(54.0, 143.2, 3.2, 1.8)
 const SHELTER := Rect2(50.2, 138.2, 3.8, 3.0)
@@ -52,8 +55,8 @@ static func blocked(x: float, z: float) -> bool:
 		return true
 	if absf(z - GREEN_WALL.y) < 0.2 and x > GREEN_WALL.x and x < YARD.end.x:
 		return true # the green wall's return along the gym's end
-	if z > EDGE_Z - 0.2:
-		return true
+	if absf(z - EDGE_Z) < 0.2 and x > GATEWAY_X and x < YARD.end.x:
+		return true # the grey wall at the edge, open to SJH's back lane west of it
 	for post in SIGNS + [BIN, POLE]:
 		if at.distance_to(post) < 0.4:
 			return true
@@ -325,8 +328,8 @@ func _yard() -> void:
 	for patch in [[138.2, 0.6, 1.4], [140.4, 0.4, 1.0], [142.0, 0.9, 0.8]]:
 		w.box(Vector3(0.04, patch[2], 1.3), Vector3(GREEN_WALL.x - 0.14, GROUND_Y + patch[1] + patch[2] / 2.0, patch[0]), stain)
 	var grey: Material = w.material("stucco", Color("a9aaa4"))
-	w.box(Vector3(YARD.end.x - SIDE.position.x, 2.6, 0.25), Vector3((SIDE.position.x + YARD.end.x) / 2.0, GROUND_Y + 1.3, EDGE_Z), grey)
-	w.box(Vector3(3.2, 2.2, 0.06), Vector3(45.0, GROUND_Y + 1.1, EDGE_Z - 0.16), w.material("metal", Color("8f9a9c"))) # the gate
+	w.box(Vector3(YARD.end.x - GATEWAY_X, 2.6, 0.25), Vector3((GATEWAY_X + YARD.end.x) / 2.0, GROUND_Y + 1.3, EDGE_Z), grey)
+	w.box(Vector3(3.2, 2.2, 0.06), Vector3(GATEWAY_X + 1.8, GROUND_Y + 1.1, EDGE_Z - 0.16), w.material("metal", Color("8f9a9c"))) # the gate, slid open
 	w.box(Vector3(SKIP.size.x, 1.2, SKIP.size.y), Vector3(SKIP.get_center().x, GROUND_Y + 0.6, SKIP.get_center().y), w.material("metal", Color("2f5e3c")))
 	var drum := CylinderMesh.new()
 	drum.top_radius = 0.36
