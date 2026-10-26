@@ -28,6 +28,9 @@ The reference for how each character looks in the full-art cutscenes and flashba
 * `lance-older.png` - Lance ten years later: shaggy auburn hair past the jaw, light stubble, a dark open overshirt over a black t-shirt. His hair is a deeper red than at school, as in the source. After converting, the whites of his eyes were made skin (shaded under the lid) by hand, so his eyes are drawn like young Lance's: a dark lid line over a rounded iris, no whites. Redo that if he is converted again.
 * `pat.png` - Pat: very long dark brown hair with loose strands and bangs between the eyes, white blouse with an open collar, black backpack straps, grey and red plaid skirt.
 * `ysha.png` - Ysha: shoulder-length wavy golden hair, white-framed glasses, an orange cat lanyard with an ID card, navy backpack straps, grey and red plaid skirt.
+* `pat-older.png` - Pat ten years later (draft): shoulder-length dark brown hair, a pendant necklace, a dark open jacket over a white top, a belt and a bag strap. Eye whites made skin by hand, like older Lance's.
+* `ysha-older.png` - Ysha ten years later (draft): short messy golden hair, no glasses, a loose white t-shirt and dark jeans. Eye whites made skin by hand, like older Lance's.
+* `cast-draft.png` - the cast side by side, at school on top and ten years later below.
 
 ## Adding a character
 1. Edit one of the style sheet's characters at 512 px and shrink it with `npcs/pixellab/shrink.ps1`.
