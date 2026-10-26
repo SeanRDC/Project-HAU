@@ -36,6 +36,13 @@
   `assets/drafts/characters/README.md`. The older three have their eye whites made skin by
   hand, so every eye is a dark lid line over a rounded iris.
 - `docs/godot-art-style.md`: "Full pixel art (cutscene portraits)", the 256 x 384 canvas.
+- `opening/STORY.md` revised to be emotional the way Omori is, by holding back (its
+  "What changed in this revision" lists each change): November 11 is no longer also
+  Ysha's birthday and 11:11 is used once; a new "Who Ysha is" (her humour, drawings,
+  opinions, a running joke with Lance) so she is a person before she is a worry; fewer
+  speeches (Pat's ending line is now "Ito 'yung nahulog mo noon."); the true ending is
+  "Sabay tayo"; "Sa likod" is silent (no "Totoong Tayo", so no song permission needed); Pat
+  has edges (a cold week, a fight); the cost is honesty with Pat, not romance.
 - `tools/pixellab-convert.mjs`: PixelLab image-to-pixelart-pro (finds the picture's own
   pixel scale), or with `--size` image-to-pixelart in faithful mode at that size.
 - `tools/pixellab-styled.mjs`: PixelLab generate-image-v2 with a style image and

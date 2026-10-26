@@ -9,6 +9,11 @@ pictures converted to pixel art at 256 x 384 by PixelLab's faithful mode
 (`tools/pixellab-convert.mjs`), not redrawn, which drifted. How the drawn scenes are made is
 still to be tried. See `sessions/2026-10-27-cutscene-direction.md`.
 
+**The story, revised, 2026-10-27.** `opening/STORY.md` now aims to be emotional the way Omori
+is, by holding back: Ysha is a person first ("Who Ysha is"), fewer coincidences on November
+11, fewer speeches, a silent "Sa likod", a Pat with edges, and the cost is honesty with Pat
+rather than romance. Its "What changed in this revision" lists every change for the team.
+
 **3D cutscene characters, 2026-10-23.** Characters who matter in cutscenes become low-poly
 3D models drawn like the pixel portraits, so cutscenes need no generated pictures. Lance is
 first: built by `tools/blender/lance.py` into `models/lance.glb`, shown by `actor.gd` with
