@@ -29,25 +29,35 @@ stays; these parts changed. Disagree with any of them and say so.
    jealous moment she is ashamed of. Her choice to help means more because of it.
 6. **The cost is honesty, not romance.** The heart of the story is no longer "every hour for
    Ysha is taken from Pat" but "every secret he keeps to save Ysha is a lie he tells Pat".
-   Lance and Ysha are friends; ending 4 is bittersweet, not love saving her.
+   Lance and Ysha are friends; the ending where he stays is bittersweet, not love saving
+   her.
 7. **How it should feel:** long light stretches first, small wrongness used rarely, and the
    truth arriving as something the player does.
+8. **His son or her** (like the choice in Shuzo Oshimi's *Drifting Net Cafe*). The child is
+   a son, and Lance feels him even in 2026: in dreams, in the photo, in the word "Papa".
+   Ysha is the first love he never told. The last night is the choice between them.
+9. **The 2038 he goes back to is the one he left.** Going back returns him to his own
+   future exactly as it was; the 2026 he changed carries on without him. So Ysha lives only
+   in the ending where he stays. In every other ending she is gone in his world.
+10. **Ending 3 is bittersweet, like *ID:INVADED* episode 10.** He saved her, she calls at
+    11:11 PM (the call he once declined), he answers, tells her that where he comes from
+    she is gone, and says he has to go back. "Saved, but alone" is dropped: three endings.
 
 ## The story in short
 
-A man full of regrets falls asleep in his old classroom at HAU and wakes up in June of his
-third year, five months before November 11, the day he lost a friend to the depression
-nobody noticed. He has one more chance, with only his memories and one photo from his
-future. But he can't explain what he knows, so to stay close to her he starts lying to the
-one person who has never lied to him: his childhood friend, the girl who, in his future,
-became his wife.
+A father full of regrets falls asleep in his old classroom at HAU and wakes up in June of
+his third year, five months before November 11, the day he lost Ysha, the first love he
+never told, to the depression nobody noticed. He has one more chance, with only his memories
+and one photo from his future: his wife Pat, his childhood friend, holding their newborn
+son. To stay close to Ysha he starts lying to Pat. And the closer November comes, the
+clearer the price: the world where Ysha lives is a world his son was never born into.
 
-- **The heart of it:** a second chance, a secret he can't tell, and a friend who notices
-  anyway.
-- **Tone:** quiet, nostalgic, warm and funny for a long time, then sad, then hopeful; told
-  like the manga opening.
+- **The heart of it:** a second chance, a secret he can't tell, a friend who notices anyway,
+  and in the end a choice no one should have to make: his son or her.
+- **Tone:** quiet, nostalgic, warm and funny for a long time, then sad, then bittersweet;
+  told like the manga opening.
 - **Language:** Tagalog and Taglish, with a little Kapampangan.
-- **The game's question:** can he save her without lying to everyone else?
+- **The game's question:** if he saves her, can he still go home?
 
 ## Characters
 
@@ -55,11 +65,11 @@ became his wife.
 | --- | --- | --- |
 | Lance Manalang (the MC) | The player boy: wavy brown hair, white polo, maroon bag | Quiet, never knows what to say. Narrates the opening. The only one pulled into his past life. |
 | Pat (Patricia Lansangan), his childhood friend | Long dark hair (`gf` in the game files) | Neighbours since they were kids, in the same schools all their lives. Loud, bossy, protective; scolds him, drags him to class, always waits for him outside the classroom. He takes her for granted and sees her as almost family; she has loved him for years and never said it. In his future she becomes his wife. Not his girlfriend now. She notices first that he has changed, and she isn't a saint about it. |
-| Ysha (Kysha Navarro), the irregular student | Short light hair (`blonde` in the game files) | Not a transferee: she has been at HAU all along, but fell behind on units, so she takes a different mix of classes every day, often with younger students, while her old block has moved on. No one group sees her every day, so no one notices when something is wrong. Funny, quick, a little mean in a way people like. Sits at the other table in the canteen. The one he loses on November 11. They become friends over shared notes for a minor they are both behind in, the same jeep after night classes, the canteen table; no "I feel like I've met you before": he truly remembers her, she has no idea. |
+| Ysha (Kysha Navarro), the irregular student | Short light hair (`blonde` in the game files) | Not a transferee: she has been at HAU all along, but fell behind on units, so she takes a different mix of classes every day, often with younger students, while her old block has moved on. No one group sees her every day, so no one notices when something is wrong. Funny, quick, a little mean in a way people like. Sits at the other table in the canteen. The one he loses on November 11, and his first love, though he never told her and never acted on it; in 2026 he is a 32-year-old father inside, and he keeps it that way. They become friends over shared notes for a minor they are both behind in, the same jeep after night classes, the canteen table; no "I feel like I've met you before": he truly remembers her, she has no idea. |
 | The campus | Kuya Ben, Ate Lorna, Coach Gab, Migo, Bea and the rest | Remember what Lance does and pass it on: friends notice, rumours spread. |
 
-Lance, Pat and Ysha are about 20, third-year students at HAU in 2026. The baby's name is
-still to be decided.
+Lance, Pat and Ysha are about 20, third-year students at HAU in 2026. Their son (in 2038,
+two years old) is still to be named.
 
 ## Who Ysha is
 
@@ -93,15 +103,20 @@ one says anything; the player just notices it is quiet.
   with him is his wallet, and in it the family photo. In the game his memories are the
   quest log.
 - **The family photo.** In the hospital on November 11, 2036, he took a selfie: him beside
-  Pat in the bed, their newborn in her arms. Weeks later she printed it, wrote the baby's
+  Pat in the bed, their newborn son in her arms. Weeks later she printed it, wrote his
   name and the date on the back, signed it, and slipped it into his wallet without a word.
-  She has no idea what it will do. Their child was born on the day he lost Ysha, ten years
+  She has no idea what it will do. Their son was born on the day he lost Ysha, ten years
   later.
 - **November 11 is never shown.** Only the date and what it left behind.
 - **Choices are remembered,** through the NPC memory the game already has.
-- **The photo fades.** The more he lies to Pat or shuts her out, the more it changes: first
-  Pat's face blurs, then the baby. Being honest with Pat brings them back. The player can
-  check it from the menu.
+- **The 2038 he goes back to is the one he left.** Falling asleep in the classroom on
+  November 11 returns him to his own future, exactly as he left it: his son, his wife, and
+  Ysha gone. The 2026 he changed carries on without him, and he can never know how. Nothing
+  he does in 2026 reaches the 2038 he wakes in. Only staying keeps the world he changed.
+- **The photo fades.** It shows the future he is about to lose. The more he lies to Pat or
+  shuts her out, the more it changes: first Pat's face blurs, then his son. Being honest
+  with Pat brings them back. The player can check it from the menu. It is a warning, not a
+  cause: in 2026, Pat drifting away is real.
 
 ## How he is sent back
 
@@ -118,9 +133,39 @@ Nobody sends him on purpose, and nobody ever explains it.
    shaking him awake. The wallet is in his pocket, the photo still inside.
 
 **The way back.** On November 11, 2026 he feels the same pull to the same seat. If he falls
-asleep there, he wakes in 2038 (endings 1 to 3). If he refuses, he stays in 2026 (ending 4).
+asleep there, he wakes in 2038 (endings 2 and 3). If he refuses, he stays in 2026 (ending 1).
 
-His wife never knows. To her it was just an afternoon he came home late.
+## His son, or her
+
+The dilemma that grows under everything (like the choice in Shuzo Oshimi's *Drifting Net
+Cafe*). It is never said out loud until the last night; the player feels it first.
+
+- **His son is there in 2026, in pieces.** When Lance dozes off (in class, on the jeep), a
+  second of 2038 leaks in: a small hand on his face, "Papa", the smell of baby powder. The
+  player can't control when. They come more often as November gets closer.
+- **The photo is his son's face.** Checking it from the menu is the only way Lance can see
+  him. When the photo fades, those dream-moments fade too.
+- **He realises the price slowly.** In October he understands the rule: if he goes back, he
+  wakes in the world he left, where she is gone. If he stays, his son will never be born.
+  Nobody explains it to him; he works it out from the photo, and so does the player.
+- **The last night is the choice.** November 11, 2026, the classroom, the window seat. The
+  photo in one hand, the phone in the other. Sleep, and go home to his son. Stay awake, and
+  stay in the world where she lives.
+
+## The ending's call
+
+Ending 3, like *ID:INVADED* episode 10, where the detective says goodbye to his daughter in
+the world where she is alive, knowing that in the real one she is gone.
+
+At 11:11 PM on November 11, 2026, Ysha calls. It is the same call, at the same minute, that
+the player had to decline at the start of the game. This time the only button is "Answer".
+She is fine: sleepy, teasing. "Uy. Gising ka pa? Wala lang... Salamat pala kanina. Sabay tayo
+bukas, ha?" He lets her talk. Then he tells her the truth, plainly: "Ysha... sa pinanggalingan
+ko, wala ka na. Kailangan kong bumalik." She doesn't understand. She laughs, the way she does:
+"Ang weird mo. Matulog ka na nga." And then, completely her: "Ingat ka, Lance. Bukas." He stays
+on the line after she hangs up, then puts his head down on the desk.
+
+His wife never knows where he went. To her it was just an afternoon he came home late.
 
 ## Pat's story
 
@@ -282,8 +327,9 @@ Omori: hold back, and trust the player.
    player feels it before anyone says a word.
 2. **A playable prologue in 2038.** Before the opening, one short day as Lance on November
    11, 2038: feeding their two-year-old, Pat teasing him, the birthday cake, a game on the
-   floor, the child calling him "Papa"; then the car and the voicemail. The family in the
-   photo becomes a child the player has held, so endings 1 and 4 truly cost something.
+   floor, his son calling him "Papa"; then the car and the voicemail. The family in the
+   photo becomes a child the player has held, so the last night's choice truly costs
+   something either way.
 3. **Show, don't say.** No one names the theme. Feelings come through objects and habits: a
    drink on a ledge, a blank margin, a pen that stops being returned, a seat nobody saves.
 4. **Small wrongness, rarely.** The doodle flicker and the distortions are rare, so the
@@ -304,8 +350,8 @@ Omori: hold back, and trust the player.
 | July | Walking Ysha to the jeep. The first things he remembers come true. Lola dies. Pat's cold week. | First rains |
 | August | Ysha hides her bad days. Pat finds the photo and her signature. | Rainy season |
 | September | The fight. Pat steps back. The rumour. Sa likod at the fountain. | Heavy rain, dusk |
-| October | Every secret costs him with Pat. The truth about the call surfaces. | Grey, still |
-| November 10–11 | The letter; then the day. 11:11 PM comes again. | |
+| October | Every secret costs him with Pat. The truth about the call surfaces. He works out the price: his son or her. | Grey, still |
+| November 10–11 | The letter; then the day. The last night in the classroom: 11:11 PM comes again, and the choice. | |
 
 ### Timeline
 
@@ -314,8 +360,8 @@ Omori: hold back, and trust the player.
 | 2026 | 20 | Third year at HAU; November 11 |
 | 2028 | 22 | They graduate |
 | 2032 | 26 | The wedding |
-| 2036 | 30 | The baby is born, November 11; the hospital selfie |
-| 2038 | 32 | The second birthday; the voicemail; the classroom; June 2026 |
+| 2036 | 30 | Their son is born, November 11; the hospital selfie |
+| 2038 | 32 | His second birthday; the voicemail; the classroom; June 2026 |
 
 ## Key scenes
 
@@ -325,36 +371,43 @@ the ledge and walks away. The camera stays on the drink until the rain starts.
 
 ## Endings
 
-| # | Ending | How he gets there | Where he ends up |
-| --- | --- | --- | --- |
-| 1 | Saved, but alone | Gives everything to saving Ysha, lies to Pat until she stops asking, still means to go home | 2038: Ysha alive; his wife and child never existed |
-| 2 | The same November 11 | Stays close to Pat, misses Ysha's signs again | 2038: his family, and the regret twice as heavy |
-| 3 | Sabay tayo (true) | Tells Pat the truth; Ysha gets real help | 2038: his family, Ysha alive as the child's ninang |
-| 4 | Ang Pinili Ko (hidden) | Saves Ysha and never sleeps in the classroom | Stays in 2026 for good |
+Three endings. Ysha lives on in every 2026 where Lance helped her, but only one ending lets
+him stay in it. All of them cost something.
 
-- **Ending 1.** Nobody dies; the family simply never happened. The photo shows him alone
-  by an empty bed. At an alumni event Pat, happy with someone else, greets him: "Uy! Ikaw
-  pala. Kumusta ka na?" Every November 11 Ysha messages: "Salamat pa rin."
-- **Ending 2.** He keeps Ysha at a distance, thinking there is time. November 11 comes
-  again. In 2038, at the birthday, his wife (who knows nothing) finds him in the car. She
-  doesn't ask. She sits with him. The last shot is the classroom.
-- **Ending 3.** In October he tells Pat everything. She is quiet for a long time, then:
-  "Sige." They sit with Ysha, walk her to the jeep, go with her to the guidance office and
-  to her family. On November 11 she is with them, under one umbrella too small for three.
-  At the fountain Pat hands back the photo, signature side up: "Ito 'yung nahulog mo noon."
-  In 2038: "Late ka na naman," and a group selfie where everyone is looking at the camera,
-  and in the corner, a sketch of the three of them, the hands still terrible.
-- **Ending 4.** He leaves the fading photo on the classroom desk and walks out before he can
-  fall asleep. He stays. Ysha gets help, slowly, and has a life that isn't about him. Pat
-  finds the photo and watches it fade in her hand until only he is left. November 11 still
-  unsettles him every year; the last panel is his wallet with an empty slot.
+| # | Ending | How he gets there | Where he ends up | Ysha | His son |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Ang Pinili Ko (hidden) | Saves Ysha and, on the last night, stays awake | 2026, for good | Lives | Never born |
+| 2 | The same November 11 | Misses her signs again, goes back | 2038 | Gone | Kept, the guilt doubled |
+| 3 | Sabay tayo (true) | Tells Pat the truth, Ysha gets real help; answers her call, then goes back | 2038 | Lives on in the 2026 he left; gone in his world | Kept |
 
-In every ending Ysha gets real help; her recovery is never "fixed by love".
+- **Ending 1: Ang Pinili Ko.** He leaves the photo on the classroom desk and stays awake
+  until morning. He stays. Ysha gets help, slowly, and has a life that isn't about him; they
+  stay friends, and he never tells her why he was always there. Pat finds the photo and
+  watches it fade in her hand, her own face, then their son, until only he is left. Years later
+  he is happy, mostly. But every November 11 he wakes at night sure he heard "Papa", and
+  the last panel is his wallet with an empty slot.
+- **Ending 2: The same November 11.** He keeps Ysha at a distance, thinking there is time.
+  November 11 comes again. In 2038, at the birthday, his wife (who knows nothing) finds him
+  in the car. She doesn't ask. She sits with him. The last shot is the classroom.
+- **Ending 3: Sabay tayo.** In October he tells Pat everything. She is quiet for a long
+  time, then: "Sige." They sit with Ysha, walk her to the jeep, go with her to the guidance
+  office and to her family. On the afternoon of November 11 she is with them, under one
+  umbrella too small for three. At the fountain Pat hands back the photo, signature side up:
+  "Ito 'yung nahulog mo noon." That night, in the classroom, comes the call ("The ending's
+  call" above): he answers, tells Ysha that where he comes from she is gone, and that he has
+  to go back. He sleeps. 2038: the car outside the party. In his world she is still gone,
+  and nothing he did changed that. But this time he goes back inside and tells his wife
+  everything, and she believes him. His son runs to him: "Papa!" The last shot is the
+  birthday table, with an empty chair he leaves for Ysha on purpose, and on the
+  classroom desk in 2026, a sketch of the three of them, the hands still terrible.
+
+Ysha's recovery is never "fixed by love": where she lives, it is because she got real help
+and people stayed. Where she is gone, it is because he went home, not because help failed.
 
 ## Open questions
 
 - [ ] Pat's surname (Lansangan is a draft).
-- [ ] The baby's name.
-- [ ] Which endings are playable, and is ending 4 hidden?
+- [ ] Their son's name.
+- [ ] Which endings are playable, and is ending 1 (he stays) hidden?
 - [ ] Does the game start in the classroom instead of in front of APS?
 - [ ] Ysha's details in "Who Ysha is" are drafts: the team should rewrite them as their own.
