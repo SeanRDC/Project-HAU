@@ -1,4 +1,4 @@
-# 2026-10-27: How cutscenes look, and Lance's cutscene reference
+# 2026-10-27: How cutscenes look, and the cast's cutscene references
 
 **Who:** Mclaren, with Claude Code.
 
@@ -7,8 +7,8 @@
 - Where the last session stopped; a look at the Lance sprite drafts and the 3D model.
 - Ideas for cutscenes that need full animation, and how to do them when nobody on the
   team can draw.
-- PixelLab tries of Lance: full body, half body, and finally one made to match a picture
-  Mclaren chose, saved as his cutscene reference.
+- PixelLab versions of pictures Mclaren chose for Lance, Pat, Ysha and Lance ten years
+  later, "exactly like" the pictures, saved as their cutscene references.
 
 ## Decisions
 
@@ -17,22 +17,26 @@
 - **Pixel art stays in the game world; cutscenes and flashbacks are drawn art, not pixel
   art** (Omori's split). The world characters are chibi pixel sprites; the cutscene art
   can be taller and more expressive.
-- **Lance's cutscene look is `assets/drafts/characters/cutscene-art/lance.png`:** messy
-  auburn hair, tired brown eyes, white short-sleeve polo with an open collar and no tie,
-  maroon backpack with black buckles. Made with PixelLab from `lance-source.png`.
-- **Pat's cutscene look is `cutscene-art/pat.png`**, made the same way from `pat-source.png`:
-  very long dark brown hair, tired brown eyes, white blouse with an open collar, black
-  backpack straps, grey and red plaid skirt.
-- **Ysha's cutscene look is `cutscene-art/ysha.png`**, from `ysha-source.png`:
-  shoulder-length wavy golden hair, white-framed glasses, orange cat lanyard with an ID
-  card, navy backpack straps, plaid skirt. Her hair came out brighter than the source.
+- **The references are converted from Mclaren's pictures, not redrawn.** Redrawing with
+  PixelLab (generate-image-v2, the picture as style and reference, 128 x 192) drifted: the
+  hair, eyes and colours changed, and two tools at two sizes gave young and older Lance
+  different looks. PixelLab's image-to-pixelart in faithful mode (`fixer`, starting from
+  the picture at strength 150, 256 x 384, a quarter of the 1024 x 1536 sources) keeps them
+  as drawn. All four are made the same way so they match.
+- **Each picture keeps its own eyes.** Pasting young Lance's eyes onto the older Lance
+  was tried and made him look childish; don't move features between versions.
+- The references keep their sources' backgrounds for now (young Lance's white shirt is
+  close to his grey background, so a quick removal could eat into it).
 
 ## What changed
 
-- `assets/drafts/characters/cutscene-art/` (`lance.png`, `lance-source.png`) and its
-  section in `assets/drafts/characters/README.md`.
+- `assets/drafts/characters/cutscene-art/`: `lance.png`, `lance-older.png`, `pat.png`,
+  `ysha.png` and each one's `-source.png`; their section in
+  `assets/drafts/characters/README.md`.
+- `tools/pixellab-convert.mjs`: PixelLab image-to-pixelart-pro (finds the picture's own
+  pixel scale), or with `--size` image-to-pixelart in faithful mode at that size.
 - `tools/pixellab-styled.mjs`: PixelLab generate-image-v2 with a style image and
-  reference images (`PIXELLAB_API_KEY` from the environment).
+  reference images (used for the first tries).
 
 ## Left unfinished / known problems
 
@@ -40,7 +44,9 @@
   Lance (`assets/drafts/3d/lance-hd.blend`), render it as ink lines (Blender Line Art,
   flat shading), put it over a campus photo inked by `manga.gdshader`, touch up by
   tracing in Krita, and animate with a few frames (blinks, hair) plus camera moves.
-- The cutscene reference has no tie, the pixel portraits and 3D model still do; decide
+- Older Lance's hair is a deeper red than young Lance's (as in the sources); decide
+  whether that is on purpose.
+- The cutscene references have no tie, the pixel portraits and 3D model still do; decide
   which uniform is right.
 - The 3D model's hair is too big and its arms too stiff to pose; not fixed yet.
 - `tools\run-aps-godot.cmd` didn't find Godot on this computer (it is at
