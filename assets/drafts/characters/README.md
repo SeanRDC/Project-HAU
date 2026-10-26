@@ -20,6 +20,11 @@ Migo, Bea, Bianca, Kuya Ben, Rica, Paolo, Ate Lorna and Coach Gab. Each is an ed
 * `pxl/migo/` - Migo kept in pxl, like the boy: his chin cleaned and steady in every frame, his hair moving in the walk. `build.ps1` builds his sheets and portrait.
 * `Plaid.cs` - the grey HAU skirt plaid, shaded per pleat. `SoftEdges.cs` - softens the outlines.
 
+## Cutscene art (`cutscene-art/`)
+The reference for how each character looks in the full-art cutscenes and flashbacks (drawn art, like Omori; the game world stays pixel art). Not loaded by the game.
+* `lance.png` - Lance's reference, half body at 128 x 192: messy auburn hair, tired brown eyes, white short-sleeve polo with an open collar and no tie, maroon backpack with black buckles. Made with PixelLab (`tools/pixellab-styled.mjs`, the source as both style and reference).
+* `lance-source.png` - the picture it was made from.
+
 ## Adding a character
 1. Edit one of the style sheet's characters at 512 px and shrink it with `npcs/pixellab/shrink.ps1`.
 2. Add their setup to `npcs/rig/NpcCast.cs`. Put their drawing in `npcs/pixellab/frames/<id>/reference.png`, estimate its skeleton (`skeleton.mjs`), add their look to `animate-all.mjs` and redraw their walk and wave with it (`PIXELLAB_API_KEY` in the environment; about 6 generations).
