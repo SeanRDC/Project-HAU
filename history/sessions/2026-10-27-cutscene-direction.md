@@ -43,6 +43,14 @@
   speeches (Pat's ending line is now "Ito 'yung nahulog mo noon."); the true ending is
   "Sabay tayo"; "Sa likod" is silent (no "Totoong Tayo", so no song permission needed); Pat
   has edges (a cold week, a fight); the cost is honesty with Pat, not romance.
+- Then the endings: **his son or her** (the dilemma of Shuzo Oshimi's *Drifting Net
+  Cafe*): the child is a son, felt in 2026 through dream-moments and the photo; Ysha is the
+  first love Lance never told. **The 2038 he goes back to is the one he left**, so Ysha
+  lives only in the ending where he stays. Three endings: 1 Ang Pinili Ko (stays; she
+  lives, his son is never born), 2 The same November 11, 3 Sabay tayo (true, bittersweet,
+  like *ID:INVADED* episode 10: at 11:11 PM she calls, the call he once declined; he
+  answers, tells her that where he comes from she is gone, and goes back). "Saved, but
+  alone" is dropped.
 - `tools/pixellab-convert.mjs`: PixelLab image-to-pixelart-pro (finds the picture's own
   pixel scale), or with `--size` image-to-pixelart in faithful mode at that size.
 - `tools/pixellab-styled.mjs`: PixelLab generate-image-v2 with a style image and

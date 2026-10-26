@@ -13,6 +13,10 @@ still to be tried. See `sessions/2026-10-27-cutscene-direction.md`.
 is, by holding back: Ysha is a person first ("Who Ysha is"), fewer coincidences on November
 11, fewer speeches, a silent "Sa likod", a Pat with edges, and the cost is honesty with Pat
 rather than romance. Its "What changed in this revision" lists every change for the team.
+The endings are now three, built on one choice, his son or Ysha: going back returns him to
+the 2038 he left (where she is gone), so she lives only if he stays. The true ending is
+bittersweet: at 11:11 PM he answers her call, the one he once declined, says goodbye and
+goes home.
 
 **3D cutscene characters, 2026-10-23.** Characters who matter in cutscenes become low-poly
 3D models drawn like the pixel portraits, so cutscenes need no generated pictures. Lance is
