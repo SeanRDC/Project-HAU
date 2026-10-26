@@ -386,9 +386,13 @@ him stay in it. All of them cost something.
   watches it fade in her hand, her own face, then their son, until only he is left. Years later
   he is happy, mostly. But every November 11 he wakes at night sure he heard "Papa", and
   the last panel is his wallet with an empty slot.
-- **Ending 2: The same November 11.** He keeps Ysha at a distance, thinking there is time.
-  November 11 comes again. In 2038, at the birthday, his wife (who knows nothing) finds him
-  in the car. She doesn't ask. She sits with him. The last shot is the classroom.
+- **Ending 2: The same November 11.** He keeps Ysha at a distance, thinking there is time,
+  and misses her signs again. At 11:11 PM on November 11, 2026 he is out with Pat, his phone
+  on silent in his bag. The player sees the screen light up, "Ysha", and stop before anyone
+  notices: the same missed call, a second time. She is gone in this world too. That night
+  in the classroom there is nothing left to choose; he sleeps and wakes in the 2038 he left,
+  having lost her twice. At the birthday his wife (who still knows nothing) finds him in
+  the car. She doesn't ask. She sits with him. The last shot is the empty classroom.
 - **Ending 3: Sabay tayo.** In October he tells Pat everything. She is quiet for a long
   time, then: "Sige." They sit with Ysha, walk her to the jeep, go with her to the guidance
   office and to her family. On the afternoon of November 11 she is with them, under one
