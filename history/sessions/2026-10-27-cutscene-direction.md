@@ -23,6 +23,9 @@
 - **Pat's cutscene look is `cutscene-art/pat.png`**, made the same way from `pat-source.png`:
   very long dark brown hair, tired brown eyes, white blouse with an open collar, black
   backpack straps, grey and red plaid skirt.
+- **Ysha's cutscene look is `cutscene-art/ysha.png`**, from `ysha-source.png`:
+  shoulder-length wavy golden hair, white-framed glasses, orange cat lanyard with an ID
+  card, navy backpack straps, plaid skirt. Her hair came out brighter than the source.
 
 ## What changed
 
