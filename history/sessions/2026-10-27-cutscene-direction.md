@@ -20,6 +20,9 @@
 - **Lance's cutscene look is `assets/drafts/characters/cutscene-art/lance.png`:** messy
   auburn hair, tired brown eyes, white short-sleeve polo with an open collar and no tie,
   maroon backpack with black buckles. Made with PixelLab from `lance-source.png`.
+- **Pat's cutscene look is `cutscene-art/pat.png`**, made the same way from `pat-source.png`:
+  very long dark brown hair, tired brown eyes, white blouse with an open collar, black
+  backpack straps, grey and red plaid skirt.
 
 ## What changed
 
