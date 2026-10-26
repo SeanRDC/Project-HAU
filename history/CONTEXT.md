@@ -3,7 +3,8 @@
 **How cutscenes look, 2026-10-27.** Inspirations: Until Then (feel), Omori (storytelling),
 A Space for the Unbound (character look). Pixel art stays in the game world; cutscenes and
 flashbacks are drawn art, not pixel art. The cast's cutscene references are in
-`assets/drafts/characters/cutscene-art/` (Lance, Lance ten years later, Pat, Ysha): Mclaren's
+`assets/drafts/characters/cutscene-art/` (Lance, Pat and Ysha at school and ten years later,
+side by side in `cast-draft.png`): Mclaren's
 pictures converted to pixel art at 256 x 384 by PixelLab's faithful mode
 (`tools/pixellab-convert.mjs`), not redrawn, which drifted. How the drawn scenes are made is
 still to be tried. See `sessions/2026-10-27-cutscene-direction.md`.

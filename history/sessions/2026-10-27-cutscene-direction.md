@@ -30,9 +30,12 @@
 
 ## What changed
 
-- `assets/drafts/characters/cutscene-art/`: `lance.png`, `lance-older.png`, `pat.png`,
-  `ysha.png` and each one's `-source.png`; their section in
-  `assets/drafts/characters/README.md`.
+- `assets/drafts/characters/cutscene-art/`: `lance.png`, `pat.png`, `ysha.png`, the
+  ten-years-later `lance-older.png`, `pat-older.png`, `ysha-older.png` (drafts), each
+  one's `-source.png`, and `cast-draft.png` (all six side by side); their section in
+  `assets/drafts/characters/README.md`. The older three have their eye whites made skin by
+  hand, so every eye is a dark lid line over a rounded iris.
+- `docs/godot-art-style.md`: "Full pixel art (cutscene portraits)", the 256 x 384 canvas.
 - `tools/pixellab-convert.mjs`: PixelLab image-to-pixelart-pro (finds the picture's own
   pixel scale), or with `--size` image-to-pixelart in faithful mode at that size.
 - `tools/pixellab-styled.mjs`: PixelLab generate-image-v2 with a style image and
