@@ -25,6 +25,7 @@ The reference for how each character looks in the full-art cutscenes and flashba
 * `lance.png` - Lance's reference, half body at 128 x 192: messy auburn hair, tired brown eyes, white short-sleeve polo with an open collar and no tie, maroon backpack with black buckles. Made with PixelLab (`tools/pixellab-styled.mjs`, the source as both style and reference).
 * `lance-source.png` - the picture it was made from.
 * `pat.png` - Pat's reference, made the same way from `pat-source.png`: very long dark brown hair with loose strands and bangs between the eyes, tired brown eyes, white short-sleeve blouse with an open collar, black backpack straps and buckles, grey and red plaid skirt.
+* `ysha.png` - Ysha's reference, made the same way from `ysha-source.png`: shoulder-length wavy golden hair with bangs, white-framed glasses, brown eyes, white short-sleeve blouse with an open collar, an orange cat lanyard with an ID card, navy backpack straps, grey and red plaid skirt. Her hair came out brighter than the source's softer gold.
 
 ## Adding a character
 1. Edit one of the style sheet's characters at 512 px and shrink it with `npcs/pixellab/shrink.ps1`.
