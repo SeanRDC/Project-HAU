@@ -651,6 +651,23 @@ models drawn like the pixel portraits, so cutscenes need no AI-generated picture
 
 ---
 
+## Full pixel art (cutscene portraits)
+
+The pictures of the cast for full-art cutscenes and flashbacks, at a much larger size than
+the world's sprites:
+
+- **The canvas is 256 x 384** (2:3, upright), a half-body portrait from the head to the
+  waist. Every full pixel art picture is this size so the cast matches side by side.
+- **Made from a 1024 x 1536 picture** (the same 2:3, four times the size), converted to
+  true pixel art, not redrawn: `node tools/pixellab-convert.mjs <in>.png <out>.png
+  --size=256x384 --strength=150` (PixelLab's image-to-pixelart in faithful mode, starting
+  from the picture). Redrawing with PixelLab drifts from the picture; don't.
+- **The references** are in `assets/drafts/characters/cutscene-art/` (Lance, Lance ten
+  years later, Pat, Ysha), each beside its `-source.png`. The eyes are a dark lid line over
+  a rounded iris with skin either side, no whites (fixed by hand on older Lance).
+
+---
+
 ## Characters
 
 - Sprites are sheets in `sprites/<boy|girl>/<idle|walk>.png` (one row, frames
