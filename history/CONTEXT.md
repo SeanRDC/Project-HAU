@@ -1,5 +1,11 @@
 # Project Context
 
+**How cutscenes look, 2026-10-27.** Inspirations: Until Then (feel), Omori (storytelling),
+A Space for the Unbound (character look). Pixel art stays in the game world; cutscenes and
+flashbacks are drawn art, not pixel art. Lance's cutscene reference is
+`assets/drafts/characters/cutscene-art/lance.png` (open collar, no tie). How the drawn
+scenes are made is still to be tried. See `sessions/2026-10-27-cutscene-direction.md`.
+
 **3D cutscene characters, 2026-10-23.** Characters who matter in cutscenes become low-poly
 3D models drawn like the pixel portraits, so cutscenes need no generated pictures. Lance is
 first: built by `tools/blender/lance.py` into `models/lance.glb`, shown by `actor.gd` with
