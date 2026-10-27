@@ -104,13 +104,14 @@ const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
 const CoveredCourt := preload("res://areas/court.gd")
 const BesideAps := preload("res://areas/beside_aps.gd")
+const SacredHeart := preload("res://areas/sh.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
 	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0,
-	"octagon": 1.2, "slab": 2.4, "circles": 1.8, "lawn": 4.0, "diamond": 2.4}
+	"octagon": 1.2, "slab": 2.4, "circles": 1.8, "lawn": 4.0, "diamond": 2.4, "herringbone": 1.6}
 ## Wall kinds that weather: drawn a second time with shaders/weathering.gdshader, a
 ## grime band at their foot and faint paint patches over them.
 const WEATHERED := ["stucco", "concrete", "brick", "stone", "ledge"]
@@ -120,7 +121,7 @@ const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
 	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc",
 	"octagon": "9f5a45", "slab": "ddd2bf", "circles": "a4523b", "lawn": "6f8a4b",
-	"diamond": "ebe3d3"}
+	"diamond": "ebe3d3", "herringbone": "5f5c55"}
 
 var root: Node3D
 var lamps: Array[Light3D] = []
@@ -167,7 +168,8 @@ static func walkable_ground(x: float, z: float) -> bool:
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
 	if BesideAps.walkable(x, z) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
-			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z):
+			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z) \
+			or SacredHeart.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
@@ -193,7 +195,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
 			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z) \
-			or BesideAps.blocked(x, z):
+			or BesideAps.blocked(x, z) or SacredHeart.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -216,6 +218,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return 0.45 if local.y > BACK_EDGE - 0.1 else 0.2 # the step down out of the back
 	if local.x > 49.0 and local.x < 53.0 and local.y <= 3.26 and local.y >= 2.45:
 		return 0.15 if local.y > 2.8 else 0.3
+	var heart := SacredHeart.floor_height(x, z)
+	if not is_nan(heart):
+		return heart
 	var beside := BesideAps.floor_height(x, z)
 	if not is_nan(beside):
 		return beside
@@ -264,9 +269,10 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return 0.03 # canopy tile
 	return -0.04 if across < 4.0 else -0.2
 
-## The outer bounds; blocked() shapes the walkable campus inside them.
+## The outer bounds; blocked() shapes the walkable campus inside them (north, up to the gate
+## across the lane behind APS).
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -192.0, 101.0), clampf(z, Hallway.BACK, 162.0))
+	return Vector2(clampf(x, -192.0, 101.0), clampf(z, SacredHeart.GATE_Z + 0.2, 162.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -289,6 +295,7 @@ func build(parent: Node3D) -> void:
 	Aero.new().build(self)
 	CoveredCourt.new().build(self)
 	BesideAps.new().build(self)
+	SacredHeart.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -456,6 +463,21 @@ func _texture(kind: String) -> Texture2D:
 						if u + v > 18.5 or maxf(u, v) > 13.0:
 							tone = tone.darkened(0.12) # the paver's worn bevel
 					var noise := random.randf_range(-0.5, 0.5) * 7.0 / 255.0
+					image.set_pixel(x, y, Color(tone.r + noise, tone.g + noise, tone.b + noise))
+		"herringbone":
+			# Sacred Heart's square: dark grey concrete pavers 20 x 10 cm laid in a herringbone
+			# (16 x 8 px, turned alternately along the diagonals), weathered tones, moss in the joints.
+			var greys: Array[Color] = [Color("5f5c55"), Color("6a675f"), Color("57544e"), Color("706c63"), Color("4f4d48")]
+			for y in 128:
+				for x in 128:
+					var along := posmod(x + y, 32) < 16
+					var a := (x + y) if along else (x - y + 256)
+					var b := (x - y + 256) if along else (x + y)
+					var cell := Vector2i(floori(a / 16.0), floori(b / 8.0))
+					var tone: Color = greys[posmod(cell.x * 7 + cell.y * 13 + (0 if along else 3), greys.size())]
+					if posmod(a, 16) == 0 or posmod(b, 8) == 0:
+						tone = Color("5d6a3f") if random.randf() < 0.35 else Color("3c3a36") # joint, mossy here and there
+					var noise := random.randf_range(-0.5, 0.5) * 6.0 / 255.0
 					image.set_pixel(x, y, Color(tone.r + noise, tone.g + noise, tone.b + noise))
 		"slab":
 			# The covered walkways' floor: cream ceramic tiles 60 cm square, light grout.

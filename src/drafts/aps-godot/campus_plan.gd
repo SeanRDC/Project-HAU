@@ -64,7 +64,7 @@ const PLOTS := {
 	"formation": {"name": "Sister Josefina Nepomuceno Formation Center", "short": "Formation Center", "no": 16, "kind": "building", "built": true,
 		"label": Vector2(22.5, 62.4),
 		"outline": [Vector2(9.9, 44.8), Vector2(3.7, 69), Vector2(8.2, 70.9), Vector2(11.5, 77.4), Vector2(15.9, 81.4), Vector2(28, 82), Vector2(32, 76.3), Vector2(35.6, 67.2), Vector2(36.1, 56.6), Vector2(35.5, 47.5), Vector2(34.3, 38.6), Vector2(30.9, 34.7), Vector2(20.8, 35.1), Vector2(16.9, 38.6), Vector2(13.2, 40.5)]},
-	"sh": {"name": "Sacred Heart Building", "short": "SH", "no": 18, "kind": "building", "built": false,
+	"sh": {"name": "Sacred Heart Building", "short": "SH", "no": 18, "kind": "building", "built": true,
 		"label": Vector2(76.8, -7.1),
 		"outline": [Vector2(72.9, 17), Vector2(51.2, 16.8), Vector2(51.2, -7.6), Vector2(54.4, -7.5), Vector2(54.4, -9.5), Vector2(54.4, -13.6), Vector2(54.4, -24.4), Vector2(105.2, -23.9), Vector2(105.1, -8.6), Vector2(107.9, -8.6), Vector2(107.9, 6.6), Vector2(94.1, 6.5), Vector2(94.1, -5.6), Vector2(64.6, -5.9), Vector2(64.6, -1.3), Vector2(73, -1.3)]},
 	"court": {"name": "Covered Court", "short": "Covered Court", "no": 19, "kind": "building", "built": true,

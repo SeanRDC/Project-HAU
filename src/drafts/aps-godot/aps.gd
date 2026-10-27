@@ -26,6 +26,7 @@ const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
 const CoveredCourt := preload("res://areas/court.gd")
 const BesideAps := preload("res://areas/beside_aps.gd")
+const SacredHeart := preload("res://areas/sh.gd")
 const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
@@ -455,7 +456,7 @@ static func gym_for(x: float, z: float) -> float:
 ## The further turn to face the gym's north gable, once past its north-west corner into
 ## the lane; it hands over to the hall view in the side entrance.
 static func gable_for(x: float, z: float) -> float:
-	return smoothstep(Gym.FRONT_X, Gym.FRONT_X + 4.0, x) * (1.0 - _side_door_for(z)) * (1.0 - CoveredCourt.view_for(x, z))
+	return smoothstep(Gym.FRONT_X, Gym.FRONT_X + 4.0, x) * (1.0 - _side_door_for(z)) * (1.0 - CoveredCourt.view_for(x, z)) 		* smoothstep(38.0, 46.0, z) # only on the gym's side, not north of the court (Sacred Heart)
 
 ## 0 in the lane, 1 once through the side entrance (the gable is at z 66.8).
 static func _side_door_for(z: float) -> float:
@@ -743,6 +744,12 @@ func _update_camera(delta: float) -> void:
 	if forward.z > 0.3 and focus.z > CoveredCourt.CUT_Z and camera.position.z < CoveredCourt.CUT_Z:
 		var court_edge := (Vector3(focus.x, focus.y, CoveredCourt.CUT_Z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, court_edge)
+	# In Sacred Heart's square and its covered walkway, facing north, the camera stands over
+	# the Covered Court: everything south of the fence along it is cut away.
+	var square_cut := SacredHeart.court_cut_for(follow.x, follow.y) * facing_north
+	if square_cut > 0.0:
+		var fence_edge := (Vector3(focus.x, focus.y, SacredHeart.FENCE_Z + 0.3) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, fence_edge * smoothstep(0.0, 1.0, square_cut))
 	# Facing east down the Covered Court (its roof fades) the camera stands over the parking
 	# lane's trees and the pergola: everything west of the court's front (its gable too) is cut away.
 	if court > 0.0 and forward.x > 0.3 and camera.position.x < CoveredCourt.SHED.position.x:
@@ -1371,7 +1378,7 @@ func _collect_cutaways() -> void:
 	# Each side of the boulevard fades the same way while the camera faces the other across
 	# it, and the Student Center's roof while the student is under it.
 	_arcade_lights = scene.find_child(StudentCenter.LIGHTS_GROUP, false, false)
-	for group in [MiddleRoad.NORTH_GROUP, MiddleRoad.SOUTH_GROUP, StudentCenter.ROOF_GROUP, CoveredCourt.ROOF_GROUP]:
+	for group in [MiddleRoad.NORTH_GROUP, MiddleRoad.SOUTH_GROUP, StudentCenter.ROOF_GROUP, CoveredCourt.ROOF_GROUP, SacredHeart.WALK_ROOF]:
 		var items := []
 		var stack: Array[Node] = [scene.find_child(group, false, false)]
 		while not stack.is_empty():
@@ -1399,6 +1406,8 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 			hidden = under_arcade
 		elif cut["name"] == CoveredCourt.ROOF_GROUP:
 			hidden = CoveredCourt.under_roof(student.position.x, student.position.z)
+		elif cut["name"] == SacredHeart.WALK_ROOF:
+			hidden = SacredHeart.in_walk(student.position.x, student.position.z)
 		else:
 			hidden = GymInterior.hidden(cut["name"], p.x, p.y, y, side)
 		hidden = hidden and not free_cam.active # flying, everything stands
@@ -1611,7 +1620,7 @@ func _verify_and_capture() -> void:
 		checks.plan_loaded = CampusPlan.PLOTS.size() == 29 and CampusPlan.PLOTS["aps"]["built"] \
 			and not CampusPlan.PLOTS.has("corazon") and not CampusPlan.PLOTS.has("srh")
 		checks.road_loop_closed = Roads.points()[0].distance_to(Roads.points()[-1]) < 0.01
-		checks.plots_reserved = Plots.occupied(-197.1, 43.6) and Plots.occupied(76.8, -7.1) and not Plots.occupied(-8.7, 58.1)
+		checks.plots_reserved = Plots.occupied(-197.1, 43.6) and not Plots.occupied(76.8, -7.1) and not Plots.occupied(-8.7, 58.1)
 		# The layout reference: the Student Center (built now, so no longer a plot) between
 		# the boulevard and the Main Building, and every plot painted with its name and
 		# outlined in dashes.
@@ -1982,6 +1991,11 @@ func _verify_and_capture() -> void:
 		# Its inside: the courts' lettering and the AERO gate, the gate solid, the floor clear
 		# between the courts; on the floor the camera faces east and the roof fades.
 		checks.court_inside = scene.find_child("COURT LETTERING", true, false) != null and scene.find_child("AERO LABORATORY", true, false) != null 			and World.blocked(CoveredCourt.GATE_X + 1.0, CoveredCourt.centre_z()) and not World.blocked(80.0, 41.5) 			and is_equal_approx(CoveredCourt.view_for(70.0, 40.0), 1.0) and CoveredCourt.under_roof(70.0, 40.0)
+		# Sacred Heart: built on its plot, solid; its square and the covered walkway walkable at
+		# their heights, the fountain, the fence along the court and the walkway's tables solid;
+		# in the square the camera faces north and the court behind is cut away.
+		checks.sh_built = not Plots.shapes().has("sh") and scene.find_child("SACRED HEART BUILDING", true, false) != null 			and scene.find_child("SH SQUARE NAME", true, false) != null and World.blocked(60.0, 5.0) and World.blocked(80.0, -10.0) 			and World.blocked(100.0, 0.0)
+		checks.sh_square = not World.blocked(83.5, 12.0) and is_equal_approx(World.floor_height(83.5, 12.0), SacredHeart.SQUARE_Y) 			and World.blocked(SacredHeart.FOUNTAIN.x, SacredHeart.FOUNTAIN.y) and World.blocked(80.0, SacredHeart.FENCE_Z) 			and not World.blocked(62.0, 18.6) and is_equal_approx(World.floor_height(62.0, 18.6), SacredHeart.WALK_Y) 			and World.blocked(SacredHeart.WALK_TABLES[1], SacredHeart.WALK_TABLE_Z) and not World.blocked(52.0, 18.6) 			and is_equal_approx(SacredHeart.court_cut_for(83.5, 12.0), 1.0) and is_equal_approx(gable_for(83.5, 12.0), 0.0)
 		checks.court_built = not Plots.shapes().has("court") 			and not World.blocked(70.0, 40.0) and is_equal_approx(World.floor_height(70.0, 40.0), CoveredCourt.FLOOR_Y) 			and not World.blocked(70.0, CoveredCourt.SHED.end.y + 0.8) and World.blocked(CoveredCourt.columns()[2], CoveredCourt.SHED.end.y - 0.3) 			and World.blocked(70.0, CoveredCourt.STANDS.x + 1.0)
 		student.place(GYM_SIDE_SPOT.x, GYM_SIDE_SPOT.y)
 		_set_zoom(44.0, true)
