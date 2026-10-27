@@ -1557,7 +1557,8 @@ func _canteen() -> void:
 		box(Vector3(0.23, 12.4, 0.28), Vector3(36.5 + bay * 4.83, 11.65, 0.4), white)
 
 	box(Vector3(29.1, 0.3, 8.5), Vector3(51, 5.3, -2.7), white)
-	# The hall is open to the patio and, at the back, to the strip behind the wing.
+	_canteen_back_face()
+	# The hall is open to the patio and, at the back, to the lane behind the wing.
 	_canteen_back()
 	box(Vector3(29, 0.2, 9.8), Vector3(51, 0.35, -2.4), material("tile", Color("b8b8b4"))) # grey tiles, as in the photo
 	for i in CANTEEN_PIERS.size():
@@ -1648,8 +1649,9 @@ func _canteen_back() -> void:
 		rod(Vector3(run.x, 1.75, BACK_EDGE), Vector3(run.y, 1.75, BACK_EDGE), 0.025, steel)
 	for gap in BACK_GAPS:
 		box(Vector3(gap.y - gap.x, 0.25, 0.45), Vector3((gap.x + gap.y) / 2.0, 0.08, BACK_EDGE - 0.25), material("tile", Color("b8b8b4")))
-	# The scalloped awning: a pale sheet on a steel frame along the back, its edge cut in scallops.
-	var sheet := material("plain", Color("d8d2c6"))
+	# The scalloped awning: a maroon sheet on a steel frame along the back, its edge cut in
+	# scallops (the "Back view of aps building canteen" photo).
+	var sheet := material("plain", Color("8e3b35"))
 	box(Vector3(29.0, 0.04, 1.6), Vector3(51.0, 4.75, BACK_EDGE - 0.85), sheet, 0.0, -0.12)
 	var x := 36.7
 	while x < 65.4:
@@ -1664,6 +1666,36 @@ func _canteen_back() -> void:
 	for lx in [43.0, 48.5, 54.0, 59.5, 64.0]:
 		for lz in [-5.8, -1.0]:
 			box(Vector3(0.3, 0.03, 0.3), Vector3(lx, 5.13, lz), lamp)
+
+## The wing's back on the lane, above the open hall (the "Back view of aps building canteen"
+## photo): a white sunshade slab at every floor, rows of brown-framed windows over it with
+## blinds drawn in some, aircons on the slabs, a drainpipe; under the roof's overhang, its
+## brackets and the top row's aircons.
+func _canteen_back_face() -> void:
+	var white := material("stucco", Color("fbf9f0"))
+	var back := -7.12
+	var out := Vector3(0, 0, -1)
+	var random := RandomNumberGenerator.new()
+	random.seed = 1544
+	for level in 4:
+		var y := 6.5 + level * 3.05
+		box(Vector3(29.4, 0.18, 0.9), Vector3(51, y - 0.2, back - 0.45), white)
+		for bay in 6:
+			var x := 38.95 + bay * 4.82
+			for half in [-1.0, 1.0]:
+				var at := Vector3(x + half * 1.05, y + 1.2, back)
+				framed_window(at, 1.95, 1.4, out, random.randf() < 0.3, 2, Color("3d3631"))
+				if random.randf() < 0.45:
+					box(Vector3(1.85, 1.0, 0.02), at + Vector3(0, 0.18, -0.03), material("plain", Color("7d5b3d")))
+			if random.randf() < 0.5:
+				box(Vector3(0.75, 0.45, 0.5), Vector3(x + random.randf_range(-1.6, 1.6), y + 0.04, back - 0.55), material("plain", Color("dedfdb")))
+	# The roof's overhang on its brackets, the top row's aircons under it.
+	box(Vector3(29.4, 0.25, 1.4), Vector3(51, 17.7, back - 0.7), white)
+	for bay in 7:
+		box(Vector3(0.2, 0.6, 1.2), Vector3(36.5 + bay * 4.83, 17.3, back - 0.6), white)
+	for bay in 6:
+		box(Vector3(0.75, 0.45, 0.5), Vector3(38.95 + bay * 4.82, 17.25, back - 0.3), material("plain", Color("dedfdb")))
+	rod(Vector3(64.6, 5.4, back - 0.25), Vector3(64.6, 17.6, back - 0.25), 0.06, Color("e2e2dc"))
 
 ## One stall in the canteen's frame: [centre, facing (unit, x/z), size (across, deep), sign
 ## name or "", sign colour, ink]. Built square, its counter on the facing side, then turned:

@@ -1,7 +1,10 @@
 extends RefCounted
 ## Beside APS, from Sean's photos (assets/Fix beside aps/) and his outline on the satellite
 ## picture (fix-outline.png): the ground between the canteen wing's east wall and the
-## Covered Court. North of the canteen's tip a paved lane runs up to Sacred Heart; south
+## Covered Court. North of the canteen's tip a paved lane runs between the canteen's back
+## and Sacred Heart's front (areas/sh.gd), past APS's east block to the gate under the
+## bridge (Sean's "Sacred Heart and APS" photos); in it the camera faces the side the
+## student is on, APS's back from the west half, Sacred Heart's front from the east; south
 ## of it, past the tip, a long island with a kerb, its west side on the east road: at its
 ## north end the pergola (cream stone-block pillars, a dark steel roof grown over with
 ## vines and hanging roots, red concrete tables and benches, palms in stone bowls), at the
@@ -15,12 +18,21 @@ extends RefCounted
 
 const Roads := preload("res://roads.gd")
 
-## The paved lane north of the canteen's tip, along the wing's east wall (the part
-## inside Sacred Heart's plot is the plot's), and its height.
+## The paved lane along the canteen wing's back (its low wall at x 43.0) up to Sacred Heart's
+## front (x 51.2), and its height; north of the wing, between APS's east block (x 46.7) and
+## Sacred Heart, on to the gate (z -13.6), wider past Sacred Heart's west block (to x 54.4).
 const LANE := Rect2(43.45, 0.4, 9.15, 23.1)
+const LANE_NORTH := Rect2(46.7, -13.6, 4.5, 14.0)
+const LANE_END := Rect2(51.2, -13.6, 3.2, 6.0)
 const LANE_Y := -0.05
-## Sacred Heart's plot's south-west corner (campus_plan.gd "sh"): the lane is drawn round it.
+## Sacred Heart's front, where the lane's slab stops (the walkway's mouth runs on east past it).
 const SH_CORNER := Vector2(51.2, 16.8)
+## APS's east block, north of the canteen wing along the lane (on the plan's APS outline, to
+## x 46.7): white, seven storeys, its face on the lane with sunshade slabs, windows, aircons.
+const APS_EAST := Rect2(36.8, -16.0, 9.9, 16.4)
+const APS_EAST_TOP := 21.0
+## The canteen's back (its low wall) and APS's east face: the lane's west side.
+const CANTEEN_BACK := 43.1
 ## The parking lane down the court's west side, at the road's height, into the gym's apron.
 const PARKING := Rect2(48.8, 23.5, 3.8, 36.7)
 const PARKING_Y := -0.185
@@ -59,10 +71,33 @@ static func in_patio(x: float, z: float) -> bool:
 
 static func walkable(x: float, z: float) -> bool:
 	var at := Vector2(x, z)
-	return LANE.has_point(at) or PARKING.has_point(at) or ISLAND.has_point(at) or in_patio(x, z)
+	return LANE.has_point(at) or LANE_NORTH.has_point(at) or LANE_END.has_point(at) or PARKING.has_point(at) \
+		or ISLAND.has_point(at) or in_patio(x, z)
+
+## The lane's west side at z: the canteen's back, or APS's east block north of the wing.
+static func west_side(z: float) -> float:
+	return CANTEEN_BACK if z > APS_EAST.end.y else APS_EAST.end.x
+
+## Sacred Heart's front at z: its west block, or the north block past it.
+static func east_side(z: float) -> float:
+	return 51.2 if z > LANE_END.end.y else LANE_END.end.x
+
+## 0..1: how far into the lane (the camera faces across it), fading out past Sacred Heart's
+## south corner towards the parking lane and the walkway's mouth.
+static func lane_for(x: float, z: float) -> float:
+	if z < LANE_NORTH.position.y - 0.5 or z > 20.0 or x < 42.8 or x > 54.6:
+		return 0.0
+	return 1.0 - smoothstep(16.0, 19.5, z)
+
+## 0 on the lane's west half (facing APS), 1 on its east half (facing Sacred Heart).
+static func lane_east_for(x: float, z: float) -> float:
+	var middle := (west_side(z) + east_side(z)) / 2.0
+	return smoothstep(middle - 0.8, middle + 0.8, x)
 
 static func blocked(x: float, z: float) -> bool:
 	var at := Vector2(x, z)
+	if APS_EAST.has_point(at) and not (x < CANTEEN_BACK + 0.35 and z > APS_EAST.end.y):
+		return true # APS's east block (the canteen wing's hall is its own)
 	if in_patio(x, z):
 		for table in UMBRELLAS:
 			if at.distance_to(table) < 1.12:
@@ -109,6 +144,7 @@ var w: RefCounted
 func build(world: RefCounted) -> void:
 	w = world
 	_lanes()
+	_aps_east()
 	_island()
 	_pergola()
 	_tables()
@@ -122,7 +158,7 @@ func _lanes() -> void:
 	var slab: Material = w.material("concrete", Color("b0afa7"))
 	var top := LANE_Y
 	for area in [Rect2(LANE.position.x, LANE.position.y, SH_CORNER.x - LANE.position.x, LANE.size.y),
-			Rect2(SH_CORNER.x, SH_CORNER.y, LANE.end.x - SH_CORNER.x, LANE.end.y - SH_CORNER.y)]:
+			Rect2(SH_CORNER.x, SH_CORNER.y, LANE.end.x - SH_CORNER.x, LANE.end.y - SH_CORNER.y), LANE_NORTH, LANE_END]:
 		var r: Rect2 = area
 		w.box(Vector3(r.size.x, 0.2, r.size.y), Vector3(r.get_center().x, top - 0.1, r.get_center().y), slab)
 	var low: Material = w.material("concrete", Color("a6a59d"))
@@ -325,3 +361,29 @@ func parasol(x: float, z: float, y: float) -> void:
 	for i in 4:
 		var a := TAU * i / 4.0 + 0.3
 		w._chair(Vector3(x + cos(a) * 0.86, y, z + sin(a) * 0.86), a + PI)
+
+## APS's east block along the lane north of the canteen wing: white walls, a sunshade slab at
+## every floor on its lane face over a row of windows (brown blinds in some), aircons on the
+## slabs, a drainpipe, the roof's parapet.
+func _aps_east() -> void:
+	var white: Material = w.material("stucco", Color("f4f2ea"))
+	var middle := APS_EAST.get_center()
+	w.box(Vector3(APS_EAST.size.x, APS_EAST_TOP, APS_EAST.end.y - 0.4 - APS_EAST.position.y), Vector3(middle.x, APS_EAST_TOP / 2.0, (APS_EAST.position.y + APS_EAST.end.y - 0.4) / 2.0), white)
+	w.box(Vector3(APS_EAST.size.x + 0.4, 0.9, APS_EAST.size.y + 0.4), Vector3(middle.x, APS_EAST_TOP + 0.45, middle.y), white)
+	var face := APS_EAST.end.x + 0.02
+	var out := Vector3(1, 0, 0)
+	var random := RandomNumberGenerator.new()
+	random.seed = 2750
+	for level in 7:
+		var y := 0.2 + level * 3.0
+		if level > 0:
+			w.box(Vector3(0.8, 0.16, APS_EAST.size.y), Vector3(face + 0.4, y, middle.y), white)
+		var z := APS_EAST.position.y + 1.4
+		while z < APS_EAST.end.y - 1.0:
+			w.framed_window(Vector3(face, y + 1.55, z), 2.0, 1.3, out, random.randf() < 0.3, 1, Color("3a3d3e"))
+			if random.randf() < 0.3:
+				w.box(Vector3(0.02, 0.9, 1.8), Vector3(face + 0.03, y + 1.7, z), w.material("plain", Color("7a5a3c")))
+			if level > 0 and random.randf() < 0.35:
+				w.box(Vector3(0.5, 0.45, 0.75), Vector3(face + 0.5, y + 0.32, z + 1.3), w.material("plain", Color("dedfdb")))
+			z += 2.8
+	w.rod(Vector3(face + 0.15, 0.0, APS_EAST.end.y - 0.6), Vector3(face + 0.15, APS_EAST_TOP, APS_EAST.end.y - 0.6), 0.06, Color("e2e2dc"))

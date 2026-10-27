@@ -230,7 +230,7 @@ func _west_block() -> void:
 	for k in 12:
 		w.box(Vector3(0.12, 0.28, 0.32), Vector3(WEST_X + 0.55, 0.9 + (k % 2) * 0.3, WEST.position.y + 1.2 + floorf(k / 2.0) * 0.55), screen)
 	w.rod(Vector3(WEST_X - 0.6, 0.0, bay_from - 0.2), Vector3(WEST_X - 0.6, ROOF, bay_from - 0.2), 0.06, Color("e7e7e2"))
-	var name_plate: Label3D = w.panel("SACRED HEART BUILDING", Vector3(WEST_X - 0.42, _floor_y(3) + 0.3, 9.6), 9.0, 0.55, Color("e8e9e6"))
+	var name_plate: Label3D = w.panel("SACRED HEART BUILDING", Vector3(WEST_X - 0.72, _floor_y(3) + 0.3, 9.6), 9.0, 0.55, Color("e8e9e6"))
 	name_plate.rotation.y = -PI / 2.0
 	name_plate.name = "SACRED HEART BUILDING"
 	# The south wall along the walkway: plain at the ground, windows above, a pipe.
