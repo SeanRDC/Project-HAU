@@ -1586,7 +1586,8 @@ func _verify_and_capture() -> void:
 		checks.yard_props_block = World.blocked(26.9, 18.4)
 		# The pergola island: walkable at its height between the pillars and the tables;
 		# the pillars, the tables and the palm bowls are solid.
-		checks.pergola_island = not World.blocked(45.8, 27.2) and is_equal_approx(World.floor_height(45.8, 27.2), BesideAps.ISLAND_Y) 			and World.blocked(BesideAps.PILLAR_X[0], BesideAps.PILLAR_Z[1]) and World.blocked(BesideAps.TABLE_X, BesideAps.TABLES[0]) 			and World.blocked(BesideAps.BOWLS[0].x, BesideAps.BOWLS[0].y)
+		checks.pergola_island = not World.blocked(45.8, 27.2) and is_equal_approx(World.floor_height(45.8, 27.2), BesideAps.ISLAND_Y) 			and World.blocked(BesideAps.PILLAR_X[0], BesideAps.PILLAR_Z[1]) and World.blocked(BesideAps.TABLE_X, BesideAps.TABLES[0]) 			and World.blocked(BesideAps.BOWLS[0].x, BesideAps.BOWLS[0].y) and World.blocked(BesideAps.TABLE_X, BesideAps.SHEDS[1]) \
+			and not World.blocked(45.0, BesideAps.SHEDS[1] + 1.6)
 		# The corner at the canteen tip's foot: walkable on its pavers, the umbrella tables solid.
 		checks.tip_corner = not World.blocked(43.2, 25.6) and is_equal_approx(World.floor_height(43.2, 25.6), BesideAps.PATIO_Y) \
 			and World.blocked(BesideAps.UMBRELLAS[0].x, BesideAps.UMBRELLAS[0].y) and World.blocked(38.0, 24.0)
@@ -1961,7 +1962,7 @@ func _verify_and_capture() -> void:
 		# The Covered Court: built on its plot, its floor and the ramp up from the gym's lane
 		# walkable, the columns, bleachers and the things in front of it solid; facing south at
 		# the gym from the lane, its roof is cut away.
-		checks.court_built = scene.find_child("COURT RESERVED", true, false) != null and not Plots.shapes().has("court") 			and not World.blocked(70.0, 40.0) and is_equal_approx(World.floor_height(70.0, 40.0), CoveredCourt.FLOOR_Y) 			and not World.blocked(70.0, 56.8) and World.blocked(CoveredCourt.columns()[2], CoveredCourt.SHED.end.y - 0.3) 			and World.blocked(70.0, 21.0) and World.blocked(CoveredCourt.SHED_AT.x, CoveredCourt.SHED_AT.y)
+		checks.court_built = scene.find_child("COURT RESERVED", true, false) != null and not Plots.shapes().has("court") 			and not World.blocked(70.0, 40.0) and is_equal_approx(World.floor_height(70.0, 40.0), CoveredCourt.FLOOR_Y) 			and not World.blocked(70.0, 56.8) and World.blocked(CoveredCourt.columns()[2], CoveredCourt.SHED.end.y - 0.3) 			and World.blocked(70.0, 21.0)
 		student.place(GYM_SIDE_SPOT.x, GYM_SIDE_SPOT.y)
 		_set_zoom(44.0, true)
 		_snap_follow()

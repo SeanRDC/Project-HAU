@@ -5,7 +5,8 @@ extends RefCounted
 ## of it, past the tip, a long island with a kerb, its west side on the east road: at its
 ## north end the pergola (cream stone-block pillars, a dark steel roof grown over with
 ## vines and hanging roots, red concrete tables and benches, palms in stone bowls), at the
-## foot of the tip round wooden tables under big square umbrellas, and
+## foot of the tip round wooden tables under big square umbrellas; south of the pergola
+## a row of green steel picnic sheds under tall trees, a palm and a potted shrub; and
 ## east of the island a parking lane down the court's west side to the gym's lane. No cars
 ## are parked in the game.
 ##
@@ -35,6 +36,12 @@ const TABLE_X := 46.6
 const TABLES: Array[float] = [25.7, 28.7, 31.7, 34.7]
 ## Palms in stone bowls on pedestals along the road side.
 const BOWLS: Array[Vector2] = [Vector2(44.95, 28.7), Vector2(44.95, 34.7)]
+## The green picnic sheds down the island's south part (z of each, on the tables' line),
+## the trees between them on the parking side, the palm bowl and the big pot at its end.
+const SHEDS: Array[float] = [38.6, 41.8, 45.0]
+const TREES: Array[Vector3] = [Vector3(48.35, 40.2, 9.5), Vector3(48.35, 43.4, 8.5)]
+const END_BOWL := Vector2(45.15, 46.95)
+const END_POT := Vector2(47.7, 46.95)
 ## The paved corner at the foot of the canteen's tip, between its end wall (z 24.8), the
 ## island and the road's kerb round the bend (roads.gd: the bend's centre and the kerb's
 ## back edge from it), with the round umbrella tables and the bins by the wall.
@@ -73,8 +80,14 @@ static func blocked(x: float, z: float) -> bool:
 	for tz in TABLES:
 		if absf(x - TABLE_X) < 0.95 and absf(z - tz) < 1.3:
 			return true # the table and its benches
-	for bowl in BOWLS:
+	for bowl in BOWLS + [END_BOWL, END_POT]:
 		if at.distance_to(bowl) < 0.55:
+			return true
+	for shed in SHEDS:
+		if absf(x - TABLE_X) < 1.3 and absf(z - shed) < 0.9:
+			return true # the shed's table and benches
+	for tree in TREES:
+		if at.distance_to(Vector2(tree.x, tree.y)) < 0.35:
 			return true
 	return false
 
@@ -100,6 +113,7 @@ func build(world: RefCounted) -> void:
 	_pergola()
 	_tables()
 	_plants()
+	_sheds()
 	_corner()
 
 ## The concrete of the lane (round Sacred Heart's corner) and of the parking lane, with a
@@ -234,6 +248,31 @@ func palm(at: Vector3, height: float, seed_value: int) -> void:
 		var tip := at + Vector3(cos(a) * 0.25, height * random.randf_range(0.7, 1.0), sin(a) * 0.25)
 		w.rod(at, tip, 0.025, Color("7d8a4a"))
 		w._mesh(cluster, tip, fronds, a).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+
+## The island's south part: the green sheds in a row, the trees between them, a palm in a
+## stone bowl and a shrub in a big clay pot at its end.
+func _sheds() -> void:
+	for shed in SHEDS:
+		w._shed(TABLE_X, shed)
+	for i in TREES.size():
+		var tree := TREES[i]
+		w._tree(Vector3(tree.x, ISLAND_Y, tree.y), tree.z, 2730 + i)
+	var bowl_stone: Material = w.material("concrete", Color("aeaca2"))
+	w.rod(Vector3(END_BOWL.x, ISLAND_Y, END_BOWL.y), Vector3(END_BOWL.x, ISLAND_Y + 0.4, END_BOWL.y), 0.13, Color("aeaca2"))
+	var bowl := CylinderMesh.new()
+	bowl.top_radius = 0.5
+	bowl.bottom_radius = 0.25
+	bowl.height = 0.36
+	bowl.radial_segments = 12
+	w._mesh(bowl, Vector3(END_BOWL.x, ISLAND_Y + 0.58, END_BOWL.y), bowl_stone)
+	palm(Vector3(END_BOWL.x, ISLAND_Y + 0.75, END_BOWL.y), 1.3, 2735)
+	var pot := CylinderMesh.new()
+	pot.top_radius = 0.5
+	pot.bottom_radius = 0.36
+	pot.height = 0.6
+	pot.radial_segments = 12
+	w._mesh(pot, Vector3(END_POT.x, ISLAND_Y + 0.3, END_POT.y), w.material("plain", Color("b5734f")))
+	w._shrub(Vector3(END_POT.x, ISLAND_Y + 0.55, END_POT.y), 1.3, 2736)
 
 ## The corner at the tip's foot: pavers out to the kerb's curve, two round wooden tables
 ## under big square brown umbrellas with slatted chairs, a yellow and a blue bin.

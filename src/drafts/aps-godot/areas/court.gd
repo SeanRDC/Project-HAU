@@ -5,8 +5,9 @@ extends RefCounted
 ## the road has a big clerestory of window grids under the roof; the sides are open over
 ## low white railings, a concrete ramp with steel rails along the lane by the gym. Inside,
 ## a concrete court with its lines and steel bleachers along the north side. In front of
-## the west gable, on the apron, a green picnic shed, a potted tree, the lamp post with the
-## bell and the RESERVED CMO GUEST-PRIEST board.
+## the west gable, on the apron, the lamp post with the bell and the RESERVED CMO
+## GUEST-PRIEST board. (The green picnic shed and the tree in front of it are on the island
+## beside APS, areas/beside_aps.gd.)
 ##
 ## World coordinates (metres, Y up), on the plan's plot (campus_plan.gd "court", 4 m east of
 ## OSM to leave room for the pergola island and the parking lane by the canteen's tip): the
@@ -26,10 +27,7 @@ const RAMP_WIDE := 1.6
 ## The bleachers along the north side (z from..to; steps).
 const STANDS := Vector2(19.4, 23.4)
 const STEPS := 5
-## Things in front of the west gable, on the apron: the picnic shed, the potted tree, the
-## lamp post with the bell, the board.
-const SHED_AT := Vector2(50.0, 46.0)
-const TREE := Vector2(50.2, 41.5)
+## Things in front of the west gable, on the apron: the lamp post with the bell, the board.
 const BELL := Vector2(51.0, 53.0)
 const BOARD := Vector2(50.0, 55.0)
 ## Facing south at the gym from the lane the camera stands over the court: everything north
@@ -59,9 +57,7 @@ static func on_ramp(x: float, z: float) -> bool:
 
 static func blocked(x: float, z: float) -> bool:
 	var at := Vector2(x, z)
-	if absf(x - SHED_AT.x) < 1.3 and absf(z - SHED_AT.y) < 0.9:
-		return true # the picnic shed's table and benches
-	if at.distance_to(TREE) < 0.7 or at.distance_to(BELL) < 0.3 or at.distance_to(BOARD) < 0.45:
+	if at.distance_to(BELL) < 0.3 or at.distance_to(BOARD) < 0.45:
 		return true
 	if not walkable(x, z):
 		return false
@@ -230,12 +226,9 @@ func _ramp() -> void:
 		w.rod(Vector3(x, base, SHED.end.y + RAMP_WIDE), Vector3(x, base + 0.97, SHED.end.y + RAMP_WIDE), 0.022, rail)
 		x += 2.0
 
-## In front of the west gable: the green picnic shed, the potted tree, the lamp post with
-## the bell, the RESERVED CMO GUEST-PRIEST board.
+## In front of the west gable: the lamp post with the bell, the RESERVED CMO GUEST-PRIEST
+## board.
 func _front() -> void:
-	w._shed(SHED_AT.x, SHED_AT.y)
-	w.box(Vector3(1.2, 0.6, 1.2), Vector3(TREE.x, 0.1, TREE.y), w.material("plain", Color("b5653f")))
-	w._tree(Vector3(TREE.x, 0.4, TREE.y), 5.5, 1900)
 	var iron := Color("3e3833")
 	w.rod(Vector3(BELL.x, -0.185, BELL.y), Vector3(BELL.x, 4.2, BELL.y), 0.06, iron)
 	w.rod(Vector3(BELL.x, 3.9, BELL.y - 0.4), Vector3(BELL.x, 3.9, BELL.y + 0.4), 0.025, iron)
