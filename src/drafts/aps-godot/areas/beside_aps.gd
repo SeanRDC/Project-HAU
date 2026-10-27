@@ -4,7 +4,8 @@ extends RefCounted
 ## Covered Court. North of the canteen's tip a paved lane runs up to Sacred Heart; south
 ## of it, past the tip, a long island with a kerb, its west side on the east road: at its
 ## north end the pergola (cream stone-block pillars, a dark steel roof grown over with
-## vines and hanging roots, red concrete tables and benches, palms in stone bowls), and
+## vines and hanging roots, red concrete tables and benches, palms in stone bowls), at the
+## foot of the tip round wooden tables under big square umbrellas, and
 ## east of the island a parking lane down the court's west side to the gym's lane. No cars
 ## are parked in the game.
 ##
@@ -34,13 +35,35 @@ const TABLE_X := 46.6
 const TABLES: Array[float] = [25.7, 28.7, 31.7, 34.7]
 ## Palms in stone bowls on pedestals along the road side.
 const BOWLS: Array[Vector2] = [Vector2(44.95, 28.7), Vector2(44.95, 34.7)]
+## The paved corner at the foot of the canteen's tip, between its end wall (z 24.8), the
+## island and the road's kerb round the bend (roads.gd: the bend's centre and the kerb's
+## back edge from it), with the round umbrella tables and the bins by the wall.
+const TIP_WALL := 24.85
+const PATIO_WEST := 36.0
+const BEND := Vector2(34.5, 36.5)
+const KERB_BACK := 9.65
+const PATIO_Y := -0.03
+const UMBRELLAS: Array[Vector2] = [Vector2(39.4, 26.6), Vector2(42.2, 28.6)]
+const BINS: Array[Vector2] = [Vector2(37.0, 25.3), Vector2(37.6, 25.3)]
+
+static func in_patio(x: float, z: float) -> bool:
+	return x >= PATIO_WEST and x < ISLAND.position.x and z >= TIP_WALL and z <= BEND.y \
+		and Vector2(x, z).distance_to(BEND) >= KERB_BACK
 
 static func walkable(x: float, z: float) -> bool:
 	var at := Vector2(x, z)
-	return LANE.has_point(at) or PARKING.has_point(at) or ISLAND.has_point(at)
+	return LANE.has_point(at) or PARKING.has_point(at) or ISLAND.has_point(at) or in_patio(x, z)
 
 static func blocked(x: float, z: float) -> bool:
 	var at := Vector2(x, z)
+	if in_patio(x, z):
+		for table in UMBRELLAS:
+			if at.distance_to(table) < 1.12:
+				return true # the table and its chairs
+		for bin in BINS:
+			if at.distance_to(bin) < 0.3:
+				return true
+		return false
 	if not ISLAND.grow(0.3).has_point(at):
 		return false
 	for px in PILLAR_X:
@@ -55,11 +78,13 @@ static func blocked(x: float, z: float) -> bool:
 			return true
 	return false
 
-## The island's, the lane's or the parking lane's height, or NAN.
+## The island's, the corner's, the lane's or the parking lane's height, or NAN.
 static func floor_height(x: float, z: float) -> float:
 	var at := Vector2(x, z)
 	if ISLAND.has_point(at):
 		return ISLAND_Y
+	if in_patio(x, z):
+		return PATIO_Y
 	if LANE.has_point(at):
 		return LANE_Y
 	if PARKING.has_point(at):
@@ -75,6 +100,7 @@ func build(world: RefCounted) -> void:
 	_pergola()
 	_tables()
 	_plants()
+	_corner()
 
 ## The concrete of the lane (round Sacred Heart's corner) and of the parking lane, with a
 ## low kerb where the lane steps down to it.
@@ -208,3 +234,55 @@ func palm(at: Vector3, height: float, seed_value: int) -> void:
 		var tip := at + Vector3(cos(a) * 0.25, height * random.randf_range(0.7, 1.0), sin(a) * 0.25)
 		w.rod(at, tip, 0.025, Color("7d8a4a"))
 		w._mesh(cluster, tip, fronds, a).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+
+## The corner at the tip's foot: pavers out to the kerb's curve, two round wooden tables
+## under big square brown umbrellas with slatted chairs, a yellow and a blue bin.
+func _corner() -> void:
+	var rim := PackedVector2Array([Vector2(PATIO_WEST, TIP_WALL), Vector2(ISLAND.position.x, TIP_WALL),
+		Vector2(ISLAND.position.x, BEND.y), Vector2(BEND.x + KERB_BACK, BEND.y)])
+	var west := asin((PATIO_WEST - BEND.x) / KERB_BACK) - PI / 2.0 # the curve's angle where it meets x PATIO_WEST
+	for i in range(1, 13):
+		var a := lerpf(0.0, west, i / 12.0)
+		rim.append(BEND + Vector2(cos(a), sin(a)) * KERB_BACK)
+	var triangles := PackedVector2Array()
+	for k in Geometry2D.triangulate_polygon(rim):
+		triangles.append(rim[k])
+	w._ground(triangles, PATIO_Y, w.material("pavers", Color("a99485")))
+	for table in UMBRELLAS:
+		parasol(table.x, table.y, PATIO_Y)
+	var colours := [Color("e8c22e"), Color("2f6fb5")]
+	for i in BINS.size():
+		w.box(Vector3(0.42, 0.75, 0.42), Vector3(BINS[i].x, PATIO_Y + 0.375, BINS[i].y), w.material("plain", colours[i]))
+		w.box(Vector3(0.46, 0.05, 0.46), Vector3(BINS[i].x, PATIO_Y + 0.77, BINS[i].y), w.material("plain", (colours[i] as Color).darkened(0.2)))
+
+## A big square patio umbrella of faded brown canvas over a round wooden table with four
+## slatted chairs (world.gd's _chair), its flaps hanging from the edges.
+func parasol(x: float, z: float, y: float) -> void:
+	var canvas := (w.material("plain", Color("8e4c38")) as StandardMaterial3D).duplicate() as StandardMaterial3D
+	canvas.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var cone := CylinderMesh.new()
+	cone.bottom_radius = 1.95
+	cone.top_radius = 0.06
+	cone.height = 0.55
+	cone.radial_segments = 4
+	cone.rings = 1
+	cone.cap_bottom = false
+	w._mesh(cone, Vector3(x, y + 2.65, z), canvas, PI / 4.0).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+	var half := 1.95 / sqrt(2.0)
+	for side in [-1.0, 1.0]:
+		w.box(Vector3(half * 2.0, 0.22, 0.02), Vector3(x, y + 2.28, z + side * half), canvas)
+		w.box(Vector3(0.02, 0.22, half * 2.0), Vector3(x + side * half, y + 2.28, z), canvas)
+	w.rod(Vector3(x, y, z), Vector3(x, y + 2.95, z), 0.03, Color("2f3133"))
+	var top := CylinderMesh.new()
+	top.top_radius = 0.55
+	top.bottom_radius = 0.55
+	top.height = 0.05
+	top.radial_segments = 16
+	w._mesh(top, Vector3(x, y + 0.74, z), w.material("wood", Color("b27a4c")))
+	var steel := Color("2f3133")
+	for i in 4:
+		var a := TAU * i / 4.0 + PI / 4.0
+		w.rod(Vector3(x, y + 0.7, z), Vector3(x + cos(a) * 0.4, y + 0.01, z + sin(a) * 0.4), 0.02, steel)
+	for i in 4:
+		var a := TAU * i / 4.0 + 0.3
+		w._chair(Vector3(x + cos(a) * 0.86, y, z + sin(a) * 0.86), a + PI)

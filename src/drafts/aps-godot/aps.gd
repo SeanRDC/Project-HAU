@@ -1587,6 +1587,9 @@ func _verify_and_capture() -> void:
 		# The pergola island: walkable at its height between the pillars and the tables;
 		# the pillars, the tables and the palm bowls are solid.
 		checks.pergola_island = not World.blocked(45.8, 27.2) and is_equal_approx(World.floor_height(45.8, 27.2), BesideAps.ISLAND_Y) 			and World.blocked(BesideAps.PILLAR_X[0], BesideAps.PILLAR_Z[1]) and World.blocked(BesideAps.TABLE_X, BesideAps.TABLES[0]) 			and World.blocked(BesideAps.BOWLS[0].x, BesideAps.BOWLS[0].y)
+		# The corner at the canteen tip's foot: walkable on its pavers, the umbrella tables solid.
+		checks.tip_corner = not World.blocked(43.2, 25.6) and is_equal_approx(World.floor_height(43.2, 25.6), BesideAps.PATIO_Y) \
+			and World.blocked(BesideAps.UMBRELLAS[0].x, BesideAps.UMBRELLAS[0].y) and World.blocked(38.0, 24.0)
 		# The corner garden is planted, not walkable; the road turning past it is.
 		checks.left_garden_blocks = World.blocked(-58.0, 8.0) and not World.blocked(-52.0, 10.0)
 		# The shared campus plan: every building, the closed road loop, reserved plots.
