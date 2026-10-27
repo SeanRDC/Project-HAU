@@ -8,32 +8,35 @@ extends RefCounted
 ## the west gable, on the apron, a green picnic shed, a potted tree, the lamp post with the
 ## bell and the RESERVED CMO GUEST-PRIEST board.
 ##
-## World coordinates (metres, Y up), on the plan's plot (campus_plan.gd "court"): the
+## World coordinates (metres, Y up), on the plan's plot (campus_plan.gd "court", 4 m east of
+## OSM to leave room for the pergola island and the parking lane by the canteen's tip): the
 ## shed is square to x; the plot's east part past it is a concrete pad.
 
 ## The shed's floor (x, z) and its height; the columns' rows and their spacing; the
 ## roof's eave, ridge and overhang.
-const SHED := Rect2(49.0, 19.0, 40.5, 37.0)
+const SHED := Rect2(53.0, 19.0, 40.5, 37.0)
 const FLOOR_Y := 0.3
 const BAY := 5.0
 const EAVE := 7.2
 const RIDGE := 11.2
 const OVERHANG := 1.6
 ## The ramp along the south side, from the lane up to the floor (x from..to, its width).
-const RAMP := Vector2(62.0, 82.0)
+const RAMP := Vector2(66.0, 86.0)
 const RAMP_WIDE := 1.6
 ## The bleachers along the north side (z from..to; steps).
 const STANDS := Vector2(19.4, 23.4)
 const STEPS := 5
 ## Things in front of the west gable, on the apron: the picnic shed, the potted tree, the
 ## lamp post with the bell, the board.
-const SHED_AT := Vector2(46.0, 46.0)
-const TREE := Vector2(46.2, 41.5)
-const BELL := Vector2(47.0, 53.0)
-const BOARD := Vector2(46.0, 55.0)
+const SHED_AT := Vector2(50.0, 46.0)
+const TREE := Vector2(50.2, 41.5)
+const BELL := Vector2(51.0, 53.0)
+const BOARD := Vector2(50.0, 55.0)
 ## Facing south at the gym from the lane the camera stands over the court: everything north
 ## of this world z (the roof, its columns) is cut away (aps.gd).
 const CUT_Z := SHED.position.y + SHED.size.y + 0.3
+## The plot's east edge, where the pad past the shed ends.
+const PAD_END := 109.4
 
 static func centre_z() -> float:
 	return SHED.get_center().y
@@ -113,7 +116,7 @@ func _floor() -> void:
 		w.box(Vector3(0.45, 0.04, 0.45), Vector3(x - side * 1.15, FLOOR_Y + 3.05, court.get_center().y), w.material("plain", Color("d0532b")))
 		w.box(Vector3(1.0, 0.25, 0.2), Vector3(x - side * 0.45, FLOOR_Y + 3.2, court.get_center().y), w.material("plain", Color("e9e9e4")))
 	# The plot past the shed: a concrete pad.
-	w.box(Vector3(105.4 - SHED.end.x, 0.02, 57.0 - 43.0), Vector3((SHED.end.x + 105.4) / 2.0, -0.18, 50.0), w.material("concrete"))
+	w.box(Vector3(PAD_END - SHED.end.x, 0.02, 57.0 - 43.0), Vector3((SHED.end.x + PAD_END) / 2.0, -0.18, 50.0), w.material("concrete"))
 
 ## The white steel columns on both long sides, the trusses across at each, the eave beams,
 ## and the low railings between the columns.
