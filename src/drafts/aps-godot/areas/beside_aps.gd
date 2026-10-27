@@ -22,7 +22,7 @@ const LANE_Y := -0.05
 ## Sacred Heart's plot's south-west corner (campus_plan.gd "sh"): the lane is drawn round it.
 const SH_CORNER := Vector2(51.2, 16.8)
 ## The parking lane down the court's west side, at the road's height, into the gym's apron.
-const PARKING := Rect2(48.8, 23.5, 3.8, 33.7)
+const PARKING := Rect2(48.8, 23.5, 3.8, 36.7)
 const PARKING_Y := -0.185
 ## The island: paved in interlocking pavers inside a kerb, a step up from the road.
 const ISLAND := Rect2(44.4, 23.5, 4.4, 24.0)

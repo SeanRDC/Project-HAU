@@ -571,8 +571,9 @@ export const GODOT_PLOTS: Record<string, GodotPlot> = {
   sh: asPlot('sh'),
   // 4 m east of its OSM outline: the satellite picture has the pergola island and a
   // parking lane, about 8.4 m, between the road past the canteen's tip and the court,
-  // where OSM leaves 5 m (Sean, 2026-10-27).
-  court: { ...asPlot('court'), outline: shift(outline('court')!, 4, 0) },
+  // where OSM leaves 5 m (Sean, 2026-10-27); and 3 m south, for the covered walkway
+  // between it and Sacred Heart (Sean, 2026-10-28).
+  court: { ...asPlot('court'), outline: shift(outline('court')!, 4, 3) },
   annex: { ...asPlot('annex'), name: 'Aero Hall', short: 'Aero Hall' },
   // Covered walks and student gates (orange), and ground-level areas (yellow).
   coveredWalk: { name: 'Covered Walk', short: 'Covered Walk', kind: 'walk', outline: onLayout([65, 412.5], [182.5, 412.5], [182.5, 442.5], [65, 442.5]) },

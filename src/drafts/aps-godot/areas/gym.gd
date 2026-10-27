@@ -58,7 +58,7 @@ const SIDE_DOOR := -20.5
 ## flat at LANE_TOP to the back; a low retaining wall shows along its court side. The
 ## railed ramp along the court stays as it was (areas/court.gd).
 const APRON_Y := -0.185
-const LANE_Z := 57.2
+const LANE_Z := 60.2
 const LANE_RISE := Vector2(86.0, 97.0)
 const LANE_TOP := 0.55
 const LANE_END := 101.0

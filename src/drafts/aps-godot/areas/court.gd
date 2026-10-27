@@ -10,12 +10,13 @@ extends RefCounted
 ## Formation Center's drop-off island, areas/formation.gd.)
 ##
 ## World coordinates (metres, Y up), on the plan's plot (campus_plan.gd "court", 4 m east of
-## OSM to leave room for the pergola island and the parking lane by the canteen's tip): the
+## OSM to leave room for the pergola island and the parking lane by the canteen's tip, 3 m
+## south for the covered walkway along Sacred Heart): the
 ## shed is square to x; the plot's east part past it is a concrete pad.
 
 ## The shed's floor (x, z) and its height; the columns' rows and their spacing; the
 ## roof's eave, ridge and overhang.
-const SHED := Rect2(53.0, 19.0, 40.5, 37.0)
+const SHED := Rect2(53.0, 22.0, 40.5, 37.0)
 const FLOOR_Y := 0.3
 const BAY := 5.0
 const EAVE := 7.2
@@ -25,7 +26,7 @@ const OVERHANG := 1.6
 const RAMP := Vector2(66.0, 86.0)
 const RAMP_WIDE := 1.6
 ## The bleachers along the north side (z from..to; steps).
-const STANDS := Vector2(19.4, 23.4)
+const STANDS := Vector2(22.4, 26.4)
 const STEPS := 5
 ## Facing south at the gym from the lane the camera stands over the court: everything north
 ## of this world z (the roof, its columns) is cut away (aps.gd).
@@ -106,7 +107,7 @@ func _floor() -> void:
 		w.box(Vector3(0.45, 0.04, 0.45), Vector3(x - side * 1.15, FLOOR_Y + 3.05, court.get_center().y), w.material("plain", Color("d0532b")))
 		w.box(Vector3(1.0, 0.25, 0.2), Vector3(x - side * 0.45, FLOOR_Y + 3.2, court.get_center().y), w.material("plain", Color("e9e9e4")))
 	# The plot past the shed: a concrete pad.
-	w.box(Vector3(PAD_END - SHED.end.x, 0.02, 57.0 - 43.0), Vector3((SHED.end.x + PAD_END) / 2.0, -0.18, 50.0), w.material("concrete"))
+	w.box(Vector3(PAD_END - SHED.end.x, 0.02, 57.0 - 43.0), Vector3((SHED.end.x + PAD_END) / 2.0, -0.18, 53.0), w.material("concrete"))
 
 ## The white steel columns on both long sides, the trusses across at each, the eave beams,
 ## and the low railings between the columns.
