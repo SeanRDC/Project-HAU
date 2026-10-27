@@ -66,8 +66,14 @@ const NORTH_TREES: Array[Vector3] = [Vector3(27.0, 39.6, 8.2), Vector3(33.8, 44.
 ## Across the road (see roads.gd) it runs from the kerb to SIDEWALK_FAR.
 const SIDEWALK_FAR := 13.5
 const SIDEWALK_Y := -0.04
-## The lamp post with its bell in front of the steps, the statue in the middle bay.
-const BELL := Vector2(27.4, 56.3)
+## The lamp post with its bell at the island's north end, the RESERVED CMO GUEST-PRIEST
+## board beside it facing the road, and a rock among the shrubs (Sean's "View on the curb
+## or island behind chapel" and "Covered Court view" photos); the statue in the middle bay.
+const BELL := Vector2(33.0, 58.4)
+const BOARD := Vector2(34.4, 58.7)
+const ROCK := Vector2(34.7, 60.3)
+## The island's ground, a step up inside its kerb.
+const ISLAND_Y := 0.1
 const STATUE := Vector2(23.1, 55.3)
 ## The electric pole on the south sidewalk (LEFT SIDE FORMATION CENTER.JPG).
 const POLE := Vector2(35.3, 83.0)
@@ -462,20 +468,6 @@ func _front() -> void:
 	head.height = 0.28
 	w._mesh(head, Vector3(STATUE.x, TERRACE_Y + 2.58, STATUE.y), white)
 	w.box(Vector3(0.18, 0.12, 0.5), Vector3(STATUE.x + 0.12, TERRACE_Y + 2.0, STATUE.y), white) # the arms, held out
-	# The lamp post with the bell: a dark iron post, a crossarm, the bell under it.
-	var iron := Color("3e3833")
-	w.rod(Vector3(BELL.x, APRON_Y, BELL.y), Vector3(BELL.x, 3.9, BELL.y), 0.06, iron)
-	w.rod(Vector3(BELL.x, 3.6, BELL.y - 0.4), Vector3(BELL.x, 3.6, BELL.y + 0.4), 0.025, iron)
-	w.box(Vector3(0.22, 0.3, 0.22), Vector3(BELL.x, 4.05, BELL.y), w.glow(Color("f6e3b0"), 0.2, 2.2))
-	var bell := CylinderMesh.new()
-	bell.top_radius = 0.08
-	bell.bottom_radius = 0.16
-	bell.height = 0.26
-	bell.radial_segments = 10
-	w._mesh(bell, Vector3(BELL.x, 3.4, BELL.y + 0.32), w.material("metal", Color("8a6a3c")))
-	# The folding board by the steps.
-	for side in [-0.18, 0.18]:
-		w.box(Vector3(0.05, 0.9, 0.55), Vector3(BELL.x - 0.2 + side, 0.4, BELL.y - 1.4), w.material("plain", Color("f0e7c8")), 0.0, side)
 
 ## The island: dry dirt and sparse grass inside a grey kerb, the big tree's two trunks
 ## and crowns, a yellow-green hedge and dark shrubs, grey bollard lamps round it.
@@ -505,6 +497,7 @@ func _island() -> void:
 		w._shrub(Vector3(spot.x, 0.1, spot.y), 1.4, 1610 + roundi(spot.y), lime)
 	for spot in [Vector2(31.4, 65.0), Vector2(35.6, 59.4), Vector2(34.4, 68.0)]:
 		w._shrub(Vector3(spot.x, 0.1, spot.y), 1.0, 1620 + roundi(spot.y), w.HEDGE_COLORS)
+	_bell()
 	var body: Material = w.material("plain", Color("8d918f"))
 	var lamp: Material = w.glow(Color("f2d38c"), 0.15, 1.8)
 	for a in [2.5, 3.2, 3.9, 0.3, 5.9]:
@@ -512,6 +505,37 @@ func _island() -> void:
 		w.box(Vector3(0.18, 0.75, 0.18), Vector3(post.x, 0.45, post.y), body)
 		w.box(Vector3(0.15, 0.16, 0.15), Vector3(post.x, 0.9, post.y), lamp)
 		w.box(Vector3(0.2, 0.05, 0.2), Vector3(post.x, 1.0, post.y), body)
+
+## On the island's north end: the lamp post with the bell (a dark iron post, a crossarm,
+## the bell hanging under it, the lantern on top), the yellow RESERVED CMO GUEST-PRIEST
+## folding board facing the road, and a grey rock.
+func _bell() -> void:
+	var iron := Color("3e3833")
+	w.rod(Vector3(BELL.x, ISLAND_Y, BELL.y), Vector3(BELL.x, 4.2, BELL.y), 0.06, iron)
+	w.rod(Vector3(BELL.x, 3.9, BELL.y - 0.4), Vector3(BELL.x, 3.9, BELL.y + 0.4), 0.025, iron)
+	w.box(Vector3(0.22, 0.3, 0.22), Vector3(BELL.x, 4.35, BELL.y), w.glow(Color("f6e3b0"), 0.2, 2.2))
+	var bell := CylinderMesh.new()
+	bell.top_radius = 0.08
+	bell.bottom_radius = 0.17
+	bell.height = 0.28
+	bell.radial_segments = 10
+	w._mesh(bell, Vector3(BELL.x, 3.7, BELL.y + 0.34), w.material("metal", Color("8a6a3c")))
+	var board: Material = w.material("plain", Color("e9dfb8"))
+	var frame: Material = w.material("plain", Color("c9a640"))
+	for side in [-0.2, 0.2]:
+		w.box(Vector3(0.06, 0.8, 1.0), Vector3(BOARD.x + side, ISLAND_Y + 0.55, BOARD.y), board)
+		for dz in [-0.5, 0.5]:
+			w.box(Vector3(0.05, 1.0, 0.05), Vector3(BOARD.x + side * 1.3, ISLAND_Y + 0.5, BOARD.y + dz), frame)
+	var ink := Color("6b4a2c")
+	var lines := [["RESERVED", 0.8, 0.16], ["CMO", 0.59, 0.22], ["GUEST-PRIEST", 0.39, 0.14]]
+	for line in lines:
+		# Lettered on both faces: one to the road, one to the drop-off.
+		for side in [1.0, -1.0]:
+			var text: Label3D = w.panel(line[0], Vector3(BOARD.x + side * 0.24, ISLAND_Y + line[1], BOARD.y), 0.9, line[2], ink)
+			text.rotation.y = side * PI / 2.0
+			if line[0] == "RESERVED" and side > 0.0:
+				text.name = "CMO RESERVED"
+	w.box(Vector3(0.8, 0.55, 0.6), Vector3(ROCK.x, ISLAND_Y + 0.2, ROCK.y), w.material("stone", Color("7a756b")), 0.5, 0.25)
 
 ## The north lawn's kiosk and trees, shrubs along the wings' feet, the electric pole on the
 ## south sidewalk.

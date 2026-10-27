@@ -79,12 +79,6 @@ const PATIO_TABLES: Array[Vector2] = [Vector2(23.0, 3.0), Vector2(28.2, 3.2), Ve
 	Vector2(29.8, 15.8), Vector2(29.8, 21.0)]
 ## The patio's tall LED street lights, at its kerb side.
 const STREET_LIGHTS: Array[Vector2] = [Vector2(26.9, 5.6), Vector2(26.9, 18.4)]
-## Between the canteen wing's east wall and the Covered Court (the "FAREST RIGHT SIDE"
-## photos): green steel picnic sheds, then a vine-covered timber pergola, on dirt.
-const STRIP := Rect2(43.4, 0.4, 4.2, 30.0)
-const PERGOLA_POSTS: Array[Vector2] = [Vector2(43.8, 12.0), Vector2(47.2, 12.0), Vector2(43.8, 16.5), Vector2(47.2, 16.5),
-	Vector2(43.8, 21.0), Vector2(47.2, 21.0), Vector2(43.8, 25.5), Vector2(47.2, 25.5), Vector2(43.8, 30.0), Vector2(47.2, 30.0)]
-const SHEDS: Array[Vector2] = [Vector2(45.5, 3.3), Vector2(45.5, 7.6)]
 ## More green picnic sheds on the lawn across the road from the APS entrance, each on
 ## a patch of worn dirt. They stay west of x 0 so the canteen camera (which sits over
 ## the lawn near x 3.5 looking east) never has one in front of the stalls.
@@ -109,13 +103,15 @@ const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
 const CoveredCourt := preload("res://areas/court.gd")
+const BesideAps := preload("res://areas/beside_aps.gd")
+const SacredHeart := preload("res://areas/sh.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
 	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0,
-	"octagon": 1.2, "slab": 2.4, "circles": 1.8, "lawn": 4.0, "diamond": 2.4}
+	"octagon": 1.2, "slab": 2.4, "circles": 1.8, "lawn": 4.0, "diamond": 2.4, "herringbone": 1.6}
 ## Wall kinds that weather: drawn a second time with shaders/weathering.gdshader, a
 ## grime band at their foot and faint paint patches over them.
 const WEATHERED := ["stucco", "concrete", "brick", "stone", "ledge"]
@@ -125,7 +121,7 @@ const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
 	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc",
 	"octagon": "9f5a45", "slab": "ddd2bf", "circles": "a4523b", "lawn": "6f8a4b",
-	"diamond": "ebe3d3"}
+	"diamond": "ebe3d3", "herringbone": "5f5c55"}
 
 var root: Node3D
 var lamps: Array[Light3D] = []
@@ -159,8 +155,8 @@ static func in_garden(x: float, z: float) -> bool:
 	return inside_corner and Vector2(x, z).distance_to(GARDEN_TURN) > GARDEN_EDGE
 
 ## Where the student may walk outside the buildings: the north road and the APS
-## front, the patio and canteen, the road past the canteen's tip, the strip by the
-## Covered Court, the west road, the lawn path, the chapel's plaza and parking, the walk
+## front, the patio and canteen, the road past the canteen's tip, the lanes beside APS
+## and the Covered Court, the west road, the lawn path, the chapel's plaza and parking, the walk
 ## along the chapel's south side, and the east road down past the gym with its apron
 ## and lane. The south road waits for SJH (its view needs that building).
 static func walkable_ground(x: float, z: float) -> bool:
@@ -171,8 +167,9 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
-	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
-			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z):
+	if BesideAps.walkable(x, z) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
+			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z) \
+			or SacredHeart.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
@@ -197,14 +194,12 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
-			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z):
+			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z) \
+			or BesideAps.blocked(x, z) or SacredHeart.blocked(x, z):
 		return true
-	for post in STREET_LIGHTS + PERGOLA_POSTS:
+	for post in STREET_LIGHTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
 			return true
-	for shed in SHEDS:
-		if absf(x - shed.x) < 1.3 and absf(z - shed.y) < 0.9:
-			return true # picnic table and benches
 	for column in CANTEEN_PIERS:
 		if absf(local.x - column) < 0.58 and absf(local.y - 1.45) < 0.58:
 			return true
@@ -223,6 +218,12 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return 0.45 if local.y > BACK_EDGE - 0.1 else 0.2 # the step down out of the back
 	if local.x > 49.0 and local.x < 53.0 and local.y <= 3.26 and local.y >= 2.45:
 		return 0.15 if local.y > 2.8 else 0.3
+	var heart := SacredHeart.floor_height(x, z)
+	if not is_nan(heart):
+		return heart
+	var beside := BesideAps.floor_height(x, z)
+	if not is_nan(beside):
+		return beside
 	var court := CoveredCourt.floor_height(x, z)
 	if not is_nan(court):
 		return court
@@ -268,9 +269,10 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return 0.03 # canopy tile
 	return -0.04 if across < 4.0 else -0.2
 
-## The outer bounds; blocked() shapes the walkable campus inside them.
+## The outer bounds; blocked() shapes the walkable campus inside them (north, up to the gate
+## across the lane behind APS).
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -192.0, 101.0), clampf(z, Hallway.BACK, 162.0))
+	return Vector2(clampf(x, -192.0, 101.0), clampf(z, SacredHeart.GATE_Z + 0.2, 162.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -292,6 +294,8 @@ func build(parent: Node3D) -> void:
 	Formation.new().build(self)
 	Aero.new().build(self)
 	CoveredCourt.new().build(self)
+	BesideAps.new().build(self)
+	SacredHeart.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -459,6 +463,21 @@ func _texture(kind: String) -> Texture2D:
 						if u + v > 18.5 or maxf(u, v) > 13.0:
 							tone = tone.darkened(0.12) # the paver's worn bevel
 					var noise := random.randf_range(-0.5, 0.5) * 7.0 / 255.0
+					image.set_pixel(x, y, Color(tone.r + noise, tone.g + noise, tone.b + noise))
+		"herringbone":
+			# Sacred Heart's square: dark grey concrete pavers 20 x 10 cm laid in a herringbone
+			# (16 x 8 px, turned alternately along the diagonals), weathered tones, moss in the joints.
+			var greys: Array[Color] = [Color("5f5c55"), Color("6a675f"), Color("57544e"), Color("706c63"), Color("4f4d48")]
+			for y in 128:
+				for x in 128:
+					var along := posmod(x + y, 32) < 16
+					var a := (x + y) if along else (x - y + 256)
+					var b := (x - y + 256) if along else (x + y)
+					var cell := Vector2i(floori(a / 16.0), floori(b / 8.0))
+					var tone: Color = greys[posmod(cell.x * 7 + cell.y * 13 + (0 if along else 3), greys.size())]
+					if posmod(a, 16) == 0 or posmod(b, 8) == 0:
+						tone = Color("5d6a3f") if random.randf() < 0.35 else Color("3c3a36") # joint, mossy here and there
+					var noise := random.randf_range(-0.5, 0.5) * 6.0 / 255.0
 					image.set_pixel(x, y, Color(tone.r + noise, tone.g + noise, tone.b + noise))
 		"slab":
 			# The covered walkways' floor: cream ceramic tiles 60 cm square, light grout.
@@ -1256,33 +1275,9 @@ func _street_light(x: float, z: float) -> void:
 
 # --- Past the canteen's end ------------------------------------------------------
 
-## Between the canteen wing's east wall and the Covered Court (the "FAREST RIGHT
-## SIDE" photos): a dirt strip with green steel picnic sheds and a timber pergola
-## grown over with vines, running to the road past the canteen's tip.
+## The green picnic sheds on the lawn across the road from the APS entrance, each on
+## its patch of worn dirt (beside the canteen's tip is areas/beside_aps.gd).
 func _yard() -> void:
-	box(Vector3(STRIP.size.x, 0.1, STRIP.size.y), Vector3(STRIP.get_center().x, -0.1, STRIP.get_center().y), material("dirt"))
-	var timber := material("wood", Color("c9b39a"))
-	for post in PERGOLA_POSTS:
-		box(Vector3(0.34, 3.0, 0.34), Vector3(post.x, 1.5, post.y), timber)
-		box(Vector3(0.46, 0.7, 0.46), Vector3(post.x, 0.35, post.y), material("stone"))
-	for x in [43.8, 47.2]:
-		box(Vector3(0.22, 0.28, 18.4), Vector3(x, 3.1, 21.0), timber)
-	var rafter := 12.0
-	while rafter <= 30.0:
-		box(Vector3(3.8, 0.16, 0.12), Vector3(45.5, 3.3, rafter), timber)
-		rafter += 0.9
-	# The vine roof: level leaf cards over the rafters and a fringe hanging off its road side.
-	var vines := _leaf_material(631, Vector3(45.5, -6.0, 21.0))
-	var roof := _cards(2.6, 0.9, 3.0, 2, true)
-	var fringe := _cards(2.2, 1.1, 2.3, 1)
-	var z := 12.6
-	while z < 30.0:
-		for x in [44.6, 46.4]:
-			_mesh(roof, Vector3(x, 0, z), vines, 0.3 if x > 45.0 else 0.0).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
-		_mesh(fringe, Vector3(47.5, 0, z), vines, PI / 2.0).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
-		z += 2.1
-	for shed in SHEDS:
-		_shed(shed.x, shed.y)
 	for shed in LAWN_SHEDS:
 		box(Vector3(4.2, 0.1, 3.5), Vector3(shed.x, -0.14, shed.y), material("dirt"))
 		_shed(shed.x, shed.y)
@@ -1436,7 +1431,7 @@ func _shrub(at: Vector3, size: float, seed_value: int, colors: Array[Color] = SH
 ## Grass tufts as one MultiMesh of crossed blade cards: a thick band along the
 ## lawn's kerbs all round the loop, tufts scattered over the chapel lawn and round
 ## the tree roots, moss where the patio meets the walls and the rail, and patchy
-## grass in the corner garden and the strip by the Covered Court.
+## grass in the corner garden.
 func _grasses() -> void:
 	var random := RandomNumberGenerator.new()
 	random.seed = 7151
@@ -1492,9 +1487,6 @@ func _grasses() -> void:
 	# The corner garden's patchy grass, none under the enclosure.
 	scatter.call(Vector2(-62, 0.3), Vector2(-44.5, 21.5), 260, -0.05, 0.9,
 		func(x: float, z: float) -> bool: return in_garden(x, z) and not (x > -61.8 and x < -55.4 and z < 4.2) and random.randf() < 0.7)
-	# The strip by the Covered Court: grass along its edges and round the posts.
-	scatter.call(STRIP.position, STRIP.end, 70, -0.05, 0.8,
-		func(x: float, _z: float) -> bool: return x < 43.8 or x > 47.1 or random.randf() < 0.2)
 	# Lush grass on the Mary lawn, clear of her pedestal and the kerb.
 	var mary_lawn := Sjh.lawn()
 	scatter.call(Vector2(-61.0, 114.0), Vector2(Sjh.LAWN_EAST, Sjh.LAWN_SOUTH), 320, 0.08, 0.95,
@@ -1565,7 +1557,8 @@ func _canteen() -> void:
 		box(Vector3(0.23, 12.4, 0.28), Vector3(36.5 + bay * 4.83, 11.65, 0.4), white)
 
 	box(Vector3(29.1, 0.3, 8.5), Vector3(51, 5.3, -2.7), white)
-	# The hall is open to the patio and, at the back, to the strip behind the wing.
+	_canteen_back_face()
+	# The hall is open to the patio and, at the back, to the lane behind the wing.
 	_canteen_back()
 	box(Vector3(29, 0.2, 9.8), Vector3(51, 0.35, -2.4), material("tile", Color("b8b8b4"))) # grey tiles, as in the photo
 	for i in CANTEEN_PIERS.size():
@@ -1656,8 +1649,9 @@ func _canteen_back() -> void:
 		rod(Vector3(run.x, 1.75, BACK_EDGE), Vector3(run.y, 1.75, BACK_EDGE), 0.025, steel)
 	for gap in BACK_GAPS:
 		box(Vector3(gap.y - gap.x, 0.25, 0.45), Vector3((gap.x + gap.y) / 2.0, 0.08, BACK_EDGE - 0.25), material("tile", Color("b8b8b4")))
-	# The scalloped awning: a pale sheet on a steel frame along the back, its edge cut in scallops.
-	var sheet := material("plain", Color("d8d2c6"))
+	# The scalloped awning: a maroon sheet on a steel frame along the back, its edge cut in
+	# scallops (the "Back view of aps building canteen" photo).
+	var sheet := material("plain", Color("8e3b35"))
 	box(Vector3(29.0, 0.04, 1.6), Vector3(51.0, 4.75, BACK_EDGE - 0.85), sheet, 0.0, -0.12)
 	var x := 36.7
 	while x < 65.4:
@@ -1672,6 +1666,36 @@ func _canteen_back() -> void:
 	for lx in [43.0, 48.5, 54.0, 59.5, 64.0]:
 		for lz in [-5.8, -1.0]:
 			box(Vector3(0.3, 0.03, 0.3), Vector3(lx, 5.13, lz), lamp)
+
+## The wing's back on the lane, above the open hall (the "Back view of aps building canteen"
+## photo): a white sunshade slab at every floor, rows of brown-framed windows over it with
+## blinds drawn in some, aircons on the slabs, a drainpipe; under the roof's overhang, its
+## brackets and the top row's aircons.
+func _canteen_back_face() -> void:
+	var white := material("stucco", Color("fbf9f0"))
+	var back := -7.12
+	var out := Vector3(0, 0, -1)
+	var random := RandomNumberGenerator.new()
+	random.seed = 1544
+	for level in 4:
+		var y := 6.5 + level * 3.05
+		box(Vector3(29.4, 0.18, 0.9), Vector3(51, y - 0.2, back - 0.45), white)
+		for bay in 6:
+			var x := 38.95 + bay * 4.82
+			for half in [-1.0, 1.0]:
+				var at := Vector3(x + half * 1.05, y + 1.2, back)
+				framed_window(at, 1.95, 1.4, out, random.randf() < 0.3, 2, Color("3d3631"))
+				if random.randf() < 0.45:
+					box(Vector3(1.85, 1.0, 0.02), at + Vector3(0, 0.18, -0.03), material("plain", Color("7d5b3d")))
+			if random.randf() < 0.5:
+				box(Vector3(0.75, 0.45, 0.5), Vector3(x + random.randf_range(-1.6, 1.6), y + 0.04, back - 0.55), material("plain", Color("dedfdb")))
+	# The roof's overhang on its brackets, the top row's aircons under it.
+	box(Vector3(29.4, 0.25, 1.4), Vector3(51, 17.7, back - 0.7), white)
+	for bay in 7:
+		box(Vector3(0.2, 0.6, 1.2), Vector3(36.5 + bay * 4.83, 17.3, back - 0.6), white)
+	for bay in 6:
+		box(Vector3(0.75, 0.45, 0.5), Vector3(38.95 + bay * 4.82, 17.25, back - 0.3), material("plain", Color("dedfdb")))
+	rod(Vector3(64.6, 5.4, back - 0.25), Vector3(64.6, 17.6, back - 0.25), 0.06, Color("e2e2dc"))
 
 ## One stall in the canteen's frame: [centre, facing (unit, x/z), size (across, deep), sign
 ## name or "", sign colour, ink]. Built square, its counter on the facing side, then turned:
