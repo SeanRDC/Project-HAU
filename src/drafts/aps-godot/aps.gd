@@ -165,6 +165,8 @@ var mgn := 0.0
 var pgn_east := 0.0
 ## 0..1: how far the camera faces the Formation Center (west, from over the east road).
 var formation := 0.0
+## 0..1: how far the camera faces east down the Covered Court (on its floor).
+var court := 0.0
 ## 0..1: how far the student is on the walk along the chapel's south side (the camera,
 ## facing north at the chapel, cuts away the parking and SJH behind it).
 var south_walk := 0.0
@@ -448,12 +450,12 @@ static func leg_for(x: float, z: float) -> float:
 ## canteen's tip (where it looked north) and on the apron in front of the gym.
 static func gym_for(x: float, z: float) -> float:
 	return smoothstep(38.0, 46.0, z) * smoothstep(34.0, 38.0, x) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Formation.view_for(x, z)) \
-			* (1.0 - Sjh.rear_for(x, z))
+			* (1.0 - Sjh.rear_for(x, z)) * (1.0 - CoveredCourt.view_for(x, z))
 
 ## The further turn to face the gym's north gable, once past its north-west corner into
 ## the lane; it hands over to the hall view in the side entrance.
 static func gable_for(x: float, z: float) -> float:
-	return smoothstep(Gym.FRONT_X, Gym.FRONT_X + 4.0, x) * (1.0 - _side_door_for(z))
+	return smoothstep(Gym.FRONT_X, Gym.FRONT_X + 4.0, x) * (1.0 - _side_door_for(z)) * (1.0 - CoveredCourt.view_for(x, z))
 
 ## 0 in the lane, 1 once through the side entrance (the gable is at z 66.8).
 static func _side_door_for(z: float) -> float:
@@ -507,6 +509,7 @@ func _snap_follow() -> void:
 	mgn = mgn_for(student.position.x, student.position.z)
 	pgn_east = Pgn.east_for(student.position.x, student.position.z)
 	formation = Formation.view_for(student.position.x, student.position.z)
+	court = CoveredCourt.view_for(student.position.x, student.position.z)
 	south_walk = ChapelSouth.view_for(student.position.x, student.position.z)
 	var on_middle := MiddleRoad.view_for(student.position.x, student.position.z)
 	middle = on_middle * MiddleRoad.south_for(student.position.z)
@@ -528,7 +531,7 @@ func _yaw() -> float:
 ## The camera's turn in quarter turns (SJH's and the boulevard's south half turns count
 ## two, MGN's three; the boulevard's north view adds none); the controls use it too.
 func _turns() -> float:
-	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle - pgn_east + 3.0 * formation
+	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle - pgn_east + 3.0 * formation + court
 
 ## The turn the controls use: the camera's, except that on the boulevard the side it faces
 ## stays the one it faced when the current direction was pressed, until it is let go or
@@ -565,6 +568,7 @@ func _update_camera(delta: float) -> void:
 	mgn = lerpf(mgn, mgn_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	pgn_east = lerpf(pgn_east, Pgn.east_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	formation = lerpf(formation, Formation.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	court = lerpf(court, CoveredCourt.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	south_walk = lerpf(south_walk, ChapelSouth.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var on_middle := MiddleRoad.view_for(student.position.x, student.position.z)
 	var south := on_middle * MiddleRoad.south_for(student.position.z)
@@ -632,9 +636,11 @@ func _update_camera(delta: float) -> void:
 	# the building; close up it frames the student's own depth on the drop-off.
 	var formation_z := lerpf(lerpf(follow.y, 56.5, wide), 56.5, campus)
 	var formation_focus := Vector3(lerpf(Formation.FRONT_X, follow.x, close), lerpf(target_y, target_y + 3.0, wide), roundf(formation_z / pixel) * pixel)
-	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation)
+	# Down the Covered Court it frames the student's own depth across it.
+	var court_focus := Vector3(roundf(follow.x / pixel) * pixel, target_y, roundf(follow.y / pixel) * pixel)
+	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
-	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle + north_focus * middle_north + pgn_focus * pgn_east + formation_focus * formation
+	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle + north_focus * middle_north + pgn_focus * pgn_east + formation_focus * formation + court_focus * court
 	# Every framing, the wide ones too, keeps the student in the middle across the screen:
 	# the focus slides sideways onto them and keeps the depth its view frames.
 	var yaw := _yaw()
@@ -688,7 +694,7 @@ func _update_camera(delta: float) -> void:
 	# the road and SJH: everything past the road (SJH and its row of cars) is cut away, so
 	# the cars nosed in to the grass stay in front, as in the photos. It fades out as the
 	# chapel's or the gym's view takes over at either end.
-	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation, 0.0, 1.0)
+	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court, 0.0, 1.0)
 	if south_walk * facing_north > 0.0:
 		# (through the ground line, as the plane leans with the camera: then nothing of the
 		# front row's cars stands above it)
@@ -737,6 +743,11 @@ func _update_camera(delta: float) -> void:
 	if forward.z > 0.3 and focus.z > CoveredCourt.CUT_Z and camera.position.z < CoveredCourt.CUT_Z:
 		var court_edge := (Vector3(focus.x, focus.y, CoveredCourt.CUT_Z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, court_edge)
+	# Facing east down the Covered Court (its roof fades) the camera stands over the parking
+	# lane's trees and the pergola: everything west of the court's front (its gable too) is cut away.
+	if court > 0.0 and forward.x > 0.3 and camera.position.x < CoveredCourt.SHED.position.x:
+		var west_edge := (Vector3(CoveredCourt.SHED.position.x + 0.3, focus.y, focus.z) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, west_edge * smoothstep(0.0, 1.0, court))
 	# Facing south across the boulevard the camera stands over PGN's plot: everything
 	# north of it (the APS wing, the corner garden) is cut away. Facing north it stands
 	# over the Main Building and MGN: everything south of their faces is cut away.
@@ -1360,7 +1371,7 @@ func _collect_cutaways() -> void:
 	# Each side of the boulevard fades the same way while the camera faces the other across
 	# it, and the Student Center's roof while the student is under it.
 	_arcade_lights = scene.find_child(StudentCenter.LIGHTS_GROUP, false, false)
-	for group in [MiddleRoad.NORTH_GROUP, MiddleRoad.SOUTH_GROUP, StudentCenter.ROOF_GROUP]:
+	for group in [MiddleRoad.NORTH_GROUP, MiddleRoad.SOUTH_GROUP, StudentCenter.ROOF_GROUP, CoveredCourt.ROOF_GROUP]:
 		var items := []
 		var stack: Array[Node] = [scene.find_child(group, false, false)]
 		while not stack.is_empty():
@@ -1386,6 +1397,8 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 			hidden = on_middle and facing_south == (cut["name"] == MiddleRoad.NORTH_GROUP)
 		elif cut["name"] == StudentCenter.ROOF_GROUP:
 			hidden = under_arcade
+		elif cut["name"] == CoveredCourt.ROOF_GROUP:
+			hidden = CoveredCourt.under_roof(student.position.x, student.position.z)
 		else:
 			hidden = GymInterior.hidden(cut["name"], p.x, p.y, y, side)
 		hidden = hidden and not free_cam.active # flying, everything stands
@@ -1966,6 +1979,9 @@ func _verify_and_capture() -> void:
 		# The Covered Court: built on its plot, its floor and the ramp up from the gym's lane
 		# walkable, the columns, bleachers and the things in front of it solid; facing south at
 		# the gym from the lane, its roof is cut away.
+		# Its inside: the courts' lettering and the AERO gate, the gate solid, the floor clear
+		# between the courts; on the floor the camera faces east and the roof fades.
+		checks.court_inside = scene.find_child("COURT LETTERING", true, false) != null and scene.find_child("AERO LABORATORY", true, false) != null 			and World.blocked(CoveredCourt.GATE_X + 1.0, CoveredCourt.centre_z()) and not World.blocked(80.0, 41.5) 			and is_equal_approx(CoveredCourt.view_for(70.0, 40.0), 1.0) and CoveredCourt.under_roof(70.0, 40.0)
 		checks.court_built = not Plots.shapes().has("court") 			and not World.blocked(70.0, 40.0) and is_equal_approx(World.floor_height(70.0, 40.0), CoveredCourt.FLOOR_Y) 			and not World.blocked(70.0, CoveredCourt.SHED.end.y + 0.8) and World.blocked(CoveredCourt.columns()[2], CoveredCourt.SHED.end.y - 0.3) 			and World.blocked(70.0, CoveredCourt.STANDS.x + 1.0)
 		student.place(GYM_SIDE_SPOT.x, GYM_SIDE_SPOT.y)
 		_set_zoom(44.0, true)
