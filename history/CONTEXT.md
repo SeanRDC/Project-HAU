@@ -1,5 +1,7 @@
 # Project Context
 
+**Beside APS, 2026-10-27.** `areas/beside_aps.gd`: past the canteen's tip a kerbed island on the east road, with the vine pergola (stone pillars, red concrete tables, palms in bowls) and green picnic sheds under tall trees; round umbrella tables at the tip's foot; a paved lane north of the tip; an empty parking lane by the court (no cars). The Covered Court is 4 m east of OSM to fit (`plan.ts`). The lane by the gym's north gable rises east past the side entrance. The bell post and the CMO board stand on the Formation Center's drop-off island. See `sessions/2026-10-27-beside-aps.md`.
+
 **Every branch in main, 2026-10-25.** Canteen layout, Covered Court, Aero Hall, Formation Center, the SJH back lane, the audio fixes, the opening and story work and the girl walk test are all merged. Aero Hall's edge wall now leaves a gateway into SJH's back lane (`GATEWAY_X`). See `sessions/2026-10-25-merge-all-branches.md`.
 
 **PGN merged with main, 2026-10-25.** The `pgn` branch (PR #44) now has every branch in
