@@ -42,7 +42,7 @@ stays; these parts changed. Disagree with any of them and say so.
 10. **Ending 3 is bittersweet, like *ID:INVADED* episode 10.** He saved her, she calls at
     11:11 PM (the call he once declined), he answers, tells her that where he comes from
     she is gone, and says he has to go back. "Saved, but alone" is dropped: three endings.
-11. **What happened on November 11, like Mari in Omori.** Everyone, Lance most of all,
+11. **What happened on November 11, like Mari in Omori (draft, not decided).** Everyone, Lance most of all,
     believes Ysha gave up. The truth, found late: she had dengue nobody noticed behind her
     "pagod", she waited at the fountain in the rain because he promised to meet her at 9,
     she had a message to the guidance office in her drafts, and at 11:11 PM she called to
@@ -280,7 +280,12 @@ Truths hidden from the player, and from Lance, until late.
 
 None of these is "the cause": her pain stays layered.
 
-## What happened on November 11, 2026
+## What happened on November 11, 2026 (draft)
+
+**Draft, not decided.** The dengue and the promise at the fountain are one idea for how she
+died; the team still has to agree on it. Other ideas considered: the Abacan River flooding
+on her way home, the campus cat in the flood, a boarding-house fire, the Pampanga
+earthquake, the milk tea shop in the flood.
 
 **Trigger warning:** depression, suicide (what everyone believes), illness, guilt. Nothing
 is shown.
