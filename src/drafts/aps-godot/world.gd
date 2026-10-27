@@ -79,12 +79,6 @@ const PATIO_TABLES: Array[Vector2] = [Vector2(23.0, 3.0), Vector2(28.2, 3.2), Ve
 	Vector2(29.8, 15.8), Vector2(29.8, 21.0)]
 ## The patio's tall LED street lights, at its kerb side.
 const STREET_LIGHTS: Array[Vector2] = [Vector2(26.9, 5.6), Vector2(26.9, 18.4)]
-## Between the canteen wing's east wall and the Covered Court (the "FAREST RIGHT SIDE"
-## photos): green steel picnic sheds, then a vine-covered timber pergola, on dirt.
-const STRIP := Rect2(43.4, 0.4, 4.2, 30.0)
-const PERGOLA_POSTS: Array[Vector2] = [Vector2(43.8, 12.0), Vector2(47.2, 12.0), Vector2(43.8, 16.5), Vector2(47.2, 16.5),
-	Vector2(43.8, 21.0), Vector2(47.2, 21.0), Vector2(43.8, 25.5), Vector2(47.2, 25.5), Vector2(43.8, 30.0), Vector2(47.2, 30.0)]
-const SHEDS: Array[Vector2] = [Vector2(45.5, 3.3), Vector2(45.5, 7.6)]
 ## More green picnic sheds on the lawn across the road from the APS entrance, each on
 ## a patch of worn dirt. They stay west of x 0 so the canteen camera (which sits over
 ## the lawn near x 3.5 looking east) never has one in front of the stalls.
@@ -109,6 +103,7 @@ const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
 const CoveredCourt := preload("res://areas/court.gd")
+const BesideAps := preload("res://areas/beside_aps.gd")
 
 ## Texture world size in metres per 128 px tile. Triplanar world mapping keeps
 ## the pixel density even on every face, so long walls never stretch their texels.
@@ -159,8 +154,8 @@ static func in_garden(x: float, z: float) -> bool:
 	return inside_corner and Vector2(x, z).distance_to(GARDEN_TURN) > GARDEN_EDGE
 
 ## Where the student may walk outside the buildings: the north road and the APS
-## front, the patio and canteen, the road past the canteen's tip, the strip by the
-## Covered Court, the west road, the lawn path, the chapel's plaza and parking, the walk
+## front, the patio and canteen, the road past the canteen's tip, the lanes beside APS
+## and the Covered Court, the west road, the lawn path, the chapel's plaza and parking, the walk
 ## along the chapel's south side, and the east road down past the gym with its apron
 ## and lane. The south road waits for SJH (its view needs that building).
 static func walkable_ground(x: float, z: float) -> bool:
@@ -171,7 +166,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true
 	if x > -44.5 and x < 36.8 and z > -1.0 and across < 4.0:
 		return true # the APS front, its corridor and the patio
-	if STRIP.has_point(Vector2(x, z)) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
+	if BesideAps.walkable(x, z) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
 			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
@@ -197,14 +192,12 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 	elif not walkable_ground(x, z) or in_garden(x, z) or Plots.occupied(x, z):
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
-			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z):
+			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z) \
+			or BesideAps.blocked(x, z):
 		return true
-	for post in STREET_LIGHTS + PERGOLA_POSTS:
+	for post in STREET_LIGHTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
 			return true
-	for shed in SHEDS:
-		if absf(x - shed.x) < 1.3 and absf(z - shed.y) < 0.9:
-			return true # picnic table and benches
 	for column in CANTEEN_PIERS:
 		if absf(local.x - column) < 0.58 and absf(local.y - 1.45) < 0.58:
 			return true
@@ -223,6 +216,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 		return 0.45 if local.y > BACK_EDGE - 0.1 else 0.2 # the step down out of the back
 	if local.x > 49.0 and local.x < 53.0 and local.y <= 3.26 and local.y >= 2.45:
 		return 0.15 if local.y > 2.8 else 0.3
+	var beside := BesideAps.floor_height(x, z)
+	if not is_nan(beside):
+		return beside
 	var court := CoveredCourt.floor_height(x, z)
 	if not is_nan(court):
 		return court
@@ -292,6 +288,7 @@ func build(parent: Node3D) -> void:
 	Formation.new().build(self)
 	Aero.new().build(self)
 	CoveredCourt.new().build(self)
+	BesideAps.new().build(self)
 	Plots.new().build(self)
 	Gym.new().build(self)
 	_grasses()
@@ -1256,33 +1253,9 @@ func _street_light(x: float, z: float) -> void:
 
 # --- Past the canteen's end ------------------------------------------------------
 
-## Between the canteen wing's east wall and the Covered Court (the "FAREST RIGHT
-## SIDE" photos): a dirt strip with green steel picnic sheds and a timber pergola
-## grown over with vines, running to the road past the canteen's tip.
+## The green picnic sheds on the lawn across the road from the APS entrance, each on
+## its patch of worn dirt (beside the canteen's tip is areas/beside_aps.gd).
 func _yard() -> void:
-	box(Vector3(STRIP.size.x, 0.1, STRIP.size.y), Vector3(STRIP.get_center().x, -0.1, STRIP.get_center().y), material("dirt"))
-	var timber := material("wood", Color("c9b39a"))
-	for post in PERGOLA_POSTS:
-		box(Vector3(0.34, 3.0, 0.34), Vector3(post.x, 1.5, post.y), timber)
-		box(Vector3(0.46, 0.7, 0.46), Vector3(post.x, 0.35, post.y), material("stone"))
-	for x in [43.8, 47.2]:
-		box(Vector3(0.22, 0.28, 18.4), Vector3(x, 3.1, 21.0), timber)
-	var rafter := 12.0
-	while rafter <= 30.0:
-		box(Vector3(3.8, 0.16, 0.12), Vector3(45.5, 3.3, rafter), timber)
-		rafter += 0.9
-	# The vine roof: level leaf cards over the rafters and a fringe hanging off its road side.
-	var vines := _leaf_material(631, Vector3(45.5, -6.0, 21.0))
-	var roof := _cards(2.6, 0.9, 3.0, 2, true)
-	var fringe := _cards(2.2, 1.1, 2.3, 1)
-	var z := 12.6
-	while z < 30.0:
-		for x in [44.6, 46.4]:
-			_mesh(roof, Vector3(x, 0, z), vines, 0.3 if x > 45.0 else 0.0).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
-		_mesh(fringe, Vector3(47.5, 0, z), vines, PI / 2.0).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
-		z += 2.1
-	for shed in SHEDS:
-		_shed(shed.x, shed.y)
 	for shed in LAWN_SHEDS:
 		box(Vector3(4.2, 0.1, 3.5), Vector3(shed.x, -0.14, shed.y), material("dirt"))
 		_shed(shed.x, shed.y)
@@ -1436,7 +1409,7 @@ func _shrub(at: Vector3, size: float, seed_value: int, colors: Array[Color] = SH
 ## Grass tufts as one MultiMesh of crossed blade cards: a thick band along the
 ## lawn's kerbs all round the loop, tufts scattered over the chapel lawn and round
 ## the tree roots, moss where the patio meets the walls and the rail, and patchy
-## grass in the corner garden and the strip by the Covered Court.
+## grass in the corner garden.
 func _grasses() -> void:
 	var random := RandomNumberGenerator.new()
 	random.seed = 7151
@@ -1492,9 +1465,6 @@ func _grasses() -> void:
 	# The corner garden's patchy grass, none under the enclosure.
 	scatter.call(Vector2(-62, 0.3), Vector2(-44.5, 21.5), 260, -0.05, 0.9,
 		func(x: float, z: float) -> bool: return in_garden(x, z) and not (x > -61.8 and x < -55.4 and z < 4.2) and random.randf() < 0.7)
-	# The strip by the Covered Court: grass along its edges and round the posts.
-	scatter.call(STRIP.position, STRIP.end, 70, -0.05, 0.8,
-		func(x: float, _z: float) -> bool: return x < 43.8 or x > 47.1 or random.randf() < 0.2)
 	# Lush grass on the Mary lawn, clear of her pedestal and the kerb.
 	var mary_lawn := Sjh.lawn()
 	scatter.call(Vector2(-61.0, 114.0), Vector2(Sjh.LAWN_EAST, Sjh.LAWN_SOUTH), 320, 0.08, 0.95,

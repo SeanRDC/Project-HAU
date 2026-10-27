@@ -25,6 +25,7 @@ const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
 const CoveredCourt := preload("res://areas/court.gd")
+const BesideAps := preload("res://areas/beside_aps.gd")
 const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
@@ -1579,9 +1580,10 @@ func _verify_and_capture() -> void:
 		checks.bend_is_road = is_equal_approx(World.floor_height(17.7, 11.3), -0.19) and not World.blocked(17.7, 11.3)
 		checks.lawn_blocks = World.blocked(12.5, 18.0) and World.blocked(5.0, 14.0)
 		checks.patio_walkable = not World.blocked(25.0, 2.0) and not World.blocked(30.6, 24.0)
-		# The strip by the Covered Court: under the pergola is walkable; posts, sheds and poles are solid.
-		checks.yard_walkable = not World.blocked(45.5, 14.2) and not World.blocked(45.5, 10.0)
-		checks.yard_props_block = World.blocked(45.5, 3.3) and World.blocked(43.8, 12.0) and World.blocked(26.9, 18.4)
+		# Beside APS: the paved lane north of the canteen's tip and the parking lane by the
+		# Covered Court are walkable at their heights; the patio's street lights are solid.
+		checks.yard_walkable = not World.blocked(45.5, 10.0) and is_equal_approx(World.floor_height(45.5, 10.0), BesideAps.LANE_Y) 			and not World.blocked(50.7, 30.0) and is_equal_approx(World.floor_height(50.7, 30.0), BesideAps.PARKING_Y)
+		checks.yard_props_block = World.blocked(26.9, 18.4)
 		# The corner garden is planted, not walkable; the road turning past it is.
 		checks.left_garden_blocks = World.blocked(-58.0, 8.0) and not World.blocked(-52.0, 10.0)
 		# The shared campus plan: every building, the closed road loop, reserved plots.
