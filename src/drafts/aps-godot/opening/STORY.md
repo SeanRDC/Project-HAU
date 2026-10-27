@@ -42,12 +42,18 @@ stays; these parts changed. Disagree with any of them and say so.
 10. **Ending 3 is bittersweet, like *ID:INVADED* episode 10.** He saved her, she calls at
     11:11 PM (the call he once declined), he answers, tells her that where he comes from
     she is gone, and says he has to go back. "Saved, but alone" is dropped: three endings.
+11. **What happened on November 11, like Mari in Omori.** Everyone, Lance most of all,
+    believes Ysha gave up. The truth, found late: she had dengue nobody noticed behind her
+    "pagod", she waited at the fountain in the rain because he promised to meet her at 9,
+    she had a message to the guidance office in her drafts, and at 11:11 PM she called to
+    ask him to take her to the ER and couldn't say it. Her depression stays real: it is why
+    nobody saw she was sick.
 
 ## The story in short
 
 A father full of regrets falls asleep in his old classroom at HAU and wakes up in June of
 his third year, five months before November 11, the day he lost Ysha, the first love he
-never told, to the depression nobody noticed. He has one more chance, with only his memories
+never told: everyone believed she gave up, after months of a sadness nobody noticed. He has one more chance, with only his memories
 and one photo from his future: his wife Pat, his childhood friend, holding their newborn
 son. To stay close to Ysha he starts lying to Pat. And the closer November comes, the
 clearer the price: the world where Ysha lives is a world his son was never born into.
@@ -157,9 +163,11 @@ Cafe*). It is never said out loud until the last night; the player feels it firs
 Ending 3, like *ID:INVADED* episode 10, where the detective says goodbye to his daughter in
 the world where she is alive, knowing that in the real one she is gone.
 
-At 11:11 PM on November 11, 2026, Ysha calls. It is the same call, at the same minute, that
-the player had to decline at the start of the game. This time the only button is "Answer".
-She is fine: sleepy, teasing. "Uy. Gising ka pa? Wala lang... Salamat pala kanina. Sabay tayo
+At 9 PM he was at the fountain, as promised. He saw her shivering and took her to the ER;
+Pat came with them. Now it is late, she is admitted and safe, and he is alone in the
+classroom, feeling the pull. At 11:11 PM Ysha calls, from a hospital bed. It is the same
+call, at the same minute, that the player had to decline at the start of the game. This
+time the only button is "Answer". She is fine: sleepy, teasing, an IV in her arm. "Uy. Gising ka pa? Wala lang... Salamat pala kanina. Sabay tayo
 bukas, ha?" He lets her talk. Then he tells her the truth, plainly: "Ysha... sa pinanggalingan
 ko, wala ka na. Kailangan kong bumalik." She doesn't understand. She laughs, the way she does:
 "Ang weird mo. Matulog ka na nga." And then, completely her: "Ingat ka, Lance. Bukas." He stays
@@ -240,7 +248,7 @@ memory replays later do they mean what they meant.
 | October | "Sana nandun pa ako, para makita ko." | "Kaya mo 'yan, ga-graduate tayo." |
 | October | A 3 AM story of the empty walkway: "Ang tahimik pala dito pag gabi." | 12 views. No replies. |
 | November 10 | "Lance, may sasabihin sana ako bukas. Okay lang ba?" | Seen. No reply. |
-| November 11 | "Pwede ba tayong mag-usap mamaya?" Then the call at 11:11 PM | "Ikaw na naman." Declined. |
+| November 11 | "Pwede ba tayong mag-usap mamaya?" Waited at the fountain from 9, sick. Then the call at 11:11 PM | "Ikaw na naman... Sige, sa fountain, 9. Promise." He forgot. Declined. |
 
 In the 2026 the player relives, every row is a moment to catch, or miss again.
 
@@ -274,25 +282,65 @@ None of these is "the cause": her pain stays layered.
 
 ## What happened on November 11, 2026
 
-**Trigger warning:** suicide, depression, guilt. Nothing is shown.
+**Trigger warning:** depression, suicide (what everyone believes), illness, guilt. Nothing
+is shown.
 
-The truth Lance has buried for twelve years; the player learns it late, in fragments.
+The truth Lance has buried for twelve years; the player learns it late, in fragments. Like
+Mari in Omori: what everyone believes is not what happened, and the hero is tied to it.
 
-1. **The afternoon.** "Lance... pwede ba tayong mag-usap mamaya?" He is tired and snaps:
-   "Ikaw na naman." She laughs: "Joke lang. Sige, bukas na lang."
-2. **The night that starts his happiness.** Pat asks him to eat with her after class; it
-   turns out to be their first date. At 11:11 PM Ysha calls. He declines: "Bukas na lang."
-3. **The voicemail.** He doesn't listen to it.
-4. **The next morning.** Her seat is empty. That is all the story ever shows.
-5. **The lie.** He says he hadn't talked to her that day and deletes the call. Pat never
-   learns. Their whole life together began on the night Ysha was alone.
-6. **The birthday he can't celebrate.** His child is born on November 11.
-7. **The voicemail, twelve years later:**
+1. **A week before.** Ysha is tired: more than usual. Her head aches, her body hurts, she is
+   cold in a warm room. It is dengue (November, after the typhoons), but she tells no one,
+   because she is always tired, and "pagod" is the one thing nobody questions about her. At
+   the canteen she pushes her tray away. Lance notices and thinks: again. He doesn't ask.
+2. **November 10.** To her mother: "Ma, pagod na pagod na ako." "Magpahinga ka lang, anak.
+   Konting tiis na lang." To Lance: "Lance, may sasabihin sana ako bukas. Okay lang ba?"
+   Seen. No reply.
+3. **The afternoon.** By the stairs, her voice small: "Lance... pwede ba tayong mag-usap
+   mamaya?" He is tired and it comes out wrong: "Ikaw na naman." Then, guilty: "Sige,
+   mamaya. Sa fountain, 9. Promise." She smiles, really smiles, for the first time in weeks.
+   "Promise ha."
+4. **The evening.** Pat asks him to eat with her after class. He forgets the fountain. It
+   becomes their first date. He laughs more that night than he has all year.
+5. **9:00 PM.** Ysha is at the fountain, early. A drizzle. She feeds the campus cat the bread
+   she saved from the lunch she didn't eat. "Nandito na ako."
+6. **10:00 PM.** Heavier rain, a worse fever; she is shivering. She stays on the ledge,
+   because he promised. "Okay lang, baka busy ka. Hintayin kita konti pa."
+7. **10:40 PM.** She types to the HAU guidance office: "Pwede po ba akong magpa-schedule
+   bukas? Hindi na po kasi ako—" It stays in her drafts.
+8. **11:11 PM.** She calls him. She meant to say "Lance, hindi ako okay. Pwede mo ba akong
+   samahan sa ER?" When it goes to voicemail she can't, she never could, so she says the
+   ordinary thing:
 
-> "Uy, Lance. 'Yung notes mo sa Ethics, nasa akin pa pala. Ibabalik ko na lang bukas.
-> ...Sige."
+   > "Uy, Lance. 'Yung notes mo sa Ethics, nasa akin pa pala. Ibabalik ko na lang bukas.
+   > ...Sige."
 
-Nothing in it: an ordinary promise about tomorrow.
+   Across town Lance sees her name and declines. "Bukas na lang," to no one. Pat asks who
+   it was. "Wala."
+9. **After.** She walks home in the rain, slowly. She lies down because she is tired, the
+   way she is always tired.
+10. **The next morning,** her seat is empty. That is all the story ever shows.
+11. **The lie.** He says he hadn't talked to her that day and deletes the call and her
+    texts. Pat never learns. Their whole life together began on the night Ysha waited.
+12. **The birthday he can't celebrate.** His son is born on November 11, ten years later.
+
+**What everyone believes, Lance most of all:** they all saw the signs (the skipped lunches,
+the "haha", the blank margins), so they believe she gave up. For twelve years Lance lives
+with it: she reached out, he didn't answer, and she ended it.
+
+**The truth, found late:**
+
+- **The hospital record:** severe dengue. She didn't give up; she was sick, and nobody
+  noticed, because everyone, Lance most of all, had long ago decided that her being tired
+  was just who she was. "Pagod na pagod na ako" meant both.
+- **The unsent draft:** "Pwede po ba akong magpa-schedule bukas?" She was reaching for
+  help. She was planning tomorrow.
+- **The voicemail** means exactly what it says. "Ibabalik ko na lang bukas." She believed in
+  bukas; he is the one who gave up on it, every November 11, for twelve years.
+- **Her two texts from the fountain,** recovered at last: "Nandito na ako." "Hintayin kita
+  konti pa."
+
+The truth doesn't free him. It is worse, and gentler, at once: she wasn't giving up; she was
+waiting for him.
 
 ### How the trauma is shown
 
@@ -302,8 +350,10 @@ The weight comes from memory, aftermath and guilt, never from showing how she di
   repeats one word wrong. Used a handful of times in the whole game, so each one lands.
 - **The aftermath:** her bag on the chair for a week; the group chat asking "Ysha, nasaan
   ka?"; her mother folding her uniform at the wake; her sibling: "Kuya, kaibigan ka ba ni
-  Ate?"; his Ethics notes, handed back by her mother, with her translations of his
-  handwriting in the margins.
+  Ate?"; her phone, with one call in the log that never connected; his Ethics notes, handed
+  back by her mother, her translations of his handwriting in every margin and on the last
+  page: "Salamat ulit. Sa susunod, ako naman manlilibre."; the campus cat, waiting at the
+  fountain at 9 PM every night for bread that doesn't come.
 - **The player is complicit:** early on, her call comes and the only button is "Decline".
 - **The guilt rots him:** he can't hold his child on November 11; he flinches at phones at
   night.
@@ -397,7 +447,8 @@ him stay in it. All of them cost something.
   time, then: "Sige." They sit with Ysha, walk her to the jeep, go with her to the guidance
   office and to her family. On the afternoon of November 11 she is with them, under one
   umbrella too small for three. At the fountain Pat hands back the photo, signature side up:
-  "Ito 'yung nahulog mo noon." That night, in the classroom, comes the call ("The ending's
+  "Ito 'yung nahulog mo noon." At 9 PM he keeps the promise, sees she is sick, and they
+  take her to the ER. That night, in the classroom, comes the call ("The ending's
   call" above): he answers, tells Ysha that where he comes from she is gone, and that he has
   to go back. He sleeps. 2038: the car outside the party. In his world she is still gone,
   and nothing he did changed that. But this time he goes back inside and tells his wife
