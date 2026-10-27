@@ -1584,6 +1584,9 @@ func _verify_and_capture() -> void:
 		# Covered Court are walkable at their heights; the patio's street lights are solid.
 		checks.yard_walkable = not World.blocked(45.5, 10.0) and is_equal_approx(World.floor_height(45.5, 10.0), BesideAps.LANE_Y) 			and not World.blocked(50.7, 30.0) and is_equal_approx(World.floor_height(50.7, 30.0), BesideAps.PARKING_Y)
 		checks.yard_props_block = World.blocked(26.9, 18.4)
+		# The pergola island: walkable at its height between the pillars and the tables;
+		# the pillars, the tables and the palm bowls are solid.
+		checks.pergola_island = not World.blocked(45.8, 27.2) and is_equal_approx(World.floor_height(45.8, 27.2), BesideAps.ISLAND_Y) 			and World.blocked(BesideAps.PILLAR_X[0], BesideAps.PILLAR_Z[1]) and World.blocked(BesideAps.TABLE_X, BesideAps.TABLES[0]) 			and World.blocked(BesideAps.BOWLS[0].x, BesideAps.BOWLS[0].y)
 		# The corner garden is planted, not walkable; the road turning past it is.
 		checks.left_garden_blocks = World.blocked(-58.0, 8.0) and not World.blocked(-52.0, 10.0)
 		# The shared campus plan: every building, the closed road loop, reserved plots.
