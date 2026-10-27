@@ -52,6 +52,16 @@ const STRIP := 4.0
 const STRIP_END := 124.2
 ## The side entrance in the north gable (local z of its middle).
 const SIDE_DOOR := -20.5
+## The lane between the Covered Court and the north gable rises east past the side
+## entrance (Sean's photos "Elevated road beside IH gym" and "Another angle for the elevated
+## road"): flat at the apron's height to world x LANE_RISE.x, up a slope to LANE_RISE.y, then
+## flat at LANE_TOP to the back; a low retaining wall shows along its court side. The
+## railed ramp along the court stays as it was (areas/court.gd).
+const APRON_Y := -0.185
+const LANE_Z := 57.2
+const LANE_RISE := Vector2(86.0, 97.0)
+const LANE_TOP := 0.55
+const LANE_END := 101.0
 
 var w # the World being built (world.gd)
 var _lamp_glow: StandardMaterial3D
@@ -71,7 +81,11 @@ static func on_apron(x: float, z: float) -> bool:
 	var p := gym_local(x, z)
 	if x >= 44.0 and x <= FRONT_X and z >= 38.0 and p.x <= STRIP_END:
 		return true
-	return x >= 44.0 and x <= 101.0 and z >= 57.2 and p.x <= NORTH
+	return x >= 44.0 and x <= LANE_END and z >= LANE_Z and p.x <= NORTH
+
+## The lane's height at world x: the apron's, then up the slope east of the side entrance.
+static func lane_y(x: float) -> float:
+	return lerpf(APRON_Y, LANE_TOP, smoothstep(LANE_RISE.x, LANE_RISE.y, x))
 
 ## Steps up to the two front doors: [local x, half width, risers].
 static func _doors() -> Array:
@@ -141,7 +155,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 	if p.x >= NORTH - 3.6 and p.x < NORTH and absf(p.y - SIDE_DOOR) <= 6.0:
 		return 0.0
 	if on_apron(x, z):
-		return -0.185
+		return lane_y(x) if z >= LANE_Z else APRON_Y
 	return NAN
 
 # --- Building -------------------------------------------------------------------
@@ -175,13 +189,30 @@ func build(world) -> void:
 	_apron()
 	w._flush()
 
-## Concrete slabs under the apron and the lane (world coordinates).
+## Concrete slabs under the apron and the lane (world coordinates): the lane flat to the
+## foot of its rise, then in short tilted strips up the slope and flat along the top, with
+## the retaining wall's face along its court side.
 func _apron() -> void:
 	var slab: Material = w.material("concrete")
 	var north := NORTH + SHIFT
-	for area in [Rect2(44.0, 38.0, FRONT_X - 44.0, STRIP_END + SHIFT - 38.0), Rect2(FRONT_X, 57.2, 101.0 - FRONT_X, north - 57.2)]:
+	for area in [Rect2(44.0, 38.0, FRONT_X - 44.0, STRIP_END + SHIFT - 38.0), Rect2(FRONT_X, LANE_Z, LANE_RISE.x - FRONT_X, north - LANE_Z)]:
 		var r: Rect2 = area
-		w.box(Vector3(r.size.x, 0.02, r.size.y), Vector3(r.get_center().x, -0.195, r.get_center().y), slab)
+		w.box(Vector3(r.size.x, 0.02, r.size.y), Vector3(r.get_center().x, APRON_Y - 0.01, r.get_center().y), slab)
+	var wide := north - LANE_Z
+	var mid := (LANE_Z + north) / 2.0
+	var wall: Material = w.material("concrete", Color("b9b8b0"))
+	var step := 0.5
+	var x := LANE_RISE.x
+	while x < LANE_RISE.y - 0.01:
+		var a := lane_y(x)
+		var b := lane_y(x + step)
+		var tilt := atan2(b - a, step)
+		# Turned a quarter so the strip's length runs along x, then tilted up the slope.
+		w.box(Vector3(wide, 0.2, step / cos(tilt) + 0.02), Vector3(x + step / 2.0, (a + b) / 2.0 - 0.1, mid), slab, PI / 2.0, -tilt)
+		w.box(Vector3(step + 0.01, (a + b) / 2.0 - APRON_Y + 0.1, 0.2), Vector3(x + step / 2.0, (APRON_Y + (a + b) / 2.0) / 2.0 - 0.05, LANE_Z + 0.1), wall)
+		x += step
+	var flat := LANE_END - LANE_RISE.y
+	w.box(Vector3(flat, LANE_TOP - APRON_Y + 0.2, wide), Vector3(LANE_RISE.y + flat / 2.0, (LANE_TOP + APRON_Y) / 2.0 - 0.1, mid), slab)
 
 func _cream() -> Material:
 	return w.material("stucco", Color("fff4dc"))

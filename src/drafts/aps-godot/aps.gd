@@ -1753,6 +1753,9 @@ func _verify_and_capture() -> void:
 		for z in range(40, 100, 5):
 			east_road = east_road and not World.blocked(40.5, z) and is_equal_approx(World.floor_height(40.5, z), -0.19)
 		checks.east_road_and_lane_open = east_road
+		# The lane by the north gable: flat past the side entrance, rising east to the back.
+		checks.gym_lane_rises = is_equal_approx(World.floor_height(70.0, 62.0), Gym.APRON_Y) and not World.blocked(92.0, 62.0) \
+			and World.floor_height(92.0, 62.0) > Gym.APRON_Y + 0.1 and is_equal_approx(World.floor_height(99.5, 62.0), Gym.LANE_TOP)
 		_choose_framing(6)
 		_set_zoom(84.0, true)
 		_update_camera(1.0)
