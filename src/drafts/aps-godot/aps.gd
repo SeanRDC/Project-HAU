@@ -1937,7 +1937,7 @@ func _verify_and_capture() -> void:
 		# sidewalk round the bend; the building, its columns, the island and the kiosks solid;
 		# the colonnade, the drop-off, its ways in and out and the sidewalk walkable.
 		var sign := scene.find_child("SISTER JOSEFINA G* NEPOMUCENO FORMATION CENTER", true, false) # (a node name drops the ".")
-		checks.formation_built = sign != null and not Plots.shapes().has("formation") and World.blocked(15.0, 56.0) 			and World.blocked(Formation.FRONT_X - 0.25, Formation.COLUMNS[2]) and World.blocked(Formation.ISLAND.x, Formation.ISLAND.y) 			and World.blocked(Formation.KIOSK.x, Formation.KIOSK.y) and World.blocked(ChapelSouth.SHEDS[0].x, ChapelSouth.SHEDS[0].y)
+		checks.formation_built = sign != null and scene.find_child("CMO RESERVED", true, false) != null and not Plots.shapes().has("formation") and World.blocked(15.0, 56.0) 			and World.blocked(Formation.FRONT_X - 0.25, Formation.COLUMNS[2]) and World.blocked(Formation.ISLAND.x, Formation.ISLAND.y) 			and World.blocked(Formation.KIOSK.x, Formation.KIOSK.y) and World.blocked(ChapelSouth.SHEDS[0].x, ChapelSouth.SHEDS[0].y)
 		checks.formation_walkable = not World.blocked(24.0, 52.7) and is_equal_approx(World.floor_height(24.0, 52.7), Formation.TERRACE_Y) 			and not World.blocked(28.0, 58.0) and not World.blocked(33.0, 52.0) and not World.blocked(32.0, 71.0) 			and not World.blocked(27.4, 74.5) and not World.blocked(35.6, 80.0)
 		checks.formation_sidewalk = not World.blocked(30.0, 35.3) and is_equal_approx(World.floor_height(30.0, 35.3), Formation.SIDEWALK_Y) 			and not World.blocked(35.6, 41.0) and Formation.NORTH_WING.y - Formation.NORTH_WING.z > 38.0
 		# In front of it the camera turns to face it from over the east road; on the road it
@@ -1965,7 +1965,7 @@ func _verify_and_capture() -> void:
 		# The Covered Court: built on its plot, its floor and the ramp up from the gym's lane
 		# walkable, the columns, bleachers and the things in front of it solid; facing south at
 		# the gym from the lane, its roof is cut away.
-		checks.court_built = scene.find_child("COURT RESERVED", true, false) != null and not Plots.shapes().has("court") 			and not World.blocked(70.0, 40.0) and is_equal_approx(World.floor_height(70.0, 40.0), CoveredCourt.FLOOR_Y) 			and not World.blocked(70.0, 56.8) and World.blocked(CoveredCourt.columns()[2], CoveredCourt.SHED.end.y - 0.3) 			and World.blocked(70.0, 21.0)
+		checks.court_built = not Plots.shapes().has("court") 			and not World.blocked(70.0, 40.0) and is_equal_approx(World.floor_height(70.0, 40.0), CoveredCourt.FLOOR_Y) 			and not World.blocked(70.0, 56.8) and World.blocked(CoveredCourt.columns()[2], CoveredCourt.SHED.end.y - 0.3) 			and World.blocked(70.0, 21.0)
 		student.place(GYM_SIDE_SPOT.x, GYM_SIDE_SPOT.y)
 		_set_zoom(44.0, true)
 		_snap_follow()

@@ -4,10 +4,10 @@ extends RefCounted
 ## on white steel columns, its ridge running east from the east road; the west gable over
 ## the road has a big clerestory of window grids under the roof; the sides are open over
 ## low white railings, a concrete ramp with steel rails along the lane by the gym. Inside,
-## a concrete court with its lines and steel bleachers along the north side. In front of
-## the west gable, on the apron, the lamp post with the bell and the RESERVED CMO
-## GUEST-PRIEST board. (The green picnic shed and the tree in front of it are on the island
-## beside APS, areas/beside_aps.gd.)
+## a concrete court with its lines and steel bleachers along the north side. (The green
+## picnic shed and the tree in front of its west gable are on the island beside APS,
+## areas/beside_aps.gd; the bell post and the RESERVED CMO GUEST-PRIEST board on the
+## Formation Center's drop-off island, areas/formation.gd.)
 ##
 ## World coordinates (metres, Y up), on the plan's plot (campus_plan.gd "court", 4 m east of
 ## OSM to leave room for the pergola island and the parking lane by the canteen's tip): the
@@ -27,9 +27,6 @@ const RAMP_WIDE := 1.6
 ## The bleachers along the north side (z from..to; steps).
 const STANDS := Vector2(19.4, 23.4)
 const STEPS := 5
-## Things in front of the west gable, on the apron: the lamp post with the bell, the board.
-const BELL := Vector2(51.0, 53.0)
-const BOARD := Vector2(50.0, 55.0)
 ## Facing south at the gym from the lane the camera stands over the court: everything north
 ## of this world z (the roof, its columns) is cut away (aps.gd).
 const CUT_Z := SHED.position.y + SHED.size.y + 0.3
@@ -57,8 +54,6 @@ static func on_ramp(x: float, z: float) -> bool:
 
 static func blocked(x: float, z: float) -> bool:
 	var at := Vector2(x, z)
-	if at.distance_to(BELL) < 0.3 or at.distance_to(BOARD) < 0.45:
-		return true
 	if not walkable(x, z):
 		return false
 	for column in columns():
@@ -88,7 +83,6 @@ func build(world: RefCounted) -> void:
 	_gables()
 	_stands()
 	_ramp()
-	_front()
 
 ## The concrete floor on a low plinth, the court's lines, and the plot's pad past the shed.
 func _floor() -> void:
@@ -225,27 +219,3 @@ func _ramp() -> void:
 		var base := lerpf(-0.185, FLOOR_Y, clampf((x - RAMP.x) / length, 0.0, 1.0))
 		w.rod(Vector3(x, base, SHED.end.y + RAMP_WIDE), Vector3(x, base + 0.97, SHED.end.y + RAMP_WIDE), 0.022, rail)
 		x += 2.0
-
-## In front of the west gable: the lamp post with the bell, the RESERVED CMO GUEST-PRIEST
-## board.
-func _front() -> void:
-	var iron := Color("3e3833")
-	w.rod(Vector3(BELL.x, -0.185, BELL.y), Vector3(BELL.x, 4.2, BELL.y), 0.06, iron)
-	w.rod(Vector3(BELL.x, 3.9, BELL.y - 0.4), Vector3(BELL.x, 3.9, BELL.y + 0.4), 0.025, iron)
-	w.box(Vector3(0.22, 0.3, 0.22), Vector3(BELL.x, 4.35, BELL.y), w.glow(Color("f6e3b0"), 0.2, 2.2))
-	var bell := CylinderMesh.new()
-	bell.top_radius = 0.08
-	bell.bottom_radius = 0.17
-	bell.height = 0.28
-	bell.radial_segments = 10
-	w._mesh(bell, Vector3(BELL.x, 3.7, BELL.y + 0.34), w.material("metal", Color("8a6a3c")))
-	var board := Color("e9dfb8")
-	for side in [-0.2, 0.2]:
-		w.box(Vector3(0.06, 0.8, 1.0), Vector3(BOARD.x + side, 0.2, BOARD.y), w.material("plain", board), 0.0, 0.0)
-	var text: Label3D = w.panel("RESERVED", Vector3(BOARD.x - 0.24, 0.45, BOARD.y), 0.9, 0.16, Color("6b4a2c"))
-	text.rotation.y = -PI / 2.0
-	text.name = "COURT RESERVED"
-	var cmo: Label3D = w.panel("CMO", Vector3(BOARD.x - 0.24, 0.24, BOARD.y), 0.9, 0.22, Color("6b4a2c"))
-	cmo.rotation.y = -PI / 2.0
-	var guest: Label3D = w.panel("GUEST-PRIEST", Vector3(BOARD.x - 0.24, 0.04, BOARD.y), 0.9, 0.14, Color("6b4a2c"))
-	guest.rotation.y = -PI / 2.0
