@@ -30,6 +30,7 @@ const SacredHeart := preload("res://areas/sh.gd")
 const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
+const DevBench := preload("res://dev_bench.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
 const HOURS: Array[float] = [5.75, 8.0, 12.0, 16.5, 17.75, 18.5, 21.0]
@@ -199,8 +200,11 @@ var pixel_mode := "auto"
 var pixel_scale := 0
 var view_metres := Vector2(98, 55.125)
 var _args := {}
+## How long _ready took to build the campus (for --bench).
+var startup_ms := 0
 
 func _ready() -> void:
+	var started := Time.get_ticks_msec()
 	for argument in OS.get_cmdline_user_args():
 		var parts := argument.trim_prefix("--").split("=", true, 1)
 		_args[parts[0]] = parts[1] if parts.size() > 1 else "true"
@@ -288,7 +292,10 @@ func _ready() -> void:
 	_was_inside = arena_for(student.position.x, student.position.z) > 0.5
 	_was_perched = _was_inside and perch > 0.5
 	_update_cutaways(0.0, true)
-	if _args.has("test") or _args.has("capture"):
+	startup_ms = Time.get_ticks_msec() - started
+	if _args.has("bench"):
+		DevBench.run.call_deferred(self, str(_args["bench"]))
+	elif _args.has("test") or _args.has("capture"):
 		_verify_and_capture.call_deferred()
 	elif Opening.wanted(_args):
 		_play_opening()
