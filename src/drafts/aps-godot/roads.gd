@@ -98,11 +98,18 @@ static func opened(at: Vector2) -> bool:
 ## Distance across the road, as on the straight APS frontage: under 4 is the left
 ## (building) side, 4..11 the carriageway between its kerbs, over 11 the lawn.
 static func across(x: float, z: float) -> float:
-	var at := Vector2(x, z)
+	return _across(Vector2(x, z), _near(Vector2(x, z)))
+
+## across() measured against every segment (the checks compare the two).
+static func across_all(x: float, z: float) -> float:
+	_near(Vector2.ZERO)
+	return _across(Vector2(x, z), _all)
+
+static func _across(at: Vector2, segments: PackedInt32Array) -> float:
 	var road := points()
 	var best := INF
 	var side := 0.0
-	for i in road.size() - 1:
+	for i: int in segments:
 		var a := road[i]
 		var b := road[i + 1]
 		var ab := b - a
@@ -113,3 +120,41 @@ static func across(x: float, z: float) -> float:
 			var left := Vector2(ab.y, -ab.x).normalized()
 			side = (at - (a + ab * t)).dot(left)
 	return 7.5 - side
+
+## across() is asked thousands of times a frame (collision, floors, the critters), so the
+## segments that can be nearest are listed per GRID square once: those within the square's
+## diagonal of the nearest one to its centre. In order, so ties go the same way; outside the
+## grid, every segment.
+const GRID := 12.0
+const GRID_FROM := Vector2(-216.0, -36.0)
+const GRID_SIZE := Vector2i(30, 18)
+static var _cells: Array[PackedInt32Array] = []
+static var _all := PackedInt32Array()
+
+static func _near(at: Vector2) -> PackedInt32Array:
+	if _cells.is_empty():
+		_grid()
+	var cell := Vector2i(((at - GRID_FROM) / GRID).floor())
+	if cell.x < 0 or cell.y < 0 or cell.x >= GRID_SIZE.x or cell.y >= GRID_SIZE.y:
+		return _all
+	return _cells[cell.y * GRID_SIZE.x + cell.x]
+
+static func _grid() -> void:
+	var road := points()
+	var reach := GRID * sqrt(2.0) # twice the half diagonal
+	for i in road.size() - 1:
+		_all.append(i)
+	for gz in GRID_SIZE.y:
+		for gx in GRID_SIZE.x:
+			var centre := GRID_FROM + (Vector2(gx, gz) + Vector2(0.5, 0.5)) * GRID
+			var distances := PackedFloat32Array()
+			var nearest := INF
+			for i in road.size() - 1:
+				var d := centre.distance_to(Geometry2D.get_closest_point_to_segment(centre, road[i], road[i + 1]))
+				distances.append(d)
+				nearest = minf(nearest, d)
+			var list := PackedInt32Array()
+			for i in distances.size():
+				if distances[i] <= nearest + reach + 0.01:
+					list.append(i)
+			_cells.append(list)

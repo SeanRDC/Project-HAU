@@ -1664,6 +1664,14 @@ func _verify_and_capture() -> void:
 		checks.plan_loaded = CampusPlan.PLOTS.size() == 29 and CampusPlan.PLOTS["aps"]["built"] \
 			and not CampusPlan.PLOTS.has("corazon") and not CampusPlan.PLOTS.has("srh")
 		checks.road_loop_closed = Roads.points()[0].distance_to(Roads.points()[-1]) < 0.01
+		# The road's lookup grid gives what measuring every segment gives, on campus and off it.
+		var grid_exact := true
+		var scatter := RandomNumberGenerator.new()
+		scatter.seed = 11
+		for i in 4000:
+			var p := Vector2(scatter.randf_range(-230.0, 160.0), scatter.randf_range(-50.0, 190.0))
+			grid_exact = grid_exact and Roads.across(p.x, p.y) == Roads.across_all(p.x, p.y)
+		checks.road_grid_exact = grid_exact
 		checks.plots_reserved = Plots.occupied(-197.1, 43.6) and not Plots.occupied(76.8, -7.1) and not Plots.occupied(-8.7, 58.1)
 		# The layout reference: the Student Center (built now, so no longer a plot) between
 		# the boulevard and the Main Building, and every plot painted with its name and
