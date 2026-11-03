@@ -24,7 +24,10 @@ void vertex() {
 	float reach = 1.0 - UV.y;
 	float gust = max(wind, 1.0);
 	float t = TIME * (1.1 + 0.5 * (gust - 1.0)) + phase + world.x * 0.31 + world.z * 0.17;
-	VERTEX.x += (sin(t) + 0.6 * (gust - 1.0)) * sway * gust * reach;
+	// Along the card's own x: a card baked into a merged mesh (world.gd merge_static) keeps
+	// it in its vertex colour, marked by alpha 0.5; an unbaked one has none (white).
+	vec3 along = COLOR.a < 0.75 ? COLOR.rgb * 2.0 - 1.0 : vec3(1.0, 0.0, 0.0);
+	VERTEX += along * (sin(t) + 0.6 * (gust - 1.0)) * sway * gust * reach;
 	VERTEX.y += cos(t * 0.73) * sway * 0.35 * reach;
 	world_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 }
