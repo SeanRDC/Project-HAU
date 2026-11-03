@@ -18,27 +18,44 @@ What you can explore so far:
 Every other building is a reserved plot on the campus plan, waiting for its turn. The first browser prototype (a 2D side-view game on our own small engine) still runs, but new work goes into Godot.
 
 ## Play It
-1. Get [Godot 4.7.2](https://godotengine.org/download/) (the standard build).
-2. Either open `src/drafts/aps-godot/project.godot` in Godot and press **F5**, or run `tools\run-aps-godot.cmd` (set `GODOT` to your Godot executable first if it isn't in `builds/godot-tools/4.7.2/` or on your PATH).
-3. After pulling new work, open the project in the Godot editor once (or run Godot with `--headless --import`) so any new images are imported.
+
+**You need:** [Godot 4.7.2](https://godotengine.org/download/windows/) (the standard build, not .NET) and a graphics card with Vulkan (the game uses the Forward+ renderer). Nothing else: no other downloads, add-ons or audio files.
+
+1. **Get the repository** (`git clone`, or pull the latest).
+2. **Tell the launcher where Godot is**, one of:
+   * put `Godot_v4.7.2-stable_win64.exe` (and its `_console.exe`) in `builds\godot-tools\4.7.2\` (ignored by git), or
+   * set `GODOT` to the full path of your Godot executable, or
+   * have `godot` on your PATH.
+3. **Import once** after cloning, or after pulling new sprites: open `src/drafts/aps-godot/project.godot` in the Godot editor, or run `tools\run-aps-godot.cmd --headless --import`. Skipping this makes new images fail to load.
+4. **Play:** run `tools\run-aps-godot.cmd`, or press **F5** in the editor. The window opens at 1600x900; **F11** is fullscreen.
+
+The first launch on a computer plays the opening (in Tagalog; it touches on depression and suicide, with a content warning and a help line). It can only be skipped once it has been watched to the end; after that, hold **Space** or **Esc** to skip it.
 
 | Key | Action |
 | --- | --- |
 | `A` / `D`, `W` / `S` (or arrows) | Walk (relative to the camera) |
 | `Shift` | Run |
-| `E`, `Space` or `Enter` | Talk to someone nearby; pick a reply with `W` / `S` and `E`, or `1`-`3` |
+| `E`, `Space` or `Enter` | Talk to someone nearby (or pet a cat); pick a reply with `W` / `S` and `E`, `1`-`3` or the mouse |
 | Mouse wheel, `+` / `-` | Zoom |
 | `1`-`9`, `0` | Framings: APS, building, corridor, canteen, close-up, chapel, IH Gym, gym side, St. Joseph Hall, inside the gym |
-| `Q` / `E` | Turn the camera a little (`E` talks instead when someone is in reach) |
-| `T` | Morning, noon, afternoon, night |
-| `G` | Rain on or off |
+| `Q` / `E`, or right-drag | Turn the camera a little (`E` talks instead when someone is in reach) |
+| `T` | Dawn, morning, noon, afternoon, golden hour, dusk, night |
+| `G` | Weather: clear, overcast, rain, thunderstorm, windy (it also changes on its own) |
 | `C` | Boy / girl |
 | `M` | Mute |
-| `P` | Pixel mode |
-| `F1` | Fast travel (dev): jump to any of 17 places |
+| `P` | Pixels: Auto, Crisp, Chunky |
+| `F1` | Fast travel (dev): jump to any of 31 places |
+| `F2` | Free camera (dev): fly anywhere; `F2` or `Esc` lands back on the student |
 | `R` / `F11` / `Tab` / `Esc` | Reset / fullscreen / hide controls / close |
 
-Checks: `tools\run-aps-godot.cmd --headless -- --test` prints a JSON report; every check must be `true`.
+Checks: `tools\run-aps-godot.cmd --headless -- --test` prints a JSON report; every check must be `true`. Performance: `--bench=<path>`, see [`PERFORMANCE_REPORT.md`](PERFORMANCE_REPORT.md).
+
+### Known issues
+* **No standalone .exe yet.** There are no export presets; play through Godot as above. Exporting needs Godot's export templates (a separate download from the same page).
+* **The first visit to an area can hitch once** while Godot compiles shaders for your graphics card. They are cached (`%APPDATA%\Project HAU APS Prototype\shader_cache`), so only the first time.
+* **Nothing is saved between runs**, except that the opening has been watched.
+* Quitting prints a few engine "leaked" and "Unreferenced static string" lines in the console. They are harmless.
+* Another game or video playing at the same time shares the graphics card and lowers the frame rate.
 
 ### The browser prototype (frozen)
 The original 2D prototype (the Side Gate, the DJN Building and the Epiphany of Angels park) still runs in the browser with [Node.js](https://nodejs.org) 20 or newer: `npm install`, then `npm run dev` and open http://localhost:5173. It is kept as a reference; new work goes into Godot.

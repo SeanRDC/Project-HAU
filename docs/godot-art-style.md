@@ -335,7 +335,7 @@ Helpers in `world.gd`:
 
 | Helper | Use |
 | --- | --- |
-| `box(size, at, material, turn := 0.0, tilt := 0.0)` | Every wall, slab, pier, rail and prop. Boxes with equal size and material become **one MultiMesh** at `_flush()`; keep using it, it is why thousands of boxes run fast. `turn` rotates about Y; `tilt` then leans the box about its own X (roof slopes, solar panels, open awning panes) |
+| `box(size, at, material, turn := 0.0, tilt := 0.0)` | Every wall, slab, pier, rail and prop. Boxes with equal size and material become **one MultiMesh** at `_flush()`, and small batches are then baked by `merge_static()` (below); keep using it, it is why thousands of boxes run fast. `turn` rotates about Y; `tilt` then leans the box about its own X (roof slopes, solar panels, open awning panes) |
 | `room_glass(lit)` | Window glass; `true` is the shared warm glass that glows at night |
 | `window(x, y, z, w, h)` | A full window: dark frame, glass (sometimes lit at night), mullions, sill |
 | `streak(top, width, normal, length)` | A rain-streak card down a wall from under a sill or ledge; `window()` and `framed_window()` add one each |
@@ -351,6 +351,19 @@ Helpers in `world.gd`:
 | `_grasses()` | Every grass tuft, as one MultiMesh |
 | `_left_garden()`, `_bamboo(at, radius, culms, seed)`, `_shrub(at, size, seed)` | The planted garden left of the wing ("APS LEFT SIDE"): dirt to the kerb, bamboo, shade trees, red-tipped shrubs, a green-netted enclosure (`#2d8a5c`) behind a yellow mesh fence (`#d8b23c`). Not walkable; the road in front is |
 | `_omni(at, color, energy, reach, shadows)`, `_lamp(light, at)` | Night lights (hidden by day) |
+
+**Static batching.** At the end of `build()`, `merge_static()` bakes every small
+static mesh and box batch (under 20 boxes) into one mesh per material, shadow mode
+and 24 m square, under the same parent: about 11,000 separate meshes become about
+2,800, and the draw calls halve. It looks exactly the same (textures are world-mapped;
+baked leaf cards keep their own sway direction in their vertex colour). Two rules
+follow for new code:
+
+- **Name a node** (`node.name = "..."`) if code finds it or changes it at run time
+  (moves, hides, fades or swaps its material). Unnamed nodes may be baked away.
+  Cut-away groups are fine: their children are baked within the group.
+- **Build custom meshes with `w.commit(tool)`**, not `tool.commit()`, so the merge can
+  bake them without reading each one back from the GPU (that took ~10 s at start-up).
 
 Rules:
 
@@ -911,6 +924,14 @@ Three static functions in `world.gd` are the whole physics:
 The student moves on X then Z separately and refuses blocked spots, so it slides
 along walls. Any new walkable area must extend these three functions **and**
 add a headless check.
+
+**Keep them cheap.** The student, every NPC, cat and bird ask `blocked()` and
+`floor_height()` thousands of times a second (about 0.1 ms each). Never rebuild an
+array from constants inside them: keep it in a `static var` the first time (see
+`Gym._blockers()`, `Chapel.south_bays()`), and test a bounding rect before walking a
+long polyline (`ChapelSouth.on_path()`). `Roads.across()` looks only at the road
+segments near the point (a 12 m grid); the `road_grid_exact` check proves it matches
+measuring every segment.
 
 **Storeys.** `blocked()` and `floor_height()` take an optional `level`: the
 height the walker stands at now (the student passes its own; without one, as
