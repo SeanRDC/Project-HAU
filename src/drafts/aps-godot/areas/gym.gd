@@ -327,7 +327,7 @@ func _triangle(lx0: float, lx1: float, made: Material) -> void:
 		for order in [[0, 1, 2, 0, 2, 3], [0, 2, 1, 0, 3, 2]]:
 			for k in order:
 				tool.add_vertex(quad[k])
-	w._mesh(tool.commit(), Vector3.ZERO, made)
+	w._mesh(w.commit(tool), Vector3.ZERO, made)
 
 ## A grid of white-framed awning windows on a wall at local z = face, facing out
 ## (+1 the front, -1 the back), a few panes pushed open at the bottom.

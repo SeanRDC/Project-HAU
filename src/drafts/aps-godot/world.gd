@@ -311,6 +311,221 @@ func build(parent: Node3D) -> void:
 	_flush()
 	root = parent
 	_flush()
+	merge_static(parent)
+
+# --- Static batching ----------------------------------------------------------
+
+## Merged meshes cover at most this many metres a side, so off-screen ones are still culled.
+const MERGE_CELL := 24.0
+## Box batches of this many or more stay one MultiMesh (already a single draw).
+const MERGE_BELOW := 20
+
+## Bakes the many small static meshes and small box batches under each node into one mesh
+## per material, shadow mode and MERGE_CELL square: ~11,000 draws become ~2,800. Only
+## unnamed leaf nodes are merged (named ones are looked up or changed at run time), with
+## StandardMaterial3Ds that are opaque or alpha-scissor (their textures are world-mapped,
+## so a baked vertex looks the same) and the leaf cards (see _flat_mesh's colours).
+static func merge_static(node: Node) -> void:
+	_merge_under(node)
+	_flat.clear()
+	_shapes.clear()
+	_committed.clear()
+
+## Built meshes' arrays by mesh id, kept until merge_static has baked them.
+static var _committed := {}
+
+## SurfaceTool.commit(), keeping the arrays for merge_static (every built mesh goes through here).
+func commit(tool: SurfaceTool) -> ArrayMesh:
+	var arrays := tool.commit_to_arrays()
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	_committed[mesh.get_instance_id()] = arrays
+	return mesh
+
+static func _merge_under(node: Node) -> void:
+	var groups := {}
+	for child in node.get_children():
+		if child.get_child_count() > 0 or not str(child.name).begins_with("@"):
+			_merge_under(child)
+			continue
+		var parts := _mergeable(child)
+		for part: Array in parts:
+			var placed: Transform3D = part[1]
+			var cell := Vector2i(floori(placed.origin.x / MERGE_CELL), floori(placed.origin.z / MERGE_CELL))
+			var key := [part[2].get_instance_id(), (child as GeometryInstance3D).cast_shadow, cell]
+			if not groups.has(key):
+				groups[key] = {"material": part[2], "cast": (child as GeometryInstance3D).cast_shadow, "parts": []}
+			(groups[key]["parts"] as Array).append(part)
+		if not parts.is_empty():
+			child.free()
+	for group: Dictionary in groups.values():
+		var sways: bool = group["material"] is ShaderMaterial
+		var vertices := PackedVector3Array()
+		var normals := PackedVector3Array()
+		var uvs := PackedVector2Array()
+		var colours := PackedColorArray()
+		for part: Array in group["parts"]:
+			var flat: Array = part[0]
+			var placed: Transform3D = part[1]
+			vertices.append_array(placed * (flat[0] as PackedVector3Array))
+			normals.append_array(Transform3D(placed.basis, Vector3.ZERO) * (flat[1] as PackedVector3Array))
+			uvs.append_array(flat[2])
+			if sways:
+				# a leaf card sways along its own x (leaves.gdshader): baked, that direction goes
+				# in its vertex colour, alpha 0.5 marking it (a mesh without colours reads white)
+				var along := placed.basis.x
+				var tint := PackedColorArray()
+				tint.resize((flat[0] as PackedVector3Array).size())
+				tint.fill(Color(along.x * 0.5 + 0.5, along.y * 0.5 + 0.5, along.z * 0.5 + 0.5, 0.5))
+				colours.append_array(tint)
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		arrays[Mesh.ARRAY_NORMAL] = normals
+		arrays[Mesh.ARRAY_TEX_UV] = uvs
+		if sways:
+			arrays[Mesh.ARRAY_COLOR] = colours
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		var merged := MeshInstance3D.new()
+		merged.mesh = mesh
+		merged.material_override = group["material"]
+		merged.cast_shadow = group["cast"]
+		node.add_child(merged)
+
+## [flat mesh, transform in the parent, material] for each piece of a node that can be baked, or [].
+static func _mergeable(child: Node) -> Array:
+	if not (child is GeometryInstance3D) or not (child as GeometryInstance3D).visible or child.get_script() != null:
+		return []
+	var g := child as GeometryInstance3D
+	if g.transparency != 0.0 or g.material_overlay != null or g.visibility_range_end != 0.0 or g.layers != 1 			or g.extra_cull_margin != 0.0 or g.gi_mode != GeometryInstance3D.GI_MODE_STATIC or not _rigid(g.transform.basis):
+		return []
+	if child is MultiMeshInstance3D:
+		var multi := (child as MultiMeshInstance3D).multimesh
+		if multi == null or multi.instance_count >= MERGE_BELOW or multi.use_colors or multi.use_custom_data 				or multi.visible_instance_count != -1 or not _bakes(multi.mesh, g.material_override):
+			return []
+		var flat := _flat_mesh(multi.mesh)
+		if flat.is_empty():
+			return []
+		var made := _made(multi.mesh, g.material_override)
+		var parts := []
+		for i in multi.instance_count:
+			var placed := g.transform * multi.get_instance_transform(i)
+			if not _rigid(placed.basis):
+				return []
+			parts.append([flat, placed, made])
+		return parts
+	if child is MeshInstance3D:
+		var instance := child as MeshInstance3D
+		var mesh := instance.mesh
+		if not _bakes(mesh, g.material_override) or instance.get_surface_override_material_count() > 0 				and instance.get_surface_override_material(0) != null:
+			return []
+		# a mesh wider than a cell keeps its own bounds (big ground sheets)
+		var size := mesh.get_aabb().size
+		if maxf(size.x, size.z) > MERGE_CELL:
+			return []
+		var flat := _flat_mesh(mesh)
+		if flat.is_empty():
+			return []
+		return [[flat, g.transform, _made(mesh, g.material_override)]]
+	return []
+
+## Turned or tilted but not scaled or mirrored, so the normals only need turning.
+static func _rigid(basis: Basis) -> bool:
+	return is_equal_approx(basis.determinant(), 1.0) and is_equal_approx(basis.x.length_squared(), 1.0) 		and is_equal_approx(basis.y.length_squared(), 1.0)
+
+## A mesh's triangles unindexed: [vertices, normals, uvs], or [] without normals.
+## Reading a mesh's arrays back from the GPU takes ~2 ms, so it is done as little as possible:
+## built meshes keep theirs (commit()); boxes and cylinders are a unit shape read once and
+## scaled (their UVs do not depend on the size); anything else is read once per distinct shape.
+static var _flat := {}
+static var _shapes := {}
+static func _flat_mesh(mesh: Mesh) -> Array:
+	var id := mesh.get_instance_id()
+	if not _flat.has(id):
+		if mesh is BoxMesh and (mesh as BoxMesh).subdivide_width == 0 and (mesh as BoxMesh).subdivide_height == 0 				and (mesh as BoxMesh).subdivide_depth == 0:
+			_flat[id] = _scaled(_shape("box", BoxMesh.new()), (mesh as BoxMesh).size, false)
+		elif mesh is CylinderMesh and (mesh as CylinderMesh).bottom_radius > 0.0 and (mesh as CylinderMesh).height > 0.0:
+			var c := mesh as CylinderMesh
+			var unit := CylinderMesh.new()
+			unit.top_radius = c.top_radius / c.bottom_radius
+			unit.bottom_radius = 1.0
+			unit.height = 1.0
+			unit.radial_segments = c.radial_segments
+			unit.rings = c.rings
+			unit.cap_top = c.cap_top
+			unit.cap_bottom = c.cap_bottom
+			var key := "cylinder:%s:%d:%d:%s:%s" % [unit.top_radius, c.radial_segments, c.rings, c.cap_top, c.cap_bottom]
+			_flat[id] = _scaled(_shape(key, unit), Vector3(c.bottom_radius, c.height, c.bottom_radius), true)
+		elif _committed.has(id):
+			_flat[id] = _unindexed(_committed[id])
+		else:
+			var key := mesh.get_class()
+			for property in mesh.get_property_list():
+				if property.usage & PROPERTY_USAGE_STORAGE and property.name != "material" and property.name != "resource_name":
+					key += ":" + str(mesh.get(property.name))
+			_flat[id] = _shape(key, mesh)
+	return _flat[id]
+
+static func _shape(key: String, mesh: Mesh) -> Array:
+	if not _shapes.has(key):
+		_shapes[key] = _unindexed(mesh.surface_get_arrays(0))
+	return _shapes[key]
+
+## A unit shape stretched by size; the normals by the inverse (renormalised), unless they are
+## all along the axes (a box's), which a stretch leaves as they are.
+static func _scaled(flat: Array, size: Vector3, slanted: bool) -> Array:
+	if flat.is_empty():
+		return []
+	var normals: PackedVector3Array = flat[1]
+	if slanted:
+		normals = Transform3D(Basis.from_scale(Vector3(1.0 / size.x, 1.0 / size.y, 1.0 / size.z)), Vector3.ZERO) * normals
+		for k in normals.size():
+			normals[k] = normals[k].normalized()
+	return [Transform3D(Basis.from_scale(size), Vector3.ZERO) * (flat[0] as PackedVector3Array), normals, flat[2]]
+
+static func _unindexed(arrays: Array) -> Array:
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
+	if normals.size() != vertices.size():
+		return []
+	if uvs.size() != vertices.size():
+		uvs.resize(vertices.size())
+	if arrays[Mesh.ARRAY_INDEX] == null:
+		return [vertices, normals, uvs]
+	var index: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var v := PackedVector3Array()
+	var n := PackedVector3Array()
+	var t := PackedVector2Array()
+	v.resize(index.size())
+	n.resize(index.size())
+	t.resize(index.size())
+	for k in index.size():
+		v[k] = vertices[index[k]]
+		n[k] = normals[index[k]]
+		t[k] = uvs[index[k]]
+	return [v, n, t]
+
+static func _made(mesh: Mesh, override: Material) -> Material:
+	return override if override != null else mesh.surface_get_material(0)
+
+## One triangle surface, no blend shapes, an opaque or alpha-scissor standard material.
+static func _bakes(mesh: Mesh, override: Material) -> bool:
+	if mesh == null or mesh.get_surface_count() != 1 or (mesh is ArrayMesh and (mesh as ArrayMesh).get_blend_shape_count() > 0):
+		return false
+	if mesh is ArrayMesh and (mesh as ArrayMesh).surface_get_primitive_type(0) != Mesh.PRIMITIVE_TRIANGLES:
+		return false # (primitive meshes are always triangles)
+	var made := _made(mesh, override)
+	if made is ShaderMaterial:
+		return (made as ShaderMaterial).shader == LEAVES_SHADER # alpha-scissor, world-phased
+	if not (made is StandardMaterial3D):
+		return false
+	var standard := made as StandardMaterial3D
+	if standard.billboard_mode != BaseMaterial3D.BILLBOARD_DISABLED or not standard.transparency in [BaseMaterial3D.TRANSPARENCY_DISABLED, BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR]:
+		return false
+	# the weathering pass reads world positions, like the triplanar textures
+	return standard.next_pass == null or (standard.next_pass is ShaderMaterial and (standard.next_pass as ShaderMaterial).shader == WEATHERING_SHADER)
 
 # --- Materials --------------------------------------------------------------
 
@@ -849,7 +1064,7 @@ func _ground(triangles: PackedVector2Array, y: float, made: Material) -> void:
 		for order in [[0, 1, 2], [0, 2, 1]]:
 			for k in order:
 				tool.add_vertex(Vector3(triangles[i + k].x, y, triangles[i + k].y))
-	var instance := _mesh(tool.commit(), Vector3.ZERO, made)
+	var instance := _mesh(commit(tool), Vector3.ZERO, made)
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 ## Crossed cards sharing one texture: `cross` vertical quads turned evenly about
@@ -878,7 +1093,7 @@ func _cards(width: float, height: float, lift: float, cross: int, cap := false) 
 			tool.set_normal(quad[0])
 			tool.set_uv(uvs[k])
 			tool.add_vertex(quad[1][k])
-	var mesh := tool.commit()
+	var mesh := commit(tool)
 	_card_meshes[key] = mesh
 	return mesh
 

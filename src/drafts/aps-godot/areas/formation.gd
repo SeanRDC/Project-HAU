@@ -226,7 +226,7 @@ func _prism(shape: PackedVector2Array, y0: float, y1: float, made: Material) -> 
 		for k in [[0, 1, 2], [0, 2, 3], [0, 2, 1], [0, 3, 2]]:
 			for j in k:
 				tool.add_vertex(quad[j])
-	w._mesh(tool.commit(), Vector3.ZERO, made)
+	w._mesh(w.commit(tool), Vector3.ZERO, made)
 
 ## The outline grown by `by` metres (for bands and copings round a wing).
 static func grown(shape: PackedVector2Array, by: float) -> PackedVector2Array:

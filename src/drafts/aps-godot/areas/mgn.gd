@@ -598,7 +598,7 @@ func _walk() -> void:
 	for order in [[0, 1, 2, 1, 3, 2], [0, 2, 1, 1, 2, 3]]:
 		for k in order:
 			tool.add_vertex(corners[k])
-	w._mesh(tool.commit(), Vector3.ZERO, w.material("brick", Color("b07466")))
+	w._mesh(w.commit(tool), Vector3.ZERO, w.material("brick", Color("b07466")))
 	# The kerbs, along the walk's edges from the corridor to the front kerb wall.
 	var reach := GARDEN + 0.05
 	for k in [-1.0, 1.0]:
