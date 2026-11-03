@@ -77,15 +77,27 @@ static func from_path(x: float, z: float) -> float:
 		best = minf(best, at.distance_to(Geometry2D.get_closest_point_to_segment(at, points[i], points[i + 1])))
 	return best
 
+static var _path_box := Rect2()
 static func on_path(x: float, z: float) -> bool:
+	if not _path_box.has_area():
+		var points := line()
+		_path_box = Rect2(points[0], Vector2.ZERO)
+		for p in points:
+			_path_box = _path_box.expand(p)
+		_path_box = _path_box.grow(WIDTH / 2.0 + 0.3)
+	if not _path_box.has_point(Vector2(x, z)):
+		return false # far from the whole path (from_path walks every point of it)
 	return from_path(x, z) < WIDTH / 2.0 + 0.2
 
 static func walkable(x: float, z: float) -> bool:
 	return GROUND.has_point(Vector2(x, z)) or on_path(x, z)
 
 ## The bollards: one each side of the curve, about four metres apart.
+static var _bollards: Array[Vector2] = []
 static func bollards() -> Array[Vector2]:
-	var spots: Array[Vector2] = []
+	if not _bollards.is_empty():
+		return _bollards
+	var spots := _bollards
 	var points := line()
 	var gone := 0.0
 	var next := 0.0

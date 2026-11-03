@@ -92,8 +92,11 @@ static func _doors() -> Array:
 	return [[LEFT_DOOR, 1.8, 4], [RIGHT_DOOR, 1.5, 3]]
 
 ## Things standing on the walk in front and in the alley: [local x, local z, radius].
+static var _blocking := []
 static func _blockers() -> Array:
-	var list := []
+	if not _blocking.is_empty():
+		return _blocking
+	var list := _blocking
 	for tent in [95.0, 99.0, 103.0]:
 		list.append([tent, 2.0, 0.95])
 		for dx in [-1.4, 1.4]:
@@ -114,8 +117,11 @@ const OPENINGS := [[LEFT_DOOR, 2.3, 3.75], [RIGHT_DOOR, 1.7, 3.2]]
 
 ## Back doors with a stoop in the alley (local x), one to a bay except the roll-up
 ## grilles and the open doorways.
+static var _back_doors := []
 static func back_doors() -> Array:
-	var list := []
+	if not _back_doors.is_empty():
+		return _back_doors
+	var list := _back_doors
 	for i in BAYS:
 		if i != 2 and i != 7 and not BACK_DOORWAY_BAYS.has(i):
 			list.append(NORTH + (i + 0.5) * bay() - 1.2)
