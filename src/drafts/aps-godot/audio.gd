@@ -33,7 +33,10 @@ var _next_bird := 1.0
 var _music: Array[AudioStreamPlayer] = []
 var _effects: Array[AudioStreamPlayer] = []
 var _cache := {}
-var _warm: Array[Callable] = []
+## The worker thread fills the cache too, so it is locked.
+var _cache_lock := Mutex.new()
+## The pool task rendering every sound up front (-1 once waited on); Godot needs every pool task waited on.
+var _task := -1
 var _clock := 0.0
 var _next_note := 1.0
 var _next_chirp := 0.0
@@ -71,21 +74,44 @@ func _ready() -> void:
 	rainfall.name = "Rainfall"
 	rainfall.bus = "Rain"
 	rainfall.volume_db = -60.0
-	rainfall.stream = _wav(_seamless(_rain(), RATE, 0.11 * MASTER), true)
 	add_child(rainfall)
-	rainfall.play()
+	var queue: Array[Callable] = []
 	for i in 3:
-		_warm.append(_birds.bind(i))
-	# Render the rest a little at a time so the first notes do not stutter.
+		queue.append(_birds.bind(i))
+	# Everything is rendered on a worker thread (about 1.5 s of GDScript), so neither the
+	# start nor the first meow, purr or thunder stutters; a sound wanted before it is ready
+	# is rendered there and then, as before.
 	for root in [DAY_ROOT, NIGHT_ROOT]:
-		_warm.append(_bass.bind(root))
+		queue.append(_bass.bind(root))
 		for step in 10:
-			_warm.append(_note.bind(root, step))
+			queue.append(_note.bind(root, step))
 	for i in 4:
-		_warm.append(_footstep.bind(true, i))
-		_warm.append(_footstep.bind(false, i))
+		queue.append(_footstep.bind(true, i))
+		queue.append(_footstep.bind(false, i))
 	for i in 3:
-		_warm.append(_chirp.bind(i))
+		queue.append(_chirp.bind(i))
+		queue.append(_meow.bind(i))
+	for i in 2:
+		queue.append(_thunder.bind(i))
+		queue.append(_flutter.bind(i))
+	queue.append(_purr)
+	queue.append(_select)
+	queue.append(func() -> void: _start_rain.call_deferred(_wav(_seamless(_rain(), RATE, 0.11 * MASTER), true)))
+	_task = WorkerThreadPool.add_task(func() -> void:
+		for render: Callable in queue:
+			render.call())
+
+func _start_rain(stream: AudioStreamWAV) -> void:
+	rainfall.stream = stream
+	rainfall.play()
+
+func _exit_tree() -> void:
+	_wait()
+
+func _wait() -> void:
+	if _task >= 0:
+		WorkerThreadPool.wait_for_task_completion(_task)
+		_task = -1
 
 func _player(bus: String) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
@@ -95,8 +121,7 @@ func _player(bus: String) -> AudioStreamPlayer:
 
 ## Renders everything still queued at once (the checks need it all ready).
 func warm_all() -> void:
-	while not _warm.is_empty():
-		_warm.pop_front().call()
+	_wait()
 
 func _play(stream: AudioStream, pool: Array[AudioStreamPlayer], delay := 0.0, volume := 1.0) -> void:
 	var player := pool[0]
@@ -116,8 +141,6 @@ func toggle_mute() -> void:
 	AudioServer.set_bus_mute(AudioServer.get_bus_index("Master"), muted)
 
 func _process(delta: float) -> void:
-	if not _warm.is_empty():
-		_warm.pop_front().call()
 	_clock += delta
 	if _clock >= _next_note:
 		# Wander up and down the scale in small steps, lower and sparser at night.
@@ -157,7 +180,10 @@ func blip(pitch: float) -> void:
 
 ## A cat's meow: a nasal tone that rises and falls ("mi-aow"), one of three.
 func meow() -> void:
-	_play(_cached("meow:%d" % (randi() % 3), func() -> PackedFloat32Array:
+	_play(_meow(randi() % 3), _effects)
+
+func _meow(variant: int) -> AudioStreamWAV:
+	return _cached("meow:%d" % variant, func() -> PackedFloat32Array:
 		var count := int(RATE * randf_range(0.42, 0.6))
 		var top := randf_range(620.0, 820.0)
 		var buffer := PackedFloat32Array()
@@ -169,22 +195,28 @@ func meow() -> void:
 			phase += freq / RATE
 			var tone := sin(TAU * phase) * 0.6 + sin(TAU * phase * 2.0) * 0.3 + sin(TAU * phase * 3.0) * 0.12
 			buffer[k] = tone * sin(PI * t) * 0.05 * MASTER
-		return buffer), _effects)
+		return buffer)
 
 ## A cat purring while petted: a low rough rumble pulsing about 25 times a second.
 func purr() -> void:
-	_play(_cached("purr", func() -> PackedFloat32Array:
+	_play(_purr(), _effects)
+
+func _purr() -> AudioStreamWAV:
+	return _cached("purr", func() -> PackedFloat32Array:
 		var count := int(RATE * 1.6)
 		var rough := _filter(_noise(count), "lowpass", 180.0, 0.8)
 		for k in count:
 			var t := float(k) / count
 			rough[k] *= (0.5 + 0.5 * sin(TAU * 25.0 * float(k) / RATE)) * sin(PI * t) * 0.9 * MASTER
-		return rough), _effects)
+		return rough)
 
 ## Thunder: a deep rumble that cracks, swells and rolls away over three seconds, under
 ## the rain.
 func thunder() -> void:
-	_play(_cached("thunder:%d" % (randi() % 2), func() -> PackedFloat32Array:
+	_play(_thunder(randi() % 2), _effects)
+
+func _thunder(variant: int) -> AudioStreamWAV:
+	return _cached("thunder:%d" % variant, func() -> PackedFloat32Array:
 		var count := int(RATE * 3.2)
 		var low := _filter(_noise(count), "lowpass", 120.0, 0.7)
 		var mid := _filter(_noise(count), "lowpass", 420.0, 0.7)
@@ -195,11 +227,14 @@ func thunder() -> void:
 			var crack := exp(-t * 18.0)
 			var roll := (1.0 - exp(-t * 6.0)) * exp(-t * 1.6) * (0.75 + 0.25 * sin(t * 23.0))
 			buffer[k] = (low[k] * 3.2 * roll + mid[k] * 1.4 * crack) * 0.55 * MASTER
-		return buffer), _effects)
+		return buffer)
 
 ## A flock taking off: a short, soft flutter of a few wingbeats.
 func flutter() -> void:
-	_play(_cached("flutter:%d" % (randi() % 2), func() -> PackedFloat32Array:
+	_play(_flutter(randi() % 2), _effects)
+
+func _flutter(variant: int) -> AudioStreamWAV:
+	return _cached("flutter:%d" % variant, func() -> PackedFloat32Array:
 		var buffer := PackedFloat32Array()
 		for i in randi_range(3, 4):
 			var beat := _filter(_noise(int(RATE * 0.025)), "bandpass", randf_range(700.0, 1100.0), 0.9)
@@ -208,11 +243,14 @@ func flutter() -> void:
 				buffer.resize(start + beat.size())
 			for k in beat.size():
 				buffer[start + k] += beat[k] * sin(PI * float(k) / beat.size()) * 0.035 * MASTER * (1.0 - i * 0.2)
-		return buffer), _effects)
+		return buffer)
 
 func select() -> void:
-	_play(_cached("select", func() -> PackedFloat32Array:
-		return _tone(PackedFloat32Array(), 660.0, 0.0, 0.08, 0.05, "triangle")), _effects)
+	_play(_select(), _effects)
+
+func _select() -> AudioStreamWAV:
+	return _cached("select", func() -> PackedFloat32Array:
+		return _tone(PackedFloat32Array(), 660.0, 0.0, 0.08, 0.05, "triangle"))
 
 # --- The sounds ----------------------------------------------------------------
 
@@ -274,9 +312,18 @@ func _chirp(variant: int) -> AudioStreamWAV:
 # --- Synthesis -------------------------------------------------------------------
 
 func _cached(key: String, render: Callable) -> AudioStreamWAV:
+	_cache_lock.lock()
+	var ready: AudioStreamWAV = _cache.get(key)
+	_cache_lock.unlock()
+	if ready != null:
+		return ready
+	var made := _wav(render.call()) # outside the lock: the worker may render the same one
+	_cache_lock.lock()
 	if not _cache.has(key):
-		_cache[key] = _wav(render.call())
-	return _cache[key]
+		_cache[key] = made
+	ready = _cache[key]
+	_cache_lock.unlock()
+	return ready
 
 func _noise(count: int) -> PackedFloat32Array:
 	var buffer := PackedFloat32Array()
