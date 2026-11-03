@@ -1605,7 +1605,7 @@ func _lathe(profile: PackedVector2Array, from: float, to: float, steps := 20) ->
 				for j in order:
 					tool.set_normal(quad[j][1] * flip)
 					tool.add_vertex(quad[j][0])
-	return tool.commit()
+	return w.commit(tool)
 
 func _profile(points: Array) -> PackedVector2Array:
 	var out := PackedVector2Array()

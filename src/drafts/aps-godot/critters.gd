@@ -75,6 +75,10 @@ var _bubble_label := Label.new()
 var _bubble_cat: Dictionary = {}
 var _bubble_age := 0.0
 var _time := 0.0
+## Hops chosen this frame: each asks the world's collision a few dozen times, so when many
+## birds would hop at once the rest wait a frame (HOPS_PER_FRAME) rather than the frame stalling.
+const HOPS_PER_FRAME := 4
+var _hops := HOPS_PER_FRAME
 
 func _ready() -> void:
 	name = "Critters"
@@ -300,11 +304,18 @@ func _walk(cat: Dictionary, delta: float, speed: float, right: Vector2) -> bool:
 ## The furthest spot towards `wish` reachable in a straight line.
 static func _clear_spot(from: Vector2, wish: Vector2) -> Vector2:
 	var best := from
+	var best_floor := NAN # the last spot's height, carried on (each query is ~0.1 ms)
 	for i in range(1, 13):
 		var spot := from.lerp(wish, i / 12.0)
-		if World.blocked(spot.x, spot.y) or absf(World.floor_height(spot.x, spot.y) - World.floor_height(best.x, best.y)) > 0.2:
+		if World.blocked(spot.x, spot.y):
+			break
+		if is_nan(best_floor):
+			best_floor = World.floor_height(best.x, best.y)
+		var floor := World.floor_height(spot.x, spot.y)
+		if absf(floor - best_floor) > 0.2:
 			break
 		best = spot
+		best_floor = floor
 	return best
 
 func cat_in_reach() -> Dictionary:
@@ -344,7 +355,7 @@ func _add_flock(spot: Vector2, count: int) -> void:
 		flock.birds.append(bird)
 	flocks.append(flock)
 
-func _update_flock(flock: Dictionary, delta: float, at: Vector2, running: bool, right: Vector2) -> void:
+func _update_flock(flock: Dictionary, delta: float, at: Vector2, running: bool, right: Vector2, seen := true) -> void:
 	var day := hour >= 6.0 and hour < 18.0 and rain < 0.35
 	match flock.state:
 		"feeding":
@@ -354,6 +365,8 @@ func _update_flock(flock: Dictionary, delta: float, at: Vector2, running: bool, 
 					scared = true
 			if scared:
 				_take_off(flock, at)
+				return
+			if not seen:
 				return
 			for bird in flock.birds:
 				_feed(bird, delta, flock.spot, right)
@@ -461,11 +474,12 @@ func _feed(bird: Dictionary, delta: float, spot: Vector2, right: Vector2) -> voi
 	else:
 		bird.peck -= delta
 		_show(bird.sprite, _birds().ground, 1 if bird.peck > 0.0 else 0)
-		if bird.timer <= 0.0:
+		if bird.timer <= 0.0 and _hops > 0:
 			bird.timer = _rng.randf_range(0.4, 2.2)
 			if _rng.randf() < 0.45:
 				bird.peck = 0.25
 			else:
+				_hops -= 1
 				var wish: Vector2 = bird.at + Vector2(_rng.randf_range(-0.5, 0.5), _rng.randf_range(-0.4, 0.4))
 				if wish.distance_to(spot) > 2.5:
 					wish = bird.at.lerp(spot, 0.3)
@@ -527,20 +541,34 @@ func _launch(at: Vector2, right: Vector2) -> void:
 
 # --- Each frame -------------------------------------------------------------------
 
+## On the screen (with a margin for a flock spread round its spot), or near the student.
+func _awake(p: Vector3, at: Vector2) -> bool:
+	return Vector2(p.x, p.z).distance_squared_to(at) < 144.0 or camera.is_position_in_frustum(p) \
+		or camera.is_position_in_frustum(p + camera.global_basis.x * 3.0) or camera.is_position_in_frustum(p - camera.global_basis.x * 3.0)
+
 static func _place(node: Node3D, at: Vector2, lift: float) -> void:
 	node.position = Vector3(at.x, World.floor_height(at.x, at.y) + 0.015 + lift, at.y)
 
 func update(delta: float, still: bool, running: bool, talking: bool, npc_near: bool) -> void:
 	_time += delta
+	_hops = HOPS_PER_FRAME
 	var right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
 	var forward := -camera.global_transform.basis.z
 	var at := Vector2(student.position.x, student.position.z)
+	# Off the screen and away from the student, cats and feeding flocks wait where they are:
+	# their walks and hops query the world's collision many times a frame, for ~120 animals.
 	for cat in cats:
+		if not _awake((cat.node as Node3D).position, at):
+			continue
 		_update_cat(cat, delta, at, still, running, right)
 		cat.sprite.flip_h = cat.facing < 0.0
 		cat.sprite.rotation.y = atan2(-forward.x, -forward.z)
 	for flock in flocks:
-		_update_flock(flock, delta, at, running, right)
+		var spot: Vector2 = flock.spot
+		var seen: bool = flock.state != "feeding" or _awake(Vector3(spot.x, (flock.birds[0].node as Node3D).position.y, spot.y), at)
+		_update_flock(flock, delta, at, running, right, seen)
+		if not seen:
+			continue
 		for bird in flock.birds:
 			bird.sprite.rotation.y = atan2(-forward.x, -forward.z)
 	_update_flyers(delta, at, right)

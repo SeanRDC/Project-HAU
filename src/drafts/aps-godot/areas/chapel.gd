@@ -55,8 +55,12 @@ static func outward(a: Vector2, b: Vector2) -> Vector2:
 
 ## The three bays of the glass hall on the south side, facing the walk (from the CHAPEL
 ## RIGHTSIDE SIDEWALK photos): each [a, b] along the outline, west to east.
+## (kept: collision asks for them on every step, and outward() walks the outline)
+static var _bays := []
 static func south_bays() -> Array:
-	var bays := []
+	if not _bays.is_empty():
+		return _bays
+	var bays := _bays
 	var shape := outline()
 	for i in shape.size():
 		var a := shape[i]
@@ -255,7 +259,7 @@ func _prism(points: PackedVector2Array, y0: float, y1: float, made: Material, ce
 		for k in [[0, 1, 2], [0, 2, 3], [0, 2, 1], [0, 3, 2]]:
 			for j in k:
 				tool.add_vertex(quad[j])
-	return w._mesh(tool.commit(), Vector3.ZERO, made)
+	return w._mesh(w.commit(tool), Vector3.ZERO, made)
 
 func _building() -> void:
 	var shape := outline()

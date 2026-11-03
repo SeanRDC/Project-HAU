@@ -403,7 +403,7 @@ func _floor_quad(group: String, x0: float, x1: float, z0: float, z1: float, y: f
 		tool.set_uv(uvs[k])
 		tool.add_vertex(corners[k])
 	var instance := MeshInstance3D.new()
-	instance.mesh = tool.commit()
+	instance.mesh = w.commit(tool)
 	instance.material_override = made
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if name != "":
