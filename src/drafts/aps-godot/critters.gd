@@ -75,6 +75,10 @@ var _bubble_label := Label.new()
 var _bubble_cat: Dictionary = {}
 var _bubble_age := 0.0
 var _time := 0.0
+## Hops chosen this frame: each asks the world's collision a few dozen times, so when many
+## birds would hop at once the rest wait a frame (HOPS_PER_FRAME) rather than the frame stalling.
+const HOPS_PER_FRAME := 4
+var _hops := HOPS_PER_FRAME
 
 func _ready() -> void:
 	name = "Critters"
@@ -300,11 +304,18 @@ func _walk(cat: Dictionary, delta: float, speed: float, right: Vector2) -> bool:
 ## The furthest spot towards `wish` reachable in a straight line.
 static func _clear_spot(from: Vector2, wish: Vector2) -> Vector2:
 	var best := from
+	var best_floor := NAN # the last spot's height, carried on (each query is ~0.1 ms)
 	for i in range(1, 13):
 		var spot := from.lerp(wish, i / 12.0)
-		if World.blocked(spot.x, spot.y) or absf(World.floor_height(spot.x, spot.y) - World.floor_height(best.x, best.y)) > 0.2:
+		if World.blocked(spot.x, spot.y):
+			break
+		if is_nan(best_floor):
+			best_floor = World.floor_height(best.x, best.y)
+		var floor := World.floor_height(spot.x, spot.y)
+		if absf(floor - best_floor) > 0.2:
 			break
 		best = spot
+		best_floor = floor
 	return best
 
 func cat_in_reach() -> Dictionary:
@@ -463,11 +474,12 @@ func _feed(bird: Dictionary, delta: float, spot: Vector2, right: Vector2) -> voi
 	else:
 		bird.peck -= delta
 		_show(bird.sprite, _birds().ground, 1 if bird.peck > 0.0 else 0)
-		if bird.timer <= 0.0:
+		if bird.timer <= 0.0 and _hops > 0:
 			bird.timer = _rng.randf_range(0.4, 2.2)
 			if _rng.randf() < 0.45:
 				bird.peck = 0.25
 			else:
+				_hops -= 1
 				var wish: Vector2 = bird.at + Vector2(_rng.randf_range(-0.5, 0.5), _rng.randf_range(-0.4, 0.4))
 				if wish.distance_to(spot) > 2.5:
 					wish = bird.at.lerp(spot, 0.3)
@@ -539,6 +551,7 @@ static func _place(node: Node3D, at: Vector2, lift: float) -> void:
 
 func update(delta: float, still: bool, running: bool, talking: bool, npc_near: bool) -> void:
 	_time += delta
+	_hops = HOPS_PER_FRAME
 	var right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
 	var forward := -camera.global_transform.basis.z
 	var at := Vector2(student.position.x, student.position.z)
