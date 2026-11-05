@@ -85,13 +85,13 @@ This is private work. Only the team and collaborators added by the repository ow
 ## The Team
 A closed 7-person project developed within the School of Computing.
 
-* **Sean Rhani Dela Cruz**
-* **Mikko Brandon Panergo**
-* **Jorel Kesse Marquez**
-* **Gil Miranda**
-* **Mclaren Ais Miranda**
-* **Cyrel Lloyd Lasola**
-* **Bernard Rodriguez Jr.**
+* **Sean Rhani Dela Cruz:** Lead Developer / Project Lead
+* **Mikko Brandon Panergo:** Environment / World Developer
+* **Jorel Kesse Marquez:** Developer – Localization & Buildings
+* **Gil Miranda:** Reference Photography / Asset Research
+* **Mclaren Ais Miranda:** Character Art & Narrative / Cutscenes
+* **Cyrel Lloyd Lasola:** Character Design Development
+* **Bernard Rodriguez Jr.:** Documentation
 
 ## Team Workflow
 To keep our repository clean and avoid merge conflicts, please follow these guidelines:
