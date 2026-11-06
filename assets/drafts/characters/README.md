@@ -20,6 +20,18 @@ Migo, Bea, Bianca, Kuya Ben, Rica, Paolo, Ate Lorna and Coach Gab. Each is an ed
 * `pxl/migo/` - Migo kept in pxl, like the boy: his chin cleaned and steady in every frame, his hair moving in the walk. `build.ps1` builds his sheets and portrait.
 * `Plaid.cs` - the grey HAU skirt plaid, shaded per pleat. `SoftEdges.cs` - softens the outlines.
 
+## Cutscene art (`cutscene-art/`)
+The reference for how each character looks in the full-art cutscenes and flashbacks (drawn art, like Omori; the game world stays pixel art). Not loaded by the game.
+
+Each `<name>.png` is its `<name>-source.png` (1024 x 1536) converted to true pixel art at 256 x 384 with PixelLab, in faithful mode starting from the picture, so nothing is redrawn: `node tools/pixellab-convert.mjs <name>-source.png <name>.png --size=256x384 --strength=150`. They keep their sources' backgrounds. Redrawing instead (`tools/pixellab-styled.mjs`) drifted from the sources, so don't.
+* `lance.png` - Lance at school: messy golden-brown hair, tired brown eyes, white short-sleeve polo with an open collar and no tie, maroon backpack with black buckles.
+* `lance-older.png` - Lance ten years later: shaggy auburn hair past the jaw, light stubble, a dark open overshirt over a black t-shirt. His hair is a deeper red than at school, as in the source. After converting, the whites of his eyes were made skin (shaded under the lid) by hand, so his eyes are drawn like young Lance's: a dark lid line over a rounded iris, no whites. Redo that if he is converted again.
+* `pat.png` - Pat: very long dark brown hair with loose strands and bangs between the eyes, white blouse with an open collar, black backpack straps, grey and red plaid skirt.
+* `ysha.png` - Ysha: shoulder-length wavy golden hair, white-framed glasses, an orange cat lanyard with an ID card, navy backpack straps, grey and red plaid skirt.
+* `pat-older.png` - Pat ten years later (draft): shoulder-length dark brown hair, a pendant necklace, a dark open jacket over a white top, a belt and a bag strap. Eye whites made skin by hand, like older Lance's.
+* `ysha-older.png` - Ysha ten years later (draft): short messy golden hair, no glasses, a loose white t-shirt and dark jeans. Eye whites made skin by hand, like older Lance's.
+* `cast-draft.png` - the cast side by side, at school on top and ten years later below.
+
 ## Adding a character
 1. Edit one of the style sheet's characters at 512 px and shrink it with `npcs/pixellab/shrink.ps1`.
 2. Add their setup to `npcs/rig/NpcCast.cs`. Put their drawing in `npcs/pixellab/frames/<id>/reference.png`, estimate its skeleton (`skeleton.mjs`), add their look to `animate-all.mjs` and redraw their walk and wave with it (`PIXELLAB_API_KEY` in the environment; about 6 generations).
