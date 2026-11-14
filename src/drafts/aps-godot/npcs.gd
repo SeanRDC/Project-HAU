@@ -104,8 +104,8 @@ const CAST := [
 	# idle only, nothing to say yet (no prompt shows over them)
 	{"id": "gf", "name": "GF (prototype)", "home": Vector2(-33.5, 5.2), "roam": 0.0, "facing": 1.0, "talks": []},
 	{"id": "blonde", "name": "Blonde short hair", "home": Vector2(-28.5, 5.4), "roam": 0.0, "facing": -1.0, "umbrella": Color("c98a3a"), "talks": []},
-	# the player's friend from the opening (idle and portrait so far; no name yet)
-	{"id": "friend", "name": "Kaibigan", "home": Vector2(-23.5, 5.4), "roam": 0.0, "facing": -1.0, "umbrella": Color("1d2640"), "talks": [
+	# the player's friend, Paeng (Rafael) Sicat (idle and portrait so far); see opening/STORY.md
+	{"id": "friend", "name": "Paeng", "home": Vector2(-23.5, 5.4), "roam": 0.0, "facing": -1.0, "umbrella": Color("1d2640"), "talks": [
 		{"when": ["friend.game"], "say": ["Mamaya sa gym, ha? 'Wag kang male-late."]},
 		{"when": ["met.friend"], "say": ["Uy, ikaw ulit. Sasama ka na ba sa laro next time?"]},
 		{"say": [
