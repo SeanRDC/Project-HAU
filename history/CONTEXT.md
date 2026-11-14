@@ -1,5 +1,22 @@
 # Project Context
 
+**The story, revised again, 2026-11-14.** `opening/STORY.md` opens with "The story as
+revised on 2026-11-14 (read this first)"; the text under it is still the 2026-10-27
+version, to be rewritten once the team agrees. Ysha dies at Consuelo, Macabebe in a
+typhoon; Paeng (Rafael Sicat, the `friend` NPC, now named in `npcs.gd`) followed her, and
+shoved her in an argument without meaning to; the police think self-harm, Lance the
+typhoon, Pat saw him and kept quiet. The opening is to be police statements (not built).
+The game ends on a call to Paeng and his one line. No dengue, no 11:11. See
+`sessions/2026-11-14-paeng.md`.
+
+**Paeng's cutscene art and the mascot, 2026-11-14.** `cutscene-art/paeng.png` and
+`paeng-older.png` (on `cast-draft.png`) were made without PixelLab, whose subscription has
+expired: `tools/pixelart-local.py` (never averages; thin lines drawn one pixel wide) then
+`tools/cutscene-grade.py` (the cast's colours, no eye whites). A draft mascot, a doodle
+of Ysha's with a paper boat for a hat, is in `assets/drafts/characters/mascot/` as pixel
+art and as a rigged T-pose model (`tools/blender/mascot.py`, `models/mascot.glb`); not in
+the game.
+
 **How cutscenes look, 2026-10-27.** Inspirations: Until Then (feel), Omori (storytelling),
 A Space for the Unbound (character look). Pixel art stays in the game world; cutscenes and
 flashbacks are drawn art, not pixel art. The cast's cutscene references are in
@@ -143,7 +160,7 @@ with the roof faded and daylight fill lights. `--view=student-center`. See
 `sessions/2026-10-19-student-center.md`.
 
 **The friend, 2026-10-19.** The player's friend from the opening is in the game as
-"Kaibigan" (no name yet) in front of APS 104-105: drawn in pxl over the redesigned boy
+"Paeng" (Rafael Sicat, named 2026-11-14; see `opening/STORY.md`) in front of APS 104-105: drawn in pxl over the redesigned boy
 (black curtain hair, black hoodie, navy bag), idle and portrait only, with a short talk.
 Sources in `assets/drafts/characters/npcs/pxl/friend/`. See
 `sessions/2026-10-19-friend-character.md`.
