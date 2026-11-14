@@ -6,6 +6,148 @@ Draft" doc. The opening itself, page by page, is in [SCRIPT.md](SCRIPT.md).
 **Trigger warning:** this story deals with depression, suicide, grief and guilt. Nothing is
 shown on screen, but the subject is central.
 
+## The story as revised on 2026-11-14 (read this first)
+
+Mclaren's revision, worked out in one session. **Everything below this section is still
+the 2026-10-27 version** and has not been rewritten to match: where the two disagree, this
+section is the newer one. The team still has to agree to it.
+
+### In plain order
+
+**The first life**
+
+1. **2026.** Lance, Pat, Ysha and Paeng are third-year students at HAU. Pat is Lance's
+   childhood friend. Ysha is the classmate he loves and never tells. Paeng is his barkada,
+   and likes Ysha too, and never tells her either.
+2. **Ysha.** Money is tight at home and her parents don't support her studying. She stays
+   at HAU only as a student assistant, which covers her tuition, and she is failing
+   subjects because she works and studies at once. She has never seen the sea and wants
+   one calm day beside it, even if it is only Consuelo in Macabebe, the nearest there is.
+3. **November 11, 2026.** A typhoon. She goes to Consuelo anyway and finds no peace there:
+   rain, wind, rough water. Paeng follows her to bring her home. They argue on the
+   landing at the end of the road. It gets physical; he shoves her away, and she goes
+   over the seawall. He didn't mean it. He walks back down the only road.
+4. **Pat sees him.** Her grandparents live along that road. She sees a man pass who looks
+   like their friend. She never tells Lance.
+5. **What each believes.** The police: she harmed herself. Lance: the typhoon took her.
+   Pat: she suspects Paeng and stays silent. Paeng knows.
+6. **After.** Lance marries Pat. Their son is born on November 11, 2036. Paeng does well in
+   life and is never found out, and it eats at him.
+7. **2038.** Lance, 32, falls asleep in his old classroom.
+
+**The second chance (the game)**
+
+8. He wakes in June 2026, twenty again, remembering everything, with five months.
+9. To stay close to Ysha he lies to Pat. That is the cost: if he and Pat drift apart,
+   their son is never born.
+10. He learns the truth in three steps, and nobody tells him. First, old memories stop
+    adding up: Paeng plainly knows Ysha well, yet told the police "Hindi po masyado.
+    Kaklase lang po sa isang minor."; he never once came to the boy's birthday; Pat never
+    went back to her grandparents' and went quiet at Paeng's name. Second, he sees that
+    Paeng likes her and would follow her. Third, on November 11 he walks the road to
+    Consuelo himself and sees two people on the landing, not one.
+11. If he is in time, he reaches them before the shove: Ysha lives, and Paeng never
+    becomes the man who did it. If he is late, the landing is empty, and on the road back
+    Paeng walks past him, soaked, and doesn't look up.
+
+**The endings**
+
+- **He stays in 2026.** Ysha lives; his son is never born. It ends at the sea.
+- **He fails again,** and goes back to 2038 knowing.
+- **He saves her, then goes home** to his son, in a 2038 where she is still gone.
+
+In both endings that return to 2038 he asks Pat one question, "Nakita mo siya noon, 'di
+ba?", and she tells him what she saw. Then the last scene.
+
+**The last scene (a cliffhanger).** Night, alone. Paeng's name on Lance's phone. Two
+buttons: "Call" and "Put it down". If the player calls: three rings, Paeng picks up,
+breathing and rain on his end, and he speaks first, one sentence:
+
+> "Thank you, pre. Ililigtas mo ako."
+
+Cut to black, then the title. What Lance says or does is never shown. If the player puts
+the phone down there is no line at all. (Mclaren's line. "Niligtas mo ako", the call has
+already saved him, is the other reading; not chosen yet.) The game opens on a phone with
+only "Decline" and ends on one with a choice whose result is withheld.
+
+### The opening: police statements
+
+The opening is a police file on Ysha's death, in the question (T) and answer (S) form of
+a Sinumpaang Salaysay, a page for each witness in their own handwriting, each leaving
+something out; then a blank statement put to the player, a phone that can only be
+declined, and the 2038 classroom. The idea of an opening told as a questionnaire comes
+from Sesuji and Shuzo Oshimi's *Kuchi ni Kansuru Anketo*; the pages and words are ours.
+Paeng's statement hides what he did and Pat's hides what she saw. The lines are not
+written yet, and the game still plays the old opening ([SCRIPT.md](SCRIPT.md)).
+
+### The place: Consuelo, Macabebe
+
+From Mclaren's photos and a drone video of it. One straight road with the village packed
+along both sides and fishponds to the horizon; past the last house the road runs on bare,
+open water either side, to a concrete landing with a white building, an "I love Consuelo
+Macabebe" sign under palms, a low seawall, boulders and a line of breakwater. The sea is
+very shallow: at low tide a wide flat of dark rippled sand with people wading far out,
+mountains across the bay. So: Pat's grandparents live in the village, anyone leaving the
+landing passes their house, nobody else is out past the last house in a typhoon, and the
+danger is the seawall and the surge, not the depth. The calm low tide is the sea Ysha
+hoped for and the picture the endings close on.
+
+### The mascot (draft, no name yet)
+
+A guide for the player and for Lance, asked for as "like Takopi": small, innocent, eager
+to help. It is the project's own design, not that character.
+
+- **What it is:** a doodle Ysha drew in ballpen in the margin of a handout, come to life:
+  a paper-white blob with a paper boat for a hat, dot eyes, cheeks the orange of her
+  lanyard, stick limbs, and two hands that don't match because she can't draw hands.
+  The design, the pixel sprites and a 3D model are in `assets/drafts/characters/mascot/`.
+- **It lives in her sketchbook.** In 2038 Lance falls asleep holding the sketchbook; it
+  climbs out of the page and takes him back. It is the guide the time travel didn't have.
+- **It guides the player:** the controls, Lance's memories as the quest log, a nudge when
+  he is about to miss a moment with Ysha.
+- **Only Lance can see it.**
+- **It can't lie and it doesn't understand sadness.** It thinks every problem is fixed by
+  being nice, and says cheerful things at the worst moments.
+- **It was there.** The sketchbook was in her bag at Consuelo, so it heard everything and
+  understood none of it. Early on it can say something innocent, like "Nung huling araw,
+  may isa pang boses," and nobody thinks twice. Later that is the first clue that someone
+  else was on the shore. It is the only witness besides Pat, and it doesn't know what it
+  witnessed.
+- **Open:** its name ("Bukas", "Papel" and "Alon" were floated); whether it stays or fades
+  once Ysha is saved; and that a talking guide changes the earlier rule that nobody ever
+  explains how Lance is sent back.
+
+### Dropped or replaced by this revision
+
+- Dengue, the promise at the fountain, the emergency room, and "11:11 PM".
+- The rumour as Paeng's doing. He posts nothing. (An earlier draft this session had him
+  turn her away from a group project and walk past her at the fountain; both gone.)
+- The milk tea shop job and the kind, busy mother: she is a student assistant, and her
+  parents don't support her studying.
+- Lance and Pat's first date on the night Ysha waited: Pat was in Macabebe that day.
+
+### Proposed by Claude, not confirmed by Mclaren
+
+- **What Lance is guilty of.** The game starts because he can't forgive himself, and a
+  typhoon gives him little to regret. Proposed: she asked him to come with her, he said
+  "next time", and he declined her call that day.
+- **Her call:** at 4:47 PM, from the landing, before Paeng arrives; the same minute comes
+  again in the second life. The date stays November 11.
+- **The shove:** Paeng takes her arm to pull her from the water's edge, she fights him
+  off, he shoves back. He went there to save her.
+- **Paeng in 2038:** he is at the birthdays he can bear to attend, never the one on the
+  11th.
+
+### Kept in mind
+
+- **It is close to Omori** in its bones: a death everyone misreads, a shove in an
+  argument, years of hiding it, an ending that cuts at the moment of truth. Players who
+  know Omori may guess the twist, so the reveal should lean on what is ours: who it was,
+  why he was there, and that Pat knew. And here the guilty one is the hero's friend, not
+  the hero, so it only hurts if the player loves Paeng: June and July need real time
+  with him.
+- **The light half is unwritten.** Everything designed in this session is the dark part.
+
 ## What changed in this revision (2026-10-27)
 
 Aim: emotional the way Omori is: by holding back, not by saying everything. The structure
@@ -72,6 +214,7 @@ clearer the price: the world where Ysha lives is a world his son was never born 
 | Lance Manalang (the MC) | The player boy: wavy brown hair, white polo, maroon bag | Quiet, never knows what to say. Narrates the opening. The only one pulled into his past life. |
 | Pat (Patricia Lansangan), his childhood friend | Long dark hair (`gf` in the game files) | Neighbours since they were kids, in the same schools all their lives. Loud, bossy, protective; scolds him, drags him to class, always waits for him outside the classroom. He takes her for granted and sees her as almost family; she has loved him for years and never said it. In his future she becomes his wife. Not his girlfriend now. She notices first that he has changed, and she isn't a saint about it. |
 | Ysha (Kysha Navarro), the irregular student | Short light hair (`blonde` in the game files) | Not a transferee: she has been at HAU all along, but fell behind on units, so she takes a different mix of classes every day, often with younger students, while her old block has moved on. No one group sees her every day, so no one notices when something is wrong. Funny, quick, a little mean in a way people like. Sits at the other table in the canteen. The one he loses on November 11, and his first love, though he never told her and never acted on it; in 2026 he is a 32-year-old father inside, and he keeps it that way. They become friends over shared notes for a minor they are both behind in, the same jeep after night classes, the canteen table; no "I feel like I've met you before": he truly remembers her, she has no idea. |
+| Paeng (Rafael Sicat), Lance's friend | Black curtain hair, black hoodie, navy bag (`friend` in the game files, in front of APS 104-105); ten years later, short hair and a black polo | Lance's barkada: easygoing, always inviting him to play at the gym, the easy part of every day. He likes Ysha and never tells her. On November 11 he follows her to Consuelo to bring her home, and is the one who shoves her; nobody ever finds out, and he does well in life and suffers for it. See "The story as revised on 2026-11-14". |
 | The campus | Kuya Ben, Ate Lorna, Coach Gab, Migo, Bea and the rest | Remember what Lance does and pass it on: friends notice, rumours spread. |
 
 Lance, Pat and Ysha are about 20, third-year students at HAU in 2026. Their son (in 2038,
@@ -466,6 +609,9 @@ and people stayed. Where she is gone, it is because he went home, not because he
 
 ## Open questions
 
+- [x] The friend's name: Paeng (Rafael Sicat).
+- [ ] Rewrite the sections below "The story as revised on 2026-11-14" to match it, once the team agrees.
+- [ ] The mascot's name.
 - [ ] Pat's surname (Lansangan is a draft).
 - [ ] Their son's name.
 - [ ] Which endings are playable, and is ending 1 (he stays) hidden?
