@@ -1,16 +1,60 @@
 # Project Context
 
+**The story, revised again, 2026-11-14.** `opening/STORY.md` opens with "The story as
+revised on 2026-11-14 (read this first)"; the text under it is still the 2026-10-27
+version, to be rewritten once the team agrees. Ysha dies at Consuelo, Macabebe in a
+typhoon; Paeng (Rafael Sicat, the `friend` NPC, now named in `npcs.gd`) followed her, and
+shoved her in an argument without meaning to; the police think self-harm, Lance the
+typhoon, Pat saw him and kept quiet. The opening is to be police statements (not built).
+The game ends on a call to Paeng and his one line. No dengue, no 11:11. See
+`sessions/2026-11-14-paeng.md`.
+
+**Paeng's cutscene art and the mascot, 2026-11-14.** `cutscene-art/paeng.png` and
+`paeng-older.png` (on `cast-draft.png`) were made without PixelLab, whose subscription has
+expired: `tools/pixelart-local.py` (never averages; thin lines drawn one pixel wide) then
+`tools/cutscene-grade.py` (the cast's colours, no eye whites). A draft mascot, a doodle
+of Ysha's with a paper boat for a hat, is in `assets/drafts/characters/mascot/` as pixel
+art and as a rigged T-pose model (`tools/blender/mascot.py`, `models/mascot.glb`); not in
+the game.
+
 **Performance pass, 2026-11-03.** About 71 to 167 fps on average (GTX 1660 Super, 1600x900), with no change to the look. Off-screen cats and feeding flocks wait; `World.merge_static()` bakes small static meshes per material and 24 m square (**name a node if code changes it at run time; build meshes with `w.commit(tool)`**); `Roads.across()` uses a grid (checked exact); sounds render on a worker thread. `--bench=<path>` measures every fast-travel place. See `PERFORMANCE_REPORT.md` and `sessions/2026-11-03-performance.md`.
 
 **Sacred Heart and the Covered Court's inside, 2026-10-28.** `areas/sh.gd`: the Sacred Heart Building round its square (the west block on the lane behind the canteen, the galleried north block, the white east wing, the bridge to APS and the gate), the covered walkway along the court and the square with the fountain and the statue of the Sacred Heart. The lane behind the canteen runs on to the gate (the new north bound) past APS's new east block; the canteen's back has its windows, sunshades and maroon awning; in the lane the camera faces the side you are on. The Covered Court moved 3 m south and is rebuilt inside and out from the photos (steel portal frames, aisles, the basketball and volleyball courts, the AERO LABORATORY gate); its roof fades while you are under it. See `sessions/2026-10-28-sacred-heart-and-court.md`.
 
 **Beside APS, 2026-10-27.** `areas/beside_aps.gd`: past the canteen's tip a kerbed island on the east road, with the vine pergola (stone pillars, red concrete tables, palms in bowls) and green picnic sheds under tall trees; round umbrella tables at the tip's foot; a paved lane north of the tip; an empty parking lane by the court (no cars). The Covered Court is 4 m east of OSM to fit (`plan.ts`). The lane by the gym's north gable rises east past the side entrance. The bell post and the CMO board stand on the Formation Center's drop-off island. See `sessions/2026-10-27-beside-aps.md`.
 
+**How cutscenes look, 2026-10-27.** Inspirations: Until Then (feel), Omori (storytelling),
+A Space for the Unbound (character look). Pixel art stays in the game world; cutscenes and
+flashbacks are drawn art, not pixel art. The cast's cutscene references are in
+`assets/drafts/characters/cutscene-art/` (Lance, Pat and Ysha at school and ten years later,
+side by side in `cast-draft.png`): Mclaren's
+pictures converted to pixel art at 256 x 384 by PixelLab's faithful mode
+(`tools/pixellab-convert.mjs`), not redrawn, which drifted. How the drawn scenes are made is
+still to be tried. See `sessions/2026-10-27-cutscene-direction.md`.
+
+**The story, revised, 2026-10-27.** `opening/STORY.md` now aims to be emotional the way Omori
+is, by holding back: Ysha is a person first ("Who Ysha is"), fewer coincidences on November
+11, fewer speeches, a silent "Sa likod", a Pat with edges, and the cost is honesty with Pat
+rather than romance. Its "What changed in this revision" lists every change for the team.
+The endings are now three, built on one choice, his son or Ysha: going back returns him to
+the 2038 he left (where she is gone), so she lives only if he stays. The true ending is
+bittersweet: at 11:11 PM he answers her call, the one he once declined, says goodbye and
+goes home.
+
 **Every branch in main, 2026-10-25.** Canteen layout, Covered Court, Aero Hall, Formation Center, the SJH back lane, the audio fixes, the opening and story work and the girl walk test are all merged. Aero Hall's edge wall now leaves a gateway into SJH's back lane (`GATEWAY_X`). See `sessions/2026-10-25-merge-all-branches.md`.
 
 **PGN merged with main, 2026-10-25.** The `pgn` branch (PR #44) now has every branch in
 main: PGN sits beside the Formation Center, Aero Hall and the Covered Court, and all checks
 pass. See `sessions/2026-10-25-pgn-merge-main.md`.
+
+**3D cutscene characters, 2026-10-23.** Characters who matter in cutscenes become low-poly
+3D models drawn like the pixel portraits, so cutscenes need no generated pictures. Lance is
+first: built by `tools/blender/lance.py` into `models/lance.glb`, shown by `actor.gd` with
+two tones a part (`toon.gdshader`), a one-pixel black line (`outline.gdshader`) and eight
+swappable pixel faces. `tools\view-actor.cmd` shows him alone to turn and zoom;
+`--actor-capture=<dir>` renders him to pictures. He is not in the game world. No rig yet; Pat and Ysha next. The three portrait sheets were also rebuilt to one
+grid and palette (`assets/drafts/characters/portraits/`). See `docs/godot-art-style.md`
+("Cutscene characters (3D)") and `sessions/2026-10-23-lance-3d.md`.
 
 **PGN, 2026-10-22.** `areas/pgn.gd`: the Peter G. Nepomuceno Building, a tall white L
 along the boulevard and beside APS. It has a dark ground floor and nine white banded floors
@@ -35,13 +79,6 @@ canopy, the stair tower's green strips, two curved wings; a drop-off round the t
 island; gabled kiosks in a row along the road south of it. In front of it the camera faces
 it from over the road (`--view=formation`). See `sessions/2026-10-22-formation-center.md`.
 
-**SJH and MGN apart, 2026-10-21.** MGN's south wing is flush with its long block (it stood
-~1 m from SJH) and SJH is 2 m east of its outline (`EAST_SHIFT`): a ~4.7 m drive runs
-between them under the bridge, ~9 m wall to wall, as in the photos. A concrete drive off the road's bend curves round Mary's big lawn into
-that lane; MGN's garden walk slants from opposite Mary to the corridor, and the bridge
-joins both third floors. MGN's north block has its forecourt entrance on the west road. See
-`sessions/2026-10-21-sjh-mgn-spacing.md`.
-
 **Canteen layout, 2026-10-22.** The APS canteen now follows Mikko's sketch: two islands of
 four stalls and a row of four by the tip, with blue tables and benches between them on a
 grey tile floor (`stalls()` and `CANTEEN_TABLES` in `world.gd`). Its back is open, with stone
@@ -52,6 +89,14 @@ pillars, a low wall with two gaps out to the strip, and the scalloped awning; HA
 gable roof on white steel columns, a clerestory in the west gable, the court with its
 bleachers, and the ramp up from the gym's lane. The camera cuts its roof away when facing
 the gym from the lane. See `sessions/2026-10-22-covered-court.md`.
+
+**SJH and MGN apart, 2026-10-21.** MGN's south wing is flush with its long block (it stood
+~1 m from SJH) and SJH is 2 m east of its outline (`EAST_SHIFT`): a ~4.7 m drive runs
+between them under the bridge, ~9 m wall to wall, as in the photos. A concrete drive off the road's bend curves round Mary's big lawn into
+that lane; MGN's garden walk slants from opposite Mary to the corridor, and the bridge
+joins both third floors. MGN's north block has its forecourt entrance on the west road. See
+`sessions/2026-10-21-sjh-mgn-spacing.md`.
+
 
 **The opening's story, 2026-10-21.** The opening now tells the game's story (draft in
 `src/drafts/aps-godot/opening/STORY.md`): Lance remembers the campus and Ysha, the girl he
@@ -180,7 +225,7 @@ with the roof faded and daylight fill lights. `--view=student-center`. See
 `sessions/2026-10-19-student-center.md`.
 
 **The friend, 2026-10-19.** The player's friend from the opening is in the game as
-"Kaibigan" (no name yet) in front of APS 104-105: drawn in pxl over the redesigned boy
+"Paeng" (Rafael Sicat, named 2026-11-14; see `opening/STORY.md`) in front of APS 104-105: drawn in pxl over the redesigned boy
 (black curtain hair, black hoodie, navy bag), idle and portrait only, with a short talk.
 Sources in `assets/drafts/characters/npcs/pxl/friend/`. See
 `sessions/2026-10-19-friend-character.md`.

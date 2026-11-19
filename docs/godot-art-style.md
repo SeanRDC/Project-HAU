@@ -586,13 +586,15 @@ anything is wet or has specular other than glass.
 
 | Shader | What it does | Parameters (defaults) | Rules |
 | --- | --- | --- | --- |
-| `edges.gdshader` | A full-screen quad on the camera (render priority 127) reads depth and normals. It draws a dark line where something sits in front of a farther surface and lightens convex creases by one pixel, and lays the drifting cloud shadows (see Lighting). It is **multiplied** over the image, so lighting, fog and glow stay intact | `line_dark 0.32`, `crease_light 0.16`, `depth_gap 0.45`, `strength` 1.0 when the pixel scale > 1, 0.7 at native resolution; `clouds`, `sun_dir`, `wind` | The sky gets no lines. Don't add per-object outlines; this handles everything |
+| `edges.gdshader` | A full-screen quad on the camera (render priority 127) reads depth and normals. It draws a dark line where something sits in front of a farther surface and lightens convex creases by one pixel, and lays the drifting cloud shadows (see Lighting). It is **multiplied** over the image, so lighting, fog and glow stay intact | `line_dark 0.32`, `crease_light 0.16`, `depth_gap 0.45`, `strength` 1.0 when the pixel scale > 1, 0.7 at native resolution; `clouds`, `sun_dir`, `wind` | The sky gets no lines. Don't add per-object outlines; this handles everything (the one exception: the 3D cutscene characters' black line, `outline.gdshader`) |
 | `weathering.gdshader` | A multiplied second pass (`next_pass`) on the `WEATHERED` wall materials: a stepped grime band at the foot of vertical faces and faint paint patches, in world space | `grime 0.22`, `grime_height 1.15`, `patches 0.06` | Don't paint dirt into the wall colours; this keeps every wall consistent |
 | `leaves.gdshader` | Alpha-cut foliage cards (leaves, grass, vines) that sway (shadows follow), are lit as a round volume and glow when backlit; edge-on cards fade out | `sway 0.045` (grass 0.03), `phase` per tree, `center` (crown middle; far below for grass), `roundness` (1.0 trees, 0.9 grass), scissor 0.4, backlight 0.45 × leaf colour | Leaf images are procedural (`_leaf_material(seed, center)`), five greens from `#3a5650` to `#a8ab70`. Round normals are per pixel |
 | `sky.gdshader` | An orthographic camera sees one direction, so the sky grades over the screen instead. Lighting probes use a direction-based gradient. At night: stars in three tints and a range of brightnesses, the brightest (1 in ~1400) with a one-cell pixel cross, about half twinkling slowly (each at its own pace); a faint patchy Milky Way band with more stars in it; the moon (drawn ~4x real size) with a soft glow, dark patches and a darker limb, where the night light comes from; stars thin out near it and fade at the horizon. In the F2 free cam (`free_look`) it is laid out by direction on a cube of 512 cells a face, so it stays put as the camera turns; in the game views over the screen (2-px cells, the moon high on the right). Hashes avoid `sin()`, which streaks at large cell numbers on the GPU | `top_color`, `horizon_color`, `ground_color`, `stars` (set by `_set_hour`), `overcast` (the rain, from atmosphere.gd: hides the night sky), `free_look` (F2), `moon_dir` (set with the sun in `_aim_sun`) | |
 | `shaft.gdshader` | Light shafts under trees and the lamp reflections on wet ground: an additive card, brightest in the middle, fading at its edges and ends | `color`, `strength` (0.08) | Unshaded, no fog, never writes depth |
 | `display.gdshader` | Final grade on the enlarged image: shade towards `shade_tint`, light towards `light_tint`, soft vignette | `warmth 0.06`, `vignette 0.22`, tints from `_set_hour` | Keep this the only colour grade |
 | `manga.gdshader` | The opening's panels only (a canvas shader, not the world). A stand-in photo becomes pen and ink: Sobel edges as ink lines, deep shadow black, shadow diagonal hatching, mid-tones screentone dots, the rest paper | `ink` 1 (photos) or 0 (drawn panels: greyed onto the paper only), `paper #f4f1ea`, `pen #1c1b19`, `tone 4.0` px | Tone and hatching are in screen pixels, like real screentone. Keep it mostly paper: light lines, few blacks |
+| `toon.gdshader` | The 3D cutscene characters (`actor.gd`): every part is exactly its base colour where the light reaches it and its shadow colour where it does not (turned away, or in the sun's cast shadow). The light's colour and strength still tint both, so a character sits in the hour; lamps fall off with distance. The face is a strip of expression textures; `face` picks one | `base_color`, `shade_color` (from `Actor.CAST`), `threshold 0.12` (skin and face -0.35: an anime face stays lit but for its edge; curls 0.3: each curl gets a dark crescent), `light_color` and `highlight` (an optional third tone where the light hits straight on; off at 2.0, curls 0.72), `textured`, `faces`, `face`, `face_count 8` | Two tones a part, never a gradient (the curls' highlight is the one third tone, as the sprite has). Colours come from the portraits' palette, the hair from the sprite |
+| `outline.gdshader` | The 3D cutscene characters' black line: the model again, inside out (`cull_front`), pushed out along its normals by whole screen pixels and set back from the camera by `depth_gap`, so touching parts (lock on lock of hair) draw no line, only real steps in depth | `width_px 1.0`, `depth_gap 0.035` m (curls 0.006 m: a line round every curl, as the sprite has), `color #000000` (the hair: the sprite's dark brown `#46201f`) | The `next_pass` of every `toon` material. Only for the cutscene characters |
 
 ---
 
@@ -612,6 +614,77 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
   second with a 260 Hz blip, then holds 1.4 s plus 0.04 s a character.
 - Pictures are drawn panels (`opening/panels/<id>.png`), else inked campus photos, else a
   grey card naming the picture to make. What to draw: `opening/README.md`.
+
+---
+
+## Cutscene characters (3D)
+
+The characters that matter in cutscenes (Lance first; Pat and Ysha next) are low-poly 3D
+models drawn like the pixel portraits, so cutscenes need no AI-generated pictures:
+
+- **Built in Blender by script:** `tools/blender/<id>.py` (`blender --background
+  --factory-startup --python tools/blender/lance.py`) writes `models/<id>.glb` and
+  `assets/drafts/3d/<id>.blend` to open and edit. `tools/blender/preview.py` renders quick
+  front, three-quarter, side and back looks. Lance is about 3,200 triangles.
+- **The design is the portrait sheet:** `assets/drafts/characters/portraits/src/<id>-sheet.png`;
+  Lance's hair is the game's student sprite (`sprites/boy`). Lance: a mop of round curls
+  (loose, lumpy low-poly balls about 5 cm across, piled high on top and standing out so the
+  outline is bumpy, a curly fringe down to the brows sweeping lower to his left, the ears
+  showing, and from just behind the ears down to the jaw at the back), a round, full face with a soft
+  U chin (no pointed anime jaw), a slim, young build (shoulders only a little wider than
+  the head, a narrow chest, thin arms close to the sides, slim legs, big round shoes), the
+  white shirt with a pointed collar and fitted short sleeves, the dark tie, the dark red backpack with straps over
+  both shoulders, black trousers and shoes.
+- **Parts are material names:** `skin`, `face`, `hair`, `shirt`, `tie`, `bag`, `pants`,
+  `shoes`. `actor.gd` gives each one its two tones from `Actor.CAST` (`base`, `shade`, and optional `wrap`, `light`, `line`, `gap`) (the portraits'
+  palette, the hair the sprite's own: hair `#7f4733`/`#572b23`, highlight `#ac5b3d`, lines `#46201f`, skin `#ecbba1`/`#cf9580`, shirt `#efe3d6`/`#cdb2a5`,
+  bag `#7d2c33`/`#511f26`, tie `#3d3436`/`#2a2326`, trousers `#2e2a31`/`#1c191e`), the
+  `toon` shading and the one-pixel black `outline`.
+- **Faces are pixel textures:** the face is a front patch of the head mapped flat to a
+  32 x 36 texture (7.4 mm a pixel), one per expression in a strip, `models/<id>_faces.png`,
+  drawn by `assets/drafts/characters/portraits/<id>-face.mjs`: neutral, smile, laugh,
+  sad, surprised, worried, annoyed, away (the portrait sheet's order).
+  `set_expression("laugh")` swaps them. The eyes are small dark ovals, 5 px wide and 7 high,
+  with a full black outline and the lower part lighter, under a thick black lid (wider than
+  the eye) that flicks up at the outer corner. They sit about a third of the face width
+  apart, with thin brows showing under the bangs and a one-pixel nose.
+- **Close-ups at the portraits' density:** 136 px a metre (`Actor.CLOSE_DENSITY`; a
+  0.6 m bust is 82 px, like the portraits). In the world at the game's zoom they render
+  at the world's own density like everything else.
+- **Check them:** `--actor-capture=<dir>` renders the cast alone into `<dir>` (each
+  expression in a close-up, a turned close-up, and the body from the front, turned and
+  from the side). `tools\view-actor.cmd` (`--actor-view=<id>`, `actor_viewer.gd`) shows
+  one model alone to look round: drag or A/D to turn, the wheel or W/S from the whole
+  body to a close-up, 1-8 for the faces, L to swing the light. The models are not in the
+  game world. The `actor_lance` check loads him with every part in its palette and swaps
+  a face.
+- **A full, smooth version (not pixel art):** `tools/blender/lance_hd.py` opens the
+  low-poly model and makes `assets/drafts/3d/lance-hd.blend`: every part smoothed
+  (subdivision; the collar, tie, bag and straps keep creased edges), the curls melted into
+  one sculpted mass, the face drawn smooth at 512 x 576 (`lance_face_hd.png`), the same
+  two-tone cel shading by the light's direction with the curls' highlight, and an ink
+  outline (an inverted hull; dark brown on the hair). It renders front, three-quarter,
+  side, back and two close-ups into `builds/lance-3d/`. It is for looking at and for
+  illustrations; the game uses the low-poly model.
+- Not yet: a rig and animation (the plan: a skeleton, played stepped at about 12 fps so
+  it moves like hand-drawn frames), and Pat and Ysha.
+
+---
+
+## Full pixel art (cutscene portraits)
+
+The pictures of the cast for full-art cutscenes and flashbacks, at a much larger size than
+the world's sprites:
+
+- **The canvas is 256 x 384** (2:3, upright), a half-body portrait from the head to the
+  waist. Every full pixel art picture is this size so the cast matches side by side.
+- **Made from a 1024 x 1536 picture** (the same 2:3, four times the size), converted to
+  true pixel art, not redrawn: `node tools/pixellab-convert.mjs <in>.png <out>.png
+  --size=256x384 --strength=150` (PixelLab's image-to-pixelart in faithful mode, starting
+  from the picture). Redrawing with PixelLab drifts from the picture; don't.
+- **The references** are in `assets/drafts/characters/cutscene-art/` (Lance, Lance ten
+  years later, Pat, Ysha), each beside its `-source.png`. The eyes are a dark lid line over
+  a rounded iris with skin either side, no whites (fixed by hand on older Lance).
 
 ---
 
@@ -897,7 +970,7 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
 - **Q/E** orbit ±0.25 rad (`ORBIT_MAX`). Default orbit 0.12. ±45° was tried (2026-10-21)
   and taken back: turned that far, the views' cuts and cutaways broke down. **The turn
   eases** after where it was dragged (`orbit_goal`, rate 16). **Holding the right mouse button and
-  dragging** turns the same orbit (`DRAG_TURN` 0.0015 rad per pixel, mouse right looks
+                         dragging** turns the same orbit (`DRAG_TURN` 0.0015 rad per pixel, mouse right looks
   right), within the same range; the cursor hides while held and comes back where it
   was (the `drag_angle` check). Smooth zoom (rate 10). **R** resets.
 

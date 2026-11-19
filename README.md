@@ -89,7 +89,7 @@ A closed 7-person project developed within the School of Computing.
 * **Mikko Brandon Panergo**
 * **Jorel Kesse Marquez**
 * **Gil Miranda**
-* **Mclaren Ais Miranda**
+* **Mclaren Ais Miranda**: Story Director, Writer, Lead Artist / Art Director
 * **Cyrel Lloyd Lasola**
 * **Bernard Rodriguez Jr.**
 

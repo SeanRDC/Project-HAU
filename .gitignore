@@ -27,3 +27,9 @@ desktop.ini
 .godot/
 *.import
 export_presets.cfg
+
+# Blender backups
+*.blend1
+
+# pxl build output (the pictures to keep are copied beside the README)
+assets/drafts/characters/mascot/pxl/out/

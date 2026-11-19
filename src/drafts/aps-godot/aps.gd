@@ -31,6 +31,8 @@ const DevTravel := preload("res://dev_travel.gd")
 const DevFreeCam := preload("res://dev_free_cam.gd")
 const Opening := preload("res://opening.gd")
 const DevBench := preload("res://dev_bench.gd")
+const Actor := preload("res://actor.gd")
+const ActorViewer := preload("res://actor_viewer.gd")
 ## Inside the hallway the view closes in to this width, framed on the corridor.
 const HALL_WIDTH := 8.5
 const HOURS: Array[float] = [5.75, 8.0, 12.0, 16.5, 17.75, 18.5, 21.0]
@@ -208,6 +210,18 @@ func _ready() -> void:
 	for argument in OS.get_cmdline_user_args():
 		var parts := argument.trim_prefix("--").split("=", true, 1)
 		_args[parts[0]] = parts[1] if parts.size() > 1 else "true"
+	if _args.has("actor-view"):
+		set_process(false)
+		set_process_input(false)
+		set_process_unhandled_input(false)
+		add_child(ActorViewer.new(String(_args["actor-view"]) if _args["actor-view"] != "true" else "lance")) # one cutscene model alone
+		return
+	if Actor.wanted(_args):
+		set_process(false)
+		set_process_input(false)
+		set_process_unhandled_input(false)
+		Actor.capture(self, String(_args["actor-capture"])) # the cutscene cast alone, then quit
+		return
 	_build_display()
 	_build_lighting()
 	Atmosphere.add_wind()
@@ -1742,6 +1756,13 @@ func _verify_and_capture() -> void:
 		checks.footsteps_while_walking = sound.steps - steps_before >= 3
 		checks.ambience_playing = AudioServer.get_bus_index("Music") >= 0
 		checks.opening_panels = Opening.panels_ready() and not Opening.wanted(_args)
+		# The 3D cutscene Lance: every part in its palette, and the faces swap.
+		var lance := Actor.new("lance")
+		scene.add_child(lance)
+		lance.set_expression("laugh")
+		checks.actor_lance = lance.parts().size() == Actor.CAST["lance"]["parts"].size() and lance.expression == "laugh" \
+			and not Actor.wanted(_args) and scene.find_children("Lance", "", true, false).size() == 1
+		lance.queue_free()
 		# Holding D from the APS front walks round the corner onto the patio.
 		student.place(14.0, 2.5)
 		_snap_follow()
