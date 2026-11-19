@@ -21,6 +21,7 @@ const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
+const Djdn := preload("res://areas/djdn.gd")
 const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
@@ -1305,6 +1306,9 @@ func _look_freely(angles: String) -> void:
 	free_cam.enter()
 	free_cam.yaw = deg_to_rad(float(parts[0]))
 	free_cam.pitch = deg_to_rad(float(parts[1]) if parts.size() > 1 else 20.0)
+	if parts.size() >= 5:
+		# --free-cam=<yaw>,<pitch>,<x>,<y>,<z>: from that spot, for captures of any place.
+		camera.position = Vector3(float(parts[2]), float(parts[3]), float(parts[4]))
 	free_cam._aim()
 	sky_material.set_shader_parameter("free_look", true)
 	pixel_scale = 0
@@ -2215,6 +2219,14 @@ func _verify_and_capture() -> void:
 		checks.plots_moved = CampusPlan.PLOTS["djdn"]["built"] and CampusPlan.PLOTS["flagCircle"]["built"] \
 			and CampusPlan.PLOTS["gateWalk"]["built"] and CampusPlan.PLOTS["sideGate1"]["built"] \
 			and absf(_centre(CampusPlan.PLOTS["flagCircle"]["outline"]).x + 178.5) < 0.6 and not CampusPlan.PLOTS["rotonda2"]["built"]
+		# The Main Building stands, and its front is symmetric about the portico: every window,
+		# column and door has its mirror across the middle (the drone shot), 18 windows a floor.
+		checks.djdn_built = scene.find_child(Djdn.BUILT_NAME, true, false) != null and World.blocked(-150.0, 95.0)
+		var mirrored := Djdn.front_windows().size() == 18
+		for row in [Djdn.front_windows(), Djdn.COLUMNS, Djdn.DOORS]:
+			for z in row:
+				mirrored = mirrored and (row as Array).any(func(other: float) -> bool: return absf(other - (2.0 * Djdn.CENTRE_Z - z)) < 0.01)
+		checks.djdn_front_symmetric = mirrored and is_equal_approx((Djdn.PAVILION.x + Djdn.PAVILION.y) / 2.0, Djdn.CENTRE_Z) 			and is_equal_approx((Djdn.NORTH + Djdn.SOUTH) / 2.0, Djdn.CENTRE_Z)
 		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
 		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)
 		checks.hallway_props_block = World.blocked(-60.0, -2.4) and World.blocked(-24.0, -0.2) \
