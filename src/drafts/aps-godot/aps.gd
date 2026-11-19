@@ -188,6 +188,8 @@ var middle_north := 0.0
 var covered := 0.0
 ## 0..1: how far the student is under the Student Center's roof (the same cutaway).
 var arcade := 0.0
+## 0..1: how far the camera faces east at the Main Building's front from its drive and grounds.
+var djdn_front := 0.0
 ## The controls keep the boulevard side they started on while a direction is held, so
 ## walking across the road does not turn round with the camera halfway (see _control_turns).
 var _control_direction := Vector2.ZERO
@@ -517,11 +519,16 @@ static func perch_for(x: float, z: float, level: float) -> float:
 
 static func chapel_for(x: float, z: float) -> float:
 	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z)) \
-		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Pgn.lane_for(x, z)) * (1.0 - Pgn.east_for(x, z)) * (1.0 - Sjh.rear_for(x, z))
+		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Pgn.lane_for(x, z)) * (1.0 - Pgn.east_for(x, z)) * (1.0 - Sjh.rear_for(x, z)) \
+		* (1.0 - Djdn.front_for(x, z))
+
+## Facing the Main Building's front from its drive (east): what the boulevard's view leaves.
+static func djdn_front_for(x: float, z: float) -> float:
+	return Djdn.front_for(x, z) * (1.0 - MiddleRoad.view_for(x, z))
 
 ## The MGN view (facing west from the west road) yields to the middle road's.
 static func mgn_for(x: float, z: float) -> float:
-	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z))
+	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z)) * (1.0 - Djdn.front_for(x, z))
 
 func _snap_follow() -> void:
 	follow = Vector2(student.position.x - 0.15, student.position.z)
@@ -548,6 +555,7 @@ func _snap_follow() -> void:
 	walkway = Sjh.walkway_for(student.position.x, student.position.z)
 	covered = MiddleRoad.covered_for(student.position.x, student.position.z)
 	arcade = StudentCenter.covered_for(student.position.x, student.position.z)
+	djdn_front = djdn_front_for(student.position.x, student.position.z)
 
 ## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
 ## canteen or the chapel (their views never overlap: one is east of x 12, one west of -18),
@@ -562,7 +570,7 @@ func _yaw() -> float:
 ## The camera's turn in quarter turns (SJH's and the boulevard's south half turns count
 ## two, MGN's three; the boulevard's north view adds none); the controls use it too.
 func _turns() -> float:
-	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle - pgn_east + 3.0 * formation + court + lane_east - lane_west
+	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle - pgn_east + 3.0 * formation + court + lane_east - lane_west + djdn_front
 
 ## The turn the controls use: the camera's, except that on the boulevard the side it faces
 ## stays the one it faced when the current direction was pressed, until it is let go or
@@ -606,6 +614,7 @@ func _update_camera(delta: float) -> void:
 	pgn_east = lerpf(pgn_east, Pgn.east_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	formation = lerpf(formation, Formation.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	court = lerpf(court, CoveredCourt.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	djdn_front = lerpf(djdn_front, djdn_front_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var lane_now := BesideAps.lane_for(student.position.x, student.position.z)
 	var east_now := lane_now * BesideAps.lane_east_for(student.position.x, student.position.z)
 	lane_east = lerpf(lane_east, east_now, 1.0 - exp(-delta * 3.0))
@@ -685,10 +694,14 @@ func _update_camera(delta: float) -> void:
 	var lane_y := lerpf(target_y, target_y + 3.0, wide)
 	var sh_focus := Vector3(lerpf(BesideAps.east_side(follow.y), follow.x, close), lane_y, lane_z)
 	var aps_back_focus := Vector3(lerpf(BesideAps.west_side(follow.y), follow.x, close), lane_y, lane_z)
-	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court - lane_east - lane_west)
+	# Facing the Main Building's front it frames the front (sliding along it), or close up a
+	# student out on the drive at their own depth.
+	var djdn_x := minf(lerpf(Djdn.FRONT, follow.x, close), follow.x + 14.0)
+	var djdn_focus := Vector3(roundf(djdn_x / pixel) * pixel, lerpf(target_y, target_y + 2.5, wide), roundf(follow.y / pixel) * pixel)
+	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court - lane_east - lane_west - djdn_front)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
 	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle + north_focus * middle_north + pgn_focus * pgn_east + formation_focus * formation + court_focus * court
-	focus += sh_focus * lane_east + aps_back_focus * lane_west
+	focus += sh_focus * lane_east + aps_back_focus * lane_west + djdn_focus * djdn_front
 	# Every framing, the wide ones too, keeps the student in the middle across the screen:
 	# the focus slides sideways onto them and keeps the depth its view frames.
 	var yaw := _yaw()
@@ -742,7 +755,7 @@ func _update_camera(delta: float) -> void:
 	# the road and SJH: everything past the road (SJH and its row of cars) is cut away, so
 	# the cars nosed in to the grass stay in front, as in the photos. It fades out as the
 	# chapel's or the gym's view takes over at either end.
-	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court - lane_east - lane_west, 0.0, 1.0)
+	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court - lane_east - lane_west - djdn_front, 0.0, 1.0)
 	if south_walk * facing_north > 0.0:
 		# (through the ground line, as the plane leans with the camera: then nothing of the
 		# front row's cars stands above it)
@@ -813,6 +826,12 @@ func _update_camera(delta: float) -> void:
 	# Facing south across the boulevard the camera stands over PGN's plot: everything
 	# north of it (the APS wing, the corner garden) is cut away. Facing north it stands
 	# over the Main Building and MGN: everything south of their faces is cut away.
+	# Facing the Main Building's front from the drive it stands over the flag circle and its
+	# palms: everything west of the drive is cut away (through the ground line, as the plane
+	# leans with the camera, so a student at the drive's kerb keeps their head).
+	if djdn_front > 0.0:
+		var drive_edge := (Vector3(Djdn.CUT_X, 0.0, focus.z) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, drive_edge * smoothstep(0.0, 1.0, djdn_front))
 	if middle > 0.0:
 		var north_edge := (Vector3(focus.x, focus.y, MIDDLE_CUT_Z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, north_edge * smoothstep(0.0, 1.0, middle))
@@ -1119,6 +1138,7 @@ static func travel_places() -> Array:
 		["Angel fountain", Vector2(-159.0, 61.0), 40.0],
 		["Student Center", STUDENT_CENTER_SPOT, 22.0],
 		["Student Center, west end", Vector2(-158.0, 84.0), 30.0],
+		["Main Building front", Vector2(-164.0, 107.7), 40.0],
 	]
 
 ## Jumps the student to a fast-travel place, with every camera zone, the gym's
@@ -2226,7 +2246,47 @@ func _verify_and_capture() -> void:
 		for row in [Djdn.front_windows(), Djdn.COLUMNS, Djdn.DOORS]:
 			for z in row:
 				mirrored = mirrored and (row as Array).any(func(other: float) -> bool: return absf(other - (2.0 * Djdn.CENTRE_Z - z)) < 0.01)
-		checks.djdn_front_symmetric = mirrored and is_equal_approx((Djdn.PAVILION.x + Djdn.PAVILION.y) / 2.0, Djdn.CENTRE_Z) 			and is_equal_approx((Djdn.NORTH + Djdn.SOUTH) / 2.0, Djdn.CENTRE_Z)
+		checks.djdn_front_symmetric = mirrored and is_equal_approx((Djdn.PAVILION.x + Djdn.PAVILION.y) / 2.0, Djdn.CENTRE_Z) \
+			and is_equal_approx((Djdn.NORTH + Djdn.SOUTH) / 2.0, Djdn.CENTRE_Z)
+		# The grounds in front: the drive at road level, the bays and the forecourt at walk level,
+		# the steps tread by tread up to the porch; the garden, the lamps, the columns, the cheek
+		# walls and the fence solid; the zebra's gap in the brick apron's hedge open, the rest not.
+		var tread := (Djdn.PORCH - Djdn.STEPS_FOOT) / Djdn.STEP_COUNT
+		var rise := (Djdn.FLOOR_Y - Djdn.WALK_Y) / Djdn.STEP_COUNT
+		checks.djdn_grounds = not World.blocked(-169.4, 100.0) and is_equal_approx(World.floor_height(-169.4, 100.0), Djdn.DRIVE_Y) \
+			and not World.blocked(-164.0, 95.0) and is_equal_approx(World.floor_height(-164.0, 95.0), Djdn.WALK_Y) \
+			and not World.blocked(-163.5, Djdn.CENTRE_Z) \
+			and is_equal_approx(World.floor_height(Djdn.STEPS_FOOT + tread * 2.5, Djdn.CENTRE_Z), Djdn.WALK_Y + rise * 3.0) \
+			and is_equal_approx(World.floor_height(-157.8, Djdn.CENTRE_Z), Djdn.FLOOR_Y) and World.blocked(-158.5, 95.0) \
+			and World.blocked(Djdn.LAMPS[0].x, Djdn.LAMPS[0].y) and World.blocked(Djdn.COLUMN_X, Djdn.COLUMNS[0]) \
+			and World.blocked(-160.0, Djdn.STEPS_Z.x - 0.4) and not World.blocked(-166.4, 87.0) and World.blocked(-166.4, 84.0) \
+			and World.blocked(-169.4, Djdn.fence_z(-169.4) + 0.5)
+		# On the forecourt the camera faces east at the front, everything west of the drive cut away.
+		student.place(-164.0, Djdn.CENTRE_Z)
+		_set_zoom(40.0, true)
+		_snap_follow()
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		var circle_cut := (Vector3(Djdn.CUT_X - 1.0, 0.0, Djdn.CENTRE_Z) - camera.position).dot(forward) < camera.near
+		checks.djdn_view_faces_front = djdn_front > 0.95 and forward.dot(Vector3.RIGHT) > 0.9 and circle_cut and chapel < 0.05 \
+			and _all_visible([Djdn.PORCH], [1.0, 8.0], [Djdn.CENTRE_Z]) \
+			and _all_visible([student.position.x], [0.3, 1.9], [student.position.z])
+		# From the Student Center's brick apron west through the hedge's gap onto the drive and down
+		# it: the camera turns from the boulevard's south view to the front's east view, never
+		# through north or west.
+		student.place(-164.0, 87.0)
+		_snap_follow()
+		var turns_ok := middle > 0.95
+		for i in 70:
+			student.move(Vector2(-1, 0), false, 0.05)
+			_update_camera(0.05)
+			turns_ok = turns_ok and _turns() > 0.9 and _turns() < 2.1
+		for i in 90:
+			student.move(Vector2(0, 1), false, 0.05)
+			_update_camera(0.05)
+			turns_ok = turns_ok and _turns() > 0.9 and _turns() < 2.1
+		checks.walk_onto_drive = turns_ok and student.position.x < -167.0 and student.position.z > 95.0 and djdn_front > 0.9
 		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
 		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)
 		checks.hallway_props_block = World.blocked(-60.0, -2.4) and World.blocked(-24.0, -0.2) \

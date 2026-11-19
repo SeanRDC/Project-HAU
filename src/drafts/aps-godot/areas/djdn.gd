@@ -70,6 +70,94 @@ const TERRAZZO := Color("d6c9c4")
 const CROSS := Color("2c3550")
 const ROOF := Color("b9bcb8")
 
+## The grounds in front (x): the drive, one way along the front from the angel fountain's apron to
+## the car gate on the fence line; the parking bays along the wings (empty: no cars); the garden
+## between them and the front. At the portico the bays give way to the forecourt up to the steps.
+const DRIVE := Vector2(-172.1, -166.75)
+const DRIVE_Y := -0.19
+const PARKING := Vector2(-166.75, -161.75)
+const GARDEN := Vector2(-161.75, FRONT)
+## Along z: the north run of bays (from the Student Center's brick apron's hedge), the forecourt
+## in front of the portico, the south run on to the fence.
+const NORTH_BAYS := Vector2(88.9, 101.4)
+const FORECOURT := Vector2(101.4, 114.0)
+const BAY := 2.5
+## The zebra from the brick apron's west end across the drive to the flag circle's steps (z),
+## through a gap in the apron's hedge (StudentCenter.HEDGE_GAP).
+const ZEBRA := Vector2(85.8, 88.2)
+## The fence on the street (Holy Angel Avenue), from the side gate's west end to the building's
+## south-west corner: the plan's Side Gate 1 strip's street edge, 25.6 degrees off x.
+const FENCE_A := Vector2(-207.6, 102.3)
+const FENCE_SLOPE := 16.3 / 34.1
+## Facing the front from the drive the camera stands over the flag circle: everything west of
+## this line (through the ground) is cut away.
+const CUT_X := -172.7
+## The garden's lamp posts, the forecourt's two, and the urn posts on the garden's fence.
+const LAMPS: Array[Vector2] = [Vector2(-161.3, 90.6), Vector2(-161.3, 97.8), Vector2(-166.3, 101.9),
+	Vector2(-166.3, 113.5), Vector2(-161.3, 117.6), Vector2(-161.3, 123.0)]
+const URN_POSTS: Array[Vector2] = [Vector2(-161.6, 89.3), Vector2(-161.6, 94.2), Vector2(-161.6, 101.1),
+	Vector2(-161.6, 114.3), Vector2(-161.6, 121.2)]
+
+## The fence line's z at x (the street edge of the plan's Side Gate 1 strip, carried on east).
+static func fence_z(x: float) -> float:
+	return FENCE_A.y + (x - FENCE_A.x) * FENCE_SLOPE
+
+## The drive, the bays, the forecourt and the zebra's end in the brick apron's hedge.
+static func on_grounds(x: float, z: float) -> bool:
+	if z > fence_z(x) - 0.45:
+		return false
+	if x >= DRIVE.x and x <= DRIVE.y:
+		return z >= 70.0
+	if x > DRIVE.y and x < -166.0:
+		return z >= ZEBRA.x and z <= ZEBRA.y # the gap in the brick apron's hedge
+	if x > DRIVE.y and x <= PARKING.y:
+		return z >= NORTH_BAYS.x
+	return x > PARKING.y and x <= STEPS_FOOT and z >= FORECOURT.x and z <= FORECOURT.y
+
+## The steps and the porch, up to the pavilion's doors.
+static func on_steps(x: float, z: float) -> bool:
+	if x > STEPS_FOOT and x <= PORCH and z >= STEPS_Z.x + 0.05 and z <= STEPS_Z.y - 0.05:
+		return true
+	return x > PORCH and x < PAVILION_FACE and z >= PORCH_Z.x and z <= PORCH_Z.y
+
+static func walkable(x: float, z: float) -> bool:
+	return on_grounds(x, z) or on_steps(x, z)
+
+static func blocked(x: float, z: float, _level := NAN) -> bool:
+	if not walkable(x, z):
+		return false
+	for at in LAMPS:
+		if absf(x - at.x) < 0.25 and absf(z - at.y) < 0.25:
+			return true
+	if x > PORCH:
+		for column in COLUMNS:
+			if Vector2(x, z).distance_to(Vector2(COLUMN_X, column)) < 0.55:
+				return true
+	return false
+
+static func floor_height(x: float, z: float, _level := NAN) -> float:
+	if on_steps(x, z):
+		if x > PORCH:
+			return FLOOR_Y
+		var step := clampi(floori((x - STEPS_FOOT) / ((PORCH - STEPS_FOOT) / STEP_COUNT)), 0, STEP_COUNT - 1)
+		return WALK_Y + (FLOOR_Y - WALK_Y) / STEP_COUNT * (step + 1)
+	if not on_grounds(x, z):
+		return NAN
+	if x >= DRIVE.x and x <= DRIVE.y - 0.15:
+		return DRIVE_Y
+	if x > DRIVE.y - 0.15 and x <= DRIVE.y + 0.12 and z >= 76.0:
+		return 0.0 # the kerb
+	return WALK_Y
+
+## How far the camera faces the front from the grounds (east, a quarter turn): 1 on the drive,
+## the bays, the forecourt and the steps south of the fountain's apron, eased in across its edge.
+## aps.gd multiplies it by what the boulevard's view leaves (that covers the fountain's apron and
+## the Student Center's brick apron).
+static func front_for(x: float, z: float) -> float:
+	var along := smoothstep(79.0, 82.0, z) * (1.0 - smoothstep(130.0, 132.0, z))
+	var across := smoothstep(DRIVE.x - 2.5, DRIVE.x - 1.0, x) * (1.0 - smoothstep(PAVILION_FACE + 0.2, FRONT + 0.4, x))
+	return along * across
+
 ## The front's windows (z), the same on both floors: on each wing one single window at its outer
 ## end and four pairs towards the pavilion, mirrored about the portico.
 static func front_windows() -> Array[float]:
@@ -103,6 +191,11 @@ func build(world_builder: RefCounted) -> void:
 	_roofs()
 	w._flush()
 	w.root = saved
+	_drive()
+	_parking()
+	_garden()
+	_lamps()
+	w._flush()
 
 # --- Helpers ------------------------------------------------------------------------------
 
@@ -412,3 +505,146 @@ func _roofs() -> void:
 	var gable_pitch := 0.12
 	for side in [-1.0, 1.0]:
 		w.box(Vector3(EAST - THEATRE_X + 0.4, 0.14, half / cos(gable_pitch)), Vector3((THEATRE_X + EAST) / 2.0, 12.7 + half * tan(gable_pitch) / 2.0, CENTRE_Z + side * half / 2.0), sheet, 0.0, side * gable_pitch)
+
+# --- The grounds ------------------------------------------------------------------------------
+
+## The drive: concrete in slabs from the fountain's apron to the car gate, its kerbs, and the
+## yellow zebra across it from the brick apron's hedge gap to the flag circle's steps.
+func _drive() -> void:
+	var concrete: Material = w.material("concrete", Color("b9b8b0"))
+	var kerb: Material = w.material("stucco", Color("bfc4bc"))
+	var yellow: Material = w.material("plain", Color("e3b733"))
+	var south_x := fence_z(DRIVE.x)
+	var south_y := fence_z(DRIVE.y)
+	var tri := PackedVector2Array([Vector2(DRIVE.x, 70.0), Vector2(DRIVE.y, 70.0), Vector2(DRIVE.y, south_y),
+		Vector2(DRIVE.x, 70.0), Vector2(DRIVE.y, south_y), Vector2(DRIVE.x, south_x)])
+	w._ground(tri, DRIVE_Y, concrete)
+	# Kerbs along the east side (broken at the zebra, yellow either side of it) and the west side.
+	for run in [Vector2(76.0, ZEBRA.x), Vector2(ZEBRA.y, south_y - 0.4)]:
+		_block(DRIVE.y - 0.15, DRIVE.y + 0.12, DRIVE_Y - 0.02, 0.0, run.x, run.y, kerb)
+	_block(DRIVE.x - 0.12, DRIVE.x + 0.04, DRIVE_Y - 0.02, -0.02, 74.0, south_x - 0.4, kerb)
+	_block(DRIVE.y - 0.16, DRIVE.y + 0.13, -0.02, 0.006, ZEBRA.x - 0.6, ZEBRA.x, yellow)
+	_block(DRIVE.y - 0.16, DRIVE.y + 0.13, -0.02, 0.006, ZEBRA.y, ZEBRA.y + 0.6, yellow)
+	var x := DRIVE.x + 0.35
+	while x < DRIVE.y - 0.3:
+		_block(x, x + 0.4, DRIVE_Y, DRIVE_Y + 0.006, ZEBRA.x + 0.15, ZEBRA.y - 0.15, yellow)
+		x += 0.8
+	# Saw-cut joints across the slabs every 4 m and one down the middle, a shade darker.
+	var joint: Material = w.material("plain", Color("8f8e88"))
+	var z := 78.0
+	while z < south_y - 1.0:
+		_block(DRIVE.x + 0.05, DRIVE.y - 0.2, DRIVE_Y, DRIVE_Y + 0.005, z, z + 0.04, joint)
+		z += 4.0
+	var mid := (DRIVE.x + DRIVE.y) / 2.0
+	_block(mid - 0.02, mid + 0.02, DRIVE_Y, DRIVE_Y + 0.005, 78.0, south_y - 1.0, joint)
+
+## The parking along the wings: grass growing between square cobbles in each bay, dark cobble
+## bands between the bays and along their ends, a yellow wheel stop at each bay's head; and the
+## forecourt of dark pavers in front of the portico. Empty: no cars (Sean, 2026-11-20).
+func _parking() -> void:
+	var grass_cobble: Material = w.material("pavers", Color("9aa58a"))
+	var band: Material = w.material("pavers", Color("6b6a66"))
+	var stop: Material = w.material("plain", Color("e6b52e"))
+	var forecourt: Material = w.material("pavers", Color("8c8a86"))
+	var south_end := fence_z(PARKING.x) - 0.45
+	for run in [Vector2(NORTH_BAYS.x, NORTH_BAYS.y), Vector2(FORECOURT.y, south_end)]:
+		_block(PARKING.x + 0.12, PARKING.y, -0.2, WALK_Y, run.x, run.y, grass_cobble)
+		_block(PARKING.x + 0.12, PARKING.x + 0.42, -0.2, WALK_Y + 0.003, run.x, run.y, band)
+		_block(PARKING.y - 0.3, PARKING.y, -0.2, WALK_Y + 0.003, run.x, run.y, band)
+		var z: float = run.x
+		while z < run.y - 0.2:
+			_block(PARKING.x + 0.42, PARKING.y - 0.3, -0.2, WALK_Y + 0.003, z, z + 0.22, band)
+			if z + BAY < run.y:
+				_block(PARKING.y - 1.05, PARKING.y - 0.9, WALK_Y, WALK_Y + 0.12, z + 0.6, z + BAY - 0.38, stop)
+			z += BAY
+	# The south run narrows with the fence: a triangle of cobbles fills its end.
+	var slope := PackedVector2Array([Vector2(PARKING.x + 0.12, south_end), Vector2(PARKING.y, south_end),
+		Vector2(PARKING.y, fence_z(PARKING.y) - 0.45)])
+	w._ground(slope, WALK_Y + 0.002, band)
+	_block(PARKING.x + 0.12, STEPS_FOOT, -0.2, WALK_Y, FORECOURT.x, FORECOURT.y, forecourt)
+	_block(PARKING.x + 0.12, PARKING.x + 0.5, -0.2, WALK_Y + 0.003, FORECOURT.x, FORECOURT.y, w.material("concrete", TERRAZZO))
+
+## The garden between the bays and the front: a kerb along its edge with a low white fence and
+## urn posts, red-tipped shrubs along the wall's foot, flowering shrubs, small palms in front of
+## each wing, and clipped cones either side of the steps.
+func _garden() -> void:
+	var kerb: Material = w.material("stucco", Color("cfcac0"))
+	var white: Material = w.material("plain", Color("eeeee6"))
+	var cream: Material = w.material("stucco", TRIM)
+	var soil: Material = w.material("dirt", Color("7d6a50"))
+	var k := 0
+	for run in [Vector2(NORTH_BAYS.x, FORECOURT.x), Vector2(FORECOURT.y, fence_z(GARDEN.x))]:
+		var z0: float = run.x
+		var z1: float = run.y
+		_block(GARDEN.x, GARDEN.x + 0.16, -0.2, 0.1, z0, z1, kerb)
+		# The low fence: posts every 1.2 m and two rails, along the kerb.
+		var z := z0 + 0.2
+		while z < z1 - 0.1:
+			w.box(Vector3(0.05, 0.55, 0.05), Vector3(GARDEN.x + 0.08, 0.37, z), white)
+			z += 1.2
+		for y in [0.3, 0.58]:
+			_block(GARDEN.x + 0.06, GARDEN.x + 0.1, y - 0.02, y + 0.02, z0 + 0.2, z1 - 0.1, white)
+		# A bed of soil and shrubs along the wall's foot (lower under the windows).
+		_block(FRONT - 1.2, FRONT, -0.2, -0.12, z0, minf(z1, SOUTH - 0.2), soil)
+		z = z0 + 0.6
+		while z < minf(z1, SOUTH) - 0.5:
+			var near_window := false
+			for wz in front_windows():
+				near_window = near_window or absf(wz - z) < 0.5
+			w._shrub(Vector3(FRONT - 0.6, -0.14, z), 0.8 if near_window else 1.05, 4100 + k)
+			z += 0.9
+			k += 1
+	for at in URN_POSTS:
+		_block(at.x - 0.22, at.x + 0.22, -0.2, 0.85, at.y - 0.22, at.y + 0.22, cream)
+		_block(at.x - 0.27, at.x + 0.27, 0.85, 0.93, at.y - 0.27, at.y + 0.27, cream)
+		_cylinder(0.16, 0.24, 0.35, Vector3(at.x, 1.1, at.y), cream, 12)
+		_cylinder(0.27, 0.14, 0.2, Vector3(at.x, 1.37, at.y), cream, 12)
+		w._shrub(Vector3(at.x, 1.4, at.y), 0.45, 4300 + roundi(at.y))
+	# Small palms and flowering shrubs in front of each wing (the drone shot).
+	var pinks: Array[Color] = [Color("3f6a35"), Color("4f7a3a"), Color("c94f6a"), Color("e07a8c"), Color("b8324a")]
+	for z in [91.4, 96.9, 99.9, 115.5, 118.5, 123.4]:
+		_areca(Vector3(-159.4, -0.18, z), 2.4, 4400 + roundi(z * 10.0))
+	for z in [93.6, 98.3, 117.0, 121.4]:
+		w._shrub(Vector3(-158.2, -0.16, z), 1.0, 4500 + roundi(z), pinks)
+		w._shrub(Vector3(-160.6, -0.16, z + 1.2), 0.8, 4600 + roundi(z), pinks)
+	# Clipped dark cones in white pots on the forecourt, either side of the steps' foot.
+	var cone_green: Material = w.material("plain", Color("2f4a2a"))
+	for z in [STEPS_Z.x - 1.25, STEPS_Z.y + 1.25]:
+		_cylinder(0.32, 0.26, 0.45, Vector3(-161.45, WALK_Y + 0.22, z), cream, 12)
+		_cylinder(0.02, 0.34, 1.6, Vector3(-161.45, WALK_Y + 1.25, z), cone_green, 10)
+
+## The lamp posts: tall black poles with a swan-neck arm and a dark dome shade (as along the
+## drive and round the flag circle in the photos), lit at night.
+func _lamps() -> void:
+	var black := Color("23262a")
+	for at in LAMPS:
+		w.box(Vector3(0.3, 0.3, 0.3), Vector3(at.x, WALK_Y + 0.15, at.y), w.material("plain", black))
+		w.rod(Vector3(at.x, WALK_Y, at.y), Vector3(at.x, 4.2, at.y), 0.06, black)
+		var toward := 1.0 if at.x > DRIVE.y + 1.0 else -1.0
+		w.rod(Vector3(at.x, 4.2, at.y), Vector3(at.x - toward * 0.35, 4.55, at.y), 0.045, black)
+		w.rod(Vector3(at.x - toward * 0.35, 4.55, at.y), Vector3(at.x - toward * 0.75, 4.35, at.y), 0.04, black)
+		var head := Vector3(at.x - toward * 0.75, 4.2, at.y)
+		_cylinder(0.1, 0.3, 0.22, head, w.material("plain", black), 12)
+		w.box(Vector3(0.3, 0.04, 0.3), head + Vector3(0, -0.12, 0), w.glow(Color("fff0d2"), 0.1, 3.0))
+		var light := SpotLight3D.new()
+		light.light_color = Color("ffd194")
+		light.light_energy = 4.0
+		light.spot_range = 9.0
+		light.spot_angle = 62.0
+		light.spot_attenuation = 0.8
+		light.shadow_enabled = true
+		light.rotation = Vector3(-PI / 2.0, 0, 0)
+		w._lamp(light, head + Vector3(0, -0.15, 0))
+
+## A small areca palm clump: thin stems fanning out, crowned with narrow-leaved fronds.
+func _areca(at: Vector3, height: float, seed_value: int) -> void:
+	var random := RandomNumberGenerator.new()
+	random.seed = seed_value
+	var greens: Array[Color] = [Color("4f7a2c"), Color("6b9a34"), Color("8fb846"), Color("b9cf5a"), Color("3f6424")]
+	var fronds: Material = w._leaf_material(seed_value, at + Vector3(0, height, 0), greens, true)
+	var cluster: ArrayMesh = w._cards(height * 0.7, height * 0.5, -height * 0.25, 3, false)
+	for i in 5:
+		var a := TAU * i / 5.0 + random.randf() * 0.5
+		var tip := at + Vector3(cos(a) * 0.3, height * random.randf_range(0.7, 1.0), sin(a) * 0.3)
+		w.rod(at, tip, 0.03, Color("7d8a4a"))
+		w._mesh(cluster, tip, fronds, a).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
