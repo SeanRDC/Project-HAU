@@ -1503,6 +1503,13 @@ func _all_visible(xs: Array, ys: Array, zs: Array) -> bool:
 					return false
 	return true
 
+## The mean of an outline's points (a plot's rough middle, for the checks).
+static func _centre(outline: Array) -> Vector2:
+	var sum := Vector2.ZERO
+	for p in outline:
+		sum += p
+	return sum / maxf(1.0, outline.size())
+
 ## World x/z of a point in the gym's local frame.
 static func _gym_world(lx: float, lz: float) -> Vector2:
 	return Vector2(Gym.FRONT_X - lz, lx + Gym.SHIFT)
@@ -1690,7 +1697,7 @@ func _verify_and_capture() -> void:
 		# The layout reference: the Student Center (built now, so no longer a plot) between
 		# the boulevard and the Main Building, and every plot painted with its name and
 		# outlined in dashes.
-		checks.plots_layout = not Plots.occupied(-120.0, 84.0) and Plots.occupied(-120.0, 100.0) \
+		checks.plots_layout = not Plots.occupied(-120.0, 84.0) and not Plots.occupied(-120.0, 100.0) and Plots.occupied(-117.1, 139.5) \
 			and CampusPlan.PLOTS["student"]["built"] and CampusPlan.PLOTS["mainGate"]["kind"] == "gate" \
 			and CampusPlan.PLOTS["annex"]["short"] == "Aero Hall"
 		var painted := scene.find_children("Ground *", "Label3D", false, false).size()
@@ -2202,6 +2209,12 @@ func _verify_and_capture() -> void:
 		for i in 60:
 			_update_camera(1.0 / 30.0)
 		checks.student_center_west_end = middle > 0.95 and chapel < 0.05 and arcade < 0.05
+		# The Main Building and the side gate's plots: built, and the flag circle, the walk, the
+		# gate and Rotonda 2 moved 5.4 m west of the layout picture (the photos' spacing from the
+		# portico); Rotonda 2 stays a reserved plot.
+		checks.plots_moved = CampusPlan.PLOTS["djdn"]["built"] and CampusPlan.PLOTS["flagCircle"]["built"] \
+			and CampusPlan.PLOTS["gateWalk"]["built"] and CampusPlan.PLOTS["sideGate1"]["built"] \
+			and absf(_centre(CampusPlan.PLOTS["flagCircle"]["outline"]).x + 178.5) < 0.6 and not CampusPlan.PLOTS["rotonda2"]["built"]
 		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
 		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)
 		checks.hallway_props_block = World.blocked(-60.0, -2.4) and World.blocked(-24.0, -0.2) \

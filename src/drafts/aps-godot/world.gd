@@ -272,7 +272,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 ## The outer bounds; blocked() shapes the walkable campus inside them (north, up to the gate
 ## across the lane behind APS).
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -192.0, 101.0), clampf(z, SacredHeart.GATE_Z + 0.2, 162.0))
+	return Vector2(clampf(x, -212.0, 101.0), clampf(z, SacredHeart.GATE_Z + 0.2, 162.0))
 
 func build(parent: Node3D) -> void:
 	root = parent

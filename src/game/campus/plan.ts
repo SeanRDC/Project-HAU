@@ -529,8 +529,13 @@ function asPlot(id: BuildingId): GodotPlot {
   return { no: b.no, name: b.name, short: b.short, kind: 'building', outline: b.outline!, label: b.label };
 }
 
-/** The Student Center and the Main Building meet here (Godot z 88.4), 8.5 m behind the boulevard. */
-const STUDENT_CENTER_BACK = 88.4 - GODOT_OFFSET.z;
+/**
+ * The flag circle, the side gate's walk, the gate and Rotonda 2 sit this far west of where the
+ * layout picture puts them (metres along x). The picture traces roofs on an oblique view, and in
+ * the photos the circle is across the drive from the portico's steps, about 10 m off; on the
+ * picture it is 5 m too close (Sean, 2026-11-20: cross-reference the picture and the photos).
+ */
+const GATE_SHIFT = -5.4;
 
 export const GODOT_PLOTS: Record<string, GodotPlot> = {
   // Built in Godot (areas/*.gd); their plots are not drawn.
@@ -557,7 +562,14 @@ export const GODOT_PLOTS: Record<string, GodotPlot> = {
     name: 'Student Center', short: 'Student Center', kind: 'building',
     outline: inGodot([-156.2, 79.9], [-84.5, 79.9], [-84.5, 88.4], [-156.2, 88.4]),
   },
-  djdn: { ...asPlot('djdn'), outline: clip(moved('djdn')!, 'v', STUDENT_CENTER_BACK, 'above') },
+  // The Main Building on its surveyed outline from the Student Center's back (z 88.4), its west face drawn straight (x -156.2) so the
+  // portico's porch (to -159.1) stands in the middle of a symmetric front, as in the photos
+  // (assets/MAIN BUILDINGS DJDN/; areas/djdn.gd).
+  djdn: {
+    ...asPlot('djdn'),
+    outline: inGodot([-89.8, 127.4], [-90.1, 116.9], [-89.6, 88.4], [-156.2, 88.4], [-156.2, 103.4],
+      [-159.1, 103.4], [-159.1, 112.0], [-156.2, 112.0], [-156.2, 127.0]),
+  },
   // The north block, on the outlines already traced off the aerial photo.
   warehouse: asPlot('warehouse'),
   foodcourt: { ...asPlot('foodcourt'), name: 'Yellow Canteen', short: 'Yellow Canteen' },
@@ -584,10 +596,10 @@ export const GODOT_PLOTS: Record<string, GodotPlot> = {
   epiphany: { name: 'Epiphany of Angels', short: 'Epiphany of Angels', kind: 'ground', outline: onLayout([42, 457], [188, 450], [190, 502], [44, 508]) },
   mainGate: { name: 'Main Gate', short: 'Main Gate', kind: 'gate', outline: onLayout([55, 525], [187.5, 525], [187.5, 550], [55, 550]) },
   sideGate2: { name: 'Side Gate 2', short: 'Side Gate 2', kind: 'gate', outline: onLayout([205, 242.5], [302.5, 242.5], [302.5, 255], [205, 255]) },
-  sideGate1: { name: 'Side Gate 1', short: 'Side Gate 1', kind: 'gate', outline: onLayout([225, 515], [325, 567.5], [315, 585], [215, 532.5]) },
-  gateWalk: { name: 'Side Gate Walkway', short: 'Side Gate Walk', kind: 'walk', outline: onLayout([292, 509.5], [316, 509.5], [325, 562], [262, 532]) },
-  rotonda2: { name: 'Rotonda 2 (the fountain plaza by SFJ)', short: 'Rotonda 2', kind: 'ground', outline: roundOnLayout([250, 480], 29) },
-  flagCircle: { name: 'Flag Circle', short: 'Flag Circle', kind: 'ground', outline: roundOnLayout([303.5, 490], 19) },
+  sideGate1: { name: 'Side Gate 1', short: 'Side Gate 1', kind: 'gate', outline: shift(onLayout([225, 515], [325, 567.5], [315, 585], [215, 532.5]), GATE_SHIFT, 0) },
+  gateWalk: { name: 'Side Gate Walkway', short: 'Side Gate Walk', kind: 'walk', outline: shift(onLayout([292, 509.5], [316, 509.5], [325, 562], [262, 532]), GATE_SHIFT, 0) },
+  rotonda2: { name: 'Rotonda 2 (the fountain plaza by SFJ)', short: 'Rotonda 2', kind: 'ground', outline: shift(roundOnLayout([250, 480], 29), GATE_SHIFT, 0) },
+  flagCircle: { name: 'Flag Circle', short: 'Flag Circle', kind: 'ground', outline: shift(roundOnLayout([303.5, 490], 19), GATE_SHIFT, 0) },
   // Along the Main Building's south side to MGN (stopped at MGN's west face).
   coveredWalkway: {
     name: 'Covered Walkway', short: 'Covered Walkway', kind: 'walk',
