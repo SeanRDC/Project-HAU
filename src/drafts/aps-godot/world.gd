@@ -117,6 +117,7 @@ const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 ## grime band at their foot and faint paint patches over them.
 const WEATHERED := ["stucco", "concrete", "brick", "stone", "ledge"]
 const WEATHERING_SHADER := preload("res://shaders/weathering.gdshader")
+const SECTION_SHADER := preload("res://shaders/section.gdshader")
 const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile": "d6d1c3",
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
@@ -561,6 +562,22 @@ func material(kind: String, tint := Color.WHITE) -> StandardMaterial3D:
 			_weathering = ShaderMaterial.new()
 			_weathering.shader = WEATHERING_SHADER
 		made.next_pass = _weathering
+	_materials[key] = made
+	return made
+
+## A material that shows a solid dark section where the cutaway's near plane slices through a
+## closed block (its back faces drawn in the cut colour; see shaders/section.gdshader). Use it on
+## the solid masses an interior's cutaway cuts through (the Main Building's rooms). Not merged by
+## merge_static (its next pass is its own), so keep it to a few big boxes.
+func sectioned(kind: String, tint := Color.WHITE) -> StandardMaterial3D:
+	var key := "sectioned:" + kind + ":" + tint.to_html()
+	if _materials.has(key):
+		return _materials[key]
+	var made := material(kind, tint).duplicate() as StandardMaterial3D
+	var section := ShaderMaterial.new()
+	section.shader = SECTION_SHADER
+	section.next_pass = made.next_pass
+	made.next_pass = section
 	_materials[key] = made
 	return made
 
