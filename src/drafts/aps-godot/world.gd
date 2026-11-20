@@ -101,6 +101,7 @@ const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
 const Djdn := preload("res://areas/djdn.gd")
 const SideGate := preload("res://areas/side_gate.gd")
+const Epiphany := preload("res://areas/epiphany.gd")
 const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
@@ -172,7 +173,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true # the APS front, its corridor and the patio
 	if BesideAps.walkable(x, z) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
 			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z) \
-			or SacredHeart.walkable(x, z) or Djdn.walkable(x, z) or SideGate.walkable(x, z):
+			or SacredHeart.walkable(x, z) or Djdn.walkable(x, z) or SideGate.walkable(x, z) or Epiphany.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
@@ -198,7 +199,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
 			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z) \
-			or BesideAps.blocked(x, z) or SacredHeart.blocked(x, z) or Djdn.blocked(x, z, level) or SideGate.blocked(x, z):
+			or BesideAps.blocked(x, z) or SacredHeart.blocked(x, z) or Djdn.blocked(x, z, level) or SideGate.blocked(x, z) or Epiphany.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -248,6 +249,9 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 	var gate := SideGate.floor_height(x, z)
 	if not is_nan(gate):
 		return gate
+	var angels := Epiphany.floor_height(x, z)
+	if not is_nan(angels):
+		return angels
 	var main := Djdn.floor_height(x, z, level)
 	if not is_nan(main):
 		return main
@@ -281,7 +285,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 ## The outer bounds; blocked() shapes the walkable campus inside them (north, up to the gate
 ## across the lane behind APS).
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -212.0, 101.0), clampf(z, SacredHeart.GATE_Z + 0.2, 162.0))
+	return Vector2(clampf(x, Epiphany.WEST + 0.4, 101.0), clampf(z, SacredHeart.GATE_Z + 0.2, 162.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -301,6 +305,7 @@ func build(parent: Node3D) -> void:
 	StudentCenter.new().build(self)
 	Djdn.new().build(self)
 	SideGate.new().build(self)
+	Epiphany.new().build(self)
 	Pgn.new().build(self)
 	Formation.new().build(self)
 	Aero.new().build(self)

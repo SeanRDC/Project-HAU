@@ -592,9 +592,12 @@ export const GODOT_PLOTS: Record<string, GodotPlot> = {
   },
   annex: { ...asPlot('annex'), name: 'Aero Hall', short: 'Aero Hall' },
   // Covered walks and student gates (orange), and ground-level areas (yellow).
-  coveredWalk: { name: 'Covered Walk', short: 'Covered Walk', kind: 'walk', outline: onLayout([65, 412.5], [182.5, 412.5], [182.5, 442.5], [65, 442.5]) },
-  epiphany: { name: 'Epiphany of Angels', short: 'Epiphany of Angels', kind: 'ground', outline: onLayout([42, 457], [188, 450], [190, 502], [44, 508]) },
-  mainGate: { name: 'Main Gate', short: 'Main Gate', kind: 'gate', outline: onLayout([55, 525], [187.5, 525], [187.5, 550], [55, 550]) },
+  // The Epiphany of Angels, its covered walks and the Main Gate walk, as built in
+  // areas/epiphany.gd (2026-11-21): square to the grid like SFJ's surveyed outline, the road's axis
+  // at z 86 from the Sto. Rosario fence (x -261) to the road by Rotonda 2 (x -213.5).
+  coveredWalk: { name: 'Covered Walk', short: 'Covered Walk', kind: 'walk', outline: inGodot([-261, 64.5], [-214.5, 64.5], [-214.5, 77], [-261, 77]) },
+  epiphany: { name: 'Epiphany of Angels', short: 'Epiphany of Angels', kind: 'ground', outline: inGodot([-261, 77], [-213.5, 77], [-213.5, 95], [-261, 95]) },
+  mainGate: { name: 'Main Gate', short: 'Main Gate', kind: 'gate', outline: inGodot([-261, 95], [-213.5, 95], [-213.5, 104.4], [-261, 104.4]) },
   sideGate2: { name: 'Side Gate 2', short: 'Side Gate 2', kind: 'gate', outline: onLayout([205, 242.5], [302.5, 242.5], [302.5, 255], [205, 255]) },
   sideGate1: { name: 'Side Gate 1', short: 'Side Gate 1', kind: 'gate', outline: shift(onLayout([225, 515], [325, 567.5], [315, 585], [215, 532.5]), GATE_SHIFT, 0) },
   gateWalk: { name: 'Side Gate Walkway', short: 'Side Gate Walk', kind: 'walk', outline: shift(onLayout([292, 509.5], [316, 509.5], [325, 562], [262, 532]), GATE_SHIFT, 0) },
