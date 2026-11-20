@@ -63,5 +63,7 @@
   the camera and shows as a dark section strip at the right edge (as the lobby's sides do).
 - A student directly east of a courtyard stair, in its 1 m strip, is partly behind it.
 - The palm crowns are full but read a little like broad trees.
-- The 25 new photos in `assets/MAIN BUILDINGS DJDN/` (20261019_*.jpg) are not committed.
+- The 25 walk photos (20261019_*.jpg, 91 MB) stay local at full size; 1600 px copies (9.5 MB)
+  are committed in `assets/MAIN BUILDINGS DJDN/2026-10-19 walk/`, and `.gitignore` keeps the
+  originals out. The code's comments name them by their file names.
 - Rotonda 2 and SFJ stay reserved plots; the Covered Walkway along the street too.
