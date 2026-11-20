@@ -33,3 +33,7 @@ export_presets.cfg
 
 # pxl build output (the pictures to keep are copied beside the README)
 assets/drafts/characters/mascot/pxl/out/
+
+# The Main Building walk photos at full size (4 MB each) stay local; 1600 px copies are
+# committed in "assets/MAIN BUILDINGS DJDN/2026-10-19 walk/"
+assets/MAIN BUILDINGS DJDN/20261019_*.jpg
