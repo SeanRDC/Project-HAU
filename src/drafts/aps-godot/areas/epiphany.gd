@@ -52,6 +52,18 @@ const SOUTH_GARDEN := 95.0
 const PATH_N := 97.4
 const SOUTH_WALK := Vector2(100.0, 103.5)
 const SOUTH_ROW := 100.3
+## The covered walk's outer row (just inside the fence), its ceiling, its bays, the pavilion at its
+## west end (its length along x), the roof's fade group.
+const SOUTH_OUTER := 103.55
+const SOUTH_CEILING := COVER_Y + 2.85
+const SOUTH_BAY := 3.6
+const PAVILION_W := 4.2
+const SOUTH_ROOF := "EpiphanySouthRoof"
+## The swing gate's pier corner (its hinge) and how far its leaf stands open (radians from the road
+## line, towards the road's north); the hatched crossing (z) on the road by Rotonda 2.
+const SWING_HINGE := Vector2(EAST - 0.05, SOUTH_ROW - 0.6)
+const SWING_OPEN := 0.35
+const CROSSING := Vector2(99.6, 102.6)
 ## The north: the garden, the covered walk (its rows), and the pavilion at its east end; the path
 ## from the curb walk's east end across the lawn to the pavilion.
 const NORTH_GARDEN := 71.6
@@ -146,6 +158,22 @@ static func blocked(x: float, z: float) -> bool:
 		return false
 	if Vector2(x, z).distance_to(POST) < 0.3:
 		return true
+	# The swing gate's pier and its open leaf.
+	if x > SWING_HINGE.x - 0.75 and x < SWING_HINGE.x + 0.2 and z > SWING_HINGE.y - 0.2 and z < SWING_HINGE.y + 0.75:
+		return true
+	var a := SWING_HINGE + Vector2(0.12, -0.05)
+	var b := a + Vector2(cos(SWING_OPEN), -sin(SWING_OPEN)) * 2.7
+	if Geometry2D.get_closest_point_to_segment(Vector2(x, z), a, b).distance_to(Vector2(x, z)) < 0.2:
+		return true
+	if in_south_walk(x, z):
+		var bays := _south_pillars()
+		for i in bays.size():
+			if absf(x - bays[i]) < 0.42 and (absf(z - SOUTH_ROW) < 0.42 or absf(z - SOUTH_OUTER) < 0.42):
+				return true
+			if i < bays.size() - 1 and i % 2 == 0:
+				var mid: float = (bays[i] + bays[i + 1]) / 2.0
+				if mid < EAST - 2.0 and absf(x - mid) < 1.05 and z > SOUTH_OUTER - 0.75:
+					return true
 	return false
 
 static func floor_height(x: float, z: float) -> float:
@@ -205,6 +233,15 @@ func build(world_builder: RefCounted) -> void:
 	_street_fence()
 	_flags()
 	_board()
+	w._flush()
+	w.root = grounds
+	_path()
+	_south_walk()
+	_avenue_fence()
+	_car_gate()
+	_swing_gate()
+	_crossing()
+	_steps()
 	w._flush()
 	w.root = saved
 
@@ -558,8 +595,9 @@ func _post() -> void:
 ## A gate pier of pale stone: a plinth, the shaft with a carved cartouche on its faces to the road
 ## and to the street, a moulded capital and cap; `lamps` puts the cluster of lanterns on top.
 func _pier(at: Vector2, half: float, height: float, carved: bool, lamps: int) -> void:
-	var stone: Material = w.material("concrete", Color("ddd7c9"))
-	var trim: Material = w.material("concrete", Color("e7e2d6"))
+	# The gate's carved piers are pale stone; the fence's plain ones cream like the side gate's.
+	var stone: Material = w.material("concrete", Color("ddd7c9")) if carved or lamps > 0 else w.material("stucco", Color("ece0bf"))
+	var trim: Material = w.material("concrete", Color("e7e2d6")) if carved or lamps > 0 else w.material("plain", Color("f1e9d2"))
 	var relief: Material = w.material("plain", Color("cfc8b8"))
 	_block(at.x - half - 0.08, at.x + half + 0.08, ROAD_Y - 0.1, CURB_Y + 0.3, at.y - half - 0.08, at.y + half + 0.08, trim)
 	_block(at.x - half, at.x + half, CURB_Y + 0.3, height - 0.35, at.y - half, at.y + half, stone)
@@ -606,25 +644,32 @@ func _omni(at: Vector3, energy: float, reach: float) -> void:
 ## Iron bars across the street line (x WEST) from z0 to z1 standing on y0: rails, bars with spear
 ## tips and a band of rings under the top, `top` high.
 func _iron(z0: float, z1: float, y0: float, top: float, step := 0.13) -> void:
+	_iron_line(Vector2(WEST + 0.12, z0), Vector2(WEST + 0.12, z1), y0, top, step)
+
+## The same iron along any line on the ground from a to b (x, z).
+func _iron_line(a: Vector2, b: Vector2, y0: float, top: float, step := 0.13) -> void:
 	var iron := Color("1f2022")
-	var x := WEST + 0.12
-	var bars := maxi(2, roundi((z1 - z0) / step))
+	var length := a.distance_to(b)
+	var turn := atan2(b.x - a.x, b.y - a.y)
+	var bars := maxi(2, roundi(length / step))
 	for k in bars + 1:
-		var z := lerpf(z0, z1, float(k) / bars)
-		w.rod(Vector3(x, y0, z), Vector3(x, top, z), 0.012, iron)
-		w.box(Vector3(0.03, 0.09, 0.05), Vector3(x, top + 0.03, z), w.material("plain", iron))
+		var at := a.lerp(b, float(k) / bars)
+		w.rod(Vector3(at.x, y0, at.y), Vector3(at.x, top, at.y), 0.012, iron)
+		w.box(Vector3(0.03, 0.09, 0.05), Vector3(at.x, top + 0.03, at.y), w.material("plain", iron), turn)
 	for y in [y0 + 0.15, y0 + 0.9, top - 0.35, top - 0.05]:
-		w.rod(Vector3(x, y, z0), Vector3(x, y, z1), 0.02, iron)
-	var z := z0 + 0.15
-	while z < z1 - 0.1:
+		w.rod(Vector3(a.x, y, a.y), Vector3(b.x, y, b.y), 0.02, iron)
+	var normal := Vector3(b.y - a.y, 0, a.x - b.x).normalized()
+	var d := 0.15
+	while d < length - 0.1:
+		var at := a.lerp(b, d / length)
 		var ring := TorusMesh.new()
 		ring.inner_radius = 0.07
 		ring.outer_radius = 0.09
 		ring.rings = 8
 		ring.ring_segments = 6
-		var made: MeshInstance3D = w._mesh(ring, Vector3(x, top - 0.6, z), w.material("plain", iron))
-		made.rotation = Vector3(0, 0, PI / 2.0)
-		z += 0.26
+		var made: MeshInstance3D = w._mesh(ring, Vector3(at.x, top - 0.6, at.y), w.material("plain", iron))
+		made.quaternion = Quaternion(Vector3.UP, normal)
+		d += 0.26
 
 ## The gate: the two tall carved piers with their lantern clusters either side of the road, the
 ## iron double gate between them (closed; its top swoops up to the middle), the pedestrian gates
@@ -688,3 +733,236 @@ func _board() -> void:
 	_block(at.x + 0.05, at.x + 0.08, 2.4, 5.3, at.y - 1.5, at.y + 1.5, w.material("plain", Color("121314")))
 	for y in [2.6, 3.5, 4.4, 5.1]:
 		w.rod(Vector3(at.x - 0.3, y, at.y - 1.55), Vector3(at.x - 0.3, y, at.y + 1.55), 0.03, steel)
+
+# --- The south: the Main Gate covered walk, the fence, the gates, the road and the steps ------
+
+## The path along the covered walk (concrete with its joints) and the kerb along the road by
+## Rotonda 2 from the lawns' ends, painted yellow by the gate (153045).
+func _path() -> void:
+	var concrete: Material = w.material("concrete", Color("b0ada5"))
+	_block(WEST, EAST, ROAD_Y - 0.2, PATH_Y, PATH_N, SOUTH_WALK.x, concrete)
+	var x := WEST + 2.5
+	while x < EAST:
+		_block(x - 0.02, x + 0.02, PATH_Y, PATH_Y + 0.004, PATH_N, SOUTH_WALK.x, w.material("plain", Color("8a867e")))
+		x += 2.5
+	var kerb: Material = w.material("concrete", Color("c3beb3"))
+	var yellow: Material = w.material("plain", Color("e3b733"))
+	_block(EAST - 0.2, EAST, ROAD_Y - 0.1, LAWN_Y + 0.12, AXIS + CURB_OUT, PATH_N, kerb)
+	_block(EAST - 0.004, EAST + 0.004, ROAD_Y, LAWN_Y + 0.12, PATH_N - 3.0, PATH_N, yellow)
+	_block(EAST - 0.2, EAST, ROAD_Y - 0.1, LAWN_Y + 0.12, NS_NORTH, AXIS - CURB_OUT, kerb)
+
+## The Main Gate covered walk along the fence (153052): its floor of pale concrete with a white X in
+## every bay, a step up from the road at its east end; square cream pillars with dark inset panels
+## along the inner row and the fence's row, cream beams over both, a dark slatted ceiling under a
+## flat roof with a dark fascia (the fade group: it hides while the student is under it), stone
+## benches against the fence; at the west end the pavilion with its hipped terracotta roof.
+func _south_walk() -> void:
+	var floor: Material = w.material("concrete", Color("c9c5bb"))
+	var line: Material = w.material("plain", Color("e8e4da"))
+	var cream: Material = w.material("stucco", Color("ece0bf"))
+	var trim: Material = w.material("plain", Color("f1e9d2"))
+	var panel: Material = w.material("plain", Color("3a3330"))
+	var stone: Material = w.material("concrete", Color("b9b4aa"))
+	_block(WEST, EAST, ROAD_Y - 0.2, COVER_Y, SOUTH_WALK.x, FENCE_Z - 0.3, floor)
+	var bays := _south_pillars()
+	for i in bays.size() - 1:
+		var a: float = bays[i]
+		var b: float = bays[i + 1]
+		for corner in [[Vector2(a, SOUTH_WALK.x + 0.5), Vector2(b, SOUTH_WALK.y - 0.3)], [Vector2(a, SOUTH_WALK.y - 0.3), Vector2(b, SOUTH_WALK.x + 0.5)]]:
+			var p: Vector2 = corner[0]
+			var q: Vector2 = corner[1]
+			var mid := (p + q) / 2.0
+			w.box(Vector3(0.12, 0.006, p.distance_to(q)), Vector3(mid.x, COVER_Y + 0.003, mid.y), line, atan2(q.x - p.x, q.y - p.y))
+	for x in bays:
+		for row in [SOUTH_ROW, SOUTH_OUTER]:
+			_block(x - 0.25, x + 0.25, COVER_Y, SOUTH_CEILING + 0.1, row - 0.25, row + 0.25, cream)
+			_block(x - 0.31, x + 0.31, COVER_Y, COVER_Y + 0.25, row - 0.31, row + 0.31, trim)
+			var face: float = row - 0.255 if row < 102.0 else row + 0.255
+			_block(x - 0.11, x + 0.11, COVER_Y + 1.0, COVER_Y + 2.1, face - 0.01, face + 0.01, panel)
+	for x0 in range(bays.size() - 1):
+		var mid: float = (bays[x0] + bays[x0 + 1]) / 2.0
+		if x0 % 2 == 0 and mid < EAST - 2.0:
+			_block(mid - 0.9, mid + 0.9, COVER_Y + 0.38, COVER_Y + 0.48, SOUTH_OUTER - 0.62, SOUTH_OUTER - 0.18, stone)
+			for end in [-0.65, 0.65]:
+				_block(mid + end - 0.12, mid + end + 0.12, COVER_Y, COVER_Y + 0.38, SOUTH_OUTER - 0.55, SOUTH_OUTER - 0.25, stone)
+	# The step up from the road at the east end, its edge yellow.
+	_block(EAST - 0.03, EAST + 0.02, ROAD_Y, COVER_Y + 0.003, SOUTH_WALK.x, FENCE_Z - 0.3, w.material("plain", Color("e3b733")))
+	# The beams, the ceiling and the roof: the fade group.
+	var roof := Node3D.new()
+	roof.name = SOUTH_ROOF
+	w.root.add_child(roof)
+	var saved: Node3D = w.root
+	w._flush()
+	w.root = roof
+	var slat: Material = w.material("plain", Color("2c2723"))
+	var x_start := WEST + PAVILION_W
+	for row in [SOUTH_ROW, SOUTH_OUTER]:
+		_block(x_start, EAST, SOUTH_CEILING, SOUTH_CEILING + 0.35, row - 0.22, row + 0.22, trim)
+	var x := x_start + 0.15
+	while x < EAST:
+		_block(x - 0.05, x + 0.05, SOUTH_CEILING - 0.02, SOUTH_CEILING + 0.06, SOUTH_ROW, SOUTH_OUTER, slat)
+		x += 0.3
+	_block(x_start, EAST + 0.3, SOUTH_CEILING + 0.35, SOUTH_CEILING + 0.55, SOUTH_ROW - 0.5, SOUTH_OUTER + 0.4, cream)
+	_block(x_start, EAST + 0.35, SOUTH_CEILING + 0.3, SOUTH_CEILING + 0.6, SOUTH_ROW - 0.56, SOUTH_ROW - 0.5, w.material("wood", Color("4a3a2e")))
+	for bx in bays:
+		if bx > x_start:
+			_block(bx - 0.15, bx + 0.15, SOUTH_CEILING - 0.05, SOUTH_CEILING + 0.01, (SOUTH_ROW + SOUTH_OUTER) / 2.0 - 0.15, (SOUTH_ROW + SOUTH_OUTER) / 2.0 + 0.15, w.glow(Color("fff1d6"), 0.15, 2.0))
+	_hip_roof(Rect2(WEST - 0.3, SOUTH_ROW - 0.8, PAVILION_W + 0.6, SOUTH_OUTER - SOUTH_ROW + 1.4), SOUTH_CEILING + 0.4, 1.6)
+	_block(WEST, WEST + PAVILION_W, SOUTH_CEILING, SOUTH_CEILING + 0.4, SOUTH_ROW - 0.25, SOUTH_OUTER + 0.25, trim)
+	w._flush()
+	w.root = saved
+
+## The inner row's pillars along the covered walk (x), every SOUTH_BAY from the east end.
+static func _south_pillars() -> Array[float]:
+	var xs: Array[float] = []
+	var x := EAST - 0.3
+	while x > WEST + 0.3:
+		xs.push_front(x)
+		x -= SOUTH_BAY
+	xs.push_front(WEST + 0.35)
+	return xs
+
+## A hipped roof of terracotta tiles over a rectangle (x, z), its eaves at `eave`, `rise` high.
+func _hip_roof(area: Rect2, eave: float, rise: float) -> void:
+	var tile: Material = w.material("tile", Color("b45b3b"))
+	var lo := area.position
+	var hi := area.end
+	var half := minf(area.size.x, area.size.y) / 2.0
+	var along_x := area.size.x >= area.size.y
+	var ra: Vector3
+	var rb: Vector3
+	if along_x:
+		ra = Vector3(lo.x + half, eave + rise, (lo.y + hi.y) / 2.0)
+		rb = Vector3(hi.x - half, eave + rise, (lo.y + hi.y) / 2.0)
+	else:
+		ra = Vector3((lo.x + hi.x) / 2.0, eave + rise, lo.y + half)
+		rb = Vector3((lo.x + hi.x) / 2.0, eave + rise, hi.y - half)
+	var c0 := Vector3(lo.x, eave, lo.y)
+	var c1 := Vector3(hi.x, eave, lo.y)
+	var c2 := Vector3(hi.x, eave, hi.y)
+	var c3 := Vector3(lo.x, eave, hi.y)
+	var faces: Array
+	if along_x:
+		faces = [[c0, c1, rb, ra], [c1, c2, rb], [c2, c3, ra, rb], [c3, c0, ra]]
+	else:
+		faces = [[c0, c1, ra], [c1, c2, rb, ra], [c2, c3, rb], [c3, c0, ra, rb]]
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for face in faces:
+		var points: Array = face
+		var p0: Vector3 = points[0]
+		var p1: Vector3 = points[1]
+		var p2: Vector3 = points[2]
+		var normal: Vector3 = (p1 - p0).cross(p2 - p0).normalized()
+		var flip := normal.y < 0.0
+		if flip:
+			normal = -normal
+		for i in range(1, points.size() - 1):
+			var tri := [points[0], points[i], points[i + 1]]
+			if flip:
+				tri = [points[0], points[i + 1], points[i]]
+			for v in tri:
+				tool.set_normal(normal)
+				tool.add_vertex(v)
+	w._mesh(w.commit(tool), Vector3.ZERO, tile).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+	_block(lo.x + 0.35, hi.x - 0.35, eave - 0.06, eave, lo.y + 0.35, hi.y - 0.35, w.material("stucco", Color("efe7d2")))
+
+## The fence on Holy Angel Avenue from the corner to the car gate: a low cream wall, cream piers
+## every three metres (the covered walk's outer pillars stand just inside it), iron bars with rings.
+func _avenue_fence() -> void:
+	var count := maxi(1, roundi((CAR_WEST.x - WEST) / FENCE_STEP))
+	for k in count:
+		var x0: float = lerpf(WEST, CAR_WEST.x, float(k) / count)
+		var x1: float = lerpf(WEST, CAR_WEST.x, float(k + 1) / count)
+		_block(x0, x1, ROAD_Y - 0.1, 0.55, FENCE_Z - 0.05, FENCE_Z + 0.3, w.material("stucco", Color("ece0bf")))
+		_block(x0, x1, 0.55, 0.62, FENCE_Z - 0.08, FENCE_Z + 0.33, w.material("plain", Color("f1e9d2")))
+		_iron_line(Vector2(x0 + 0.25, FENCE_Z + 0.12), Vector2(x1 - 0.25, FENCE_Z + 0.12), 0.62, 2.35, 0.16)
+		if k > 0:
+			_pier(Vector2(x0, FENCE_Z + 0.12), 0.26, 2.75, false, 0)
+
+## The Guardian Angel car gate across the road by Rotonda 2 where it meets the avenue: a cream pier
+## on the fence's corner (the side gate fence's last pier is the other), the iron gate closed.
+func _car_gate() -> void:
+	_pier(CAR_WEST, 0.35, 2.9, false, 0)
+	var a := CAR_WEST + (SideGate.FENCE_A - CAR_WEST).normalized() * 0.4
+	var b := SideGate.FENCE_A - (SideGate.FENCE_A - CAR_WEST).normalized() * 0.3
+	_iron_line(a, b, ROAD_Y + 0.08, 2.45, 0.14)
+	w.rod(Vector3(a.x, ROAD_Y + 0.08, a.y), Vector3(b.x, ROAD_Y + 0.08, b.y), 0.035, Color("1f2022"))
+
+## The black swing gate at the covered walk's east end (153045): a white pier with its plaque, the
+## leaf hung from it and folded open towards the road, its top swooping down from the hinge in an
+## S, a band of rings and spear tips.
+func _swing_gate() -> void:
+	var white: Material = w.material("stucco", Color("f1eee6"))
+	_block(SWING_HINGE.x - 0.55, SWING_HINGE.x + 0.05, ROAD_Y, 2.9, SWING_HINGE.y - 0.05, SWING_HINGE.y + 0.55, white)
+	_block(SWING_HINGE.x - 0.6, SWING_HINGE.x + 0.1, 2.9, 3.05, SWING_HINGE.y - 0.1, SWING_HINGE.y + 0.6, w.material("plain", Color("f6f4ee")))
+	_block(SWING_HINGE.x + 0.05, SWING_HINGE.x + 0.07, 1.0, 1.9, SWING_HINGE.y + 0.1, SWING_HINGE.y + 0.42, w.material("plain", Color("4a3f36")))
+	var iron := Color("1f2022")
+	var out := Vector2(cos(SWING_OPEN), -sin(SWING_OPEN))
+	var length := 2.7
+	var bars := 20
+	var previous := Vector3.ZERO
+	for k in bars + 1:
+		var t := float(k) / bars
+		var at := SWING_HINGE + Vector2(0.12, -0.05) + out * length * t
+		var top := lerpf(3.3, 2.3, t * t * (3.0 - 2.0 * t))
+		w.rod(Vector3(at.x, ROAD_Y + 0.08, at.y), Vector3(at.x, top, at.y), 0.012, iron)
+		var head := Vector3(at.x, top, at.y)
+		if k > 0:
+			w.rod(previous, head, 0.025, iron)
+		previous = head
+	var a := SWING_HINGE + Vector2(0.12, -0.05)
+	var b := a + out * length
+	for y in [ROAD_Y + 0.15, 0.6, 1.6, 2.15]:
+		w.rod(Vector3(a.x, y, a.y), Vector3(b.x, y, b.y), 0.022, iron)
+	var normal := Vector3(-out.y, 0, out.x)
+	for k in 10:
+		var at := a.lerp(b, (k + 0.5) / 10.0)
+		for y in [1.85, 0.35]:
+			var ring := TorusMesh.new()
+			ring.inner_radius = 0.08
+			ring.outer_radius = 0.1
+			ring.rings = 8
+			ring.ring_segments = 6
+			var made: MeshInstance3D = w._mesh(ring, Vector3(at.x, y, at.y), w.material("plain", iron))
+			made.quaternion = Quaternion(Vector3.UP, normal)
+
+## The hatched crossing on the road by Rotonda 2 from the steps to the covered walk (153043, 153045):
+## bands of rough exposed aggregate across smooth concrete; and the drain grate along the road's east
+## edge below the steps.
+func _crossing() -> void:
+	var rough: Material = w.material("concrete", Color("8f8b82"))
+	var x := EAST + 0.35
+	while x < NS_EAST - 0.2:
+		_block(x - 0.2, x + 0.2, ROAD_Y, ROAD_Y + 0.005, CROSSING.x, CROSSING.y, rough)
+		x += 0.75
+	var grate: Material = w.material("plain", Color("3b3936"))
+	_block(NS_EAST - 0.55, NS_EAST - 0.05, ROAD_Y - 0.01, ROAD_Y + 0.004, CROSSING.x - 3.0, CROSSING.y + 0.8, w.material("metal", Color("6b6a66")))
+	var z := CROSSING.x - 2.95
+	while z < CROSSING.y + 0.75:
+		_block(NS_EAST - 0.53, NS_EAST - 0.07, ROAD_Y, ROAD_Y + 0.008, z - 0.015, z + 0.015, grate)
+		z += 0.08
+	# A painted arrow on the road at the foot of the steps (153043).
+	_block(NS_EAST - 1.6, NS_EAST - 1.3, ROAD_Y, ROAD_Y + 0.005, CROSSING.x + 0.6, CROSSING.x + 1.0, w.material("plain", Color("d9a92b")))
+
+## The four steps from the side gate colonnade's west pavilion down to the road: concrete treads with
+## yellow nosings (153043), their cheeks, the landing at their foot.
+func _steps() -> void:
+	var concrete: Material = w.material("concrete", Color("b6b2a9"))
+	var yellow: Material = w.material("plain", Color("e3b733"))
+	var turn := SideGate.TURN
+	var depth := (STEPS_LX.x - STEPS_LX.y) / RISERS
+	var width := STEPS_LZ.y - STEPS_LZ.x
+	var mid_lz := (STEPS_LZ.x + STEPS_LZ.y) / 2.0
+	for k in RISERS:
+		var top: float = SideGate.GATE_Y - (SideGate.GATE_Y - ROAD_Y) * (k + 1) / RISERS
+		var lx := STEPS_LX.x - depth * (k + 0.5)
+		var at := SideGate.fence_world(lx, mid_lz)
+		w.box(Vector3(depth, top - ROAD_Y + 0.2, width + 0.3), Vector3(at.x, (top + ROAD_Y - 0.2) / 2.0, at.y), concrete, turn)
+		var nose := SideGate.fence_world(STEPS_LX.x - depth * k - 0.04, mid_lz)
+		w.box(Vector3(0.07, 0.012, width + 0.3), Vector3(nose.x, SideGate.GATE_Y - (SideGate.GATE_Y - ROAD_Y) * k / RISERS + 0.004, nose.y), yellow, turn)
+	for side in [-1.0, 1.0]:
+		var cheek := SideGate.fence_world((STEPS_LX.x + STEPS_LX.y) / 2.0, mid_lz + side * (width / 2.0 + 0.25))
+		w.box(Vector3(STEPS_LX.x - STEPS_LX.y, SideGate.GATE_Y - ROAD_Y + 0.25, 0.2), Vector3(cheek.x, (SideGate.GATE_Y + ROAD_Y) / 2.0 + 0.03, cheek.y), yellow, turn)
+	var landing := SideGate.fence_world(STEPS_LX.y - 1.1, mid_lz)
+	w.box(Vector3(2.2, 0.2, width + 0.5), Vector3(landing.x, ROAD_Y - 0.1, landing.y), w.material("concrete", Color("a9a69e")), turn)
