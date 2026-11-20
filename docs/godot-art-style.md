@@ -1063,6 +1063,20 @@ Build an interior the same way:
   inside stays shaded by its roof. A wall that is cut away keeps a **1.2 m
   stub** (`STUB`), so rooms still read as a plan. Floating plot labels hide
   while the student is inside.
+- **Section fill** (the Main Building, 2026-11-20). A solid mass the near plane
+  slices through would show as a hollow shell. Give it `w.sectioned(kind, tint)`
+  instead of `w.material`: a copy whose next pass (`shaders/section.gdshader`)
+  draws only its back faces, flat in the cut band's colour (`#13110f`-ish,
+  `display.gdshader` `cut_color`), so the cut part reads as solid dark. From
+  outside they stand behind the front faces and never show. Where the slanted
+  cut still leaves an outside face in view (the Main Building's front rooms seen
+  from its lobby), `aps.gd` draws the whole group flat dark while the student is
+  there (`Djdn.sectioned`). Facing east inside the Main Building, the front's face,
+  porch, portico, garden and the inside of the front wall are one fade group
+  (`DjdnFront`); the front block's rooms (`DjdnFrontRooms`) fade once you pass the
+  lobby into the corridor. The cutaway closes in to `Djdn.INSIDE_WIDTH` (18 m), the
+  focus stands `FOCUS_LIFT` (2.2 m) over the floor, and the cut is `CUT_AHEAD` (3 m)
+  in front of the student but never short of the wall behind them (`cut_ahead`).
 - **Lights inside** are plain `OmniLight3D`s in their own group, on at every
   hour but only while the student is in (not in `world.lamps`, which are night
   lamps). Windows inside glow by day through `glow()`.

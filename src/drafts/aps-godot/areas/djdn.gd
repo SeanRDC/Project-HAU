@@ -121,11 +121,13 @@ static func on_steps(x: float, z: float) -> bool:
 	return x > PORCH and x < PAVILION_FACE and z >= PORCH_Z.x and z <= PORCH_Z.y
 
 static func walkable(x: float, z: float) -> bool:
-	return on_grounds(x, z) or on_steps(x, z)
+	return on_grounds(x, z) or on_steps(x, z) or inside(x, z)
 
-static func blocked(x: float, z: float, _level := NAN) -> bool:
+static func blocked(x: float, z: float, level := NAN) -> bool:
 	if not walkable(x, z):
 		return false
+	if inside(x, z):
+		return _blocked_inside(x, z, level)
 	for at in LAMPS:
 		if absf(x - at.x) < 0.25 and absf(z - at.y) < 0.25:
 			return true
@@ -135,7 +137,9 @@ static func blocked(x: float, z: float, _level := NAN) -> bool:
 				return true
 	return false
 
-static func floor_height(x: float, z: float, _level := NAN) -> float:
+static func floor_height(x: float, z: float, level := NAN) -> float:
+	if inside(x, z):
+		return floor_at(x, z, level)
 	if on_steps(x, z):
 		if x > PORCH:
 			return FLOOR_Y
@@ -148,6 +152,148 @@ static func floor_height(x: float, z: float, _level := NAN) -> float:
 	if x > DRIVE.y - 0.15 and x <= DRIVE.y + 0.12 and z >= 76.0:
 		return 0.0 # the kerb
 	return WALK_Y
+
+# --- Inside: where one may walk, and the floors ------------------------------------------------
+#
+# The ground floor (FLOOR_Y): the lobby in the pavilion, the corridor along the front block's
+# courtyard side, the open galleries along the north and south wings; the courtyard's tiles a few
+# steps lower (YARD_Y), the stage up its curved steps (STAGE_Y). Floors are levels, as in the gym:
+# floors() lists every floor at a point, the walker takes the highest it can step onto (0.5 m up at
+# most) and may not step off more than 0.6 m (see "Storeys" in docs/godot-art-style.md).
+
+## The lobby (double height, in the pavilion), the corridor behind it, the two ground galleries,
+## the courtyard's open floor.
+const LOBBY := Rect2(FRONT, PAVILION.x, CORRIDOR - FRONT, PAVILION.y - PAVILION.x)
+const HALL := Rect2(CORRIDOR, NORTH_ROOMS, BACK - CORRIDOR, SOUTH_ROOMS - NORTH_ROOMS)
+const GALLERY_N := Rect2(BACK, NORTH_ROOMS, THEATRE_X - BACK, NORTH_WING - NORTH_ROOMS)
+const GALLERY_S := Rect2(BACK, SOUTH_WING, THEATRE_X - BACK, SOUTH_ROOMS - SOUTH_WING)
+const YARD := Rect2(BACK, NORTH_WING, THEATRE_X - BACK, SOUTH_WING - NORTH_WING)
+## The back arcade between the corridor and the courtyard: its columns' z on x BACK, and the two
+## steps down to the tiles in front of it (x, from BACK).
+const ARCADE: Array[float] = [97.9, 101.3, 104.7, 110.7, 114.1, 117.5]
+const STEP_DOWN := 0.8
+## The bust of Juan D. Nepomuceno on its pedestal, the glass case beside it, the display boards.
+const BUST := Vector2(-151.6, CENTRE_Z)
+const CASE := Rect2(-151.95, 109.0, 0.7, 1.0)
+const BOARDS: Array[Rect2] = [Rect2(-154.4, 103.75, 4.0, 0.2), Rect2(-155.6, 112.85, 2.6, 0.2)]
+## Inside, the camera faces east (the front's quarter turn) in a cutaway: the zoom closes in to
+## INSIDE_WIDTH and the near plane stands CUT_AHEAD in front of the student (never short of the
+## front wall's inside face, so walking in through a door the wall falls away at once).
+const INSIDE_WIDTH := 18.0
+const CUT_AHEAD := 3.0
+const CEILING_BAND := 12.3
+## The cutaway's focus stands this high over the student's floor (the lobby is double height, so
+## higher than a corridor's 1.35), and its top band closes at the ceiling this far behind them.
+const FOCUS_LIFT := 2.2
+const BAND_BACK := 6.0
+## The inside's daylight fill (on at every hour while the student is in).
+const LIGHTS_GROUP := "DjdnLights"
+## The cutaway's fade groups (aps.gd fades them out, keeping their shadows, while hidden() says):
+## the front's face, porch, portico and garden, which stand between the camera and anyone inside; the
+## front block's rooms either side of the lobby and their roofs, which stand between the camera
+## and the corridor, the galleries and the courtyard behind them.
+const FRONT_GROUP := "DjdnFront"
+const ROOMS_GROUP := "DjdnFrontRooms"
+
+## Whether the front block's rooms show as a flat dark section (from the lobby, where they stand
+## either side and the near plane slices them on a slant: their outside faces would show).
+static func sectioned(x: float, z: float) -> bool:
+	return inside(x, z) and not hidden(ROOMS_GROUP, x, z)
+
+## Whether a fade group is in the way of a student at x, z.
+static func hidden(group: String, x: float, z: float) -> bool:
+	if not inside(x, z):
+		return false
+	if group == ROOMS_GROUP:
+		return x > CORRIDOR - 0.5
+	return group == FRONT_GROUP
+
+static func in_door(x: float, z: float) -> bool:
+	if x < PAVILION_FACE - 0.01 or x > FRONT + 0.01:
+		return false
+	for door in DOORS:
+		if absf(z - door) < DOOR_W / 2.0 - 0.12:
+			return true
+	return false
+
+## Anywhere inside one may stand, on any storey.
+static func inside(x: float, z: float) -> bool:
+	if x < PAVILION_FACE - 0.01 or x > THEATRE_X or z < NORTH_ROOMS - 0.01 or z > SOUTH_ROOMS + 0.01:
+		return false
+	var p := Vector2(x, z)
+	return LOBBY.has_point(p) or HALL.has_point(p) or GALLERY_N.has_point(p) or GALLERY_S.has_point(p) \
+		or YARD.has_point(p) or in_door(x, z)
+
+## The ground's height here: the floor's, or the courtyard's tiles with their steps.
+static func ground_at(x: float, z: float) -> float:
+	if not YARD.has_point(Vector2(x, z)) or x < BACK:
+		return FLOOR_Y
+	var h := YARD_Y
+	# Two steps down from the arcade and from the ground galleries' edges.
+	var step := (FLOOR_Y - YARD_Y) / 2.0
+	if x < BACK + STEP_DOWN or z < NORTH_WING + STEP_DOWN or z > SOUTH_WING - STEP_DOWN:
+		var into := minf(x - BACK, minf(z - NORTH_WING, SOUTH_WING - z))
+		h = FLOOR_Y - step * (1.0 + floorf(clampf(into / (STEP_DOWN / 2.0), 0.0, 1.0)))
+	return h
+
+## Every floor at a point: [height, solid] (a solid floor fills down to the ground below it).
+static func floors(x: float, z: float) -> Array:
+	return [[ground_at(x, z), false]]
+
+## The floor a walker at height level stands on here: the highest it can step onto (0.5 m up at
+## most); without a level, the ground's.
+static func floor_at(x: float, z: float, level := NAN) -> float:
+	var from := ground_at(x, z) if is_nan(level) else level
+	var best := -INF
+	var lowest := INF
+	for entry in floors(x, z):
+		var h: float = entry[0]
+		lowest = minf(lowest, h)
+		if h <= from + 0.5 and h > best:
+			best = h
+	return best if best > -INF else lowest
+
+static func _blocked_inside(x: float, z: float, level := NAN) -> bool:
+	var at := floor_at(x, z, level)
+	if not is_nan(level) and at < level - 0.6:
+		return true # no stepping off an upper floor or the stage
+	for entry in floors(x, z):
+		if entry[1] and entry[0] > at + 0.5:
+			return true # the side of a stair
+	var p := Vector2(x, z)
+	if at < UPPER_Y - 1.0:
+		if p.distance_to(BUST) < 0.55 or CASE.grow(0.2).has_point(p):
+			return true
+		for board in BOARDS:
+			if board.grow(0.2).has_point(p):
+				return true
+		for column in ARCADE:
+			if p.distance_to(Vector2(BACK, column)) < 0.42:
+				return true
+	return false
+
+## How far the camera is in the inside's cutaway: 1 inside, rising across the porch's last 0.8 m
+## in front of a door.
+static func inside_for(x: float, z: float) -> float:
+	if inside(x, z):
+		return 1.0
+	if x > PAVILION_FACE - 0.8 and x <= PAVILION_FACE:
+		for door in DOORS:
+			if absf(z - door) < DOOR_W / 2.0 + 0.2:
+				return smoothstep(PAVILION_FACE - 0.8, PAVILION_FACE, x)
+	return 0.0
+
+## The cutaway's near plane: how far in front of the student it stands (towards the camera, west),
+## never short of the wall behind them: the front wall's inside face in front of the lobby, the
+## front block's rooms' back wall along the corridor north and south of it.
+static func cut_ahead(x: float, z: float) -> float:
+	var wall := FRONT if z > PAVILION.x and z < PAVILION.y else CORRIDOR
+	return clampf(x - (wall + 0.08), 0.15, CUT_AHEAD)
+
+## Facing east at the building, from its grounds or inside it (the chapel's and MGN's views,
+## which would otherwise take these spots, yield to this).
+static func view_for(x: float, z: float) -> float:
+	return maxf(front_for(x, z), inside_for(x, z))
 
 ## How far the camera faces the front from the grounds (east, a quarter turn): 1 on the drive,
 ## the bays, the forecourt and the steps south of the fountain's apron, eased in across its edge.
@@ -173,6 +319,8 @@ static func front_windows() -> Array[float]:
 	return all
 
 var w: RefCounted
+## The front's fade group (the lobby's side of the front wall goes in it too).
+var _front_node: Node3D
 
 func build(world_builder: RefCounted) -> void:
 	w = world_builder
@@ -181,23 +329,45 @@ func build(world_builder: RefCounted) -> void:
 	var building := Node3D.new()
 	building.name = BUILT_NAME
 	saved.add_child(building)
-	w.root = building
-	_masses()
+	var front := _group(building, FRONT_GROUP)
+	_front_node = front
+	w.root = front
 	_front()
 	_pavilion()
 	_portico()
 	_steps()
+	w._flush()
+	w.root = _group(building, ROOMS_GROUP)
+	_front_rooms()
+	w._flush()
+	w.root = building
+	_masses()
 	_other_faces()
 	_roofs()
+	_floors()
+	_lobby()
+	_arcade()
 	w._flush()
 	w.root = saved
+	_inside_lights(saved)
 	_drive()
 	_parking()
-	_garden()
 	_lamps()
 	w._flush()
+	# The garden goes with the front: from inside, its palms and shrubs stand in front of the lobby.
+	w.root = front
+	_garden()
+	w._flush()
+	w.root = saved
 
 # --- Helpers ------------------------------------------------------------------------------
+
+## A named node under parent for a fade group.
+func _group(parent: Node3D, group: String) -> Node3D:
+	var node := Node3D.new()
+	node.name = group
+	parent.add_child(node)
+	return node
 
 ## A box from x0..x1, y0..y1, z0..z1 (any order).
 func _block(x0: float, x1: float, y0: float, y1: float, z0: float, z1: float, made: Material) -> void:
@@ -245,13 +415,27 @@ func _gable(x0: float, x1: float, z0: float, z1: float, y0: float, apex: float, 
 
 # --- The masses -----------------------------------------------------------------------------
 
-## The closed parts as solid blocks to the cornice: the rooms either side of the lobby in the
-## front block, the rooms of the north and south wings (the north wing open at the Student
-## Center gate's passage on the ground floor), and the theatre block, taller.
-func _masses() -> void:
-	var wall: Material = w.material("stucco", WALL)
+## The front block's rooms either side of the lobby, solid to the cornice, and their roofs: one
+## slope each from the front up towards the courtyard. (Sectioned: from the lobby the cutaway's
+## near plane slices through them, and they read as solid.)
+func _front_rooms() -> void:
+	var wall: Material = w.sectioned("stucco", WALL)
 	_block(FRONT, CORRIDOR, 0.0, CORNICE, NORTH, PAVILION.x, wall)
 	_block(FRONT, CORRIDOR, 0.0, CORNICE, PAVILION.y, SOUTH, wall)
+	var sheet: Material = w.material("ribbed", ROOF)
+	var pitch := 0.16
+	var depth := CORRIDOR - FRONT + 3.0
+	var rise := depth * tan(pitch)
+	for span in [Vector2(NORTH, PAVILION.x), Vector2(PAVILION.y, SOUTH)]:
+		# (turned a quarter so the box's z runs east; a negative tilt lifts its east end)
+		w.box(Vector3(span.y - span.x, 0.12, depth / cos(pitch)), Vector3((FRONT + CORRIDOR + 3.0) / 2.0, CORNICE + rise / 2.0 + 0.1, (span.x + span.y) / 2.0), sheet, PI / 2.0, -pitch)
+
+## The other closed parts as solid blocks to the cornice: the rooms of the north and south wings
+## (the north wing open at the Student Center gate's passage on the ground floor), and the theatre
+## block, taller.
+func _masses() -> void:
+	# (sectioned: inside, the cutaway's near plane slices through these rooms; they read as solid)
+	var wall: Material = w.sectioned("stucco", WALL)
 	# The north wing's rooms (above the Student Center's back wall on its north face).
 	_block(CORRIDOR, PASSAGE.x, 0.0, CORNICE, NORTH, NORTH_ROOMS, wall)
 	_block(PASSAGE.y, THEATRE_X, 0.0, CORNICE, NORTH, NORTH_ROOMS, wall)
@@ -489,12 +673,7 @@ func _other_faces() -> void:
 func _roofs() -> void:
 	var sheet: Material = w.material("ribbed", ROOF)
 	var pitch := 0.16
-	# The front block: one slope from the front up towards the courtyard.
-	var depth := CORRIDOR - FRONT + 3.0
-	var rise := depth * tan(pitch)
-	for span in [Vector2(NORTH, PAVILION.x), Vector2(PAVILION.y, SOUTH)]:
-		# (turned a quarter so the box's z runs east; a negative tilt lifts its east end)
-		w.box(Vector3(span.y - span.x, 0.12, depth / cos(pitch)), Vector3((FRONT + CORRIDOR + 3.0) / 2.0, CORNICE + rise / 2.0 + 0.1, (span.x + span.y) / 2.0), sheet, PI / 2.0, -pitch)
+	# (the front block's are with its rooms, in _front_rooms)
 	# The wings: one slope each from the outer wall up over the rooms.
 	var wing_depth := NORTH_ROOMS - NORTH + 0.4
 	var wing_rise := wing_depth * tan(pitch)
@@ -648,3 +827,161 @@ func _areca(at: Vector3, height: float, seed_value: int) -> void:
 		var tip := at + Vector3(cos(a) * 0.3, height * random.randf_range(0.7, 1.0), sin(a) * 0.3)
 		w.rod(at, tip, 0.03, Color("7d8a4a"))
 		w._mesh(cluster, tip, fronds, a).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+
+# --- The lobby and the arcade -------------------------------------------------------------------
+
+## The floors: the lobby's marble (large beige tiles, as in the photos) through the doors and
+## across the corridor in front of it, the corridor's and the galleries' red tiles, and the
+## courtyard's red tiles a little lower with the two steps down along its edges.
+func _floors() -> void:
+	var marble: Material = w.material("slab", Color("e9dcc6"))
+	var red: Material = w.material("floor", Color("d8836a"))
+	_block(FRONT, BACK, FLOOR_Y - 0.4, FLOOR_Y, PAVILION.x, PAVILION.y, marble)
+	for z in DOORS:
+		_block(PAVILION_FACE - 0.02, FRONT, FLOOR_Y - 0.4, FLOOR_Y, z - DOOR_W / 2.0, z + DOOR_W / 2.0, marble)
+	_block(CORRIDOR, BACK, FLOOR_Y - 0.4, FLOOR_Y, NORTH_ROOMS, PAVILION.x, red)
+	_block(CORRIDOR, BACK, FLOOR_Y - 0.4, FLOOR_Y, PAVILION.y, SOUTH_ROOMS, red)
+	_block(BACK, THEATRE_X, FLOOR_Y - 0.4, FLOOR_Y, NORTH_ROOMS, NORTH_WING, red)
+	_block(BACK, THEATRE_X, FLOOR_Y - 0.4, FLOOR_Y, SOUTH_WING, SOUTH_ROOMS, red)
+	_block(BACK, THEATRE_X, YARD_Y - 0.3, YARD_Y, NORTH_WING, SOUTH_WING, red)
+	var step := (FLOOR_Y - YARD_Y) / 2.0
+	var edge: Material = w.material("concrete", Color("b7aea4"))
+	_block(BACK, BACK + STEP_DOWN / 2.0, YARD_Y, FLOOR_Y - step, NORTH_WING, SOUTH_WING, red)
+	_block(BACK + STEP_DOWN / 2.0, THEATRE_X, YARD_Y, FLOOR_Y - step - 0.004, NORTH_WING, NORTH_WING + STEP_DOWN / 2.0, red)
+	_block(BACK + STEP_DOWN / 2.0, THEATRE_X, YARD_Y, FLOOR_Y - step - 0.004, SOUTH_WING - STEP_DOWN / 2.0, SOUTH_WING, red)
+	# Grey concrete nosings on every step's edge, as in the courtyard photos.
+	_block(BACK - 0.03, BACK + 0.05, FLOOR_Y - 0.06, FLOOR_Y + 0.004, NORTH_WING, SOUTH_WING, edge)
+	_block(BACK + STEP_DOWN / 2.0 - 0.03, BACK + STEP_DOWN / 2.0 + 0.05, FLOOR_Y - step - 0.06, FLOOR_Y - step + 0.004, NORTH_WING + STEP_DOWN / 2.0, SOUTH_WING - STEP_DOWN / 2.0, edge)
+	for z in [NORTH_WING, SOUTH_WING]:
+		var out := 1.0 if z == NORTH_WING else -1.0
+		_block(BACK, THEATRE_X, FLOOR_Y - 0.06, FLOOR_Y + 0.004, z - out * 0.03, z + out * 0.05, edge)
+		_block(BACK + STEP_DOWN / 2.0, THEATRE_X, FLOOR_Y - step - 0.06, FLOOR_Y - step + 0.002, z + out * (STEP_DOWN / 2.0 - 0.03), z + out * (STEP_DOWN / 2.0 + 0.05), edge)
+
+## The lobby: the front wall's inside, with the tall pale wood door leaves folded back between
+## the doors and an iron lantern on each, a beam over them; maroon skirting on the side walls;
+## the bust of Juan D. Nepomuceno on its travertine pedestal with the gold plaque, the glass case
+## beside it, the display boards; the corridor's ceiling over its back.
+func _lobby() -> void:
+	var wood: Material = w.material("wood", Color("e2b47e"))
+	var dark_wood: Material = w.material("plain", Color("4a2f22"))
+	var cream: Material = w.material("stucco", Color("f1e6c6"))
+	var maroon: Material = w.material("plain", Color("6e2a26"))
+	var iron: Material = w.material("plain", Color("1d1d1d"))
+	# The front wall's inside goes with the front's fade group: facing east from inside, it stands
+	# behind the student, in front of the cut's slant near the floor.
+	w._flush()
+	var building: Node3D = w.root
+	w.root = _front_node
+	var edges := [PAVILION.x]
+	for z in DOORS:
+		edges.append(z - DOOR_W / 2.0)
+		edges.append(z + DOOR_W / 2.0)
+	edges.append(PAVILION.y)
+	for i in range(0, edges.size(), 2):
+		var z0: float = edges[i]
+		var z1: float = edges[i + 1]
+		_block(FRONT, FRONT + 0.07, FLOOR_Y, FLOOR_Y + 3.4, z0, z1, wood)
+		_block(FRONT, FRONT + 0.09, FLOOR_Y, FLOOR_Y + 0.16, z0, z1, dark_wood)
+		# The leaves' joints, and a lantern on each run of panels.
+		var joints := maxi(1, roundi((z1 - z0) / 0.55))
+		for k in range(1, joints):
+			_block(FRONT + 0.07, FRONT + 0.085, FLOOR_Y + 0.16, FLOOR_Y + 3.4, z0 + (z1 - z0) * k / joints - 0.01, z0 + (z1 - z0) * k / joints + 0.01, dark_wood)
+		var mid := (z0 + z1) / 2.0
+		_block(FRONT + 0.07, FRONT + 0.32, FLOOR_Y + 1.95, FLOOR_Y + 2.45, mid - 0.13, mid + 0.13, iron)
+		_block(FRONT + 0.1, FRONT + 0.3, FLOOR_Y + 2.0, FLOOR_Y + 2.38, mid - 0.09, mid + 0.09, w.glow(Color("f2d8a4"), 0.25, 1.6))
+	for z in DOORS:
+		_block(FRONT, FRONT + 0.12, FLOOR_Y, FLOOR_Y + DOOR_H, z - DOOR_W / 2.0, z - DOOR_W / 2.0 + 0.1, dark_wood)
+		_block(FRONT, FRONT + 0.12, FLOOR_Y, FLOOR_Y + DOOR_H, z + DOOR_W / 2.0 - 0.1, z + DOOR_W / 2.0, dark_wood)
+	_block(FRONT, FRONT + 0.55, FLOOR_Y + 3.4, FLOOR_Y + 3.95, PAVILION.x, PAVILION.y, cream)
+	w._flush()
+	w.root = building
+	# Maroon skirting along the lobby's side walls and the corridor's room walls.
+	for z in [PAVILION.x, PAVILION.y]:
+		var out := 1.0 if z == PAVILION.x else -1.0
+		_block(FRONT, CORRIDOR, FLOOR_Y, FLOOR_Y + 0.15, z, z + out * 0.03, maroon)
+	for span in [Vector2(NORTH_ROOMS, PAVILION.x), Vector2(PAVILION.y, SOUTH_ROOMS)]:
+		_block(CORRIDOR, CORRIDOR + 0.03, FLOOR_Y, FLOOR_Y + 0.15, span.x, span.y, maroon)
+	# The corridor's ceiling: the upper floor's slab over it, white underneath.
+	_block(CORRIDOR, BACK + 0.25, UPPER_Y - 0.32, UPPER_Y, NORTH_ROOMS, SOUTH_ROOMS, w.material("stucco", Color("f4f1e8")))
+	# The bust: a travertine pedestal with a dark wood cap and the gold plaque, the bronze bust.
+	var travertine: Material = w.material("stone", Color("e7cfae"))
+	var bronze: Material = w.material("plain", Color("3d3a33"))
+	_block(BUST.x - 0.31, BUST.x + 0.31, FLOOR_Y, FLOOR_Y + 1.25, BUST.y - 0.31, BUST.y + 0.31, travertine)
+	_block(BUST.x - 0.36, BUST.x + 0.36, FLOOR_Y + 1.25, FLOOR_Y + 1.33, BUST.y - 0.36, BUST.y + 0.36, dark_wood)
+	_block(BUST.x - 0.33, BUST.x - 0.31, FLOOR_Y + 0.75, FLOOR_Y + 1.1, BUST.y - 0.2, BUST.y + 0.2, w.glow(Color("c9a64a"), 0.0, 0.0))
+	_block(BUST.x - 0.2, BUST.x + 0.2, FLOOR_Y + 1.33, FLOOR_Y + 1.45, BUST.y - 0.22, BUST.y + 0.22, bronze)
+	_block(BUST.x - 0.16, BUST.x + 0.16, FLOOR_Y + 1.45, FLOOR_Y + 1.72, BUST.y - 0.3, BUST.y + 0.3, bronze)
+	var head := SphereMesh.new()
+	head.radius = 0.15
+	head.height = 0.36
+	head.radial_segments = 12
+	head.rings = 6
+	w._mesh(head, Vector3(BUST.x, FLOOR_Y + 1.9, BUST.y), bronze)
+	# The glass case beside it, on a dark base, with a model in green inside.
+	_block(CASE.position.x, CASE.end.x, FLOOR_Y, FLOOR_Y + 0.85, CASE.position.y, CASE.end.y, dark_wood)
+	_block(CASE.position.x + 0.05, CASE.end.x - 0.05, FLOOR_Y + 0.85, FLOOR_Y + 0.92, CASE.position.y + 0.05, CASE.end.y - 0.05, w.material("plain", Color("4f7a3e")))
+	_block(CASE.position.x, CASE.end.x, FLOOR_Y + 0.85, FLOOR_Y + 1.35, CASE.position.y, CASE.end.y, w.material("glass", Color("cfe0dc")))
+	# The display boards: a dark green base and a printed panel of photos and text.
+	var board_base: Material = w.material("plain", Color("23392f"))
+	var print: Material = w.material("plain", Color("e8e4dc"))
+	for board in BOARDS:
+		_block(board.position.x, board.end.x, FLOOR_Y, FLOOR_Y + 0.95, board.position.y, board.end.y, board_base)
+		_block(board.position.x, board.end.x, FLOOR_Y + 0.95, FLOOR_Y + 2.45, board.position.y + 0.05, board.end.y - 0.05, print)
+		_block(board.position.x - 0.03, board.end.x + 0.03, FLOOR_Y + 2.45, FLOOR_Y + 2.52, board.position.y, board.end.y, board_base)
+	var title: Label3D = w.panel("HOW HOLY ANGEL U. GOT ITS NAME", Vector3(-152.4, FLOOR_Y + 2.25, BOARDS[0].end.y + 0.01), 3.4, 0.22, Color("2a2a2a"))
+	title.double_sided = false
+	var other: Label3D = w.panel("FR. PEDRO P. SANTOS", Vector3(-154.3, FLOOR_Y + 2.25, BOARDS[1].position.y - 0.01), 2.2, 0.22, Color("2a2a2a"))
+	other.rotation.y = PI
+	other.double_sided = false
+
+## The back arcade onto the courtyard: yellow marbled columns on dark bases under a beam with a
+## curved haunch either side of each (the arches in the photos), wide open on the lobby's axis, and
+## the iron lantern hanging in the middle.
+func _arcade() -> void:
+	var marbled: Material = w.material("stucco", Color("dcb94e"))
+	var dark: Material = w.material("plain", Color("26231f"))
+	var cream: Material = w.material("stucco", Color("f1e6c6"))
+	for z in ARCADE:
+		_cylinder(0.3, 0.3, 0.3, Vector3(BACK, FLOOR_Y + 0.15, z), dark, 14)
+		_cylinder(0.2, 0.22, 3.25, Vector3(BACK, FLOOR_Y + 0.3 + 1.625, z), marbled, 14)
+		_block(BACK - 0.3, BACK + 0.3, FLOOR_Y + 3.55, FLOOR_Y + 3.7, z - 0.3, z + 0.3, cream)
+	_block(BACK - 0.3, BACK + 0.3, FLOOR_Y + 3.7, UPPER_Y - 0.3, NORTH_WING, SOUTH_WING, cream)
+	# The haunches: stepped quarter-curves from each column's head along the beam.
+	var bays := [[NORTH_WING, ARCADE[0]]]
+	for i in ARCADE.size() - 1:
+		if ARCADE[i + 1] - ARCADE[i] < 4.0:
+			bays.append([ARCADE[i], ARCADE[i + 1]])
+	bays.append([ARCADE[-1], SOUTH_WING])
+	for bay in bays:
+		var z0: float = bay[0]
+		var z1: float = bay[1]
+		for k in 3:
+			var reach: float = [0.75, 0.45, 0.22][k]
+			var drop: float = [0.18, 0.42, 0.7][k]
+			_block(BACK - 0.26, BACK + 0.26, FLOOR_Y + 3.7 - drop, FLOOR_Y + 3.7, z0, z0 + reach, cream)
+			_block(BACK - 0.26, BACK + 0.26, FLOOR_Y + 3.7 - drop, FLOOR_Y + 3.7, z1 - reach, z1, cream)
+	# The lantern hanging on its chain in the open middle.
+	w.rod(Vector3(BACK - 0.9, UPPER_Y - 0.32, CENTRE_Z), Vector3(BACK - 0.9, FLOOR_Y + 3.2, CENTRE_Z), 0.015, Color("1d1d1d"))
+	_block(BACK - 1.12, BACK - 0.68, FLOOR_Y + 2.45, FLOOR_Y + 3.2, CENTRE_Z - 0.22, CENTRE_Z + 0.22, w.material("plain", Color("1d1d1d")))
+	_block(BACK - 1.06, BACK - 0.74, FLOOR_Y + 2.52, FLOOR_Y + 3.1, CENTRE_Z - 0.16, CENTRE_Z + 0.16, w.glow(Color("f2d8a4"), 0.25, 1.8))
+
+## The inside's daylight fill, on at every hour while the student is inside (the gym's way); the
+## lamps above are the night's.
+func _inside_lights(parent: Node3D) -> void:
+	var lights := Node3D.new()
+	lights.name = LIGHTS_GROUP
+	lights.visible = false
+	parent.add_child(lights)
+	var spots: Array[Vector3] = [Vector3(-152.6, 4.6, CENTRE_Z), Vector3(-152.6, 8.6, CENTRE_Z)]
+	var z := NORTH_ROOMS + 2.0
+	while z < SOUTH_ROOMS:
+		spots.append(Vector3(-147.5, 3.9, z))
+		z += 6.0
+	for at in spots:
+		var light := OmniLight3D.new()
+		light.light_color = Color("fff1dc")
+		light.light_energy = 0.8
+		light.omni_range = 8.0
+		light.omni_attenuation = 1.2
+		light.position = at
+		lights.add_child(light)
