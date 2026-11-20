@@ -76,6 +76,15 @@ const NORTH_CEILING := COVER_Y + 2.7
 const NORTH_BAY := 3.4
 const PAVILION_CEILING := COVER_Y + 3.0
 const NORTH_ROOF := "EpiphanyNorthRoof"
+## The trees (x, z, height): big shade trees in the south garden, smaller ones in the north
+## garden; the fallen trunk, the Memorare stone, the birdbath, the galvanised box on the kerb.
+const SOUTH_TREES: Array[Vector3] = [Vector3(-253.5, 96.3, 9.5), Vector3(-243.0, 96.0, 11.0), Vector3(-231.5, 96.4, 10.0),
+	Vector3(-222.0, 96.1, 11.5), Vector3(-215.0, 96.3, 10.5)]
+const NORTH_TREES: Array[Vector3] = [Vector3(-249.5, 74.3, 8.0), Vector3(-238.0, 74.6, 9.0), Vector3(-227.5, 74.2, 8.5), Vector3(-220.5, 74.8, 9.0)]
+const TRUNK := Vector2(-226.5, 96.2)
+const MEMORARE := Vector2(-218.4, 95.9)
+const BIRDBATH := Vector2(-235.8, 96.0)
+const BOX := Vector2(-216.6, AXIS + CURB_OUT + 0.45)
 
 ## The steps from the side gate colonnade's west pavilion down to the road (in the fence's frame:
 ## lx from the colonnade's walk end to the strip's west end, lz between its pillars' rows).
@@ -257,6 +266,10 @@ func build(world_builder: RefCounted) -> void:
 	_steps()
 	_north_walk()
 	_north_garden()
+	_trees()
+	_fallen_trunk()
+	_memorare()
+	_lawn_things()
 	w._flush()
 	w.root = saved
 
@@ -1064,3 +1077,57 @@ func _north_garden() -> void:
 	while x < PAVILION.position.x - 0.8:
 		w._shrub(Vector3(x, LAWN_Y, NORTH_GARDEN + 0.45), 0.6, 7800 + int(x * 10.0))
 		x += 0.9
+
+# --- Trees and the things on the lawns ---------------------------------------------------------
+
+## The big shade trees in the south garden (153045, 153052, 153054) and along the north garden, the
+## shrubs under them on the south side.
+func _trees() -> void:
+	for i in SOUTH_TREES.size():
+		var t: Vector3 = SOUTH_TREES[i]
+		w._tree(Vector3(t.x, LAWN_Y, t.y), t.z, 7900 + i)
+	for i in NORTH_TREES.size():
+		var t: Vector3 = NORTH_TREES[i]
+		w._tree(Vector3(t.x, LAWN_Y, t.y), t.z, 7950 + i)
+	var random := RandomNumberGenerator.new()
+	random.seed = 7990
+	var x := WEST + 4.0
+	while x < EAST - 1.5:
+		if absf(x - TRUNK.x) > 3.2:
+			w._shrub(Vector3(x, LAWN_Y, random.randf_range(SOUTH_GARDEN + 0.5, PATH_N - 0.6)), random.randf_range(0.9, 1.4), 7991 + int(x * 10.0))
+		x += random.randf_range(1.6, 3.0)
+
+## The old fallen trunk on the south lawn by the east end, its roots at one end (153052, 153054).
+func _fallen_trunk() -> void:
+	var bark := Color("4a3d30")
+	var a := Vector3(TRUNK.x - 2.8, LAWN_Y + 0.32, TRUNK.y + 0.1)
+	var b := Vector3(TRUNK.x + 2.8, LAWN_Y + 0.26, TRUNK.y - 0.15)
+	w.rod(a, b, 0.36, bark)
+	for k in 5:
+		var angle := TAU * k / 5.0
+		var root := a + Vector3(-0.35, sin(angle) * 0.3, cos(angle) * 0.35)
+		w.rod(a, root + Vector3(-0.3, 0.0, cos(angle) * 0.25), 0.1, bark)
+	w.rod(b, b + Vector3(0.8, 0.25, -0.3), 0.12, bark)
+
+## The Memorare stone: a tall rough granite slab on a base with a dark bronze plaque on its face
+## to the road (the plaque's words are not readable in the photos).
+func _memorare() -> void:
+	var granite: Material = w.material("concrete", Color("8d8a84"))
+	var at := MEMORARE
+	_block(at.x - 0.75, at.x + 0.75, LAWN_Y, LAWN_Y + 0.25, at.y - 0.45, at.y + 0.45, w.material("concrete", Color("b9b4aa")))
+	_block(at.x - 0.55, at.x + 0.55, LAWN_Y + 0.25, LAWN_Y + 2.2, at.y - 0.25, at.y + 0.25, granite)
+	_block(at.x - 0.45, at.x + 0.4, LAWN_Y + 2.2, LAWN_Y + 2.45, at.y - 0.22, at.y + 0.22, granite)
+	_block(at.x - 0.38, at.x + 0.38, LAWN_Y + 1.0, LAWN_Y + 1.9, at.y - 0.27, at.y - 0.25, w.material("plain", Color("3e3428")))
+
+## The stone birdbath under the trees, and the galvanised box on the south lawn's kerb (153054).
+func _lawn_things() -> void:
+	var stone: Material = w.material("concrete", Color("b8b2a5"))
+	var at := Vector3(BIRDBATH.x, LAWN_Y, BIRDBATH.y)
+	_cylinder(0.22, 0.12, at + Vector3(0, 0.06, 0), stone, 10)
+	_cylinder(0.09, 0.85, at + Vector3(0, 0.55, 0), stone, 8, 0.07)
+	_cylinder(0.32, 0.12, at + Vector3(0, 1.02, 0), stone, 12, 0.36)
+	var box := BOX
+	_block(box.x - 0.55, box.x + 0.55, LAWN_Y + 0.12, LAWN_Y + 0.7, box.y - 0.22, box.y + 0.22, w.material("metal", Color("a9b0b3")))
+	_block(box.x - 0.57, box.x + 0.57, LAWN_Y + 0.7, LAWN_Y + 0.74, box.y - 0.24, box.y + 0.24, w.material("metal", Color("bfc5c7")))
+	for dx in [-0.45, 0.45]:
+		_block(box.x + dx - 0.03, box.x + dx + 0.03, LAWN_Y, LAWN_Y + 0.12, box.y - 0.03, box.y + 0.03, w.material("plain", Color("3a3a3a")))
