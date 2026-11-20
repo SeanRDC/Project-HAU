@@ -753,7 +753,7 @@ func _update_camera(delta: float) -> void:
 		# short of the front wall's inside face, the band's top over the galleries' roofs.
 		corridor = Vector3(roundf(follow.x / pixel) * pixel, student.level() + Djdn.focus_lift(shown_width), roundf(follow.y / pixel) * pixel)
 		cut_offset = Djdn.cut_ahead(follow.x, follow.y)
-		ceiling = Djdn.CEILING_BAND
+		ceiling = maxf(Djdn.CEILING_BAND, student.level() + Djdn.CEILING_BAND - Djdn.YARD_Y)
 		band_back = Djdn.BAND_BACK
 	focus = focus.lerp(corridor, inside)
 	distance = lerpf(distance, 20.0, inside)
@@ -1126,7 +1126,8 @@ func _reset() -> void:
 	_set_hour(16.5)
 	_set_zoom(112.0)
 
-## Fast-travel places (dev, F1): name, where the student stands, the framing width.
+## Fast-travel places (dev, F1): name, where the student stands, the framing width, and (upstairs)
+## the level it stands at.
 ## Each spot is walkable ground (a check makes sure); add new buildings here.
 static func travel_places() -> Array:
 	return [
@@ -1164,6 +1165,7 @@ static func travel_places() -> Array:
 		["Main Building front", Vector2(-164.0, 107.7), 40.0],
 		["Main Building lobby", Vector2(-152.5, 104.5), Djdn.INSIDE_WIDTH],
 		["Main Building courtyard", Vector2(-125.0, 108.0), Djdn.YARD_WIDTH],
+		["Main Building gallery", Vector2(-125.0, 95.9), Djdn.YARD_WIDTH, Djdn.UPPER_Y],
 	]
 
 ## Jumps the student to a fast-travel place, with every camera zone, the gym's
@@ -1171,7 +1173,7 @@ static func travel_places() -> Array:
 func _travel_to(index: int) -> void:
 	var place: Array = travel_places()[index]
 	var spot: Vector2 = place[1]
-	if not student.place(spot.x, spot.y):
+	if not student.place(spot.x, spot.y, place[3] if place.size() > 3 else NAN):
 		push_warning("Fast travel: %s is not walkable" % place[0])
 		return
 	_snap_follow()
@@ -1488,7 +1490,7 @@ func _collect_cutaways() -> void:
 	_arcade_lights = scene.find_child(StudentCenter.LIGHTS_GROUP, false, false)
 	_djdn_lights = scene.find_child(Djdn.LIGHTS_GROUP, false, false)
 	for group in [MiddleRoad.NORTH_GROUP, MiddleRoad.SOUTH_GROUP, StudentCenter.ROOF_GROUP, CoveredCourt.ROOF_GROUP, SacredHeart.WALK_ROOF,
-			Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP, Djdn.ROOF_GROUP, Djdn.WING_GROUP]:
+			Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP, Djdn.ROOF_GROUP, Djdn.WING_GROUP, Djdn.UPPER_N, Djdn.UPPER_S, Djdn.ROOF_N, Djdn.ROOF_S]:
 		var items := []
 		var stack: Array[Node] = [scene.find_child(group, group.begins_with("Djdn"), false)]
 		while not stack.is_empty():
@@ -1518,8 +1520,8 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 			hidden = CoveredCourt.under_roof(student.position.x, student.position.z)
 		elif cut["name"] == SacredHeart.WALK_ROOF:
 			hidden = SacredHeart.in_walk(student.position.x, student.position.z)
-		elif cut["name"] in [Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP, Djdn.ROOF_GROUP, Djdn.WING_GROUP]:
-			hidden = Djdn.hidden(cut["name"], student.position.x, student.position.z)
+		elif cut["name"] in [Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP, Djdn.ROOF_GROUP, Djdn.WING_GROUP, Djdn.UPPER_N, Djdn.UPPER_S, Djdn.ROOF_N, Djdn.ROOF_S]:
+			hidden = Djdn.hidden(cut["name"], student.position.x, student.position.z, student.level())
 		else:
 			hidden = GymInterior.hidden(cut["name"], p.x, p.y, y, side)
 		hidden = hidden and not free_cam.active # flying, everything stands
@@ -1561,6 +1563,13 @@ func _cut_alpha(group: String) -> float:
 	return -1.0
 
 # --- Checks and captures ----------------------------------------------------------
+
+## Walks the student in a direction (world x/z) until done() says so, for at most 20 s (checks).
+func _walk_until(direction: Vector2, done: Callable) -> void:
+	for i in 600:
+		if done.call():
+			return
+		student.move(direction, false, 1.0 / 30.0, 0.0)
 
 func _all_visible(xs: Array, ys: Array, zs: Array) -> bool:
 	for x in xs:
@@ -2415,6 +2424,46 @@ func _verify_and_capture() -> void:
 				passage_ok = passage_ok and _cut_alpha(Djdn.WING_GROUP) < 1.0 \
 					and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
 		checks.courtyard_gate_through = student.position.z > 98.0 and passage_ok and djdn_in > 0.95
+		# Upstairs: up the lobby's stair to the mezzanine, round its arms to the front corridor, along
+		# it and the north upper gallery; up each courtyard stair onto its gallery; and under the
+		# upper gallery the student is still seen (its floor fades).
+		student.place(-149.2, 102.8, Djdn.FLOOR_Y)
+		_walk_until(Vector2(-1, 0), func() -> bool: return student.position.x < -155.5)
+		var up_ok := absf(student.level() - Djdn.UPPER_Y) < 0.02
+		_walk_until(Vector2(0, 1), func() -> bool: return student.position.z > 112.5)
+		_walk_until(Vector2(1, 0), func() -> bool: return student.position.x > -147.5)
+		up_ok = up_ok and absf(student.level() - Djdn.UPPER_Y) < 0.02 and student.position.x > -147.6
+		_walk_until(Vector2(0, -1), func() -> bool: return student.position.z < 95.9)
+		_walk_until(Vector2(1, 0), func() -> bool: return student.position.x > -125.0)
+		up_ok = up_ok and absf(student.level() - Djdn.UPPER_Y) < 0.02 and student.position.x > -125.1
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		up_ok = up_ok and _cut_alpha(Djdn.ROOF_N) == 0.0 and _cut_alpha(Djdn.UPPER_N) == 1.0 \
+			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		for flight in [[Vector2(-144.2, 98.8), Vector2(0, -1), 96.0], [Vector2(-114.8, 116.85), Vector2(0, 1), 119.5]]:
+			var foot: Vector2 = flight[0]
+			var onto: Vector2 = flight[1]
+			student.place(foot.x, foot.y)
+			_walk_until(Vector2(1, 0), func() -> bool: return student.position.x > foot.x + 7.6)
+			var aim: float = flight[2]
+			_walk_until(onto, func() -> bool: return absf(student.position.z - aim) < 0.2)
+			up_ok = up_ok and absf(student.level() - Djdn.UPPER_Y) < 0.02 and absf(student.position.z - aim) < 0.2
+		student.place(-125.0, 96.0)
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		checks.gallery_upstairs = up_ok and absf(student.level() - Djdn.FLOOR_Y) < 0.02 and _cut_alpha(Djdn.UPPER_N) == 0.0 \
+			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		# No stepping off upstairs: past the galleries' parapets, the arcade's, the mezzanine's edges
+		# (a 4.4 m drop); the slab, the landings' gaps and the stair tops are fine.
+		checks.gallery_no_drop = World.blocked(-125.0, Djdn.NORTH_WING + 0.3, Djdn.UPPER_Y) and World.blocked(-125.0, Djdn.NORTH_WING + 1.0, Djdn.UPPER_Y) \
+			and World.blocked(-125.0, Djdn.SOUTH_WING - 1.0, Djdn.UPPER_Y) and World.blocked(Djdn.BACK + 0.6, Djdn.CENTRE_Z, Djdn.UPPER_Y) \
+			and World.blocked(Djdn.FRONT + Djdn.MEZZANINE + 0.3, Djdn.CENTRE_Z, Djdn.UPPER_Y) and World.blocked(-152.0, Djdn.PAVILION.y - 1.7, Djdn.UPPER_Y) \
+			and not World.blocked(-125.0, 96.0, Djdn.UPPER_Y) and not World.blocked(-136.4, Djdn.NORTH_WING, Djdn.UPPER_Y) \
+			and not World.blocked(-155.4, Djdn.CENTRE_Z, Djdn.UPPER_Y) and not World.blocked(-152.0, 112.5, Djdn.UPPER_Y)
 		student.place(-164.0, Djdn.CENTRE_Z)
 		_snap_follow()
 		_update_cutaways(0.0, true)
@@ -2657,7 +2706,7 @@ func _verify_and_capture() -> void:
 			_travel_to(i)
 			var spot: Vector2 = place[1]
 			travelled = travelled and Vector2(student.position.x, student.position.z).distance_to(spot) < 0.01 \
-				and is_equal_approx(target_width, place[2])
+				and is_equal_approx(target_width, place[2]) and (place.size() < 4 or absf(student.level() - place[3]) < 0.02)
 		checks.fast_travel = travelled
 		student.position = saved
 		_snap_follow()

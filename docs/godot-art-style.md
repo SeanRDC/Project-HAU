@@ -1085,6 +1085,15 @@ Build an interior the same way:
   the passage from the Student Center's courtyard gate the north wing's rooms west of
   and over it fade (`DjdnNorthWingWest`). The Main Building's windows sit fully proud
   of their walls (`_window`), so a wing seen in section never shows them inside it.
+  Upstairs (`UPPER_Y` 5.3) is a ring: both upper galleries, the upper corridor over
+  the arcade and the lobby's mezzanine (west and south arms). Three stairs
+  (`Djdn.STAIRS`, 0.2 m risers, solid underneath): the lobby's along its north wall
+  rising west, and one in front of each gallery rising east to a landing through a
+  gap in the parapet. Each upper gallery's floor (`DjdnGalleryUpperN/S`) fades while
+  the student walks under it, and its roof (`DjdnGalleryRoofN/S`) while they are
+  anywhere in that gallery: from the low west camera both stand in front of them.
+  Upstairs the band's ceiling rises with the student. Fast-travel places may carry
+  a fourth element, the level to land on.
 - **Lights inside** are plain `OmniLight3D`s in their own group, on at every
   hour but only while the student is in (not in `world.lamps`, which are night
   lamps). Windows inside glow by day through `glow()`.

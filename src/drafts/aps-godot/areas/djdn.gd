@@ -240,9 +240,9 @@ const MASTS: Array[Vector2] = [Vector2(-134.0, 99.2), Vector2(-125.0, 99.2), Vec
 const TREES: Array[Vector2] = [Vector2(-141.0, 100.5), Vector2(-141.0, 115.3)]
 const PLANTER_R := 1.1
 ## The bins (green, blue, yellow) and the potted plants along the galleries' steps.
-const BINS: Array[Rect2] = [Rect2(-144.6, 98.35, 1.5, 0.5), Rect2(-112.6, 116.95, 1.5, 0.5)]
-const POTS: Array[Vector2] = [Vector2(-142.6, 98.6), Vector2(-138.2, 98.6), Vector2(-108.4, 98.6),
-	Vector2(-138.2, 116.8), Vector2(-142.6, 116.8), Vector2(-114.6, 116.8)]
+const BINS: Array[Rect2] = [Rect2(-131.8, 98.35, 1.5, 0.5), Rect2(-122.6, 116.95, 1.5, 0.5)]
+const POTS: Array[Vector2] = [Vector2(-136.2, 98.6), Vector2(-128.6, 98.6), Vector2(-108.4, 98.6),
+	Vector2(-138.2, 116.8), Vector2(-142.6, 116.8), Vector2(-118.6, 116.8)]
 ## The gallery posts along the courtyard edge, every POST_STEP from POST_FROM (none in the passage).
 const POST_FROM := -144.3
 const POST_STEP := 3.4
@@ -253,6 +253,58 @@ const ARCADE_FLOOR := 0.12
 ## The glass roof over the courtyard: its group (faded while inside, like the Student Center's).
 const GLASS_Y := 12.0
 const ROOF_GROUP := "DjdnGlassRoof"
+
+# --- Upstairs -------------------------------------------------------------------------------
+#
+# The ring upstairs at UPPER_Y: both upper galleries, the front block's upper corridor over the
+# arcade, and the lobby's mezzanine (its west arm along the front wall, its south arm along the
+# south wall) round the double-height void. Three stairs: the lobby's along its north wall rising
+# west to the mezzanine, and one in front of each gallery in the courtyard rising east to a landing
+# through a gap in the gallery's parapet. Stairs are solid floors (nothing walks under them).
+
+## Each stair: [x at its foot, x at its top, z0, z1, the foot's floor, the top's], rising along x.
+const STAIRS: Array = [
+	[-149.4, -155.9, PAVILION.x + 0.02, PAVILION.x + 1.2, FLOOR_Y, UPPER_Y],
+	[-143.9, -137.2, 98.25, 99.35, YARD_Y, UPPER_Y],
+	[-114.4, -107.7, 116.3, 117.4, YARD_Y, UPPER_Y]]
+const RISER := 0.2
+## The courtyard stairs' landings, from their top step across to the gallery's edge (solid).
+const LANDINGS: Array[Rect2] = [Rect2(-137.2, NORTH_WING - 0.01, 1.6, 99.35 - NORTH_WING + 0.01),
+	Rect2(-107.7, 116.3, 1.6, SOUTH_WING - 116.3 + 0.01)]
+## The floors upstairs: the north and south upper galleries, the front corridor, the mezzanine's
+## west and south arms.
+const MEZZANINE := 1.6
+const UPPER: Array[Rect2] = [
+	Rect2(CORRIDOR, NORTH_ROOMS, THEATRE_X - CORRIDOR, NORTH_WING - NORTH_ROOMS),
+	Rect2(CORRIDOR, SOUTH_WING, THEATRE_X - CORRIDOR, SOUTH_ROOMS - SOUTH_WING),
+	Rect2(CORRIDOR, NORTH_ROOMS, BACK - CORRIDOR, SOUTH_ROOMS - NORTH_ROOMS),
+	Rect2(FRONT, PAVILION.x, MEZZANINE, PAVILION.y - PAVILION.x),
+	Rect2(FRONT, PAVILION.y - 1.4, CORRIDOR - FRONT, 1.4)]
+## The galleries' fade groups: each upper floor (slab, parapet, rail, posts) fades while the
+## student is under it, each roof while the student is anywhere in that gallery (from the camera,
+## low and west, they stand in front of the student).
+const UPPER_N := "DjdnGalleryUpperN"
+const UPPER_S := "DjdnGalleryUpperS"
+const ROOF_N := "DjdnGalleryRoofN"
+const ROOF_S := "DjdnGalleryRoofS"
+
+## The floor a stair's tread has at x, z (NAN off the stair).
+static func stair_at(stair: Array, x: float, z: float) -> float:
+	var foot: float = stair[0]
+	var top: float = stair[1]
+	if z < stair[2] or z > stair[3] or x < minf(foot, top) or x > maxf(foot, top):
+		return NAN
+	var rise: float = stair[5] - stair[4]
+	var steps := roundi(rise / RISER)
+	var t := clampf((x - foot) / (top - foot), 0.0, 1.0)
+	return stair[4] + rise * mini(steps, floori(t * steps) + 1) / steps
+
+## Whether a point is in a landing's gap in a parapet (x along the gallery's edge).
+static func in_landing_gap(x: float) -> bool:
+	for landing in LANDINGS:
+		if x > landing.position.x + 0.05 and x < landing.end.x - 0.05:
+			return true
+	return false
 
 ## How far outside the stage's edge a point is (negative on it): the circle and the square ends.
 static func stage_distance(x: float, z: float) -> float:
@@ -273,10 +325,21 @@ static func gallery_posts() -> Array[float]:
 static func sectioned(x: float, z: float) -> bool:
 	return inside(x, z) and not hidden(ROOMS_GROUP, x, z)
 
-## Whether a fade group is in the way of a student at x, z.
-static func hidden(group: String, x: float, z: float) -> bool:
+## Whether a fade group is in the way of a student at x, z, standing at level.
+static func hidden(group: String, x: float, z: float, level := NAN) -> bool:
 	if not inside(x, z):
 		return false
+	var north := z > NORTH_ROOMS - 0.5 and z < NORTH_WING + 0.3 and x > CORRIDOR
+	var south := z > SOUTH_WING - 0.3 and z < SOUTH_ROOMS + 0.5 and x > CORRIDOR
+	var below := is_nan(level) or level < UPPER_Y - 1.0
+	if group == ROOF_N:
+		return north
+	if group == ROOF_S:
+		return south
+	if group == UPPER_N:
+		return north and below
+	if group == UPPER_S:
+		return south and below
 	if group == ROOMS_GROUP:
 		return x > CORRIDOR - 0.5
 	if group == WING_GROUP:
@@ -322,7 +385,20 @@ static func ground_at(x: float, z: float) -> float:
 
 ## Every floor at a point: [height, solid] (a solid floor fills down to the ground below it).
 static func floors(x: float, z: float) -> Array:
-	return [[ground_at(x, z), false]]
+	var list := [[ground_at(x, z), false]]
+	for stair in STAIRS:
+		var h := stair_at(stair, x, z)
+		if not is_nan(h):
+			list.append([h, true])
+	var p := Vector2(x, z)
+	for landing in LANDINGS:
+		if landing.has_point(p):
+			list.append([UPPER_Y, true])
+	for upper in UPPER:
+		if upper.has_point(p):
+			list.append([UPPER_Y, false])
+			break
+	return list
 
 ## The floor a walker at height level stands on here: the highest it can step onto (0.5 m up at
 ## most); without a level, the ground's.
@@ -345,6 +421,12 @@ static func _blocked_inside(x: float, z: float, level := NAN) -> bool:
 		if entry[1] and entry[0] > at + 0.5:
 			return true # the side of a stair
 	var p := Vector2(x, z)
+	if at > UPPER_Y - 0.1 and x > BACK - 0.2:
+		# The galleries' parapets and the arcade's (open at the landings).
+		if (absf(z - NORTH_WING) < 0.22 or absf(z - SOUTH_WING) < 0.22) and not in_landing_gap(x):
+			return true
+		if absf(x - BACK) < 0.22 and z > NORTH_WING and z < SOUTH_WING:
+			return true
 	if at < UPPER_Y - 1.0:
 		if p.distance_to(BUST) < 0.55 or CASE.grow(0.2).has_point(p):
 			return true
@@ -458,6 +540,8 @@ func build(world_builder: RefCounted) -> void:
 	_passage()
 	_masts()
 	_yard_props()
+	_stairs()
+	_mezzanine()
 	w._flush()
 	w.root = _group(building, ROOF_GROUP)
 	_glass_roof()
@@ -1273,6 +1357,7 @@ func _galleries() -> void:
 	var teal: Material = w.material("plain", Color("2f7d7b"))
 	var breeze: Material = w.material("stucco", Color("eee6cf"))
 	var hole: Material = w.material("plain", Color("4b4237"))
+	var building: Node3D = w.root
 	for side in [-1.0, 1.0]:
 		# side -1: the north gallery (rooms at NORTH_ROOMS, edge at NORTH_WING); 1: the south.
 		var rooms: float = NORTH_ROOMS if side < 0.0 else SOUTH_ROOMS
@@ -1280,27 +1365,36 @@ func _galleries() -> void:
 		var inward: float = -side # from the rooms towards the courtyard
 		var post_z := edge - inward * 0.15
 		var x1 := THEATRE_X
-		# The upper floor: slab (red tiles on top, white beneath), its edge beam.
+		for post in gallery_posts():
+			_block(post - 0.13, post + 0.13, FLOOR_Y, UPPER_Y - 0.5, post_z - 0.13, post_z + 0.13, white)
+		# The upper floor, in its fade group: slab (red tiles on top, white beneath), its edge beam,
+		# the low parapet with the iron rail along it (open at the stair's landing), the posts.
+		w._flush()
+		w.root = _group(building, UPPER_N if side < 0.0 else UPPER_S)
 		_block(CORRIDOR, x1, UPPER_Y - 0.32, UPPER_Y - 0.01, rooms, edge, slab)
 		_block(CORRIDOR, x1, UPPER_Y - 0.01, UPPER_Y, rooms, edge, red)
 		_block(BACK, x1, UPPER_Y - 0.5, UPPER_Y, edge - inward * 0.02, edge + inward * 0.12, white)
-		# The low parapet on the upper edge, with the iron rail along it.
-		_block(BACK, x1, UPPER_Y, UPPER_Y + 0.75, edge - inward * 0.14, edge + inward * 0.02, white)
-		w.rod(Vector3(BACK, UPPER_Y + 1.05, edge - inward * 0.06), Vector3(x1, UPPER_Y + 1.05, edge - inward * 0.06), 0.03, iron)
-		var x := BACK + 0.6
-		while x < x1:
-			w.rod(Vector3(x, UPPER_Y + 0.75, edge - inward * 0.06), Vector3(x, UPPER_Y + 1.05, edge - inward * 0.06), 0.015, iron)
-			x += 0.6
-		# The posts, both storeys.
+		var landing: Rect2 = LANDINGS[0] if side < 0.0 else LANDINGS[1]
+		for run in [Vector2(BACK, landing.position.x), Vector2(landing.end.x, x1)]:
+			_block(run.x, run.y, UPPER_Y, UPPER_Y + 0.75, edge - inward * 0.14, edge + inward * 0.02, white)
+			w.rod(Vector3(run.x, UPPER_Y + 1.05, edge - inward * 0.06), Vector3(run.y, UPPER_Y + 1.05, edge - inward * 0.06), 0.03, iron)
+			var x: float = run.x + 0.3
+			while x < run.y - 0.1:
+				w.rod(Vector3(x, UPPER_Y + 0.75, edge - inward * 0.06), Vector3(x, UPPER_Y + 1.05, edge - inward * 0.06), 0.015, iron)
+				x += 0.6
 		for post in gallery_posts():
-			_block(post - 0.13, post + 0.13, FLOOR_Y, UPPER_Y - 0.5, post_z - 0.13, post_z + 0.13, white)
 			_block(post - 0.1, post + 0.1, UPPER_Y + 0.75, 8.7, post_z - 0.1, post_z + 0.1, white)
-		# The roof over the upper gallery: white corrugated sheet from the rooms' wall down past the edge.
+		# The roof over the upper gallery, in its own: white corrugated sheet from the rooms' wall
+		# down past the edge.
+		w._flush()
+		w.root = _group(building, ROOF_N if side < 0.0 else ROOF_S)
 		var reach := absf(edge - rooms) + 0.9
 		var drop := 1.0
 		var tilt := atan2(drop, reach)
 		w.box(Vector3(x1 - BACK + 0.4, 0.08, reach / cos(tilt) + 0.1), Vector3((BACK + x1) / 2.0, 9.25 - drop / 2.0, rooms + inward * reach / 2.0), sheet, 0.0, -inward * tilt)
 		_block(BACK - 0.2, x1, 8.55, 8.75, edge + inward * 0.85, edge + inward * 0.95, white)
+		w._flush()
+		w.root = building
 		# The rooms' wall: on each floor, every other bay a teal door, a window and a breeze-block panel.
 		var normal := Vector3(0, 0, inward)
 		var face := rooms + inward * 0.005
@@ -1439,3 +1533,92 @@ func _glass_roof() -> void:
 		var leaf: MeshInstance3D = w._mesh(card, Vector3(x0 + random.randf_range(0.0, 0.6), GLASS_Y + 0.1, vz), vine, random.randf() * PI)
 		leaf.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
 		vz += random.randf_range(0.9, 1.6)
+
+# --- Upstairs -----------------------------------------------------------------------------------
+
+## A sloped iron handrail at `height` over a stair's nosings along z, with a baluster every few
+## steps, from its foot to its top.
+func _stair_rail(stair: Array, z: float, height: float) -> void:
+	var iron := Color("2a2b2c")
+	var foot: float = stair[0]
+	var top: float = stair[1]
+	var y0: float = stair[4]
+	var y1: float = stair[5]
+	w.rod(Vector3(foot, y0 + height, z), Vector3(top, y1 + height, z), 0.03, iron)
+	var steps := roundi((y1 - y0) / RISER)
+	for k in range(0, steps + 1, 3):
+		var t := float(k) / steps
+		var x := lerpf(foot, top, t)
+		var y := lerpf(y0, y1, t)
+		w.rod(Vector3(x, y, z), Vector3(x, y + height, z), 0.015, iron)
+
+## The three stairs: a solid block under each tread with a dark nosing, the rails; the courtyard
+## stairs' landings across to the galleries, railed on their open sides.
+func _stairs() -> void:
+	var marble: Material = w.material("slab", Color("e9dcc6"))
+	var terrazzo: Material = w.material("concrete", Color("cdc7be"))
+	var red: Material = w.material("floor", Color("d8836a"))
+	var white: Material = w.material("stucco", Color("f2eee3"))
+	var nosing: Material = w.material("plain", Color("6f655f"))
+	for i in STAIRS.size():
+		var stair: Array = STAIRS[i]
+		var foot: float = stair[0]
+		var top: float = stair[1]
+		var z0: float = stair[2]
+		var z1: float = stair[3]
+		var y0: float = stair[4]
+		var y1: float = stair[5]
+		var made: Material = marble if i == 0 else terrazzo
+		var steps := roundi((y1 - y0) / RISER)
+		var run := (top - foot) / steps
+		for k in steps:
+			var h := y0 + (y1 - y0) * (k + 1) / steps
+			var xa := foot + run * k
+			var xb := foot + run * (k + 1)
+			_block(xa, xb, y0 - 0.05, h, z0, z1, made)
+			_block(xa - 0.02 * signf(run), xa + 0.05 * signf(run), h - 0.03, h + 0.004, z0, z1, nosing)
+		if i == 0:
+			# The lobby's: against the north wall, its rail on the open (south) side.
+			_stair_rail(stair, z1 - 0.05, 0.95)
+		else:
+			# The courtyard's: white side walls up to the rail's height along both sides.
+			for z in [z0, z1]:
+				_stair_rail(stair, z + (0.05 if z == z0 else -0.05), 0.95)
+	for landing in LANDINGS:
+		_block(landing.position.x, landing.end.x, YARD_Y - 0.05, UPPER_Y - 0.01, landing.position.y, landing.end.y, white)
+		_block(landing.position.x, landing.end.x, UPPER_Y - 0.01, UPPER_Y, landing.position.y, landing.end.y, red)
+		# Rails on its open sides: east, and the courtyard side beyond the stair.
+		var iron := Color("2a2b2c")
+		var x1 := landing.end.x - 0.05
+		w.rod(Vector3(x1, UPPER_Y + 1.0, landing.position.y), Vector3(x1, UPPER_Y + 1.0, landing.end.y), 0.03, iron)
+		for z in [landing.position.y + 0.1, (landing.position.y + landing.end.y) / 2.0, landing.end.y - 0.1]:
+			w.rod(Vector3(x1, UPPER_Y, z), Vector3(x1, UPPER_Y + 1.0, z), 0.015, iron)
+		var outer := landing.end.y - 0.05 if landing.position.y < CENTRE_Z else landing.position.y + 0.05
+		w.rod(Vector3(landing.position.x, UPPER_Y + 1.0, outer), Vector3(x1, UPPER_Y + 1.0, outer), 0.03, iron)
+
+## The lobby's mezzanine round the double-height void: its west arm along the front wall and its
+## south arm along the south wall, marble on top and white beneath, an iron railing of balusters
+## and a scroll band (the photos) along its edge to the void.
+func _mezzanine() -> void:
+	var marble: Material = w.material("slab", Color("e9dcc6"))
+	var white: Material = w.material("stucco", Color("f4f1e8"))
+	var west: Rect2 = UPPER[3]
+	var south: Rect2 = UPPER[4]
+	for arm in [west, south]:
+		_block(arm.position.x, arm.end.x, UPPER_Y - 0.32, UPPER_Y - 0.01, arm.position.y, arm.end.y, white)
+		_block(arm.position.x, arm.end.x, UPPER_Y - 0.01, UPPER_Y, arm.position.y, arm.end.y, marble)
+	var iron := Color("1d1d1d")
+	var edge_x := west.end.x - 0.05
+	var edge_z := south.position.y + 0.05
+	var lines := [[Vector3(edge_x, 0.0, STAIRS[0][3]), Vector3(edge_x, 0.0, edge_z)],
+		[Vector3(edge_x, 0.0, edge_z), Vector3(CORRIDOR, 0.0, edge_z)]]
+	for line in lines:
+		var a: Vector3 = line[0]
+		var b: Vector3 = line[1]
+		for h in [UPPER_Y + 1.0, UPPER_Y + 0.88, UPPER_Y + 0.12]:
+			w.rod(Vector3(a.x, h, a.z), Vector3(b.x, h, b.z), 0.025 if h > UPPER_Y + 0.95 else 0.012, iron)
+		var length := a.distance_to(b)
+		var count := maxi(2, floori(length / 0.14))
+		for k in count + 1:
+			var at := a.lerp(b, float(k) / count)
+			w.rod(Vector3(at.x, UPPER_Y + 0.12, at.z), Vector3(at.x, UPPER_Y + 0.88, at.z), 0.008, iron)
