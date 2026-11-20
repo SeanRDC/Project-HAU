@@ -71,6 +71,11 @@ const NORTH_WALK := Vector2(66.5, 71.0)
 const NORTH_WEST := -259.0
 const PAVILION := Rect2(-219.2, 65.8, 4.6, 5.9)
 const NORTH_PATH := Rect2(-216.6, 71.0, 2.0, 9.6)
+## The north covered walk's ceiling and bays, the pavilion's ceiling, the roofs' fade group.
+const NORTH_CEILING := COVER_Y + 2.7
+const NORTH_BAY := 3.4
+const PAVILION_CEILING := COVER_Y + 3.0
+const NORTH_ROOF := "EpiphanyNorthRoof"
 
 ## The steps from the side gate colonnade's west pavilion down to the road (in the fence's frame:
 ## lx from the colonnade's walk end to the strip's west end, lz between its pillars' rows).
@@ -165,6 +170,14 @@ static func blocked(x: float, z: float) -> bool:
 	var b := a + Vector2(cos(SWING_OPEN), -sin(SWING_OPEN)) * 2.7
 	if Geometry2D.get_closest_point_to_segment(Vector2(x, z), a, b).distance_to(Vector2(x, z)) < 0.2:
 		return true
+	if in_north_walk(x, z):
+		for px in _north_pillars():
+			if absf(x - px) < 0.4 and (absf(z - NORTH_WALK.x) < 0.4 or absf(z - NORTH_WALK.y) < 0.4):
+				return true
+		for corner in [PAVILION.position, Vector2(PAVILION.end.x, PAVILION.position.y), PAVILION.end, Vector2(PAVILION.position.x, PAVILION.end.y)]:
+			var c: Vector2 = corner + (PAVILION.get_center() - corner).normalized() * 0.42
+			if absf(x - c.x) < 0.45 and absf(z - c.y) < 0.45:
+				return true
 	if in_south_walk(x, z):
 		var bays := _south_pillars()
 		for i in bays.size():
@@ -242,6 +255,8 @@ func build(world_builder: RefCounted) -> void:
 	_swing_gate()
 	_crossing()
 	_steps()
+	_north_walk()
+	_north_garden()
 	w._flush()
 	w.root = saved
 
@@ -966,3 +981,86 @@ func _steps() -> void:
 		w.box(Vector3(STEPS_LX.x - STEPS_LX.y, SideGate.GATE_Y - ROAD_Y + 0.25, 0.2), Vector3(cheek.x, (SideGate.GATE_Y + ROAD_Y) / 2.0 + 0.03, cheek.y), yellow, turn)
 	var landing := SideGate.fence_world(STEPS_LX.y - 1.1, mid_lz)
 	w.box(Vector3(2.2, 0.2, width + 0.5), Vector3(landing.x, ROAD_Y - 0.1, landing.y), w.material("concrete", Color("a9a69e")), turn)
+
+# --- The north: the covered walk, its pavilion and the garden ---------------------------------
+
+## The covered walk along the north side (the "covered shed"; 153055, 153057, and "epiphany begin,
+## facing the campus"): square cream pillars on both rows with small dark plaques, cream beams, a
+## dark slatted ceiling and a flat roof with a dark fascia; a plain floor of pale tiles; at its east
+## end the pavilion, taller, under a hipped terracotta roof with wide eaves, a step up to it from the
+## path across the lawn. The roof and the pavilion's are a fade group (hidden while the student is
+## under them).
+func _north_walk() -> void:
+	var floor: Material = w.material("tile", Color("d8d2c4"))
+	var cream: Material = w.material("stucco", Color("ece0bf"))
+	var trim: Material = w.material("plain", Color("f1e9d2"))
+	var plaque: Material = w.material("plain", Color("5a4636"))
+	_block(NORTH_WEST, PAVILION.end.x, ROAD_Y - 0.2, COVER_Y, NORTH_WALK.x - 0.3, NORTH_WALK.y + 0.3, floor)
+	_block(PAVILION.position.x, PAVILION.end.x, ROAD_Y - 0.2, COVER_Y + 0.02, PAVILION.position.y, PAVILION.end.y, floor)
+	var xs := _north_pillars()
+	for x in xs:
+		for row in [NORTH_WALK.x, NORTH_WALK.y]:
+			_block(x - 0.24, x + 0.24, COVER_Y, NORTH_CEILING + 0.1, row - 0.24, row + 0.24, cream)
+			_block(x - 0.3, x + 0.3, COVER_Y, COVER_Y + 0.22, row - 0.3, row + 0.3, trim)
+			_block(x - 0.1, x + 0.1, COVER_Y + 1.55, COVER_Y + 1.95, row + 0.245, row + 0.255, plaque)
+	# The pavilion's corner pillars, wider, with their plaques.
+	for corner in [PAVILION.position, Vector2(PAVILION.end.x, PAVILION.position.y), PAVILION.end, Vector2(PAVILION.position.x, PAVILION.end.y)]:
+		var c: Vector2 = corner + (PAVILION.get_center() - corner).normalized() * 0.42
+		_block(c.x - 0.3, c.x + 0.3, COVER_Y, PAVILION_CEILING + 0.1, c.y - 0.3, c.y + 0.3, cream)
+		_block(c.x - 0.36, c.x + 0.36, COVER_Y, COVER_Y + 0.28, c.y - 0.36, c.y + 0.36, trim)
+		_block(c.x - 0.12, c.x + 0.12, COVER_Y + 1.6, COVER_Y + 2.05, c.y + 0.3, c.y + 0.31, plaque)
+	var roof := Node3D.new()
+	roof.name = NORTH_ROOF
+	w.root.add_child(roof)
+	var saved: Node3D = w.root
+	w._flush()
+	w.root = roof
+	var slat: Material = w.material("plain", Color("2c2723"))
+	for row in [NORTH_WALK.x, NORTH_WALK.y]:
+		_block(NORTH_WEST - 0.3, PAVILION.position.x, NORTH_CEILING, NORTH_CEILING + 0.32, row - 0.22, row + 0.22, trim)
+	var x := NORTH_WEST + 0.15
+	while x < PAVILION.position.x:
+		_block(x - 0.05, x + 0.05, NORTH_CEILING - 0.02, NORTH_CEILING + 0.06, NORTH_WALK.x, NORTH_WALK.y, slat)
+		x += 0.3
+	_block(NORTH_WEST - 0.4, PAVILION.position.x, NORTH_CEILING + 0.32, NORTH_CEILING + 0.52, NORTH_WALK.x - 0.5, NORTH_WALK.y + 0.5, cream)
+	_block(NORTH_WEST - 0.4, PAVILION.position.x, NORTH_CEILING + 0.28, NORTH_CEILING + 0.56, NORTH_WALK.y + 0.5, NORTH_WALK.y + 0.56, w.material("wood", Color("4a3a2e")))
+	for px in xs:
+		_block(px + 1.5, px + 1.8, NORTH_CEILING - 0.05, NORTH_CEILING + 0.01, (NORTH_WALK.x + NORTH_WALK.y) / 2.0 - 0.15, (NORTH_WALK.x + NORTH_WALK.y) / 2.0 + 0.15, w.glow(Color("fff1d6"), 0.15, 2.0))
+	_block(PAVILION.position.x, PAVILION.end.x, PAVILION_CEILING, PAVILION_CEILING + 0.4, PAVILION.position.y, PAVILION.end.y, trim)
+	_hip_roof(PAVILION.grow(0.7), PAVILION_CEILING + 0.4, 1.9)
+	w._flush()
+	w.root = saved
+	# The path across the lawn from the curb walk's east end to the pavilion.
+	_block(NORTH_PATH.position.x, NORTH_PATH.end.x, ROAD_Y - 0.2, COVER_Y, NORTH_PATH.position.y, NORTH_PATH.end.y, w.material("concrete", Color("b9b5ac")))
+
+## The north row's pillars (x), every NORTH_BAY from the pavilion westward.
+static func _north_pillars() -> Array[float]:
+	var xs: Array[float] = []
+	var x := PAVILION.position.x - 0.3
+	while x > NORTH_WEST + 0.2:
+		xs.push_front(x)
+		x -= NORTH_BAY
+	xs.push_front(NORTH_WEST + 0.3)
+	return xs
+
+## The garden between the covered walk and the north lawn: dark earth beds edged in concrete, with
+## the clumps of broad dark leaves (birds of paradise, heliconias; 153055) and lower shrubs.
+func _north_garden() -> void:
+	var earth: Material = w.material("dirt", Color("6b5a45"))
+	_rect(NORTH_WEST, PAVILION.position.x - 0.4, NORTH_GARDEN, AXIS - LAWN_OUT, LAWN_Y + 0.01, earth)
+	var kerb: Material = w.material("concrete", Color("c3beb3"))
+	_block(NORTH_WEST, PAVILION.position.x - 0.4, LAWN_Y - 0.1, LAWN_Y + 0.14, NORTH_GARDEN - 0.06, NORTH_GARDEN + 0.06, kerb)
+	var dark: Array[Color] = [Color("1f3a22"), Color("2b4a2a"), Color("3a5f33"), Color("4f7a3e"), Color("6b8f45")]
+	var random := RandomNumberGenerator.new()
+	random.seed = 7710
+	var x := NORTH_WEST + 0.8
+	while x < PAVILION.position.x - 1.0:
+		if absf(x - (NORTH_PATH.position.x + 1.0)) > 1.6:
+			var z := random.randf_range(NORTH_GARDEN + 0.9, AXIS - LAWN_OUT - 1.0)
+			w._shrub(Vector3(x, LAWN_Y, z), random.randf_range(1.0, 1.5), 7711 + int(x * 10.0), dark)
+		x += random.randf_range(1.1, 1.8)
+	# The low shrubs in a line along the walk's edge.
+	x = NORTH_WEST + 0.5
+	while x < PAVILION.position.x - 0.8:
+		w._shrub(Vector3(x, LAWN_Y, NORTH_GARDEN + 0.45), 0.6, 7800 + int(x * 10.0))
+		x += 0.9
