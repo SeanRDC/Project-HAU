@@ -1098,8 +1098,12 @@ Build an interior the same way:
   a fourth element, the level to land on.
 - **Side gate** (`SideGate.view_for`, eased in `aps.gd` as `gate_view`): on the flag
   circle, the walk and the parking beside it the camera turns `SideGate.GATE_TURNS`
-  (2.28 quarter turns) to look at the gate square to the fence, and everything more
-  than `GATE_CUT` (4 m) in front of the student is cut away through the ground line.
+  (2.28 quarter turns) to look at the gate square to the fence, and everything further
+  from the fence than `SideGate.CUT_LZ` (38 m, past the circle's palms) is cut away
+  through the ground line. A cut a few metres in front of the student was tried: it
+  sliced the walk's trees and left their crowns floating. Under the colonnade it is
+  the covered walk's cutaway (`colonnade`, `SideGate.colonnade_for`): the near plane at
+  the inner row of pillars, the slatted ceiling as the band's top.
   The boulevard's view keeps the circle's north apron, and the drive stays the
   front's; the chapel, MGN and the front views yield to it.
 - **Lights inside** are plain `OmniLight3D`s in their own group, on at every

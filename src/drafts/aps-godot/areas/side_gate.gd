@@ -71,9 +71,53 @@ const WALK_LAMPS: Array[Vector2] = [Vector2(-2.95, 8.4), Vector2(2.95, 8.4), Vec
 const LAMP_R := 5.85
 ## The EVACUATION SITE 5 sign by the walk's head.
 const SIGN := Vector2(-3.0, 19.0)
-## The camera's view facing the gate: on the circle and its flights, the walk and the parking,
-## eased in across their edges.
 const BUILT_NAME := "SideGate"
+## Facing the gate the camera stands over the boulevard: everything further from the fence than
+## this (past the circle's palms) is cut away.
+const CUT_LZ := 38.0
+
+# --- The gate strip (from 153008, 153020, 153024 and HAU SIDE GATE DESIGN.jpg) --------------------
+#
+# Along the fence (lz 0) from the strip's west end to the drive: the gatehouse square over the walk
+# (white piers, the band with LAUS DEO SEMPER 1933 inside and HOLY ANGEL UNIVERSITY and the seal
+# outside, the glass pyramid on its white frame, three steps up from the walk, the turnstiles and
+# the guard's desk inside, the iron gates folded back on the street side); either side of it the
+# colonnade (square cream pillars with dark inset panels, cream beams, a dark slatted ceiling, the
+# floor's dark X in every bay with beige borders, stone benches) to a terracotta-roofed pavilion at
+# each end; the iron fence with rings on cream piers over a low wall; at the drive the car gate
+# (closed) with the small guardhouse beside it; the bronze angel on its red pedestal on the lawn.
+
+## The gatehouse's floor level (three steps up from the walk), its half width and its piers.
+const GATE_Y := WALK_Y + 0.45
+const HOUSE_HALF := 3.2
+const STEPS := Vector2(5.85, 6.75)
+const TURNSTILES := 2.6
+const PIER := 0.9
+## The colonnade: from the gatehouse along the fence each way (|lx|), its pillars' rows (lz) and
+## their spacing, the pavilions at its ends; the covered walk between the rows.
+const COLONNADE := Vector2(2.9, 17.2)
+const PILLARS: Array[float] = [4.0, 7.0, 10.0, 13.0, 17.4]
+const ROWS := Vector2(0.6, 4.1)
+const COL_WALK := Vector2(0.95, 3.3)
+const COL_CEILING := GATE_Y + 3.05
+## The covered walk's cutaway: its middle (lz), the near plane just inside the inner row's faces
+## (COL_CUT past the middle towards the camera, so the inner pillars fall away; the walk stops
+## short of it), and the band behind it.
+const COL_MIDDLE := 2.35
+const COL_CUT := 1.4
+const COL_BAND := 1.9
+const BENCHES_COL: Array[float] = [5.5, 8.5, 11.5]
+## The strip's ends along the fence, the car gate across the drive (lx), the fence's far end at
+## the Main Building's south-west corner, the guardhouse, the angel.
+const STRIP_WEST := -19.6
+const CAR_GATE := Vector2(19.7, 25.65)
+const FENCE_EAST := 37.35
+const GUARDHOUSE := Rect2(17.8, 0.7, 1.7, 1.7)
+const ANGEL := Vector2(10.5, 5.6)
+const GATEHOUSE_NAME := "SideGateGatehouse"
+const COLONNADE_NAME := "SideGateColonnade"
+const FENCE_NAME := "SideGateFence"
+const CAR_GATE_NAME := "SideGateCarGate"
 
 static func fence_local(x: float, z: float) -> Vector2:
 	var d := Vector2(x, z) - GATE
@@ -108,10 +152,22 @@ static func on_parking(x: float, z: float) -> bool:
 	var p := fence_local(x, z)
 	return p.x > PARK_LX and p.y >= STRIP + 0.6 and p.y <= PARK_LZ and x < DRIVE_WEST
 
+## The gatehouse's floor inside the turnstiles and its steps from the walk.
+static func in_gatehouse(x: float, z: float) -> bool:
+	var p := fence_local(x, z)
+	if p.y >= STEPS.x and p.y < STEPS.y:
+		return absf(p.x) < PAVING
+	return absf(p.x) < COLONNADE.x + 0.1 and p.y >= TURNSTILES and p.y < STEPS.x
+
+## The colonnade's covered walk and the pavilions (either side of the gatehouse).
+static func in_colonnade(x: float, z: float) -> bool:
+	var p := fence_local(x, z)
+	return absf(p.x) >= COLONNADE.x and absf(p.x) <= COLONNADE.y and p.y >= COL_WALK.x and p.y <= COL_WALK.y
+
 static func walkable(x: float, z: float) -> bool:
 	if Vector2(x, z).distance_to(CIRCLE) < CIRCLE_R + 0.02:
 		return on_circle(x, z)
-	return on_walk(x, z) or on_parking(x, z) or NORTH_APRON.has_point(Vector2(x, z))
+	return on_walk(x, z) or on_parking(x, z) or NORTH_APRON.has_point(Vector2(x, z)) or in_gatehouse(x, z) or in_colonnade(x, z)
 
 static func blocked(x: float, z: float) -> bool:
 	if not walkable(x, z):
@@ -126,12 +182,29 @@ static func blocked(x: float, z: float) -> bool:
 	for tree in PARK_TREES:
 		if p.distance_to(fence_world(tree.x, tree.y)) < 0.45:
 			return true
+	var q := fence_local(x, z)
+	if in_colonnade(x, z) or in_gatehouse(x, z):
+		# The gatehouse's piers, the colonnade's and pavilions' pillars, the benches, the desk.
+		if absf(q.x) > HOUSE_HALF - PIER - 0.2 and absf(q.x) < HOUSE_HALF + 0.2 and q.y > STEPS.x - PIER - 0.4:
+			return true
+		for pillar in PILLARS:
+			for row in [ROWS.x, ROWS.y]:
+				if absf(absf(q.x) - pillar) < 0.5 and absf(q.y - row) < 0.5:
+					return true
+		for bench in BENCHES_COL:
+			if absf(absf(q.x) - bench) < 1.1 and q.y > ROWS.y - 0.75:
+				return true
 	return false
 
 static func floor_height(x: float, z: float) -> float:
 	if not walkable(x, z):
 		return NAN
 	var flight := flight_at(x, z)
+	if in_gatehouse(x, z) or in_colonnade(x, z):
+		var q := fence_local(x, z)
+		if q.y >= STEPS.x and absf(q.x) < PAVING:
+			return WALK_Y + (GATE_Y - WALK_Y) * (floori((STEPS.y - q.y) / (STEPS.y - STEPS.x) * 3.0) + 1) / 3.0
+		return GATE_Y
 	if Vector2(x, z).distance_to(CIRCLE) < CIRCLE_R + 0.02:
 		if flight.x < 0.0:
 			return CIRCLE_Y
@@ -153,7 +226,20 @@ static func view_for(x: float, z: float) -> float:
 		* (1.0 - smoothstep(CIRCLE_LZ - 1.0, CIRCLE_LZ, p.y))
 	var park := smoothstep(PARK_LX - 0.6, PARK_LX, p.x) * smoothstep(STRIP - 4.0, STRIP - 3.0, p.y) \
 		* (1.0 - smoothstep(PARK_LZ, PARK_LZ + 0.8, p.y)) * (1.0 - smoothstep(DRIVE_WEST - 0.3, DRIVE_WEST + 0.4, x))
-	return maxf(circle, maxf(walk, park))
+	# The gate strip: the gatehouse, the colonnade, the pavilions.
+	var strip := (1.0 - smoothstep(STRIP - 0.5, STRIP + 0.2, p.y)) * (1.0 - smoothstep(COLONNADE.y, COLONNADE.y + 1.0, absf(p.x)))
+	return maxf(maxf(circle, strip), maxf(walk, park))
+
+## How far the student is under the colonnade (the covered walk's cutaway): 1 between its rows,
+## easing in from the gatehouse's side.
+static func colonnade_for(x: float, z: float) -> float:
+	var p := fence_local(x, z)
+	return smoothstep(COLONNADE.x - 0.2, COLONNADE.x + 0.6, absf(p.x)) * (1.0 - smoothstep(COLONNADE.y, COLONNADE.y + 0.5, absf(p.x))) \
+		* (1.0 - smoothstep(COL_WALK.y, COL_WALK.y + 0.6, p.y)) * smoothstep(-0.2, COL_WALK.x, p.y)
+
+## The colonnade's middle line level with the student (world x, z).
+static func colonnade_middle(x: float, z: float) -> Vector2:
+	return fence_world(fence_local(x, z).x, COL_MIDDLE)
 
 # --- Building ---------------------------------------------------------------------------------
 
@@ -177,6 +263,24 @@ func build(world_builder: RefCounted) -> void:
 	_planting()
 	_lamps()
 	_sign()
+	w._flush()
+	_strip_lawn()
+	w.root = _named(grounds, GATEHOUSE_NAME)
+	_gatehouse()
+	w._flush()
+	w.root = _named(grounds, COLONNADE_NAME)
+	_colonnade()
+	_pavilions()
+	w._flush()
+	w.root = _named(grounds, FENCE_NAME)
+	_fence()
+	w._flush()
+	w.root = _named(grounds, CAR_GATE_NAME)
+	_car_gate()
+	w._flush()
+	w.root = grounds
+	_guardhouse()
+	_angel()
 	w._flush()
 	w.root = saved
 
@@ -519,3 +623,312 @@ func _sign() -> void:
 	var label: Label3D = w.panel("EVACUATION SITE 5", Vector3(at.x + INWARD.x * 0.025, 2.05, at.y + INWARD.y * 0.025), 1.2, 0.36, Color("1e1e1e"))
 	label.rotation.y = atan2(INWARD.x, INWARD.y)
 	label.double_sided = false
+
+# --- The gate strip ---------------------------------------------------------------------------
+
+## A named node under parent (the checks find the gate strip's parts).
+func _named(parent: Node3D, node_name: String) -> Node3D:
+	var node := Node3D.new()
+	node.name = node_name
+	parent.add_child(node)
+	return node
+
+## A strip of `width` on the ground from local a to local b (lx, lz), y0..y1.
+func _local_strip(a: Vector2, b: Vector2, width: float, y0: float, y1: float, made: Material) -> void:
+	var p := fence_world(a.x, a.y)
+	var q := fence_world(b.x, b.y)
+	var mid := (p + q) / 2.0
+	w.box(Vector3(width, y1 - y0, p.distance_to(q)), Vector3(mid.x, (y0 + y1) / 2.0, mid.y), made, atan2(q.x - p.x, q.y - p.y))
+
+## A label on a face of the gate strip: facing inward (towards the campus) or out to the street.
+func _strip_label(text: String, lx: float, y: float, lz: float, width: float, height: float, inward: bool) -> void:
+	var at := fence_world(lx, lz)
+	var label: Label3D = w.panel(text, Vector3(at.x, y, at.y), width, height, Color("2a2622"))
+	var facing := INWARD if inward else -INWARD
+	label.rotation.y = atan2(facing.x, facing.y)
+	label.double_sided = false
+
+## The grass on the strip round the gatehouse, the colonnade and the pavilions, out to the fence.
+func _strip_lawn() -> void:
+	var lawn: Material = w.material("lawn", Color("6f8a4b"))
+	var a := fence_world(STRIP_WEST, 0.0)
+	var b := fence_world(CAR_GATE.x, 0.0)
+	var c := fence_world(CAR_GATE.x, STRIP)
+	var d := fence_world(STRIP_WEST, STRIP)
+	w._ground(PackedVector2Array([a, b, c, a, c, d]), WALK_Y - 0.03, lawn)
+
+## The gatehouse: four white piers, the band round their heads with its words, the glass pyramid
+## on its white frame, the floor and the three steps up from the walk, the turnstiles and the
+## guard's desk, a light under the band, the iron gates folded back on the street side.
+func _gatehouse() -> void:
+	var white: Material = w.material("stucco", Color("f3f0e8"))
+	var trim: Material = w.material("plain", Color("f7f5ef"))
+	var floor: Material = w.material("concrete", Color("cfc9bd"))
+	var h := HOUSE_HALF
+	_local_block(-h, h, WALK_Y - 0.1, GATE_Y, 0.2, STEPS.x, floor)
+	for k in 3:
+		var lz0: float = STEPS.x + (STEPS.y - STEPS.x) * k / 3.0
+		var lz1: float = STEPS.x + (STEPS.y - STEPS.x) * (k + 1) / 3.0
+		var top := GATE_Y - (GATE_Y - WALK_Y) * k / 3.0
+		_local_block(-PAVING - 0.3, PAVING + 0.3, WALK_Y - 0.1, top, lz0, lz1, floor)
+		_local_block(-PAVING - 0.3, PAVING + 0.3, top - 0.02, top + 0.004, lz0, lz0 + 0.05, w.material("plain", Color("7d776f")))
+	var band := Vector2(GATE_Y + 3.45, GATE_Y + 4.45)
+	for side in [-1.0, 1.0]:
+		for lz in [0.2, STEPS.x - PIER]:
+			var x0: float = side * (h - PIER)
+			var x1: float = side * h
+			_local_block(x0, x1, GATE_Y, band.x, lz, lz + PIER, white)
+			_local_block(x0 - side * 0.06, x1 + side * 0.06, GATE_Y, GATE_Y + 0.3, lz - 0.06, lz + PIER + 0.06, trim)
+			_local_block(x0 - side * 0.06, x1 + side * 0.06, band.x - 0.25, band.x, lz - 0.06, lz + PIER + 0.06, trim)
+	# The band: four sides round the piers' heads, a cornice over it.
+	_local_block(-h - 0.05, h + 0.05, band.x, band.y, 0.15, 0.6, white)
+	_local_block(-h - 0.05, h + 0.05, band.x, band.y, STEPS.x - 0.45, STEPS.x + 0.05, white)
+	for side in [-1.0, 1.0]:
+		_local_block(side * (h - 0.45), side * (h + 0.05), band.x, band.y, 0.15, STEPS.x + 0.05, white)
+	_local_block(-h - 0.2, h + 0.2, band.y, band.y + 0.18, 0.0, STEPS.x + 0.2, trim)
+	_strip_label("LAUS DEO SEMPER 1933", 0.0, (band.x + band.y) / 2.0, STEPS.x + 0.08, 4.8, 0.5, true)
+	_strip_label("HOLY ANGEL UNIVERSITY", 0.0, (band.x + band.y) / 2.0 - 0.1, 0.12, 5.0, 0.5, false)
+	var seal_at := fence_world(0.0, 0.05)
+	var seal := _cylinder(0.32, 0.05, Vector3(seal_at.x, band.y - 0.05, seal_at.y), w.material("plain", Color("3f4a3c")), 20)
+	seal.rotation = Vector3(PI / 2.0, -TURN, 0)
+	# The glass pyramid on its white frame, a finial on top.
+	var base := band.y + 0.18
+	var apex := base + 2.0
+	var corners := [fence_world(-h, 0.0), fence_world(h, 0.0), fence_world(h, STEPS.x + 0.2), fence_world(-h, STEPS.x + 0.2)]
+	var top_at := fence_world(0.0, (STEPS.x + 0.2) / 2.0)
+	var tip := Vector3(top_at.x, apex, top_at.y)
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in 4:
+		var a: Vector2 = corners[i]
+		var b: Vector2 = corners[(i + 1) % 4]
+		var va := Vector3(a.x, base, a.y)
+		var vb := Vector3(b.x, base, b.y)
+		var normal := (vb - va).cross(tip - va).normalized()
+		if normal.y < 0.0:
+			normal = -normal
+		for v in [va, tip, vb, va, vb, tip]:
+			tool.set_normal(normal)
+			tool.add_vertex(v)
+		w.rod(va, tip, 0.04, Color("f3f1ea"))
+		w.rod(va, vb, 0.05, Color("f3f1ea"))
+		for t in [0.33, 0.66]:
+			w.rod(va.lerp(tip, t), vb.lerp(tip, t), 0.02, Color("f3f1ea"))
+	var glass: MeshInstance3D = w._mesh(w.commit(tool), Vector3.ZERO, w.material("glass", Color("bcd6df")))
+	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	w.rod(tip, tip + Vector3(0, 0.5, 0), 0.04, Color("e8e6de"))
+	# The turnstiles and the guard's desk.
+	var steel := Color("9aa0a4")
+	for lx in [-1.6, 0.0, 1.6]:
+		var at := fence_world(lx, TURNSTILES - 0.1)
+		w.box(Vector3(0.3, 1.0, 0.4), Vector3(at.x, GATE_Y + 0.5, at.y), w.material("metal", Color("a8adb0")), TURN)
+		for arm in 3:
+			var a := TAU * arm / 3.0
+			var reach := Vector3(ALONG.x, 0, ALONG.y) * cos(a) * 0.55 + Vector3(0, sin(a) * 0.3, 0)
+			w.rod(Vector3(at.x, GATE_Y + 0.85, at.y), Vector3(at.x, GATE_Y + 0.85, at.y) + reach, 0.02, steel)
+	_local_block(1.9, 2.25, GATE_Y, GATE_Y + 0.95, 1.2, 2.6, w.material("wood", Color("6b4a36")))
+	var lamp := fence_world(0.0, STEPS.x / 2.0)
+	w.box(Vector3(0.5, 0.05, 0.5), Vector3(lamp.x, band.x - 0.05, lamp.y), w.glow(Color("fff1d6"), 0.2, 2.0), TURN)
+	# The iron gates on the street side, folded back against the outer piers.
+	var iron := Color("1f2022")
+	for side in [-1.0, 1.0]:
+		var from := fence_world(side * (h - PIER - 0.05), 0.25)
+		var to := fence_world(side * (h - PIER - 0.05), 1.6)
+		for y in [GATE_Y + 0.15, GATE_Y + 2.2]:
+			w.rod(Vector3(from.x, y, from.y), Vector3(to.x, y, to.y), 0.025, iron)
+		for k in 8:
+			var at := from.lerp(to, k / 7.0)
+			w.rod(Vector3(at.x, GATE_Y + 0.15, at.y), Vector3(at.x, GATE_Y + 2.2, at.y), 0.012, iron)
+
+## The colonnade either side of the gatehouse: its floor with a dark X in every bay and beige
+## borders, the square cream pillars on both rows with dark inset panels, cream beams, the dark
+## slatted ceiling under a flat roof, stone benches along the inner row.
+func _colonnade() -> void:
+	var cream: Material = w.material("stucco", Color("ece0bf"))
+	var trim: Material = w.material("plain", Color("f1e9d2"))
+	var granite: Material = w.material("concrete", Color("97928a"))
+	var dark: Material = w.material("concrete", Color("4e4b47"))
+	var beige: Material = w.material("stone", Color("dccdb0"))
+	var panel: Material = w.material("plain", Color("2a2a2c"))
+	var slat: Material = w.material("plain", Color("2c2723"))
+	var stone: Material = w.material("concrete", Color("b9b4aa"))
+	for side in [-1.0, 1.0]:
+		var x0: float = side * COLONNADE.x
+		var x1: float = side * COLONNADE.y
+		_local_block(x0, x1, WALK_Y - 0.1, GATE_Y, 0.2, ROWS.y + 0.4, granite)
+		# Beige border tiles along both edges, a dark X across each bay between the pillars.
+		_local_block(x0, x1, GATE_Y, GATE_Y + 0.004, ROWS.x + 0.32, ROWS.x + 0.55, beige)
+		_local_block(x0, x1, GATE_Y, GATE_Y + 0.004, ROWS.y - 0.55, ROWS.y - 0.32, beige)
+		var edges: Array[float] = [COLONNADE.x]
+		edges.append_array(PILLARS)
+		for i in edges.size() - 1:
+			var a: float = side * edges[i]
+			var b: float = side * edges[i + 1]
+			_local_strip(Vector2(a, ROWS.x + 0.55), Vector2(b, ROWS.y - 0.55), 0.28, GATE_Y, GATE_Y + 0.005, dark)
+			_local_strip(Vector2(a, ROWS.y - 0.55), Vector2(b, ROWS.x + 0.55), 0.28, GATE_Y, GATE_Y + 0.005, dark)
+		# The pillars (the last pair are the pavilion's) with their inset panels, beams on both rows.
+		for pillar in PILLARS:
+			var lx: float = side * pillar
+			for row in [ROWS.x, ROWS.y]:
+				_local_block(lx - 0.3, lx + 0.3, GATE_Y, COL_CEILING + 0.1, row - 0.3, row + 0.3, cream)
+				_local_block(lx - 0.36, lx + 0.36, GATE_Y, GATE_Y + 0.25, row - 0.36, row + 0.36, trim)
+				var face: float = row + (0.305 if row > 2.0 else -0.305)
+				_local_block(lx - 0.13, lx + 0.13, GATE_Y + 1.1, GATE_Y + 2.3, face - 0.01, face + 0.01, panel)
+		for row in [ROWS.x, ROWS.y]:
+			_local_block(x0, side * PILLARS[3], COL_CEILING, COL_CEILING + 0.35, row - 0.25, row + 0.25, trim)
+		# The dark slatted ceiling and the flat roof over it.
+		var lx: float = COLONNADE.x + 0.15
+		while lx < PILLARS[3]:
+			_local_block(side * lx - 0.05, side * lx + 0.05, COL_CEILING - 0.02, COL_CEILING + 0.06, ROWS.x, ROWS.y, slat)
+			lx += 0.3
+		_local_block(x0, side * PILLARS[3], COL_CEILING + 0.35, COL_CEILING + 0.6, ROWS.x - 0.4, ROWS.y + 0.4, cream)
+		_local_block(x0, side * PILLARS[3], COL_CEILING + 0.6, COL_CEILING + 0.68, ROWS.x - 0.45, ROWS.y + 0.45, trim)
+		for bench in BENCHES_COL:
+			var bx: float = side * bench
+			_local_block(bx - 0.95, bx + 0.95, GATE_Y + 0.38, GATE_Y + 0.48, ROWS.y - 0.7, ROWS.y - 0.25, stone)
+			for end in [-0.7, 0.7]:
+				_local_block(bx + end - 0.12, bx + end + 0.12, GATE_Y, GATE_Y + 0.38, ROWS.y - 0.62, ROWS.y - 0.33, stone)
+		# Ceiling lights between the slats.
+		for bench in BENCHES_COL:
+			var at := fence_world(side * bench, COL_MIDDLE)
+			w.box(Vector3(0.3, 0.05, 0.3), Vector3(at.x, COL_CEILING - 0.04, at.y), w.glow(Color("fff1d6"), 0.15, 2.0), TURN)
+
+## The pavilions at the colonnade's ends: open on cream pillars (the colonnade's last), a beam
+## round their heads and a hipped roof of terracotta tiles.
+func _pavilions() -> void:
+	var trim: Material = w.material("plain", Color("f1e9d2"))
+	var tile: Material = w.material("tile", Color("b45b3b"))
+	for side in [-1.0, 1.0]:
+		var x0: float = side * PILLARS[3]
+		var x1: float = side * PILLARS[4]
+		_local_block(x0, x1, COL_CEILING, COL_CEILING + 0.4, ROWS.x - 0.3, ROWS.x + 0.3, trim)
+		_local_block(x0, x1, COL_CEILING, COL_CEILING + 0.4, ROWS.y - 0.3, ROWS.y + 0.3, trim)
+		_local_block(x1 - side * 0.3, x1 + side * 0.3, COL_CEILING, COL_CEILING + 0.4, ROWS.x, ROWS.y, trim)
+		# The hipped roof: four sloping faces to a short ridge along the fence.
+		var eave := COL_CEILING + 0.4
+		var ridge := eave + 1.6
+		var lo := Vector2(minf(x0, x1) - 0.5, ROWS.x - 0.8)
+		var hi := Vector2(maxf(x0, x1) + 0.5, ROWS.y + 0.8)
+		var mid_z := (lo.y + hi.y) / 2.0
+		var ridge_a := Vector2(lo.x + (hi.y - lo.y) / 2.0, mid_z)
+		var ridge_b := Vector2(hi.x - (hi.y - lo.y) / 2.0, mid_z)
+		if ridge_b.x < ridge_a.x:
+			ridge_a = Vector2((lo.x + hi.x) / 2.0, mid_z)
+			ridge_b = ridge_a
+		var to3 := func(p: Vector2, y: float) -> Vector3:
+			var at := fence_world(p.x, p.y)
+			return Vector3(at.x, y, at.y)
+		var c0: Vector3 = to3.call(Vector2(lo.x, lo.y), eave)
+		var c1: Vector3 = to3.call(Vector2(hi.x, lo.y), eave)
+		var c2: Vector3 = to3.call(Vector2(hi.x, hi.y), eave)
+		var c3: Vector3 = to3.call(Vector2(lo.x, hi.y), eave)
+		var ra: Vector3 = to3.call(ridge_a, ridge)
+		var rb: Vector3 = to3.call(ridge_b, ridge)
+		var faces := [[c0, c1, rb, ra], [c1, c2, rb], [c2, c3, ra, rb], [c3, c0, ra]]
+		var tool := SurfaceTool.new()
+		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+		for face in faces:
+			var points: Array = face
+			var p0: Vector3 = points[0]
+			var p1: Vector3 = points[1]
+			var p2: Vector3 = points[2]
+			var normal: Vector3 = (p1 - p0).cross(p2 - p0).normalized()
+			var flip := normal.y < 0.0
+			if flip:
+				normal = -normal
+			for i in range(1, points.size() - 1):
+				var tri := [points[0], points[i], points[i + 1]]
+				if flip:
+					tri = [points[0], points[i + 1], points[i]]
+				for v in tri:
+					tool.set_normal(normal)
+					tool.add_vertex(v)
+		w._mesh(w.commit(tool), Vector3.ZERO, tile).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+		_local_block(lo.x + 0.4, hi.x - 0.4, eave - 0.06, eave, lo.y + 0.4, hi.y - 0.4, w.material("stucco", Color("efe7d2")))
+
+## The fence on the street: a low cream wall, cream piers every three metres, iron bars between
+## with a band of rings across them, from the strip's west end to the Main Building's corner,
+## broken by the gatehouse and the car gate.
+func _fence() -> void:
+	var cream: Material = w.material("stucco", Color("ece0bf"))
+	var trim: Material = w.material("plain", Color("f1e9d2"))
+	var iron := Color("1f2022")
+	var runs := [Vector2(STRIP_WEST, -HOUSE_HALF), Vector2(HOUSE_HALF, CAR_GATE.x), Vector2(CAR_GATE.y, FENCE_EAST)]
+	for run in runs:
+		var a: float = run.x
+		var b: float = run.y
+		_local_block(a, b, WALK_Y - 0.05, 0.55, 0.05, 0.35, cream)
+		_local_block(a, b, 0.55, 0.62, 0.0, 0.4, trim)
+		var count := maxi(1, roundi((b - a) / 3.0))
+		for k in count + 1:
+			var lx: float = lerpf(a, b, float(k) / count)
+			_local_block(lx - 0.25, lx + 0.25, WALK_Y, 2.5, -0.05, 0.45, cream)
+			_local_block(lx - 0.3, lx + 0.3, 2.5, 2.62, -0.1, 0.5, trim)
+		var from := fence_world(a, 0.2)
+		var to := fence_world(b, 0.2)
+		for y in [0.75, 1.55, 2.3]:
+			w.rod(Vector3(from.x, y, from.y), Vector3(to.x, y, to.y), 0.02, iron)
+		var bars := floori((b - a) / 0.16)
+		for k in bars + 1:
+			var at := from.lerp(to, float(k) / bars)
+			w.rod(Vector3(at.x, 0.62, at.y), Vector3(at.x, 2.35, at.y), 0.011, iron)
+			if k % 2 == 0 and k < bars:
+				var ring_at := from.lerp(to, (k + 1.0) / bars)
+				var ring := TorusMesh.new()
+				ring.inner_radius = 0.06
+				ring.outer_radius = 0.075
+				ring.rings = 8
+				ring.ring_segments = 6
+				var made: MeshInstance3D = w._mesh(ring, Vector3(ring_at.x, 1.95, ring_at.y), w.material("plain", iron))
+				made.rotation = Vector3(PI / 2.0, -TURN, 0)
+
+## The car gate across the drive at the fence line: two cream piers and the iron sliding gate
+## between them, closed.
+func _car_gate() -> void:
+	var cream: Material = w.material("stucco", Color("ece0bf"))
+	var trim: Material = w.material("plain", Color("f1e9d2"))
+	var iron := Color("1f2022")
+	for lx in [CAR_GATE.x, CAR_GATE.y]:
+		_local_block(lx - 0.35, lx + 0.35, DRIVE_Y, 2.9, -0.1, 0.5, cream)
+		_local_block(lx - 0.42, lx + 0.42, 2.9, 3.05, -0.17, 0.57, trim)
+	var from := fence_world(CAR_GATE.x + 0.35, 0.2)
+	var to := fence_world(CAR_GATE.y - 0.35, 0.2)
+	for y in [DRIVE_Y + 0.12, 1.2, 2.25]:
+		w.rod(Vector3(from.x, y, from.y), Vector3(to.x, y, to.y), 0.035, iron)
+	var bars := floori(from.distance_to(to) / 0.14)
+	for k in bars + 1:
+		var at := from.lerp(to, float(k) / bars)
+		w.rod(Vector3(at.x, DRIVE_Y + 0.12, at.y), Vector3(at.x, 2.45, at.y), 0.014, iron)
+
+## The small guardhouse inside the car gate: white walls, a window on each side, a flat roof.
+func _guardhouse() -> void:
+	var white: Material = w.material("stucco", Color("f1eee6"))
+	var g := GUARDHOUSE
+	_local_block(g.position.x, g.end.x, WALK_Y, WALK_Y + 2.5, g.position.y, g.end.y, white)
+	_local_block(g.position.x - 0.15, g.end.x + 0.15, WALK_Y + 2.5, WALK_Y + 2.68, g.position.y - 0.15, g.end.y + 0.15, w.material("plain", Color("f6f4ee")))
+	var glass: Material = w.material("glass", Color("33414b"))
+	_local_block(g.position.x + 0.3, g.end.x - 0.3, WALK_Y + 1.0, WALK_Y + 2.0, g.end.y, g.end.y + 0.03, glass)
+	_local_block(g.end.x, g.end.x + 0.03, WALK_Y + 1.0, WALK_Y + 2.0, g.position.y + 0.3, g.end.y - 0.3, glass)
+
+## The bronze angel on its red pedestal on the lawn by the parking.
+func _angel() -> void:
+	var at := fence_world(ANGEL.x, ANGEL.y)
+	var red: Material = w.material("stucco", Color("9c3b2e"))
+	var bronze: Material = w.material("plain", Color("5a4a33"))
+	_local_block(ANGEL.x - 0.7, ANGEL.x + 0.7, WALK_Y, WALK_Y + 0.2, ANGEL.y - 0.7, ANGEL.y + 0.7, w.material("concrete", Color("a9a49c")))
+	_local_block(ANGEL.x - 0.5, ANGEL.x + 0.5, WALK_Y + 0.2, WALK_Y + 1.7, ANGEL.y - 0.5, ANGEL.y + 0.5, red)
+	var base := Vector3(at.x, WALK_Y + 1.7, at.y)
+	var body := CylinderMesh.new()
+	body.top_radius = 0.16
+	body.bottom_radius = 0.32
+	body.height = 1.3
+	body.radial_segments = 10
+	w._mesh(body, base + Vector3(0, 0.65, 0), bronze)
+	var head := SphereMesh.new()
+	head.radius = 0.14
+	head.height = 0.28
+	w._mesh(head, base + Vector3(0, 1.45, 0), bronze)
+	for side in [-1.0, 1.0]:
+		var wing: Vector3 = base + Vector3(0, 1.15, 0) + Vector3(ALONG.x, 0, ALONG.y) * side * 0.3 + Vector3(INWARD.x, 0, INWARD.y) * -0.1
+		w.box(Vector3(0.6, 0.9, 0.05), wing, bronze, TURN + side * 0.5)
+	w.rod(base + Vector3(0, 1.0, 0), base + Vector3(0, 1.9, 0) + Vector3(ALONG.x, 0, ALONG.y) * 0.25, 0.03, Color("5a4a33"))
