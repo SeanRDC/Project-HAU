@@ -1077,6 +1077,14 @@ Build an interior the same way:
   lobby into the corridor. The cutaway closes in to `Djdn.INSIDE_WIDTH` (18 m), the
   focus stands `FOCUS_LIFT` (2.2 m) over the floor, and the cut is `CUT_AHEAD` (3 m)
   in front of the student but never short of the wall behind them (`cut_ahead`).
+  Past the arcade, in the courtyard, the cap eases out to `Djdn.YARD_WIDTH` (30 m,
+  `width_cap`, eased in `aps.gd` as `djdn_cap`) and the focus rises with the framing
+  (`focus_lift`: the floor's cut edge stays `BELOW_FLOOR` 2.86 m over the frame's
+  foot), so the theatre's front and its frieze read over the student. The glass roof
+  (`DjdnGlassRoof`) fades while inside; its glass casts no shadow, its steel does. In
+  the passage from the Student Center's courtyard gate the north wing's rooms west of
+  and over it fade (`DjdnNorthWingWest`). The Main Building's windows sit fully proud
+  of their walls (`_window`), so a wing seen in section never shows them inside it.
 - **Lights inside** are plain `OmniLight3D`s in their own group, on at every
   hour but only while the student is in (not in `world.lamps`, which are night
   lamps). Windows inside glow by day through `glow()`.

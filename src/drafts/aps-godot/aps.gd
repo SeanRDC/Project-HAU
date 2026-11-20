@@ -196,6 +196,8 @@ var arcade := 0.0
 var djdn_front := 0.0
 ## 0..1: how far the student is inside the Main Building (its cutaway, facing east).
 var djdn_in := 0.0
+## The widest the Main Building's cutaway frames here (Djdn.width_cap), eased.
+var djdn_cap := 18.0
 ## The controls keep the boulevard side they started on while a direction is held, so
 ## walking across the road does not turn round with the camera halfway (see _control_turns).
 var _control_direction := Vector2.ZERO
@@ -440,7 +442,7 @@ func _choose_scale() -> int:
 
 func _resize() -> void:
 	shown_width = lerpf(width, minf(width, HALL_WIDTH), smoothstep(0.0, 1.0, clampf(hall + walkway + covered + arcade, 0.0, 1.0)))
-	shown_width = lerpf(shown_width, minf(shown_width, Djdn.INSIDE_WIDTH), smoothstep(0.0, 1.0, djdn_in))
+	shown_width = lerpf(shown_width, minf(shown_width, djdn_cap), smoothstep(0.0, 1.0, djdn_in))
 	var window := Vector2(get_window().size)
 	var aspect := window.x / maxf(window.y, 1.0)
 	# The framing width is for a 16:9 frame: keep that whole frame on any window shape.
@@ -565,6 +567,7 @@ func _snap_follow() -> void:
 	arcade = StudentCenter.covered_for(student.position.x, student.position.z)
 	djdn_front = djdn_front_for(student.position.x, student.position.z)
 	djdn_in = Djdn.inside_for(student.position.x, student.position.z)
+	djdn_cap = Djdn.width_cap(student.position.x, student.position.z)
 
 ## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
 ## canteen or the chapel (their views never overlap: one is east of x 12, one west of -18),
@@ -599,13 +602,14 @@ func _control_turns(direction: Vector2) -> float:
 		+ on_lane * (2.0 * _control_lane_east - 1.0)
 
 func _update_camera(delta: float) -> void:
-	var was_inside := hall + walkway + covered + arcade + djdn_in
+	var was_inside := hall + walkway + covered + arcade + djdn_in + djdn_cap * 0.01
 	hall = lerpf(hall, Hallway.hall_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
 	walkway = lerpf(walkway, Sjh.walkway_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
 	covered = lerpf(covered, MiddleRoad.covered_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
 	arcade = lerpf(arcade, StudentCenter.covered_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
 	djdn_in = lerpf(djdn_in, Djdn.inside_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
-	if absf(hall + walkway + covered + arcade + djdn_in - was_inside) > 0.0005 or absf(width - target_width) > 0.001:
+	djdn_cap = lerpf(djdn_cap, Djdn.width_cap(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	if absf(hall + walkway + covered + arcade + djdn_in + djdn_cap * 0.01 - was_inside) > 0.0005 or absf(width - target_width) > 0.001:
 		if absf(width - target_width) > 0.001:
 			width = lerpf(width, target_width, 1.0 - exp(-delta * 10.0))
 			if absf(width - target_width) < 0.02:
@@ -747,7 +751,7 @@ func _update_camera(delta: float) -> void:
 		# Inside the Main Building, facing east: the corridor is the student's own spot (the lobby
 		# and the courtyard are wide, not a corridor), the cut CUT_AHEAD in front of them but never
 		# short of the front wall's inside face, the band's top over the galleries' roofs.
-		corridor = Vector3(roundf(follow.x / pixel) * pixel, student.level() + Djdn.FOCUS_LIFT, roundf(follow.y / pixel) * pixel)
+		corridor = Vector3(roundf(follow.x / pixel) * pixel, student.level() + Djdn.focus_lift(shown_width), roundf(follow.y / pixel) * pixel)
 		cut_offset = Djdn.cut_ahead(follow.x, follow.y)
 		ceiling = Djdn.CEILING_BAND
 		band_back = Djdn.BAND_BACK
@@ -887,7 +891,7 @@ func _update_camera(delta: float) -> void:
 		var size := Vector2(viewport.size)
 		var back := corridor - toward * band_back
 		grade.set_shader_parameter("cut_top", camera.unproject_position(Vector3(back.x, ceiling, back.z)).y / size.y)
-		var floor_y := corridor.y - (Djdn.FOCUS_LIFT if djdn_in > maxf(maxf(hall, walkway), covered + arcade) else 1.35)
+		var floor_y := corridor.y - (Djdn.focus_lift(shown_width) if djdn_in > maxf(maxf(hall, walkway), covered + arcade) else 1.35)
 		grade.set_shader_parameter("cut_bottom", camera.unproject_position(Vector3(cut.x, floor_y, cut.z)).y / size.y)
 	# Shadow and fog ranges follow the camera so the wide views stay sharp and unhazed.
 	sun.directional_shadow_max_distance = distance + 45.0
@@ -1159,6 +1163,7 @@ static func travel_places() -> Array:
 		["Student Center, west end", Vector2(-158.0, 84.0), 30.0],
 		["Main Building front", Vector2(-164.0, 107.7), 40.0],
 		["Main Building lobby", Vector2(-152.5, 104.5), Djdn.INSIDE_WIDTH],
+		["Main Building courtyard", Vector2(-125.0, 108.0), Djdn.YARD_WIDTH],
 	]
 
 ## Jumps the student to a fast-travel place, with every camera zone, the gym's
@@ -1483,7 +1488,7 @@ func _collect_cutaways() -> void:
 	_arcade_lights = scene.find_child(StudentCenter.LIGHTS_GROUP, false, false)
 	_djdn_lights = scene.find_child(Djdn.LIGHTS_GROUP, false, false)
 	for group in [MiddleRoad.NORTH_GROUP, MiddleRoad.SOUTH_GROUP, StudentCenter.ROOF_GROUP, CoveredCourt.ROOF_GROUP, SacredHeart.WALK_ROOF,
-			Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP]:
+			Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP, Djdn.ROOF_GROUP, Djdn.WING_GROUP]:
 		var items := []
 		var stack: Array[Node] = [scene.find_child(group, group.begins_with("Djdn"), false)]
 		while not stack.is_empty():
@@ -1513,7 +1518,7 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 			hidden = CoveredCourt.under_roof(student.position.x, student.position.z)
 		elif cut["name"] == SacredHeart.WALK_ROOF:
 			hidden = SacredHeart.in_walk(student.position.x, student.position.z)
-		elif cut["name"] == Djdn.FRONT_GROUP or cut["name"] == Djdn.ROOMS_GROUP:
+		elif cut["name"] in [Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP, Djdn.ROOF_GROUP, Djdn.WING_GROUP]:
 			hidden = Djdn.hidden(cut["name"], student.position.x, student.position.z)
 		else:
 			hidden = GymInterior.hidden(cut["name"], p.x, p.y, y, side)
@@ -2250,9 +2255,13 @@ func _verify_and_capture() -> void:
 		_set_zoom(36.0, true)
 		_snap_follow()
 		for i in 150:
+			if student.position.z > StudentCenter.INNER + 2.5:
+				break # (in the arcade; this line goes on through the courtyard gate)
 			var turn := -PI / 2.0 * _turns()
 			var away := Vector2(-sin(turn), -cos(turn))
 			student.move(away, false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		for i in 60:
 			_update_camera(1.0 / 30.0)
 		forward = -camera.global_basis.z
 		var post_cut := (Vector3(student.position.x, 1.0, StudentCenter.POST_Z) - camera.position).dot(forward) < camera.near
@@ -2361,6 +2370,53 @@ func _verify_and_capture() -> void:
 			_update_cutaways(1.0 / 30.0)
 		checks.walk_out_of_lobby = student.position.x < Djdn.PORCH and djdn_in < 0.05 and djdn_front > 0.9 \
 			and _cut_alpha(Djdn.FRONT_GROUP) == 1.0 and not _djdn_sectioned and not _djdn_lights.visible and camera.near < 40.0
+		_update_cutaways(0.0, true)
+		# The courtyard: its tiles, the ground galleries a step up, the stage up its curved steps;
+		# the trees, the masts, the bins and the theatre's front solid.
+		var stage_rise := (Djdn.STAGE_Y - Djdn.YARD_Y) / Djdn.STAGE_STEPS
+		checks.courtyard_walkable = not World.blocked(-125.0, 105.0) and is_equal_approx(World.floor_height(-125.0, 105.0), Djdn.YARD_Y) \
+			and not World.blocked(-125.0, 96.0) and is_equal_approx(World.floor_height(-125.0, 96.0), Djdn.FLOOR_Y) \
+			and not World.blocked(-125.0, 119.5) and is_equal_approx(World.floor_height(-125.0, 119.5), Djdn.FLOOR_Y) \
+			and is_equal_approx(World.floor_height(-106.0, Djdn.CENTRE_Z), Djdn.STAGE_Y) \
+			and is_equal_approx(World.floor_height(Djdn.STAGE.position.x - Djdn.STAGE_TREAD * 0.5, Djdn.CENTRE_Z), Djdn.STAGE_Y - stage_rise) \
+			and World.blocked(Djdn.TREES[0].x, Djdn.TREES[0].y) and World.blocked(Djdn.MASTS[0].x, Djdn.MASTS[0].y) \
+			and World.blocked(Djdn.BINS[0].get_center().x, Djdn.BINS[0].get_center().y) and World.blocked(Djdn.THEATRE_X - 0.1, Djdn.CENTRE_Z)
+		# Walking up onto the stage from the ring, one step at a time.
+		student.place(-116.0, Djdn.CENTRE_Z)
+		for i in 120:
+			student.move(Vector2(1, 0), false, 1.0 / 30.0, 0.0)
+		checks.stage_reachable = is_equal_approx(student.level(), Djdn.STAGE_Y) and student.position.x > Djdn.STAGE.position.x
+		# In the courtyard the camera faces east at the theatre, framing it wider, the glass roof
+		# faded (its shadow kept), the near plane in front of the student.
+		student.place(-125.0, 108.0)
+		_set_zoom(Djdn.YARD_WIDTH, true)
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		var behind := (Vector3(-128.5, student.level() + Djdn.focus_lift(shown_width), 108.0) - camera.position).dot(forward) < camera.near
+		checks.courtyard_cutaway = djdn_in > 0.95 and forward.dot(Vector3.RIGHT) > 0.9 and _cut_alpha(Djdn.ROOF_GROUP) == 0.0 \
+			and _cut_alpha(Djdn.ROOMS_GROUP) == 0.0 and behind and shown_width > Djdn.YARD_WIDTH - 0.5 \
+			and _all_visible([Djdn.THEATRE_X], [Djdn.STAGE_Y + 1.0, Djdn.STAGE_Y + 7.0], [Djdn.CENTRE_Z]) \
+			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		# From the Student Center's arcade through its courtyard gate, up the passage's ramp, across
+		# the north gallery and down into the courtyard (it used to be a dead end).
+		student.place(-105.6, 86.0)
+		_set_zoom(22.0, true)
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		var passage_ok := true
+		for i in 180:
+			student.move(Vector2(0, 1), false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+			_update_cutaways(1.0 / 30.0)
+			if student.position.z > 90.0 and student.position.z < 93.0:
+				passage_ok = passage_ok and _cut_alpha(Djdn.WING_GROUP) < 1.0 \
+					and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		checks.courtyard_gate_through = student.position.z > 98.0 and passage_ok and djdn_in > 0.95
+		student.place(-164.0, Djdn.CENTRE_Z)
+		_snap_follow()
 		_update_cutaways(0.0, true)
 		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
 		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)

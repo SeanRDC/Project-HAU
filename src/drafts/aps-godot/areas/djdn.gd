@@ -185,15 +185,88 @@ const CEILING_BAND := 12.3
 ## The cutaway's focus stands this high over the student's floor (the lobby is double height, so
 ## higher than a corridor's 1.35), and its top band closes at the ceiling this far behind them.
 const FOCUS_LIFT := 2.2
+## Wider (the courtyard), the focus rises so the floor's cut edge stays this far above the frame's
+## foot: the student sits low and the frame shows the theatre's front, not the dark band.
+const BELOW_FLOOR := 2.86
+
+## The focus's height over the floor for a framing shown_width wide (16:9).
+static func focus_lift(shown_width: float) -> float:
+	return maxf(FOCUS_LIFT, shown_width * 9.0 / 32.0 - BELOW_FLOOR)
 const BAND_BACK := 6.0
 ## The inside's daylight fill (on at every hour while the student is in).
 const LIGHTS_GROUP := "DjdnLights"
 ## The cutaway's fade groups (aps.gd fades them out, keeping their shadows, while hidden() says):
 ## the front's face, porch, portico and garden, which stand between the camera and anyone inside; the
 ## front block's rooms either side of the lobby and their roofs, which stand between the camera
-## and the corridor, the galleries and the courtyard behind them.
+## and the corridor, the galleries and the courtyard behind them; and the courtyard's glass roof
+## (ROOF_GROUP, with the courtyard below).
 const FRONT_GROUP := "DjdnFront"
 const ROOMS_GROUP := "DjdnFrontRooms"
+## The north wing's rooms west of the passage from the Student Center's gate and over it: in the
+## passage they stand between the camera and the student.
+const WING_GROUP := "DjdnNorthWingWest"
+## Past the arcade the cutaway opens out to YARD_WIDTH, so the courtyard and the theatre's front read.
+const YARD_WIDTH := 30.0
+
+## The cutaway's widest framing here: INSIDE_WIDTH in the lobby, the corridor and the passage,
+## easing out to YARD_WIDTH over the arcade's steps.
+static func width_cap(x: float, z: float) -> float:
+	var yard := smoothstep(BACK - 0.5, BACK + 2.5, x) * smoothstep(NORTH_ROOMS - 1.5, NORTH_ROOMS + 0.5, z)
+	return lerpf(INSIDE_WIDTH, YARD_WIDTH, yard)
+
+# --- The courtyard --------------------------------------------------------------------------
+#
+# From INSIDE DJN BUILDING.jpg and CLOSER VIEW INSIDE DJN.jpg (before the works): red tiles with
+# grey bands and a grey ring before the stage; the stage in front of the theatre, its terrazzo
+# steps curving round its west side; the lattice masts wrapped in vines holding up the glass roof;
+# two trees in round planters by the lobby; bins and potted plants by the galleries.
+
+## The stage: a slab of a circle (centre far east, so its front curves gently) cut square at its
+## ends, up three terrazzo steps of STAGE_TREAD all round its west side (Rect2: its plan box).
+const STAGE := Rect2(-110.0, 100.0, 7.0, 15.4)
+const STAGE_CENTRE := Vector2(-90.0, CENTRE_Z)
+const STAGE_R := 20.0
+const STAGE_HALF := 7.7
+const STAGE_TREAD := 0.4
+const STAGE_STEPS := 3
+## The grey ring set in the tiles before the stage, and the grey bands across the tiles.
+const RING := Vector2(-118.0, CENTRE_Z)
+const RING_R := 4.0
+const BANDS_X: Array[float] = [-137.4, -128.8]
+const BANDS_Z: Array[float] = [101.6, 113.8]
+## The lattice masts holding up the glass roof (wrapped in vines), and the two trees.
+const MASTS: Array[Vector2] = [Vector2(-134.0, 99.2), Vector2(-125.0, 99.2), Vector2(-116.0, 99.2),
+	Vector2(-134.0, 116.2), Vector2(-125.0, 116.2), Vector2(-116.0, 116.2)]
+const TREES: Array[Vector2] = [Vector2(-141.0, 100.5), Vector2(-141.0, 115.3)]
+const PLANTER_R := 1.1
+## The bins (green, blue, yellow) and the potted plants along the galleries' steps.
+const BINS: Array[Rect2] = [Rect2(-144.6, 98.35, 1.5, 0.5), Rect2(-112.6, 116.95, 1.5, 0.5)]
+const POTS: Array[Vector2] = [Vector2(-142.6, 98.6), Vector2(-138.2, 98.6), Vector2(-108.4, 98.6),
+	Vector2(-138.2, 116.8), Vector2(-142.6, 116.8), Vector2(-114.6, 116.8)]
+## The gallery posts along the courtyard edge, every POST_STEP from POST_FROM (none in the passage).
+const POST_FROM := -144.3
+const POST_STEP := 3.4
+## The passage from the Student Center's courtyard gate south through the north wing: from the
+## arcade's floor (StudentCenter.FLOOR_Y) at the gate up a ramp to the gallery.
+const GATE_PASSAGE := Rect2(PASSAGE.x, 87.8, PASSAGE.y - PASSAGE.x, NORTH_ROOMS - 87.8)
+const ARCADE_FLOOR := 0.12
+## The glass roof over the courtyard: its group (faded while inside, like the Student Center's).
+const GLASS_Y := 12.0
+const ROOF_GROUP := "DjdnGlassRoof"
+
+## How far outside the stage's edge a point is (negative on it): the circle and the square ends.
+static func stage_distance(x: float, z: float) -> float:
+	return maxf(Vector2(x, z).distance_to(STAGE_CENTRE) - STAGE_R, absf(z - CENTRE_Z) - STAGE_HALF)
+
+## The posts' x along both galleries.
+static func gallery_posts() -> Array[float]:
+	var at: Array[float] = []
+	var x := POST_FROM
+	while x < THEATRE_X - 0.8:
+		if x < PASSAGE.x - 0.3 or x > PASSAGE.y + 0.3:
+			at.append(x)
+		x += POST_STEP
+	return at
 
 ## Whether the front block's rooms show as a flat dark section (from the lobby, where they stand
 ## either side and the near plane slices them on a slant: their outside faces would show).
@@ -206,7 +279,9 @@ static func hidden(group: String, x: float, z: float) -> bool:
 		return false
 	if group == ROOMS_GROUP:
 		return x > CORRIDOR - 0.5
-	return group == FRONT_GROUP
+	if group == WING_GROUP:
+		return x > PASSAGE.x - 0.5 and x < PASSAGE.y + 0.5 and z < NORTH_ROOMS + 0.5
+	return group == FRONT_GROUP or group == ROOF_GROUP
 
 static func in_door(x: float, z: float) -> bool:
 	if x < PAVILION_FACE - 0.01 or x > FRONT + 0.01:
@@ -218,6 +293,8 @@ static func in_door(x: float, z: float) -> bool:
 
 ## Anywhere inside one may stand, on any storey.
 static func inside(x: float, z: float) -> bool:
+	if GATE_PASSAGE.has_point(Vector2(x, z)):
+		return true
 	if x < PAVILION_FACE - 0.01 or x > THEATRE_X or z < NORTH_ROOMS - 0.01 or z > SOUTH_ROOMS + 0.01:
 		return false
 	var p := Vector2(x, z)
@@ -226,8 +303,15 @@ static func inside(x: float, z: float) -> bool:
 
 ## The ground's height here: the floor's, or the courtyard's tiles with their steps.
 static func ground_at(x: float, z: float) -> float:
+	if z < NORTH_ROOMS and GATE_PASSAGE.has_point(Vector2(x, z)):
+		# The ramp up from the gate (through the Student Center's back wall, still its floor).
+		return lerpf(ARCADE_FLOOR, FLOOR_Y, clampf((z - NORTH) / (NORTH_ROOMS - NORTH), 0.0, 1.0))
 	if not YARD.has_point(Vector2(x, z)) or x < BACK:
 		return FLOOR_Y
+	var stage := stage_distance(x, z)
+	if stage < STAGE_TREAD * STAGE_STEPS:
+		var rise := (STAGE_Y - YARD_Y) / STAGE_STEPS
+		return STAGE_Y - rise * ceilf(maxf(stage, 0.0) / STAGE_TREAD) if stage > 0.0 else STAGE_Y
 	var h := YARD_Y
 	# Two steps down from the arcade and from the ground galleries' edges.
 	var step := (FLOOR_Y - YARD_Y) / 2.0
@@ -270,6 +354,24 @@ static func _blocked_inside(x: float, z: float, level := NAN) -> bool:
 		for column in ARCADE:
 			if p.distance_to(Vector2(BACK, column)) < 0.42:
 				return true
+		if x > THEATRE_X - 0.3:
+			return true # the theatre's front
+		for at_tree in TREES:
+			if p.distance_to(at_tree) < PLANTER_R + 0.2:
+				return true
+		for mast in MASTS:
+			if p.distance_to(mast) < 0.45:
+				return true
+		for bin in BINS:
+			if bin.grow(0.2).has_point(p):
+				return true
+		for pot in POTS:
+			if p.distance_to(pot) < 0.5:
+				return true
+		for post in gallery_posts():
+			for edge in [NORTH_WING - 0.15, SOUTH_WING + 0.15]:
+				if p.distance_to(Vector2(post, edge)) < 0.3:
+					return true
 	return false
 
 ## How far the camera is in the inside's cutaway: 1 inside, rising across the porch's last 0.8 m
@@ -288,6 +390,8 @@ static func inside_for(x: float, z: float) -> float:
 ## front block's rooms' back wall along the corridor north and south of it.
 static func cut_ahead(x: float, z: float) -> float:
 	var wall := FRONT if z > PAVILION.x and z < PAVILION.y else CORRIDOR
+	if z < NORTH_ROOMS and GATE_PASSAGE.has_point(Vector2(x, z)):
+		wall = PASSAGE.x # the passage's west wall
 	return clampf(x - (wall + 0.08), 0.15, CUT_AHEAD)
 
 ## Facing east at the building, from its grounds or inside it (the chapel's and MGN's views,
@@ -347,6 +451,16 @@ func build(world_builder: RefCounted) -> void:
 	_floors()
 	_lobby()
 	_arcade()
+	_yard_floor()
+	_stage()
+	_theatre_front()
+	_galleries()
+	_passage()
+	_masts()
+	_yard_props()
+	w._flush()
+	w.root = _group(building, ROOF_GROUP)
+	_glass_roof()
 	w._flush()
 	w.root = saved
 	_inside_lights(saved)
@@ -381,6 +495,11 @@ func _cylinder(top: float, bottom: float, height: float, at: Vector3, made: Mate
 	mesh.radial_segments = segments
 	mesh.rings = 1
 	return w._mesh(mesh, at, made)
+
+## A framed window on a wall at `at` (the wall's surface), set out so no part of it sits inside
+## the wall: inside, where the cutaway's near plane slices a wing, its section would show it.
+func _window(at: Vector3, width: float, height: float, normal: Vector3, lit := false, mullions := 1, frame := TRIM) -> void:
+	w.framed_window(at + normal * 0.04, width, height, normal, lit, mullions, frame)
 
 ## A sign facing west (the drive): Label3D faces +z, turned a quarter to face -x.
 func _west_label(text: String, at: Vector3, width: float, height: float, ink: Color) -> Label3D:
@@ -436,10 +555,16 @@ func _front_rooms() -> void:
 func _masses() -> void:
 	# (sectioned: inside, the cutaway's near plane slices through these rooms; they read as solid)
 	var wall: Material = w.sectioned("stucco", WALL)
-	# The north wing's rooms (above the Student Center's back wall on its north face).
+	# The north wing's rooms (above the Student Center's back wall on its north face); those west
+	# of the passage in their own fade group.
+	w._flush()
+	var building: Node3D = w.root
+	w.root = _group(building, WING_GROUP)
 	_block(CORRIDOR, PASSAGE.x, 0.0, CORNICE, NORTH, NORTH_ROOMS, wall)
-	_block(PASSAGE.y, THEATRE_X, 0.0, CORNICE, NORTH, NORTH_ROOMS, wall)
 	_block(PASSAGE.x, PASSAGE.y, PASSAGE_TOP, CORNICE, NORTH, NORTH_ROOMS, wall)
+	w._flush()
+	w.root = building
+	_block(PASSAGE.y, THEATRE_X, 0.0, CORNICE, NORTH, NORTH_ROOMS, wall)
 	_block(CORRIDOR, THEATRE_X, 0.0, CORNICE, SOUTH_ROOMS, SOUTH, wall)
 	# The theatre: its front on the courtyard at THEATRE_X, its back on the lawn by MGN.
 	_block(THEATRE_X, EAST, 0.0, 12.4, NORTH, SOUTH, wall)
@@ -478,7 +603,7 @@ func _front() -> void:
 		_block(FRONT - 0.07, FRONT + 0.01, FLOOR_Y, 9.3, corner, corner + inward * 0.45, trim)
 	for z in front_windows():
 		for y in [2.95, 7.45]:
-			w.framed_window(Vector3(FRONT, y, z), 0.9, 1.85, Vector3(-1, 0, 0), false, 1, TRIM)
+			_window(Vector3(FRONT, y, z), 0.9, 1.85, Vector3(-1, 0, 0), false, 1, TRIM)
 			# A white head over each window, and a transom under its top third.
 			_block(FRONT - 0.14, FRONT + 0.01, y + 1.04, y + 1.2, z - 0.58, z + 0.58, trim)
 			_block(FRONT - 0.11, FRONT - 0.03, y + 0.3, y + 0.34, z - 0.45, z + 0.45, dentil)
@@ -649,9 +774,9 @@ func _other_faces() -> void:
 		var x := FRONT + 2.4
 		while x < THEATRE_X - 1.5:
 			for dx in [-0.6, 0.6]:
-				w.framed_window(Vector3(x + dx, 7.45, z), 0.82, 2.05, normal, false, 1, TRIM)
+				_window(Vector3(x + dx, 7.45, z), 0.82, 2.05, normal, false, 1, TRIM)
 				if from < 1.0 and (x + dx < PASSAGE.x - 0.6 or x + dx > PASSAGE.y + 0.6):
-					w.framed_window(Vector3(x + dx, 2.95, z), 0.82, 2.05, normal, false, 1, TRIM)
+					_window(Vector3(x + dx, 2.95, z), 0.82, 2.05, normal, false, 1, TRIM)
 			x += 3.4
 	# The theatre block: high windows and a band on its north, south and east faces.
 	var hall: Material = w.material("stucco", TRIM.darkened(0.03))
@@ -660,10 +785,10 @@ func _other_faces() -> void:
 		var normal := Vector3(0, 0, -1) if z == NORTH else Vector3(0, 0, 1)
 		var x := THEATRE_X + 2.2
 		while x < EAST - 1.5:
-			w.framed_window(Vector3(x, 8.6, z), 1.1, 2.4, normal, false, 1, TRIM)
+			_window(Vector3(x, 8.6, z), 1.1, 2.4, normal, false, 1, TRIM)
 			x += 3.2
 	for z in range(0, 5):
-		w.framed_window(Vector3(EAST, 8.6, NORTH + 5.0 + z * 7.2), 1.1, 2.4, Vector3(1, 0, 0), false, 1, TRIM)
+		_window(Vector3(EAST, 8.6, NORTH + 5.0 + z * 7.2), 1.1, 2.4, Vector3(1, 0, 0), false, 1, TRIM)
 	_block(EAST, EAST + 0.06, 0.0, FLOOR_Y, NORTH, SOUTH, w.material("stucco", PLINTH))
 	_block(EAST, EAST + 0.1, 4.9, 5.25, NORTH, SOUTH, trim)
 
@@ -977,6 +1102,16 @@ func _inside_lights(parent: Node3D) -> void:
 	while z < SOUTH_ROOMS:
 		spots.append(Vector3(-147.5, 3.9, z))
 		z += 6.0
+	# The lamps hung under the courtyard's glass roof (the dusk photo), wider and softer.
+	var yard: Array[Vector3] = [Vector3(-136.0, 7.5, 103.5), Vector3(-136.0, 7.5, 111.9), Vector3(-120.0, 7.5, 103.5), Vector3(-120.0, 7.5, 111.9)]
+	for at in yard:
+		var lamp := OmniLight3D.new()
+		lamp.light_color = Color("ffe9c8")
+		lamp.light_energy = 0.7
+		lamp.omni_range = 13.0
+		lamp.omni_attenuation = 1.1
+		lamp.position = at
+		lights.add_child(lamp)
 	for at in spots:
 		var light := OmniLight3D.new()
 		light.light_color = Color("fff1dc")
@@ -985,3 +1120,322 @@ func _inside_lights(parent: Node3D) -> void:
 		light.omni_attenuation = 1.2
 		light.position = at
 		lights.add_child(light)
+
+# --- The courtyard ------------------------------------------------------------------------------
+
+## A flat-topped prism from y0 to y1 over a convex outline (xz, either winding): its top and its
+## sides (the bottom is never seen).
+func _prism(outline: PackedVector2Array, y0: float, y1: float, made: Material) -> void:
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var centre := Vector2.ZERO
+	for p in outline:
+		centre += p
+	centre /= outline.size()
+	var n := outline.size()
+	for i in n:
+		var a := outline[i]
+		var b := outline[(i + 1) % n]
+		# Each triangle and quad is wound to face out (up for the top), whatever the outline's order.
+		var outward := Vector3(b.y - a.y, 0.0, a.x - b.x).normalized()
+		if outward.dot(Vector3((a.x + b.x) / 2.0 - centre.x, 0.0, (a.y + b.y) / 2.0 - centre.y)) < 0.0:
+			outward = -outward
+		var top: Array[Vector3] = [Vector3(centre.x, y1, centre.y), Vector3(a.x, y1, a.y), Vector3(b.x, y1, b.y)]
+		if (top[1] - top[0]).cross(top[2] - top[0]).y > 0.0:
+			top = [top[0], top[2], top[1]]
+		for v in top:
+			tool.set_normal(Vector3.UP)
+			tool.add_vertex(v)
+		var quad: Array[Vector3] = [Vector3(a.x, y0, a.y), Vector3(b.x, y0, b.y), Vector3(b.x, y1, b.y), Vector3(a.x, y1, a.y)]
+		if (quad[1] - quad[0]).cross(quad[2] - quad[0]).dot(outward) > 0.0:
+			quad = [quad[1], quad[0], quad[3], quad[2]]
+		for k in [0, 1, 2, 0, 2, 3]:
+			tool.set_normal(outward)
+			tool.add_vertex(quad[k])
+	w._mesh(w.commit(tool), Vector3.ZERO, made)
+
+## The stage's outline grown by `grow` (its steps): the curved front, square ends, the theatre.
+func _stage_outline(grow: float) -> PackedVector2Array:
+	var r := STAGE_R + grow
+	var half := STAGE_HALF + grow
+	var points := PackedVector2Array()
+	points.append(Vector2(THEATRE_X, CENTRE_Z - half))
+	var segments := 24
+	for i in segments + 1:
+		var z := CENTRE_Z - half + 2.0 * half * i / segments
+		points.append(Vector2(STAGE_CENTRE.x - sqrt(r * r - (z - CENTRE_Z) * (z - CENTRE_Z)), z))
+	points.append(Vector2(THEATRE_X, CENTRE_Z + half))
+	return points
+
+## The tiles' grey bands and the ring before the stage, a few millimetres proud.
+func _yard_floor() -> void:
+	var grey: Material = w.material("concrete", Color("9c968e"))
+	var y := YARD_Y + 0.006
+	for z in BANDS_Z:
+		var east := STAGE_CENTRE.x - sqrt(pow(STAGE_R + STAGE_TREAD * STAGE_STEPS, 2.0) - pow(z - CENTRE_Z, 2.0))
+		w.box(Vector3(east - BACK - STEP_DOWN, 0.012, 0.3), Vector3((BACK + STEP_DOWN + east) / 2.0, y, z), grey)
+	for x in BANDS_X:
+		w.box(Vector3(0.3, 0.012, SOUTH_WING - NORTH_WING - 2.0 * STEP_DOWN), Vector3(x, y, CENTRE_Z), grey)
+	var segments := 48
+	for i in segments:
+		var a := TAU * (i + 0.5) / segments
+		var length := TAU * RING_R / segments + 0.02
+		w.box(Vector3(0.35, 0.012, length), Vector3(RING.x + cos(a) * RING_R, y + 0.001, RING.y + sin(a) * RING_R), grey, -a)
+
+## The stage: pale terrazzo, its top and the two steps below it curving round its front, a grey
+## nosing on each edge.
+func _stage() -> void:
+	var terrazzo: Material = w.material("concrete", Color("cfcac2"))
+	var rise := (STAGE_Y - YARD_Y) / STAGE_STEPS
+	for k in STAGE_STEPS:
+		# k 0 the stage itself, then the steps outwards.
+		_prism(_stage_outline(STAGE_TREAD * k), YARD_Y - 0.05, STAGE_Y - rise * k, terrazzo)
+	var nosing: Material = w.material("plain", Color("8d8984"))
+	for k in STAGE_STEPS:
+		var outline := _stage_outline(STAGE_TREAD * k)
+		var top := STAGE_Y - rise * k
+		for i in range(1, outline.size() - 2):
+			var a := outline[i]
+			var b := outline[i + 1]
+			var mid := (a + b) / 2.0
+			w.box(Vector3(0.06, 0.04, a.distance_to(b) + 0.01), Vector3(mid.x - 0.02, top - 0.015, mid.y), nosing, atan2(b.x - a.x, b.y - a.y))
+
+## The theatre's front over the stage: three tall arches of dark glass between grey marbled
+## columns, the ornate door in the middle one, a cornice, the frieze with LAUS DEO SEMPER between
+## 1933 and 1953, and the dark green swags with their tassels.
+func _theatre_front() -> void:
+	var x := THEATRE_X
+	var glass: Material = w.material("glass", Color("2a3036"))
+	var trim: Material = w.material("stucco", TRIM)
+	var marble: Material = w.material("stone", Color("bdbab3"))
+	var dark: Material = w.material("plain", Color("26231f"))
+	var arch_w := 4.2
+	var spring := STAGE_Y + 3.6
+	for z in [CENTRE_Z - 5.0, CENTRE_Z, CENTRE_Z + 5.0]:
+		_block(x - 0.02, x + 0.01, STAGE_Y, spring, z - arch_w / 2.0, z + arch_w / 2.0, glass)
+		var head := _cylinder(arch_w / 2.0, arch_w / 2.0, 0.03, Vector3(x - 0.005, spring, z), glass, 20)
+		head.rotation = Vector3(0, 0, PI / 2.0)
+		# The arch's white surround: jambs and a ring of blocks round its head.
+		for side in [-1.0, 1.0]:
+			_block(x - 0.08, x + 0.01, STAGE_Y, spring, z + side * (arch_w / 2.0), z + side * (arch_w / 2.0 + 0.18), trim)
+		for i in 9:
+			var a := PI * (i + 0.5) / 9.0
+			w.box(Vector3(0.08, 0.2, 0.48), Vector3(x - 0.04, spring + sin(a) * (arch_w / 2.0 + 0.09), z - cos(a) * (arch_w / 2.0 + 0.09)), trim, 0.0, -(PI / 2.0 - a))
+		# Mullions in the glass.
+		for k in [-1.0, 1.0]:
+			_block(x - 0.05, x + 0.01, STAGE_Y, spring + arch_w / 2.0 * 0.8, z + k * arch_w / 6.0 - 0.03, z + k * arch_w / 6.0 + 0.03, dark)
+		_block(x - 0.05, x + 0.01, STAGE_Y + 2.6, STAGE_Y + 2.66, z - arch_w / 2.0, z + arch_w / 2.0, dark)
+	# The ornate door in the middle arch: a grey stone surround with a small pediment, dark leaves.
+	_block(x - 0.12, x + 0.01, STAGE_Y, STAGE_Y + 2.7, CENTRE_Z - 1.15, CENTRE_Z + 1.15, marble)
+	_block(x - 0.14, x + 0.01, STAGE_Y, STAGE_Y + 2.45, CENTRE_Z - 0.85, CENTRE_Z + 0.85, w.material("plain", Color("3b2a22")))
+	_gable(x - 0.16, x + 0.01, CENTRE_Z - 1.3, CENTRE_Z + 1.3, STAGE_Y + 2.7, STAGE_Y + 3.25, marble)
+	# The grey marbled columns between and beside the arches, with dark bases and white capitals.
+	for z in [CENTRE_Z - 7.6, CENTRE_Z - 2.5, CENTRE_Z + 2.5, CENTRE_Z + 7.6]:
+		_cylinder(0.34, 0.34, 0.35, Vector3(x - 0.4, STAGE_Y + 0.175, z), dark, 14)
+		_cylinder(0.25, 0.27, 5.0, Vector3(x - 0.4, STAGE_Y + 0.35 + 2.5, z), marble, 14)
+		_block(x - 0.75, x - 0.05, STAGE_Y + 5.35, STAGE_Y + 5.55, z - 0.35, z + 0.35, trim)
+	# The cornice over the arches and the frieze.
+	_block(x - 0.45, x + 0.01, STAGE_Y + 5.55, STAGE_Y + 5.85, STAGE.position.y - 0.3, STAGE.end.y + 0.3, trim)
+	_block(x - 0.3, x + 0.01, STAGE_Y + 5.85, STAGE_Y + 6.0, STAGE.position.y - 0.2, STAGE.end.y + 0.2, trim)
+	_block(x - 0.08, x + 0.01, STAGE_Y + 6.0, STAGE_Y + 8.9, STAGE.position.y - 0.6, STAGE.end.y + 0.6, w.material("stucco", Color("f1e9cf")))
+	_block(x - 0.35, x + 0.01, STAGE_Y + 8.9, STAGE_Y + 9.2, STAGE.position.y - 0.7, STAGE.end.y + 0.7, trim)
+	var ink := Color("2b2620")
+	_west_label("LAUS DEO SEMPER", Vector3(x - 0.1, STAGE_Y + 6.9, CENTRE_Z), 6.4, 0.75, ink)
+	_west_label("1933", Vector3(x - 0.1, STAGE_Y + 6.75, CENTRE_Z - 6.2), 1.6, 0.6, ink)
+	_west_label("1953", Vector3(x - 0.1, STAGE_Y + 6.75, CENTRE_Z + 6.2), 1.6, 0.6, ink)
+	# The swags: dark green rope hanging in festoons along the frieze's top, a tassel at each knot.
+	var rope := Color("2f4d34")
+	var knots: Array[float] = [CENTRE_Z - 7.6, CENTRE_Z - 3.8, CENTRE_Z, CENTRE_Z + 3.8, CENTRE_Z + 7.6]
+	var top := STAGE_Y + 8.6
+	for i in knots.size() - 1:
+		var z0: float = knots[i]
+		var z1: float = knots[i + 1]
+		var previous := Vector3(x - 0.14, top, z0)
+		for k in range(1, 9):
+			var t := k / 8.0
+			var at := Vector3(x - 0.14, top - 0.75 * 4.0 * t * (1.0 - t), lerpf(z0, z1, t))
+			w.rod(previous, at, 0.06, rope)
+			previous = at
+	for z in knots:
+		w.rod(Vector3(x - 0.14, top, z), Vector3(x - 0.14, top - 1.1, z), 0.07, rope)
+		w.box(Vector3(0.14, 0.3, 0.14), Vector3(x - 0.14, top - 1.25, z), w.material("plain", rope))
+
+## The galleries along the north and south wings on both floors: square white posts at the
+## courtyard edge, the upper floor's slab with its low parapet and iron rail, the white
+## corrugated roofs sloping down to the courtyard, and on the rooms' walls teal doors, windows and
+## breeze-block panels.
+func _galleries() -> void:
+	var white: Material = w.material("stucco", Color("f2eee3"))
+	var slab: Material = w.material("stucco", Color("ece6d6"))
+	var red: Material = w.material("floor", Color("d8836a"))
+	var sheet: Material = w.material("ribbed", Color("e6e5df"))
+	var iron := Color("2a2b2c")
+	var teal: Material = w.material("plain", Color("2f7d7b"))
+	var breeze: Material = w.material("stucco", Color("eee6cf"))
+	var hole: Material = w.material("plain", Color("4b4237"))
+	for side in [-1.0, 1.0]:
+		# side -1: the north gallery (rooms at NORTH_ROOMS, edge at NORTH_WING); 1: the south.
+		var rooms: float = NORTH_ROOMS if side < 0.0 else SOUTH_ROOMS
+		var edge: float = NORTH_WING if side < 0.0 else SOUTH_WING
+		var inward: float = -side # from the rooms towards the courtyard
+		var post_z := edge - inward * 0.15
+		var x1 := THEATRE_X
+		# The upper floor: slab (red tiles on top, white beneath), its edge beam.
+		_block(CORRIDOR, x1, UPPER_Y - 0.32, UPPER_Y - 0.01, rooms, edge, slab)
+		_block(CORRIDOR, x1, UPPER_Y - 0.01, UPPER_Y, rooms, edge, red)
+		_block(BACK, x1, UPPER_Y - 0.5, UPPER_Y, edge - inward * 0.02, edge + inward * 0.12, white)
+		# The low parapet on the upper edge, with the iron rail along it.
+		_block(BACK, x1, UPPER_Y, UPPER_Y + 0.75, edge - inward * 0.14, edge + inward * 0.02, white)
+		w.rod(Vector3(BACK, UPPER_Y + 1.05, edge - inward * 0.06), Vector3(x1, UPPER_Y + 1.05, edge - inward * 0.06), 0.03, iron)
+		var x := BACK + 0.6
+		while x < x1:
+			w.rod(Vector3(x, UPPER_Y + 0.75, edge - inward * 0.06), Vector3(x, UPPER_Y + 1.05, edge - inward * 0.06), 0.015, iron)
+			x += 0.6
+		# The posts, both storeys.
+		for post in gallery_posts():
+			_block(post - 0.13, post + 0.13, FLOOR_Y, UPPER_Y - 0.5, post_z - 0.13, post_z + 0.13, white)
+			_block(post - 0.1, post + 0.1, UPPER_Y + 0.75, 8.7, post_z - 0.1, post_z + 0.1, white)
+		# The roof over the upper gallery: white corrugated sheet from the rooms' wall down past the edge.
+		var reach := absf(edge - rooms) + 0.9
+		var drop := 1.0
+		var tilt := atan2(drop, reach)
+		w.box(Vector3(x1 - BACK + 0.4, 0.08, reach / cos(tilt) + 0.1), Vector3((BACK + x1) / 2.0, 9.25 - drop / 2.0, rooms + inward * reach / 2.0), sheet, 0.0, -inward * tilt)
+		_block(BACK - 0.2, x1, 8.55, 8.75, edge + inward * 0.85, edge + inward * 0.95, white)
+		# The rooms' wall: on each floor, every other bay a teal door, a window and a breeze-block panel.
+		var normal := Vector3(0, 0, inward)
+		var face := rooms + inward * 0.005
+		var bay := CORRIDOR + 2.2
+		while bay < x1 - 1.2:
+			for floor_y in [FLOOR_Y, UPPER_Y]:
+				if floor_y == FLOOR_Y and bay > PASSAGE.x - 1.6 and bay < PASSAGE.y + 1.6:
+					continue
+				_block(bay - 0.5, bay + 0.5, floor_y, floor_y + 2.15, face, face + inward * 0.04, teal)
+				_block(bay - 0.6, bay + 0.6, floor_y + 2.15, floor_y + 2.25, face, face + inward * 0.06, white)
+				_window(Vector3(bay + 1.45, floor_y + 1.6, rooms), 1.0, 1.1, normal, false, 1, TRIM)
+				_block(bay - 1.55, bay - 0.85, floor_y + 1.2, floor_y + 2.1, face, face + inward * 0.03, breeze)
+				for i in 3:
+					for j in 3:
+						var hx := bay - 1.43 + i * 0.22
+						var hy: float = floor_y + 1.33 + j * 0.28
+						_block(hx - 0.06, hx + 0.06, hy - 0.08, hy + 0.08, face + inward * 0.03, face + inward * 0.035, hole)
+			bay += POST_STEP * 2.0
+	# The upper corridor along the front block's back over the arcade: its parapet and rail.
+	_block(BACK - 0.14, BACK + 0.02, UPPER_Y, UPPER_Y + 0.75, NORTH_WING, SOUTH_WING, white)
+	w.rod(Vector3(BACK - 0.06, UPPER_Y + 1.05, NORTH_WING), Vector3(BACK - 0.06, UPPER_Y + 1.05, SOUTH_WING), 0.03, iron)
+
+## The passage from the Student Center's courtyard gate: the ramp up through the north wing, red
+## tiles, an iron handrail along its east wall.
+func _passage() -> void:
+	var red: Material = w.material("floor", Color("d8836a"))
+	var length := NORTH_ROOMS - NORTH
+	var rise := FLOOR_Y - ARCADE_FLOOR
+	var tilt := atan2(rise, length)
+	var width := PASSAGE.y - PASSAGE.x
+	var mid := (PASSAGE.x + PASSAGE.y) / 2.0
+	w.box(Vector3(width, 0.3, length / cos(tilt)), Vector3(mid, (ARCADE_FLOOR + FLOOR_Y) / 2.0 - 0.15, (NORTH + NORTH_ROOMS) / 2.0), red, 0.0, -tilt)
+	_block(PASSAGE.x, PASSAGE.y, ARCADE_FLOOR - 0.3, ARCADE_FLOOR, GATE_PASSAGE.position.y, NORTH, red)
+	var rail_x := PASSAGE.y - 0.12
+	var iron := Color("2a2b2c")
+	w.rod(Vector3(rail_x, ARCADE_FLOOR + 0.9, NORTH + 0.3), Vector3(rail_x, FLOOR_Y + 0.9, NORTH_ROOMS - 0.2), 0.03, iron)
+	for t in [0.05, 0.5, 0.95]:
+		var z := lerpf(NORTH + 0.3, NORTH_ROOMS - 0.2, t)
+		var y := lerpf(ARCADE_FLOOR, FLOOR_Y, (z - NORTH) / length)
+		w.rod(Vector3(rail_x, y + 0.9, z), Vector3(rail_x + 0.1, y + 0.9, z), 0.02, iron)
+
+## The lattice masts from the tiles up to the glass roof: four corner tubes, a zigzag of braces on
+## each face, and vines climbing them.
+func _masts() -> void:
+	var steel := Color("6d7377")
+	var colours: Array[Color] = [Color("27412a"), Color("2f5331"), Color("3e6a3b"), Color("557f45"), Color("6e9552")]
+	var seed_value := 4100
+	for mast in MASTS:
+		var h := 0.2
+		var corners: Array[Vector2] = [Vector2(-h, -h), Vector2(h, -h), Vector2(h, h), Vector2(-h, h)]
+		for c in corners:
+			w.rod(Vector3(mast.x + c.x, YARD_Y, mast.y + c.y), Vector3(mast.x + c.x, GLASS_Y - 0.6, mast.y + c.y), 0.035, steel)
+		var y := YARD_Y + 0.3
+		var k := 0
+		while y < GLASS_Y - 1.4:
+			for i in 4:
+				var a: Vector2 = corners[i]
+				var b: Vector2 = corners[(i + 1) % 4]
+				var lo: Vector2 = a if k % 2 == 0 else b
+				var hi: Vector2 = b if k % 2 == 0 else a
+				w.rod(Vector3(mast.x + lo.x, y, mast.y + lo.y), Vector3(mast.x + hi.x, y + 0.8, mast.y + hi.y), 0.018, steel)
+			y += 0.8
+			k += 1
+		_block(mast.x - 0.32, mast.x + 0.32, YARD_Y, YARD_Y + 0.2, mast.y - 0.32, mast.y + 0.32, w.material("concrete", Color("a9a49c")))
+		# The vines: narrow leaf cards up the mast, more of them higher up.
+		var random := RandomNumberGenerator.new()
+		random.seed = seed_value
+		var vine: Material = w._leaf_material(seed_value, Vector3(mast.x, 7.0, mast.y), colours, true)
+		var card: ArrayMesh = w._cards(0.9, 2.4, -1.2, 2)
+		var vy := YARD_Y + 2.2
+		while vy < GLASS_Y - 0.6:
+			var leaf: MeshInstance3D = w._mesh(card, Vector3(mast.x + random.randf_range(-0.25, 0.25), vy, mast.y + random.randf_range(-0.25, 0.25)), vine, random.randf() * PI)
+			leaf.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+			vy += random.randf_range(0.9, 1.5)
+		seed_value += 7
+
+## The trees in their round planters by the lobby's arcade, the bins and the potted plants.
+func _yard_props() -> void:
+	var planter: Material = w.material("concrete", Color("8f8a83"))
+	var seed_value := 4300
+	for at in TREES:
+		_cylinder(PLANTER_R, PLANTER_R, 0.5, Vector3(at.x, YARD_Y + 0.25, at.y), planter, 20)
+		_cylinder(PLANTER_R - 0.12, PLANTER_R - 0.12, 0.02, Vector3(at.x, YARD_Y + 0.5, at.y), w.material("dirt", Color("5b4636")), 20)
+		w._tree(Vector3(at.x, YARD_Y + 0.5, at.y), 7.2, seed_value)
+		w._shrub(Vector3(at.x + 0.5, YARD_Y + 0.5, at.y - 0.3), 0.7, seed_value + 1)
+		seed_value += 11
+	var colours: Array[Color] = [Color("2f6b3c"), Color("2e4f8f"), Color("d9b52f")]
+	for bin in BINS:
+		for i in 3:
+			var x := bin.position.x + 0.25 + i * 0.5
+			_block(x - 0.21, x + 0.21, YARD_Y, YARD_Y + 0.85, bin.position.y + 0.04, bin.end.y - 0.04, w.material("plain", colours[i]))
+			_block(x - 0.23, x + 0.23, YARD_Y + 0.85, YARD_Y + 0.92, bin.position.y + 0.02, bin.end.y - 0.02, w.material("plain", colours[i].darkened(0.25)))
+	var terracotta: Material = w.material("plain", Color("9c5e44"))
+	for at in POTS:
+		_cylinder(0.3, 0.22, 0.5, Vector3(at.x, YARD_Y + 0.25, at.y), terracotta, 10)
+		w._shrub(Vector3(at.x, YARD_Y + 0.45, at.y), 0.8, seed_value)
+		seed_value += 5
+
+## The glass roof over the courtyard on its steel trusses (spanning north to south), purlins along
+## it, the glass (casting no shadow: the light comes through; the steel's lattice shadow stays),
+## and the vines spilling over its west edge.
+func _glass_roof() -> void:
+	var steel: Material = w.material("plain", Color("7a8084"))
+	var z0 := NORTH_WING - 0.6
+	var z1 := SOUTH_WING + 0.6
+	var x0 := BACK - 0.4
+	var x1 := THEATRE_X
+	var x := x0 + 0.1
+	while x < x1:
+		_block(x - 0.07, x + 0.07, GLASS_Y - 0.08, GLASS_Y + 0.06, z0, z1, steel)
+		_block(x - 0.05, x + 0.05, GLASS_Y - 0.7, GLASS_Y - 0.6, z0 + 0.6, z1 - 0.6, steel)
+		var z := z0 + 0.6
+		var up := true
+		while z < z1 - 1.0:
+			w.rod(Vector3(x, GLASS_Y - 0.65 if up else GLASS_Y, z), Vector3(x, GLASS_Y if up else GLASS_Y - 0.65, z + 1.0), 0.025, Color("7a8084"))
+			z += 1.0
+			up = not up
+		x += 4.5
+	var purlin := z0
+	while purlin <= z1 + 0.01:
+		_block(x0, x1, GLASS_Y + 0.06, GLASS_Y + 0.14, purlin - 0.04, purlin + 0.04, steel)
+		purlin += 1.7
+	var panel := BoxMesh.new()
+	panel.size = Vector3(x1 - x0, 0.02, z1 - z0)
+	var glass: MeshInstance3D = w._mesh(panel, Vector3((x0 + x1) / 2.0, GLASS_Y + 0.16, (z0 + z1) / 2.0), w.material("glass", Color("c6d9e0")))
+	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# The vines along the west edge, over the upper corridor (seen from the front over the roofs).
+	var colours: Array[Color] = [Color("27412a"), Color("2f5331"), Color("3e6a3b"), Color("557f45"), Color("6e9552")]
+	var vine: Material = w._leaf_material(4500, Vector3(x0, GLASS_Y - 1.5, CENTRE_Z), colours, true)
+	var random := RandomNumberGenerator.new()
+	random.seed = 4500
+	var vz := z0 + 0.4
+	while vz < z1:
+		var length := random.randf_range(1.6, 3.4)
+		var card: ArrayMesh = w._cards(1.1, length, -length, 2)
+		var leaf: MeshInstance3D = w._mesh(card, Vector3(x0 + random.randf_range(0.0, 0.6), GLASS_Y + 0.1, vz), vine, random.randf() * PI)
+		leaf.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+		vz += random.randf_range(0.9, 1.6)

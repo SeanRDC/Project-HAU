@@ -425,13 +425,13 @@ func _cafe_juan() -> void:
 	for at in PALM_POTS:
 		_cylinder(0.24, 0.18, 0.42, Vector3(at.x, FLOOR_Y + 0.21, at.y), pot, 10)
 
-## The courtyard gate: an opening through to the Main Building's courtyard (its daylight
-## behind), the iron gate folded back against both jambs, the sign over it.
+## The courtyard gate: an opening through to the Main Building's passage and courtyard
+## (Djdn.GATE_PASSAGE), the iron gate folded back against both jambs, the sign over it.
 func _courtyard_gate() -> void:
 	var x := (COURTYARD.x + COURTYARD.y) / 2.0
 	var width := COURTYARD.y - COURTYARD.x
-	w.box(Vector3(width, 2.75, 0.05), Vector3(x, 1.375, BACK - 0.03), w.glow(Color("dfe6d4"), 0.55, 0.15))
-	w.box(Vector3(width, 0.12, BACK - WALL), Vector3(x, FLOOR_Y + 0.06, (WALL + BACK) / 2.0), w.material("concrete", Color("c9c3b6")))
+	# (open through to the Main Building's passage and its courtyard: no daylight card)
+	w.box(Vector3(width, 0.02, BACK - WALL), Vector3(x, FLOOR_Y + 0.005, (WALL + BACK) / 2.0), w.material("concrete", Color("c9c3b6")))
 	var iron: Material = w.material("plain", Color("26282a"))
 	for side in [-1.0, 1.0]:
 		w.box(Vector3(0.16, 2.75, BACK - WALL + 0.08), Vector3(x + side * (width / 2.0 - 0.08), 1.375, (WALL + BACK) / 2.0), w.material("stucco", Color("e6d29d")))
