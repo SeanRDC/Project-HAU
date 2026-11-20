@@ -99,6 +99,8 @@ const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
+const Djdn := preload("res://areas/djdn.gd")
+const SideGate := preload("res://areas/side_gate.gd")
 const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
@@ -116,6 +118,7 @@ const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 ## grime band at their foot and faint paint patches over them.
 const WEATHERED := ["stucco", "concrete", "brick", "stone", "ledge"]
 const WEATHERING_SHADER := preload("res://shaders/weathering.gdshader")
+const SECTION_SHADER := preload("res://shaders/section.gdshader")
 const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile": "d6d1c3",
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
@@ -169,7 +172,7 @@ static func walkable_ground(x: float, z: float) -> bool:
 		return true # the APS front, its corridor and the patio
 	if BesideAps.walkable(x, z) or Hallway.in_hall(x, z) or Sjh.walkable(x, z) or Mgn.walkable(x, z) or MiddleRoad.walkable(x, z) \
 			or StudentCenter.walkable(x, z) or Pgn.walkable(x, z) or Formation.walkable(x, z) or Aero.walkable(x, z) or CoveredCourt.walkable(x, z) \
-			or SacredHeart.walkable(x, z):
+			or SacredHeart.walkable(x, z) or Djdn.walkable(x, z) or SideGate.walkable(x, z):
 		return true
 	return Chapel.walkable(x, z) or ChapelSouth.walkable(x, z)
 
@@ -195,7 +198,7 @@ static func blocked(x: float, z: float, level := NAN) -> bool:
 		return true
 	elif Chapel.blocked(x, z) or ChapelSouth.blocked(x, z) or Gym.blocked(x, z, level) or Hallway.blocked(x, z) or Sjh.blocked(x, z) or Mgn.blocked(x, z) or MiddleRoad.blocked(x, z) \
 			or StudentCenter.blocked(x, z) or Pgn.blocked(x, z) or Formation.blocked(x, z) or Aero.blocked(x, z) or CoveredCourt.blocked(x, z) \
-			or BesideAps.blocked(x, z) or SacredHeart.blocked(x, z):
+			or BesideAps.blocked(x, z) or SacredHeart.blocked(x, z) or Djdn.blocked(x, z, level) or SideGate.blocked(x, z):
 		return true
 	for post in STREET_LIGHTS:
 		if Vector2(x, z).distance_to(post) < 0.3:
@@ -242,6 +245,12 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 	var arcade := StudentCenter.floor_height(x, z)
 	if not is_nan(arcade):
 		return arcade
+	var gate := SideGate.floor_height(x, z)
+	if not is_nan(gate):
+		return gate
+	var main := Djdn.floor_height(x, z, level)
+	if not is_nan(main):
+		return main
 	var across := across_road(x, z)
 	if across > 4.135 and across < 10.865:
 		return -0.19 # carriageway
@@ -272,7 +281,7 @@ static func floor_height(x: float, z: float, level := NAN) -> float:
 ## The outer bounds; blocked() shapes the walkable campus inside them (north, up to the gate
 ## across the lane behind APS).
 static func clamp_position(x: float, z: float) -> Vector2:
-	return Vector2(clampf(x, -192.0, 101.0), clampf(z, SacredHeart.GATE_Z + 0.2, 162.0))
+	return Vector2(clampf(x, -212.0, 101.0), clampf(z, SacredHeart.GATE_Z + 0.2, 162.0))
 
 func build(parent: Node3D) -> void:
 	root = parent
@@ -290,6 +299,8 @@ func build(parent: Node3D) -> void:
 	Mgn.new().build(self)
 	MiddleRoad.new().build(self)
 	StudentCenter.new().build(self)
+	Djdn.new().build(self)
+	SideGate.new().build(self)
 	Pgn.new().build(self)
 	Formation.new().build(self)
 	Aero.new().build(self)
@@ -556,6 +567,22 @@ func material(kind: String, tint := Color.WHITE) -> StandardMaterial3D:
 			_weathering = ShaderMaterial.new()
 			_weathering.shader = WEATHERING_SHADER
 		made.next_pass = _weathering
+	_materials[key] = made
+	return made
+
+## A material that shows a solid dark section where the cutaway's near plane slices through a
+## closed block (its back faces drawn in the cut colour; see shaders/section.gdshader). Use it on
+## the solid masses an interior's cutaway cuts through (the Main Building's rooms). Not merged by
+## merge_static (its next pass is its own), so keep it to a few big boxes.
+func sectioned(kind: String, tint := Color.WHITE) -> StandardMaterial3D:
+	var key := "sectioned:" + kind + ":" + tint.to_html()
+	if _materials.has(key):
+		return _materials[key]
+	var made := material(kind, tint).duplicate() as StandardMaterial3D
+	var section := ShaderMaterial.new()
+	section.shader = SECTION_SHADER
+	section.next_pass = made.next_pass
+	made.next_pass = section
 	_materials[key] = made
 	return made
 

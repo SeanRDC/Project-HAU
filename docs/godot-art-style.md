@@ -44,6 +44,8 @@ Files:
 | `areas/sjh.gd` | St. Joseph Hall under its own pivot (facing north), set back 12 m (`SETBACK`) from its OSM outline to match the team's map and leave room for its front, and 2 m east of it (`EAST_SHIFT`) so the drive to MGN is ~4.7 m wide as in the photos; its raised ground floor (the walkway on a plinth; in front, along the whole building, grass with shrubs and bamboo at 0.5 m from the plinth to a low stone wall at the kerb (the front row of cars parks against it), and through it the brown paver sidewalk winding from side to side and sloping to the ground at both ends; at the centre tower the long stair out to the kerb: the steps up to the elevator lobby across the tower, a deep brown landing where the sidewalk meets it, the flight down between its handrails with grass and shrubs either side, and a planter box; clad piers, bar tables and bins, the diamond-tiled floor), the west end (the passage through the terracotta block and its steps, the ramp, the yard, the lane to MGN under the bridge), the Mary statue (a square white pedestal with a moulded cap and the black plaque, a white rose with a blush-pink heart on her chest, a pale-blue mantle) on one big lawn behind a rounded yellow-painted kerb (`lawn()`), the concrete drive off the road's bend round it along MGN's garden into the lane (`DRIVE`, ~4.4 m), and two rows of parked cars (by the chapel, and in front of SJH); the back from the rear photos (`assets/SJH BUILDING/rear/`) and the lane behind it, reached round the east end |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside, under its own pivot (facing east onto the west road): the open-corridor long block, the box-window wing over the entrance and open stair, the north block, the south wing with its service block and roof tank (its front flush with the long block's, ~9 m from SJH under the bridge, which joins the two buildings' third floors and rises 0.5 m to SJH's taller storeys), the raised garden in front, running on past the south wing, with the brown paver walk from the drive opposite the Mary statue angled north in to the corridor (`WALK_X`, `WALK_SLANT` 3 m), the garden split into two beds either side of it (grass wedges filling the slant), the walk sunk between their white-kerbed faces and rising from the drive's level to the corridor floor (`WALK_Y`), the north entrance on the north block's road face (a raised forecourt of pale grey squares in dark grout bands at 0.25 m behind a white kerb, under the overhang on two pillars, a grated drain, bins and potted plants; red octagon pavers beside it to the boulevard's covered walkway, running on over the west road's sidewalk to the boulevard's corner, where the kerb curves into the south lane (`MiddleRoad.CORNER_R` 2.5 m, painted yellow)); walkable up to the turnstile |
 | `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
+| `areas/djdn.gd` | The Main Building (DJDN), from `assets/MAIN BUILDINGS DJDN/`: the symmetric front with the portico, the drive, the empty parking, the garden; inside the lobby, the courtyard (stage, theatre front, masts, glass roof), the galleries on both storeys, the three stairs and the mezzanine; its storeys (`floors`, `floor_at`), its views (`front_for`, `inside_for`, `width_cap`, `focus_lift`) and its fade groups |
+| `areas/side_gate.gd` | The side gate's grounds: the flag circle (mound, star, pedestal and flag, chained posts, royal palms, three flights), the walk square to the fence with its diamond tiles, benches, bollards and low fences, the lawns and the empty parking beside it; the fence's frame (`fence_local`, `fence_world`) and the gate view (`view_for`, `GATE_TURNS`) |
 | `areas/pgn.gd` | The Peter G. Nepomuceno Building (world coordinates, the plot squared to x): an L, the long block's face on the boulevard at z 49.2 and the wing beside APS on the west road. A dark grey ground floor (`4e555b`, 4.2 m) set back 1 m under the first band; nine 3.3 m floors, each a white band (`f4f5f1`, 1.1 m tall, standing out 1.1 m, rounded at the outside corners) over a row of blue windows (`3c63b4`) in white frames, grey ribbed louvres angled at the bands' edge; a white louvred stair screen, the name in gold, an orange strip over the covered walkway; the roof box with its vents. At the west end a blue glass stair tower (`2648d8`) and a dark louvred corner with the name in steel, beside the paver lane (`MiddleRoad.PGN_LANE`) with potted trees up to the courtyard. In the lane the camera looks north (`lane_for`); the boulevard's south view cuts at `MIDDLE_CUT_Z` 50.4, in front of PGN's bands |
 | `areas/formation.gd` | The Sister Josefina G. Nepomuceno Formation Center (world coordinates, front at x 25 facing the east road), set back inside its plot and joined at the back to the chapel's east wall (`CHAPEL_EDGE`): the north wing 2.3 m clear of the lawn-side sidewalk round the bend (`SIDEWALK_FAR`, from the kerb to 13.5 across), the drop-off between the steps and the road. Cream stucco (`f1e8cb`) with white bands (`f7f1dc`); a 4.4 m ground floor whose open colonnade (raised 0.45 m, three steps) has white grilles over dark doors and the name in grey steel letters on the sign band; two 3.5 m floors of windows between slim fins; a white fabric barrel-vault canopy on steel arches over the roof terrace; the 16.2 m stair tower with two green-glass strips behind white louvres; the curved wings (half discs: north r 6.2 full height, south r 7.5 a storey lower). A concrete way in at the north end, grey stamped pavers on the apron and the way out round the island (its two-trunked tree, lime hedges, grey bollard lamps), the gabled green kiosks (`World._kiosk`). Facing it (`view_for`, turn 3 like MGN) the camera cuts away everything east of `CUT_X` 44.8 |
 | `areas/aero.gd` | Aero Hall (the plan's annex; only its front part is built, the strips behind the gym are bare): one storey of navy ribbed walls (`2d3548`) on a white base under dark grey ribbed gable roofs with black fascias; the taller front block's gable faces the gym's GYM doorway. The concrete beside it starts at x 38.8 (SJH's east face, with room for SJH's 2 m shift east). Facing the gym from out here the camera cuts away everything west of `CUT_X` 38.6, past the road's end only (`cut_for`) |
@@ -1063,6 +1065,47 @@ Build an interior the same way:
   inside stays shaded by its roof. A wall that is cut away keeps a **1.2 m
   stub** (`STUB`), so rooms still read as a plan. Floating plot labels hide
   while the student is inside.
+- **Section fill** (the Main Building, 2026-11-20). A solid mass the near plane
+  slices through would show as a hollow shell. Give it `w.sectioned(kind, tint)`
+  instead of `w.material`: a copy whose next pass (`shaders/section.gdshader`)
+  draws only its back faces, flat in the cut band's colour (`#13110f`-ish,
+  `display.gdshader` `cut_color`), so the cut part reads as solid dark. From
+  outside they stand behind the front faces and never show. Where the slanted
+  cut still leaves an outside face in view (the Main Building's front rooms seen
+  from its lobby), `aps.gd` draws the whole group flat dark while the student is
+  there (`Djdn.sectioned`). Facing east inside the Main Building, the front's face,
+  porch, portico, garden and the inside of the front wall are one fade group
+  (`DjdnFront`); the front block's rooms (`DjdnFrontRooms`) fade once you pass the
+  lobby into the corridor. The cutaway closes in to `Djdn.INSIDE_WIDTH` (18 m), the
+  focus stands `FOCUS_LIFT` (2.2 m) over the floor, and the cut is `CUT_AHEAD` (3 m)
+  in front of the student but never short of the wall behind them (`cut_ahead`).
+  Past the arcade, in the courtyard, the cap eases out to `Djdn.YARD_WIDTH` (30 m,
+  `width_cap`, eased in `aps.gd` as `djdn_cap`) and the focus rises with the framing
+  (`focus_lift`: the floor's cut edge stays `BELOW_FLOOR` 2.86 m over the frame's
+  foot), so the theatre's front and its frieze read over the student. The glass roof
+  (`DjdnGlassRoof`) fades while inside; its glass casts no shadow, its steel does. In
+  the passage from the Student Center's courtyard gate the north wing's rooms west of
+  and over it fade (`DjdnNorthWingWest`). The Main Building's windows sit fully proud
+  of their walls (`_window`), so a wing seen in section never shows them inside it.
+  Upstairs (`UPPER_Y` 5.3) is a ring: both upper galleries, the upper corridor over
+  the arcade and the lobby's mezzanine (west and south arms). Three stairs
+  (`Djdn.STAIRS`, 0.2 m risers, solid underneath): the lobby's along its north wall
+  rising west, and one in front of each gallery rising east to a landing through a
+  gap in the parapet. Each upper gallery's floor (`DjdnGalleryUpperN/S`) fades while
+  the student walks under it, and its roof (`DjdnGalleryRoofN/S`) while they are
+  anywhere in that gallery: from the low west camera both stand in front of them.
+  Upstairs the band's ceiling rises with the student. Fast-travel places may carry
+  a fourth element, the level to land on.
+- **Side gate** (`SideGate.view_for`, eased in `aps.gd` as `gate_view`): on the flag
+  circle, the walk and the parking beside it the camera turns `SideGate.GATE_TURNS`
+  (2.28 quarter turns) to look at the gate square to the fence, and everything further
+  from the fence than `SideGate.CUT_LZ` (38 m, past the circle's palms) is cut away
+  through the ground line. A cut a few metres in front of the student was tried: it
+  sliced the walk's trees and left their crowns floating. Under the colonnade it is
+  the covered walk's cutaway (`colonnade`, `SideGate.colonnade_for`): the near plane at
+  the inner row of pillars, the slatted ceiling as the band's top.
+  The boulevard's view keeps the circle's north apron, and the drive stays the
+  front's; the chapel, MGN and the front views yield to it.
 - **Lights inside** are plain `OmniLight3D`s in their own group, on at every
   hour but only while the student is in (not in `world.lamps`, which are night
   lamps). Windows inside glow by day through `glow()`.

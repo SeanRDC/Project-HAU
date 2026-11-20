@@ -25,6 +25,16 @@ built yet is a reserved plot, and a building is merged on its plot as
 - **The Student Center**, the open arcade along the Main Building beside the
   boulevard: Cafe Juan's front, the courtyard gate, study tables, the BDO ATM, and
   a brick apron at its west end out to the fountain.
+- **The Main Building (DJDN)**, from the photos: its symmetric front with the portico,
+  the drive, the empty parking and the garden; walk in through the doors to the lobby
+  (the bust, the display boards), on through the arcade into the courtyard (the stage,
+  the LAUS DEO SEMPER theatre front, the vine-wrapped masts under the glass roof), and
+  up the three stairs to the galleries and the lobby's mezzanine. The Student Center's
+  courtyard gate leads through into it.
+- **The side gate**: the flag circle across the drive (the star, the flag, the chained
+  posts, the royal palms), the walk square to the fence, the gatehouse with its glass
+  pyramid and turnstiles, the colonnade and terracotta pavilions along the fence, the
+  iron fence, the closed car gate and the bronze angel. Nothing past the fence.
 - **Eight NPCs** (Migo, Bea, Rica, Paolo, Bianca, Kuya Ben, Ate Lorna, Coach
   Gab) who stroll or keep their posts, look your way, wave when you come near, and the
   friendlier ones say hi (their own line, another once you've met, or one for the hour or the rain), open umbrellas
@@ -60,6 +70,16 @@ lead, or from the brick apron at the west end by the fountain. Inside, the camer
 closes in the same way, the roof fades so you see the whole back wall (Cafe Juan's
 tall windows and doorway, the courtyard gate, the offices), and the posts and planter
 in front are cut away (`--view=student-center`).
+
+South of the Student Center, the drive runs along the Main Building's front: the camera
+turns to face it from over the drive. Inside, it keeps facing east in a cutaway (the
+front and the rooms in front of you fade, the solid rooms beside you show as a dark
+section); in the courtyard it opens out so the theatre's front reads, and the galleries'
+upper floor and roof fade while you are under or in them. Across the zebra from the
+portico, on the flag circle and the walk to the side gate, it turns to look at the gate
+square to the fence; under the colonnade it is the covered-walk cutaway again. F1 has
+the front, the lobby, the courtyard, the gallery upstairs, the flag circle, the walk,
+the gatehouse and the colonnade.
 
 Behind the chapel, the Formation Center faces the east road: walk up from the road onto
 its drop-off, round the island with the big tree, and up the steps into the colonnade;
@@ -181,6 +201,8 @@ because their kernel grows with zoom.
 | `areas/hallway.gd` | The APS ground-floor hallway (walk in from the sidewalk: the outside cuts away), the bust and the campus map |
 | `areas/sjh.gd` | St. Joseph Hall: the slab, its raised ground floor (the walkway behind its railing, the planter, brown sidewalk and grass strip in front, the elevator lobby up the long stair in the middle, the side entrance and ramp at the west end, the lane to MGN under the bridge), the Mary statue garden, the parking and cars; the back facade and the lane behind it (sheds, carports, the HAU vans, the basement ramp), reached round the east end |
 | `areas/mgn.gd` | The Mamerto G. Nepomuceno Building from outside: the open-corridor block, the box-window wing over the entrance (walk in up to the turnstile), the open stair, the north block, the south wing with its roof tank, the raised garden. The camera turns to face it on the west road |
+| `areas/djdn.gd` | The Main Building (DJDN): the front, the portico, the drive, parking and garden; the lobby, the arcade, the courtyard (stage, theatre front, masts, glass roof), the galleries on both storeys, the three stairs and the mezzanine; its storeys, views and fade groups |
+| `areas/side_gate.gd` | The side gate: the flag circle, the walk, the lawns and parking beside it, the gatehouse, the colonnade, the pavilions, the fence, the car gate, the guardhouse and the angel; the fence's frame and the gate view |
 | `areas/student_center.gd` | The Student Center, the open arcade between the boulevard and the Main Building: the planter and rail (open at the crossings), the cream posts and the roof (it fades while you are under it), Cafe Juan's windows and doorway, the courtyard gate, the offices, the study tables, the ATM and cafe tables at the west end, the brick apron out to the fountain, the lawn at the east end. Its camera weights |
 | `areas/pgn.gd` | The Peter G. Nepomuceno Building: the tall white L along the boulevard and beside APS, its dark ground floor, nine banded floors with blue windows and grey louvres, the stair screen, the gold name, the box on the roof, the blue glass stair tower and the paver lane with potted trees along its west end |
 | `areas/formation.gd` | The Sister Josefina G. Nepomuceno Formation Center, facing the east road behind the chapel: the colonnade under the steel name, two window floors, the roof canopy, the stair tower with its green strips, the curved wings, the drop-off round the tree island (with the bell post, the RESERVED CMO GUEST-PRIEST board and a rock at its north end), the north lawn's kiosk, the lawn-side sidewalk round the bend and down the road, and its camera view |
@@ -223,7 +245,7 @@ Close other games while measuring: they share the GPU and inflate its times.
 Checks the canteen and signs, that the wing faces the patio, the road bend, lawn and patio, walking round the corner, the canteen view facing the stalls, the closest zoom, column/pier/stall/tower/table collisions, the
 rail gap, walking up the canteen steps, floor heights, lights per time, sheet
 switching, sprite shadows, and that the wide/whole-building framings contain
-the frontage, and the gym inside (walking in through a doorway and the side entrance, its two storeys, the stairs and bleacher rows, the stage and backstage, the cutaway and the hall view), SJH, MGN, the middle road and the walk along the chapel's south side, every fast-travel place being walkable, the NPCs (spawned on walkable ground, wandering, noticing and waving, umbrellas, talking, choices, the talk closing when you walk away), the campus sounds, and rain wetting the ground and drying. Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
+the frontage, and the gym inside (walking in through a doorway and the side entrance, its two storeys, the stairs and bleacher rows, the stage and backstage, the cutaway and the hall view), SJH, MGN, the middle road and the walk along the chapel's south side, every fast-travel place being walkable, the NPCs (spawned on walkable ground, wandering, noticing and waving, umbrellas, talking, choices, the talk closing when you walk away), the campus sounds, rain wetting the ground and drying, and the Main Building and the side gate (the front and its grounds, walking into the lobby and out, the courtyard and its cutaway, the stage, the Student Center's gate through to the courtyard, the stairs and the ring upstairs with no stepping off, the flag circle, the walk to the turnstiles, the gate view, the gate strip and the colonnade's cutaway). Rendered pixels need the GPU: `sh tools/capture-aps-godot.sh`
 writes review shots into the ignored `builds/aps-godot-review/port/`.
 
 Optional arguments after `--`: `--hour=5.75|8|12|16.5|17.75|18.5|21`, `--weather=clear|overcast|rain|storm|windy`, `--girl`, `--x=`, `--z=`,

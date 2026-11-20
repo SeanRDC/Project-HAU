@@ -21,6 +21,8 @@ const Sjh := preload("res://areas/sjh.gd")
 const Mgn := preload("res://areas/mgn.gd")
 const MiddleRoad := preload("res://areas/middle_road.gd")
 const StudentCenter := preload("res://areas/student_center.gd")
+const Djdn := preload("res://areas/djdn.gd")
+const SideGate := preload("res://areas/side_gate.gd")
 const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
@@ -154,6 +156,10 @@ var _zoom_before_perch := -1.0
 var _cutaways: Array = []
 ## The Student Center's daylight fill, on while the student is under its roof.
 var _arcade_lights: Node3D
+var _djdn_lights: Node3D
+## The Main Building's front block rooms drawn flat dark (see Djdn.sectioned), and the material.
+var _djdn_sectioned := false
+var _section_fill: StandardMaterial3D
 var _interior_lights: Node3D
 ## The reserved plots' floating labels, hidden while the student is inside the gym
 ## (the annex's would hang in front of the side views).
@@ -187,6 +193,17 @@ var middle_north := 0.0
 var covered := 0.0
 ## 0..1: how far the student is under the Student Center's roof (the same cutaway).
 var arcade := 0.0
+## 0..1: how far the camera faces east at the Main Building's front from its drive and grounds.
+var djdn_front := 0.0
+## 0..1: how far the student is inside the Main Building (its cutaway, facing east).
+var djdn_in := 0.0
+## 0..1: how far the camera faces the side gate square to the fence (SideGate.GATE_TURNS), from
+## the flag circle, the walk and the parking beside it.
+var gate_view := 0.0
+## 0..1: how far the student is under the side gate's colonnade (the covered walk's cutaway).
+var colonnade := 0.0
+## The widest the Main Building's cutaway frames here (Djdn.width_cap), eased.
+var djdn_cap := 18.0
 ## The controls keep the boulevard side they started on while a direction is held, so
 ## walking across the road does not turn round with the camera halfway (see _control_turns).
 var _control_direction := Vector2.ZERO
@@ -430,7 +447,8 @@ func _choose_scale() -> int:
 	return clampi(roundi(ideal), 1, 8)
 
 func _resize() -> void:
-	shown_width = lerpf(width, minf(width, HALL_WIDTH), smoothstep(0.0, 1.0, clampf(hall + walkway + covered + arcade, 0.0, 1.0)))
+	shown_width = lerpf(width, minf(width, HALL_WIDTH), smoothstep(0.0, 1.0, clampf(hall + walkway + covered + arcade + colonnade, 0.0, 1.0)))
+	shown_width = lerpf(shown_width, minf(shown_width, djdn_cap), smoothstep(0.0, 1.0, djdn_in))
 	var window := Vector2(get_window().size)
 	var aspect := window.x / maxf(window.y, 1.0)
 	# The framing width is for a 16:9 frame: keep that whole frame on any window shape.
@@ -516,11 +534,22 @@ static func perch_for(x: float, z: float, level: float) -> float:
 
 static func chapel_for(x: float, z: float) -> float:
 	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z)) \
-		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Pgn.lane_for(x, z)) * (1.0 - Pgn.east_for(x, z)) * (1.0 - Sjh.rear_for(x, z))
+		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Pgn.lane_for(x, z)) * (1.0 - Pgn.east_for(x, z)) * (1.0 - Sjh.rear_for(x, z)) \
+		* (1.0 - Djdn.view_for(x, z)) * (1.0 - SideGate.view_for(x, z))
+
+## Facing the Main Building's front from its drive (east), or east inside it: what the
+## boulevard's and the side gate's views leave.
+static func djdn_front_for(x: float, z: float) -> float:
+	return Djdn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - gate_for(x, z))
+
+## Facing the side gate from the flag circle and the walk: what the boulevard's view leaves (it
+## keeps the circle's north apron).
+static func gate_for(x: float, z: float) -> float:
+	return SideGate.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z))
 
 ## The MGN view (facing west from the west road) yields to the middle road's.
 static func mgn_for(x: float, z: float) -> float:
-	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z))
+	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z)) * (1.0 - Djdn.view_for(x, z)) * (1.0 - SideGate.view_for(x, z))
 
 func _snap_follow() -> void:
 	follow = Vector2(student.position.x - 0.15, student.position.z)
@@ -547,6 +576,11 @@ func _snap_follow() -> void:
 	walkway = Sjh.walkway_for(student.position.x, student.position.z)
 	covered = MiddleRoad.covered_for(student.position.x, student.position.z)
 	arcade = StudentCenter.covered_for(student.position.x, student.position.z)
+	djdn_front = djdn_front_for(student.position.x, student.position.z)
+	djdn_in = Djdn.inside_for(student.position.x, student.position.z)
+	djdn_cap = Djdn.width_cap(student.position.x, student.position.z)
+	gate_view = gate_for(student.position.x, student.position.z)
+	colonnade = SideGate.colonnade_for(student.position.x, student.position.z)
 
 ## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
 ## canteen or the chapel (their views never overlap: one is east of x 12, one west of -18),
@@ -561,7 +595,7 @@ func _yaw() -> float:
 ## The camera's turn in quarter turns (SJH's and the boulevard's south half turns count
 ## two, MGN's three; the boulevard's north view adds none); the controls use it too.
 func _turns() -> float:
-	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle - pgn_east + 3.0 * formation + court + lane_east - lane_west
+	return leg + chapel + gym + gable + arena * face + 2.0 * sjh + 3.0 * mgn + 2.0 * middle - pgn_east + 3.0 * formation + court + lane_east - lane_west + djdn_front + SideGate.GATE_TURNS * gate_view
 
 ## The turn the controls use: the camera's, except that on the boulevard the side it faces
 ## stays the one it faced when the current direction was pressed, until it is let go or
@@ -581,12 +615,15 @@ func _control_turns(direction: Vector2) -> float:
 		+ on_lane * (2.0 * _control_lane_east - 1.0)
 
 func _update_camera(delta: float) -> void:
-	var was_inside := hall + walkway + covered + arcade
+	var was_inside := hall + walkway + covered + arcade + djdn_in + djdn_cap * 0.01 + colonnade
 	hall = lerpf(hall, Hallway.hall_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
 	walkway = lerpf(walkway, Sjh.walkway_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
 	covered = lerpf(covered, MiddleRoad.covered_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
 	arcade = lerpf(arcade, StudentCenter.covered_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
-	if absf(hall + walkway + covered + arcade - was_inside) > 0.0005 or absf(width - target_width) > 0.001:
+	djdn_in = lerpf(djdn_in, Djdn.inside_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
+	djdn_cap = lerpf(djdn_cap, Djdn.width_cap(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	colonnade = lerpf(colonnade, SideGate.colonnade_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.5))
+	if absf(hall + walkway + covered + arcade + djdn_in + djdn_cap * 0.01 + colonnade - was_inside) > 0.0005 or absf(width - target_width) > 0.001:
 		if absf(width - target_width) > 0.001:
 			width = lerpf(width, target_width, 1.0 - exp(-delta * 10.0))
 			if absf(width - target_width) < 0.02:
@@ -605,6 +642,8 @@ func _update_camera(delta: float) -> void:
 	pgn_east = lerpf(pgn_east, Pgn.east_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	formation = lerpf(formation, Formation.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	court = lerpf(court, CoveredCourt.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	djdn_front = lerpf(djdn_front, djdn_front_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	gate_view = lerpf(gate_view, gate_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	var lane_now := BesideAps.lane_for(student.position.x, student.position.z)
 	var east_now := lane_now * BesideAps.lane_east_for(student.position.x, student.position.z)
 	lane_east = lerpf(lane_east, east_now, 1.0 - exp(-delta * 3.0))
@@ -684,10 +723,17 @@ func _update_camera(delta: float) -> void:
 	var lane_y := lerpf(target_y, target_y + 3.0, wide)
 	var sh_focus := Vector3(lerpf(BesideAps.east_side(follow.y), follow.x, close), lane_y, lane_z)
 	var aps_back_focus := Vector3(lerpf(BesideAps.west_side(follow.y), follow.x, close), lane_y, lane_z)
-	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court - lane_east - lane_west)
+	# Facing the Main Building's front it frames the front (sliding along it), or close up a
+	# student out on the drive at their own depth.
+	var djdn_x := minf(lerpf(Djdn.FRONT, follow.x, close), follow.x + 14.0)
+	var djdn_focus := Vector3(roundf(djdn_x / pixel) * pixel, lerpf(target_y, target_y + 2.5, wide), roundf(follow.y / pixel) * pixel)
+	var focus := Vector3(front, target_y, depth) * (1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court - lane_east - lane_west - djdn_front - gate_view)
 	focus += Vector3(CANTEEN_FACE_X, target_y, side) * leg + Vector3(reach, target_y, aisle) * chapel + gym_focus * gym
 	focus += sjh_focus * sjh + mgn_focus * mgn + middle_focus * middle + north_focus * middle_north + pgn_focus * pgn_east + formation_focus * formation + court_focus * court
-	focus += sh_focus * lane_east + aps_back_focus * lane_west
+	focus += sh_focus * lane_east + aps_back_focus * lane_west + djdn_focus * djdn_front
+	# Facing the side gate it frames the student at their own depth on the walk or the circle.
+	var gate_focus := Vector3(roundf(follow.x / pixel) * pixel, lerpf(target_y, target_y + 2.5, wide), roundf(follow.y / pixel) * pixel)
+	focus += gate_focus * gate_view
 	# Every framing, the wide ones too, keeps the student in the middle across the screen:
 	# the focus slides sideways onto them and keeps the depth its view frames.
 	var yaw := _yaw()
@@ -699,7 +745,7 @@ func _update_camera(delta: float) -> void:
 	# Inside a covered corridor (the APS hallway, SJH's walkway, the boulevard's covered
 	# walkways, the Student Center): glide in close and look a little down along it. Each
 	# gives the corridor's middle, how far in front of it the cut goes, and its ceiling.
-	var inside_weight := clampf(hall + walkway + covered + arcade, 0.0, 1.0)
+	var inside_weight := clampf(hall + walkway + covered + arcade + djdn_in + colonnade, 0.0, 1.0)
 	var inside := smoothstep(0.0, 1.0, inside_weight)
 	var corridor := Vector3(roundf(follow.x / pixel) * pixel, 1.35, -1.9)
 	var cut_offset := Hallway.CUT_Z + 1.9
@@ -719,6 +765,22 @@ func _update_camera(delta: float) -> void:
 		cut_offset = lerpf(MiddleRoad.CUT_OFFSET, StudentCenter.CUT_OFFSET, share)
 		ceiling = lerpf(MiddleRoad.CEILING, StudentCenter.CEILING, share)
 		band_back = lerpf(band_back, StudentCenter.BAND_BACK, share)
+	if djdn_in > maxf(maxf(hall, walkway), covered + arcade):
+		# Inside the Main Building, facing east: the corridor is the student's own spot (the lobby
+		# and the courtyard are wide, not a corridor), the cut CUT_AHEAD in front of them but never
+		# short of the front wall's inside face, the band's top over the galleries' roofs.
+		corridor = Vector3(roundf(follow.x / pixel) * pixel, student.level() + Djdn.focus_lift(shown_width), roundf(follow.y / pixel) * pixel)
+		cut_offset = Djdn.cut_ahead(follow.x, follow.y)
+		ceiling = maxf(Djdn.CEILING_BAND, student.level() + Djdn.CEILING_BAND - Djdn.YARD_Y)
+		band_back = Djdn.BAND_BACK
+	if colonnade > maxf(maxf(hall, walkway), maxf(covered + arcade, djdn_in)):
+		# Under the side gate's colonnade, facing the fence across it: its middle line level with
+		# the student, the near plane at its inner row of pillars, its slatted ceiling as the band's top.
+		var middle_at := SideGate.colonnade_middle(follow.x, follow.y)
+		corridor = Vector3(roundf(middle_at.x / pixel) * pixel, SideGate.GATE_Y + 1.35, roundf(middle_at.y / pixel) * pixel)
+		cut_offset = SideGate.COL_CUT
+		ceiling = SideGate.COL_CEILING
+		band_back = SideGate.COL_BAND
 	focus = focus.lerp(corridor, inside)
 	distance = lerpf(distance, 20.0, inside)
 	lift = lerpf(lift, 5.0, inside)
@@ -741,7 +803,7 @@ func _update_camera(delta: float) -> void:
 	# the road and SJH: everything past the road (SJH and its row of cars) is cut away, so
 	# the cars nosed in to the grass stay in front, as in the photos. It fades out as the
 	# chapel's or the gym's view takes over at either end.
-	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court - lane_east - lane_west, 0.0, 1.0)
+	var facing_north := clampf(1.0 - leg - chapel - gym - sjh - mgn - middle - middle_north - pgn_east - formation - court - lane_east - lane_west - djdn_front - gate_view, 0.0, 1.0)
 	if south_walk * facing_north > 0.0:
 		# (through the ground line, as the plane leans with the camera: then nothing of the
 		# front row's cars stands above it)
@@ -812,6 +874,19 @@ func _update_camera(delta: float) -> void:
 	# Facing south across the boulevard the camera stands over PGN's plot: everything
 	# north of it (the APS wing, the corner garden) is cut away. Facing north it stands
 	# over the Main Building and MGN: everything south of their faces is cut away.
+	# Facing the Main Building's front from the drive it stands over the flag circle and its
+	# palms: everything west of the drive is cut away (through the ground line, as the plane
+	# leans with the camera, so a student at the drive's kerb keeps their head).
+	if djdn_front > 0.0:
+		var drive_edge := (Vector3(Djdn.CUT_X, 0.0, focus.z) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, drive_edge * smoothstep(0.0, 1.0, djdn_front))
+	# Facing the side gate it stands over the boulevard and the Student Center: everything past the
+	# flag circle and its palms (SideGate.CUT_LZ from the fence, through the ground line) is cut
+	# away. (The walk's palms and trees stay whole: cut through, their crowns would float.)
+	if gate_view > 0.0:
+		var cut_at := SideGate.fence_world(SideGate.fence_local(follow.x, follow.y).x, SideGate.CUT_LZ)
+		var gate_edge := (Vector3(cut_at.x, 0.0, cut_at.y) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, gate_edge * smoothstep(0.0, 1.0, gate_view))
 	if middle > 0.0:
 		var north_edge := (Vector3(focus.x, focus.y, MIDDLE_CUT_Z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, north_edge * smoothstep(0.0, 1.0, middle))
@@ -849,7 +924,8 @@ func _update_camera(delta: float) -> void:
 		var size := Vector2(viewport.size)
 		var back := corridor - toward * band_back
 		grade.set_shader_parameter("cut_top", camera.unproject_position(Vector3(back.x, ceiling, back.z)).y / size.y)
-		grade.set_shader_parameter("cut_bottom", camera.unproject_position(Vector3(cut.x, corridor.y - 1.35, cut.z)).y / size.y)
+		var floor_y := corridor.y - (Djdn.focus_lift(shown_width) if djdn_in > maxf(maxf(hall, walkway), covered + arcade) else 1.35)
+		grade.set_shader_parameter("cut_bottom", camera.unproject_position(Vector3(cut.x, floor_y, cut.z)).y / size.y)
 	# Shadow and fog ranges follow the camera so the wide views stay sharp and unhazed.
 	sun.directional_shadow_max_distance = distance + 45.0
 	environment.fog_depth_begin = distance + 14.0
@@ -1083,7 +1159,8 @@ func _reset() -> void:
 	_set_hour(16.5)
 	_set_zoom(112.0)
 
-## Fast-travel places (dev, F1): name, where the student stands, the framing width.
+## Fast-travel places (dev, F1): name, where the student stands, the framing width, and (upstairs)
+## the level it stands at.
 ## Each spot is walkable ground (a check makes sure); add new buildings here.
 static func travel_places() -> Array:
 	return [
@@ -1118,6 +1195,14 @@ static func travel_places() -> Array:
 		["Angel fountain", Vector2(-159.0, 61.0), 40.0],
 		["Student Center", STUDENT_CENTER_SPOT, 22.0],
 		["Student Center, west end", Vector2(-158.0, 84.0), 30.0],
+		["Main Building front", Vector2(-164.0, 107.7), 40.0],
+		["Main Building lobby", Vector2(-152.5, 104.5), Djdn.INSIDE_WIDTH],
+		["Main Building courtyard", Vector2(-125.0, 108.0), Djdn.YARD_WIDTH],
+		["Main Building gallery", Vector2(-125.0, 95.9), Djdn.YARD_WIDTH, Djdn.UPPER_Y],
+		["Flag circle", Vector2(-178.5, 82.3), 30.0],
+		["Side gate walk", SideGate.fence_world(0.0, 13.0), 30.0],
+		["Side gate", SideGate.fence_world(0.0, 4.5), 26.0],
+		["Side gate colonnade", SideGate.fence_world(8.5, 2.0), 22.0],
 	]
 
 ## Jumps the student to a fast-travel place, with every camera zone, the gym's
@@ -1125,7 +1210,7 @@ static func travel_places() -> Array:
 func _travel_to(index: int) -> void:
 	var place: Array = travel_places()[index]
 	var spot: Vector2 = place[1]
-	if not student.place(spot.x, spot.y):
+	if not student.place(spot.x, spot.y, place[3] if place.size() > 3 else NAN):
 		push_warning("Fast travel: %s is not walkable" % place[0])
 		return
 	_snap_follow()
@@ -1305,6 +1390,9 @@ func _look_freely(angles: String) -> void:
 	free_cam.enter()
 	free_cam.yaw = deg_to_rad(float(parts[0]))
 	free_cam.pitch = deg_to_rad(float(parts[1]) if parts.size() > 1 else 20.0)
+	if parts.size() >= 5:
+		# --free-cam=<yaw>,<pitch>,<x>,<y>,<z>: from that spot, for captures of any place.
+		camera.position = Vector3(float(parts[2]), float(parts[3]), float(parts[4]))
 	free_cam._aim()
 	sky_material.set_shader_parameter("free_look", true)
 	pixel_scale = 0
@@ -1434,11 +1522,14 @@ func _collect_cutaways() -> void:
 			stack.append_array(node.get_children())
 		_cutaways.append({"name": group, "alpha": 1.0, "items": items})
 	# Each side of the boulevard fades the same way while the camera faces the other across
-	# it, and the Student Center's roof while the student is under it.
+	# it, the Student Center's roof while the student is under it, and the Main Building's front
+	# and its front block's rooms while the student is inside (those two are under the building).
 	_arcade_lights = scene.find_child(StudentCenter.LIGHTS_GROUP, false, false)
-	for group in [MiddleRoad.NORTH_GROUP, MiddleRoad.SOUTH_GROUP, StudentCenter.ROOF_GROUP, CoveredCourt.ROOF_GROUP, SacredHeart.WALK_ROOF]:
+	_djdn_lights = scene.find_child(Djdn.LIGHTS_GROUP, false, false)
+	for group in [MiddleRoad.NORTH_GROUP, MiddleRoad.SOUTH_GROUP, StudentCenter.ROOF_GROUP, CoveredCourt.ROOF_GROUP, SacredHeart.WALK_ROOF,
+			Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP, Djdn.ROOF_GROUP, Djdn.WING_GROUP, Djdn.UPPER_N, Djdn.UPPER_S, Djdn.ROOF_N, Djdn.ROOF_S]:
 		var items := []
-		var stack: Array[Node] = [scene.find_child(group, false, false)]
+		var stack: Array[Node] = [scene.find_child(group, group.begins_with("Djdn"), false)]
 		while not stack.is_empty():
 			var node: Node = stack.pop_back()
 			if node is GeometryInstance3D:
@@ -1466,6 +1557,8 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 			hidden = CoveredCourt.under_roof(student.position.x, student.position.z)
 		elif cut["name"] == SacredHeart.WALK_ROOF:
 			hidden = SacredHeart.in_walk(student.position.x, student.position.z)
+		elif cut["name"] in [Djdn.FRONT_GROUP, Djdn.ROOMS_GROUP, Djdn.ROOF_GROUP, Djdn.WING_GROUP, Djdn.UPPER_N, Djdn.UPPER_S, Djdn.ROOF_N, Djdn.ROOF_S]:
+			hidden = Djdn.hidden(cut["name"], student.position.x, student.position.z, student.level())
 		else:
 			hidden = GymInterior.hidden(cut["name"], p.x, p.y, y, side)
 		hidden = hidden and not free_cam.active # flying, everything stands
@@ -1482,6 +1575,20 @@ func _update_cutaways(delta: float, immediate := false) -> void:
 			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY if alpha <= 0.0 else cast
 	_interior_lights.visible = GymInterior.inside(p.x, p.y)
 	_arcade_lights.visible = under_arcade
+	_djdn_lights.visible = Djdn.inside(student.position.x, student.position.z)
+	var sectioned := Djdn.sectioned(student.position.x, student.position.z) and not free_cam.active
+	if sectioned != _djdn_sectioned:
+		_djdn_sectioned = sectioned
+		if _section_fill == null:
+			_section_fill = StandardMaterial3D.new()
+			_section_fill.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			_section_fill.albedo_color = Color(0.075, 0.068, 0.062) # display.gdshader's cut_color
+			_section_fill.cull_mode = BaseMaterial3D.CULL_DISABLED
+			_section_fill.disable_fog = true
+		for cut in _cutaways:
+			if cut["name"] == Djdn.ROOMS_GROUP:
+				for item in cut["items"]:
+					(item[0] as GeometryInstance3D).material_override = _section_fill if sectioned else null
 	# The plots' labels hide inside the gym and on the middle road (PGN's would hang in front).
 	for label in _plot_labels:
 		(label as Label3D).visible = not _interior_lights.visible and not on_middle
@@ -1494,6 +1601,13 @@ func _cut_alpha(group: String) -> float:
 
 # --- Checks and captures ----------------------------------------------------------
 
+## Walks the student in a direction (world x/z) until done() says so, for at most 20 s (checks).
+func _walk_until(direction: Vector2, done: Callable) -> void:
+	for i in 600:
+		if done.call():
+			return
+		student.move(direction, false, 1.0 / 30.0, 0.0)
+
 func _all_visible(xs: Array, ys: Array, zs: Array) -> bool:
 	for x in xs:
 		for y in ys:
@@ -1502,6 +1616,13 @@ func _all_visible(xs: Array, ys: Array, zs: Array) -> bool:
 				if p.x < 0 or p.y < 0 or p.x > viewport.size.x or p.y > viewport.size.y:
 					return false
 	return true
+
+## The mean of an outline's points (a plot's rough middle, for the checks).
+static func _centre(outline: Array) -> Vector2:
+	var sum := Vector2.ZERO
+	for p in outline:
+		sum += p
+	return sum / maxf(1.0, outline.size())
 
 ## World x/z of a point in the gym's local frame.
 static func _gym_world(lx: float, lz: float) -> Vector2:
@@ -1690,7 +1811,7 @@ func _verify_and_capture() -> void:
 		# The layout reference: the Student Center (built now, so no longer a plot) between
 		# the boulevard and the Main Building, and every plot painted with its name and
 		# outlined in dashes.
-		checks.plots_layout = not Plots.occupied(-120.0, 84.0) and Plots.occupied(-120.0, 100.0) \
+		checks.plots_layout = not Plots.occupied(-120.0, 84.0) and not Plots.occupied(-120.0, 100.0) and Plots.occupied(-117.1, 139.5) \
 			and CampusPlan.PLOTS["student"]["built"] and CampusPlan.PLOTS["mainGate"]["kind"] == "gate" \
 			and CampusPlan.PLOTS["annex"]["short"] == "Aero Hall"
 		var painted := scene.find_children("Ground *", "Label3D", false, false).size()
@@ -2180,9 +2301,13 @@ func _verify_and_capture() -> void:
 		_set_zoom(36.0, true)
 		_snap_follow()
 		for i in 150:
+			if student.position.z > StudentCenter.INNER + 2.5:
+				break # (in the arcade; this line goes on through the courtyard gate)
 			var turn := -PI / 2.0 * _turns()
 			var away := Vector2(-sin(turn), -cos(turn))
 			student.move(away, false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+		for i in 60:
 			_update_camera(1.0 / 30.0)
 		forward = -camera.global_basis.z
 		var post_cut := (Vector3(student.position.x, 1.0, StudentCenter.POST_Z) - camera.position).dot(forward) < camera.near
@@ -2202,6 +2327,253 @@ func _verify_and_capture() -> void:
 		for i in 60:
 			_update_camera(1.0 / 30.0)
 		checks.student_center_west_end = middle > 0.95 and chapel < 0.05 and arcade < 0.05
+		# The Main Building and the side gate's plots: built, and the flag circle, the walk, the
+		# gate and Rotonda 2 moved 5.4 m west of the layout picture (the photos' spacing from the
+		# portico); Rotonda 2 stays a reserved plot.
+		checks.plots_moved = CampusPlan.PLOTS["djdn"]["built"] and CampusPlan.PLOTS["flagCircle"]["built"] \
+			and CampusPlan.PLOTS["gateWalk"]["built"] and CampusPlan.PLOTS["sideGate1"]["built"] \
+			and absf(_centre(CampusPlan.PLOTS["flagCircle"]["outline"]).x + 178.5) < 0.6 and not CampusPlan.PLOTS["rotonda2"]["built"]
+		# The Main Building stands, and its front is symmetric about the portico: every window,
+		# column and door has its mirror across the middle (the drone shot), 18 windows a floor.
+		checks.djdn_built = scene.find_child(Djdn.BUILT_NAME, true, false) != null and World.blocked(-150.0, 95.0)
+		var mirrored := Djdn.front_windows().size() == 18
+		for row in [Djdn.front_windows(), Djdn.COLUMNS, Djdn.DOORS]:
+			for z in row:
+				mirrored = mirrored and (row as Array).any(func(other: float) -> bool: return absf(other - (2.0 * Djdn.CENTRE_Z - z)) < 0.01)
+		checks.djdn_front_symmetric = mirrored and is_equal_approx((Djdn.PAVILION.x + Djdn.PAVILION.y) / 2.0, Djdn.CENTRE_Z) \
+			and is_equal_approx((Djdn.NORTH + Djdn.SOUTH) / 2.0, Djdn.CENTRE_Z)
+		# The grounds in front: the drive at road level, the bays and the forecourt at walk level,
+		# the steps tread by tread up to the porch; the garden, the lamps, the columns, the cheek
+		# walls and the fence solid; the zebra's gap in the brick apron's hedge open, the rest not.
+		var tread := (Djdn.PORCH - Djdn.STEPS_FOOT) / Djdn.STEP_COUNT
+		var rise := (Djdn.FLOOR_Y - Djdn.WALK_Y) / Djdn.STEP_COUNT
+		checks.djdn_grounds = not World.blocked(-169.4, 100.0) and is_equal_approx(World.floor_height(-169.4, 100.0), Djdn.DRIVE_Y) \
+			and not World.blocked(-164.0, 95.0) and is_equal_approx(World.floor_height(-164.0, 95.0), Djdn.WALK_Y) \
+			and not World.blocked(-163.5, Djdn.CENTRE_Z) \
+			and is_equal_approx(World.floor_height(Djdn.STEPS_FOOT + tread * 2.5, Djdn.CENTRE_Z), Djdn.WALK_Y + rise * 3.0) \
+			and is_equal_approx(World.floor_height(-157.8, Djdn.CENTRE_Z), Djdn.FLOOR_Y) and World.blocked(-158.5, 95.0) \
+			and World.blocked(Djdn.LAMPS[0].x, Djdn.LAMPS[0].y) and World.blocked(Djdn.COLUMN_X, Djdn.COLUMNS[0]) \
+			and World.blocked(-160.0, Djdn.STEPS_Z.x - 0.4) and not World.blocked(-166.4, 87.0) and World.blocked(-166.4, 84.0) \
+			and World.blocked(-169.4, Djdn.fence_z(-169.4) + 0.5)
+		# On the forecourt the camera faces east at the front, everything west of the drive cut away.
+		student.place(-164.0, Djdn.CENTRE_Z)
+		_set_zoom(40.0, true)
+		_snap_follow()
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		var circle_cut := (Vector3(Djdn.CUT_X - 1.0, 0.0, Djdn.CENTRE_Z) - camera.position).dot(forward) < camera.near
+		checks.djdn_view_faces_front = djdn_front > 0.95 and forward.dot(Vector3.RIGHT) > 0.9 and circle_cut and chapel < 0.05 \
+			and _all_visible([Djdn.PORCH], [1.0, 8.0], [Djdn.CENTRE_Z]) \
+			and _all_visible([student.position.x], [0.3, 1.9], [student.position.z])
+		# From the Student Center's brick apron west through the hedge's gap onto the drive and down
+		# it: the camera turns from the boulevard's south view to the front's east view, never
+		# through north or west.
+		student.place(-164.0, 87.0)
+		_snap_follow()
+		var turns_ok := middle > 0.95
+		for i in 70:
+			if student.position.x < -169.4:
+				break # (on the drive; straight on is the flag circle's east flight)
+			student.move(Vector2(-1, 0), false, 0.05)
+			_update_camera(0.05)
+			turns_ok = turns_ok and _turns() > 0.9 and _turns() < 2.1
+		for i in 90:
+			student.move(Vector2(0, 1), false, 0.05)
+			_update_camera(0.05)
+			turns_ok = turns_ok and _turns() > 0.9 and _turns() < 2.1
+		checks.walk_onto_drive = turns_ok and student.position.x < -167.0 and student.position.z > 95.0 and djdn_front > 0.9
+		# The lobby: its floor walkable through the doors, the bust, the case, the boards and the
+		# arcade's columns solid, the front wall between the doorways solid.
+		checks.lobby_props = not World.blocked(-153.5, 106.0) and is_equal_approx(World.floor_height(-153.5, 106.0), Djdn.FLOOR_Y) \
+			and not World.blocked(-156.5, Djdn.DOORS[1]) and World.blocked(-156.5, (Djdn.DOORS[0] + Djdn.DOORS[1]) / 2.0) \
+			and World.blocked(Djdn.BUST.x, Djdn.BUST.y) and World.blocked(Djdn.CASE.get_center().x, Djdn.CASE.get_center().y) \
+			and World.blocked(Djdn.BOARDS[0].get_center().x, Djdn.BOARDS[0].get_center().y) \
+			and World.blocked(Djdn.BACK, Djdn.ARCADE[0])
+		# Walking in from the forecourt up the steps through the middle door: the camera keeps facing
+		# east, closes in, the front fades, the portico's columns fall in front of the cut, and the
+		# student stays in frame; walking back out undoes it all.
+		student.place(-163.0, Djdn.CENTRE_Z - 0.6)
+		_set_zoom(40.0, true)
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		for i in 240:
+			if student.position.x > -153.5:
+				break # (in the lobby, before the corridor)
+			student.move(Vector2(1, 0), false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+			_update_cutaways(1.0 / 30.0)
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+			_update_cutaways(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		var column_cut := (Vector3(Djdn.COLUMN_X, 4.0, Djdn.COLUMNS[1]) - camera.position).dot(forward) < camera.near
+		checks.walk_into_lobby = student.position.x > Djdn.FRONT + 1.0 and absf(student.level() - Djdn.FLOOR_Y) < 0.02 \
+			and djdn_in > 0.95 and forward.dot(Vector3.RIGHT) > 0.9 and shown_width < Djdn.INSIDE_WIDTH + 0.2 and column_cut \
+			and _cut_alpha(Djdn.FRONT_GROUP) == 0.0 and _cut_alpha(Djdn.ROOMS_GROUP) == 1.0 and _djdn_sectioned \
+			and _djdn_lights.visible and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		for i in 180:
+			student.move(Vector2(-1, 0), false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+			_update_cutaways(1.0 / 30.0)
+		checks.walk_out_of_lobby = student.position.x < Djdn.PORCH and djdn_in < 0.05 and djdn_front > 0.9 \
+			and _cut_alpha(Djdn.FRONT_GROUP) == 1.0 and not _djdn_sectioned and not _djdn_lights.visible and camera.near < 40.0
+		_update_cutaways(0.0, true)
+		# The courtyard: its tiles, the ground galleries a step up, the stage up its curved steps;
+		# the trees, the masts, the bins and the theatre's front solid.
+		var stage_rise := (Djdn.STAGE_Y - Djdn.YARD_Y) / Djdn.STAGE_STEPS
+		checks.courtyard_walkable = not World.blocked(-125.0, 105.0) and is_equal_approx(World.floor_height(-125.0, 105.0), Djdn.YARD_Y) \
+			and not World.blocked(-125.0, 96.0) and is_equal_approx(World.floor_height(-125.0, 96.0), Djdn.FLOOR_Y) \
+			and not World.blocked(-125.0, 119.5) and is_equal_approx(World.floor_height(-125.0, 119.5), Djdn.FLOOR_Y) \
+			and is_equal_approx(World.floor_height(-106.0, Djdn.CENTRE_Z), Djdn.STAGE_Y) \
+			and is_equal_approx(World.floor_height(Djdn.STAGE.position.x - Djdn.STAGE_TREAD * 0.5, Djdn.CENTRE_Z), Djdn.STAGE_Y - stage_rise) \
+			and World.blocked(Djdn.TREES[0].x, Djdn.TREES[0].y) and World.blocked(Djdn.MASTS[0].x, Djdn.MASTS[0].y) \
+			and World.blocked(Djdn.BINS[0].get_center().x, Djdn.BINS[0].get_center().y) and World.blocked(Djdn.THEATRE_X - 0.1, Djdn.CENTRE_Z)
+		# Walking up onto the stage from the ring, one step at a time.
+		student.place(-116.0, Djdn.CENTRE_Z)
+		for i in 120:
+			student.move(Vector2(1, 0), false, 1.0 / 30.0, 0.0)
+		checks.stage_reachable = is_equal_approx(student.level(), Djdn.STAGE_Y) and student.position.x > Djdn.STAGE.position.x
+		# In the courtyard the camera faces east at the theatre, framing it wider, the glass roof
+		# faded (its shadow kept), the near plane in front of the student.
+		student.place(-125.0, 108.0)
+		_set_zoom(Djdn.YARD_WIDTH, true)
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		var behind := (Vector3(-128.5, student.level() + Djdn.focus_lift(shown_width), 108.0) - camera.position).dot(forward) < camera.near
+		checks.courtyard_cutaway = djdn_in > 0.95 and forward.dot(Vector3.RIGHT) > 0.9 and _cut_alpha(Djdn.ROOF_GROUP) == 0.0 \
+			and _cut_alpha(Djdn.ROOMS_GROUP) == 0.0 and behind and shown_width > Djdn.YARD_WIDTH - 0.5 \
+			and _all_visible([Djdn.THEATRE_X], [Djdn.STAGE_Y + 1.0, Djdn.STAGE_Y + 7.0], [Djdn.CENTRE_Z]) \
+			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		# From the Student Center's arcade through its courtyard gate, up the passage's ramp, across
+		# the north gallery and down into the courtyard (it used to be a dead end).
+		student.place(-105.6, 86.0)
+		_set_zoom(22.0, true)
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		var passage_ok := true
+		for i in 180:
+			student.move(Vector2(0, 1), false, 1.0 / 30.0, 0.0)
+			_update_camera(1.0 / 30.0)
+			_update_cutaways(1.0 / 30.0)
+			if student.position.z > 90.0 and student.position.z < 93.0:
+				passage_ok = passage_ok and _cut_alpha(Djdn.WING_GROUP) < 1.0 \
+					and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		checks.courtyard_gate_through = student.position.z > 98.0 and passage_ok and djdn_in > 0.95
+		# The flag circle: its plaza three steps up, the lawn, pedestal and posts in the middle solid,
+		# the walk and the north apron at walk level, the lawns beside the walk not walkable; up the
+		# east flight from the zebra on the drive.
+		var post := SideGate.CIRCLE + Vector2(cos(PI / 8.0), sin(PI / 8.0)) * SideGate.POSTS_R
+		var gate_walk := SideGate.fence_world(0.0, 13.0)
+		var lawn := SideGate.fence_world(-4.2, 13.0)
+		checks.flag_circle = not World.blocked(-178.5, 82.3) and is_equal_approx(World.floor_height(-178.5, 82.3), SideGate.CIRCLE_Y) \
+			and World.blocked(SideGate.CIRCLE.x, SideGate.CIRCLE.y) and World.blocked(post.x, post.y) \
+			and not World.blocked(gate_walk.x, gate_walk.y) and is_equal_approx(World.floor_height(gate_walk.x, gate_walk.y), SideGate.WALK_Y) \
+			and World.blocked(lawn.x, lawn.y) and not World.blocked(-178.5, 79.8) and is_equal_approx(World.floor_height(-178.5, 79.8), SideGate.WALK_Y)
+		student.place(-170.0, SideGate.CIRCLE.y)
+		_walk_until(Vector2(-1, 0), func() -> bool: return student.position.x < -174.4)
+		checks.flag_circle = checks.flag_circle and absf(student.level() - SideGate.CIRCLE_Y) < 0.02 and student.position.x < -174.3
+		# From the circle's plaza straight down its south flight, along the walk and up the gatehouse's
+		# steps to the turnstiles, where it stops (nothing past the fence).
+		var head := SideGate.fence_world(0.0, SideGate.CIRCLE_LZ - 4.6)
+		student.place(head.x, head.y)
+		var last_z := 1000.0
+		for i in 600:
+			student.move(-SideGate.INWARD, false, 1.0 / 30.0, 0.0)
+			if absf(student.position.z - last_z) < 0.0001:
+				break
+			last_z = student.position.z
+		var at_gate := SideGate.fence_local(student.position.x, student.position.z)
+		checks.walk_to_gate = at_gate.y < SideGate.TURNSTILES + 0.3 and at_gate.y >= SideGate.TURNSTILES - 0.01 and absf(at_gate.x) < 0.2 \
+			and Vector2(student.position.x, student.position.z).distance_to(SideGate.GATE) < 4.0 \
+			and absf(student.level() - SideGate.GATE_Y) < 0.02
+		# On the walk the camera faces the gate square to the fence; past the circle (the boulevard, the
+		# Student Center) is cut away, the circle stays; the gate and the student are in frame.
+		student.place(gate_walk.x, gate_walk.y)
+		_set_zoom(30.0, true)
+		_snap_follow()
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		var to_gate := Vector3(-SideGate.INWARD.x, 0.0, -SideGate.INWARD.y)
+		var gate_beyond := SideGate.fence_world(0.0, SideGate.CUT_LZ + 2.0)
+		var gate_circle_cut := (Vector3(gate_beyond.x, 0.5, gate_beyond.y) - camera.position).dot(forward) < camera.near \
+			and (Vector3(SideGate.CIRCLE.x, 3.0, SideGate.CIRCLE.y) - camera.position).dot(forward) > camera.near
+		checks.gate_view_faces_gate = gate_view > 0.95 and Vector3(forward.x, 0.0, forward.z).normalized().dot(to_gate) > 0.95 \
+			and djdn_front < 0.05 and chapel < 0.05 and gate_circle_cut \
+			and _all_visible([SideGate.GATE.x], [1.0, 3.0], [SideGate.GATE.y]) \
+			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		# The gate strip stands: the gatehouse, the colonnade, the fence and the car gate (closed); the
+		# fence line is solid along its length, and the drive stops at the car gate.
+		var strip_ok := scene.find_child(SideGate.GATEHOUSE_NAME, true, false) != null and scene.find_child(SideGate.COLONNADE_NAME, true, false) != null \
+			and scene.find_child(SideGate.FENCE_NAME, true, false) != null and scene.find_child(SideGate.CAR_GATE_NAME, true, false) != null
+		for lx in [-18.0, -9.0, 0.0, 9.0, 16.0, 22.5, 30.0]:
+			var at := SideGate.fence_world(lx, 0.1)
+			strip_ok = strip_ok and World.blocked(at.x, at.y)
+		var on_drive := SideGate.fence_world(22.5, 0.8)
+		strip_ok = strip_ok and not World.blocked(on_drive.x, on_drive.y) # (the drive runs up to the car gate)
+		var colonnade_at := SideGate.fence_world(8.5, 2.0)
+		strip_ok = strip_ok and not World.blocked(colonnade_at.x, colonnade_at.y) and is_equal_approx(World.floor_height(colonnade_at.x, colonnade_at.y), SideGate.GATE_Y)
+		checks.side_gate_built = strip_ok
+		# Under the colonnade: the covered walk's cutaway, still facing the gate, the inner row of
+		# pillars in front of the cut, the student in frame.
+		student.place(colonnade_at.x, colonnade_at.y)
+		_snap_follow()
+		_set_zoom(30.0, true)
+		for i in 90:
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		var inner := SideGate.fence_world(SideGate.PILLARS[2], SideGate.ROWS.y)
+		var pillar_cut := (Vector3(inner.x, SideGate.GATE_Y + 1.5, inner.y) - camera.position).dot(forward) < camera.near
+		checks.colonnade_cutaway = colonnade > 0.95 and gate_view > 0.95 and pillar_cut and shown_width < HALL_WIDTH + 0.2 \
+			and Vector3(forward.x, 0.0, forward.z).normalized().dot(Vector3(-SideGate.INWARD.x, 0.0, -SideGate.INWARD.y)) > 0.95 \
+			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		# Upstairs: up the lobby's stair to the mezzanine, round its arms to the front corridor, along
+		# it and the north upper gallery; up each courtyard stair onto its gallery; and under the
+		# upper gallery the student is still seen (its floor fades).
+		student.place(-149.2, 102.8, Djdn.FLOOR_Y)
+		_walk_until(Vector2(-1, 0), func() -> bool: return student.position.x < -155.5)
+		var up_ok := absf(student.level() - Djdn.UPPER_Y) < 0.02
+		_walk_until(Vector2(0, 1), func() -> bool: return student.position.z > 112.5)
+		_walk_until(Vector2(1, 0), func() -> bool: return student.position.x > -147.5)
+		up_ok = up_ok and absf(student.level() - Djdn.UPPER_Y) < 0.02 and student.position.x > -147.6
+		_walk_until(Vector2(0, -1), func() -> bool: return student.position.z < 95.9)
+		_walk_until(Vector2(1, 0), func() -> bool: return student.position.x > -125.0)
+		up_ok = up_ok and absf(student.level() - Djdn.UPPER_Y) < 0.02 and student.position.x > -125.1
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		up_ok = up_ok and _cut_alpha(Djdn.ROOF_N) == 0.0 and _cut_alpha(Djdn.UPPER_N) == 1.0 \
+			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		for flight in [[Vector2(-144.2, 98.8), Vector2(0, -1), 96.0], [Vector2(-114.8, 116.85), Vector2(0, 1), 119.5]]:
+			var foot: Vector2 = flight[0]
+			var onto: Vector2 = flight[1]
+			student.place(foot.x, foot.y)
+			_walk_until(Vector2(1, 0), func() -> bool: return student.position.x > foot.x + 7.6)
+			var aim: float = flight[2]
+			_walk_until(onto, func() -> bool: return absf(student.position.z - aim) < 0.2)
+			up_ok = up_ok and absf(student.level() - Djdn.UPPER_Y) < 0.02 and absf(student.position.z - aim) < 0.2
+		student.place(-125.0, 96.0)
+		_snap_follow()
+		_update_cutaways(0.0, true)
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		checks.gallery_upstairs = up_ok and absf(student.level() - Djdn.FLOOR_Y) < 0.02 and _cut_alpha(Djdn.UPPER_N) == 0.0 \
+			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
+		# No stepping off upstairs: past the galleries' parapets, the arcade's, the mezzanine's edges
+		# (a 4.4 m drop); the slab, the landings' gaps and the stair tops are fine.
+		checks.gallery_no_drop = World.blocked(-125.0, Djdn.NORTH_WING + 0.3, Djdn.UPPER_Y) and World.blocked(-125.0, Djdn.NORTH_WING + 1.0, Djdn.UPPER_Y) \
+			and World.blocked(-125.0, Djdn.SOUTH_WING - 1.0, Djdn.UPPER_Y) and World.blocked(Djdn.BACK + 0.6, Djdn.CENTRE_Z, Djdn.UPPER_Y) \
+			and World.blocked(Djdn.FRONT + Djdn.MEZZANINE + 0.3, Djdn.CENTRE_Z, Djdn.UPPER_Y) and World.blocked(-152.0, Djdn.PAVILION.y - 1.7, Djdn.UPPER_Y) \
+			and not World.blocked(-125.0, 96.0, Djdn.UPPER_Y) and not World.blocked(-136.4, Djdn.NORTH_WING, Djdn.UPPER_Y) \
+			and not World.blocked(-155.4, Djdn.CENTRE_Z, Djdn.UPPER_Y) and not World.blocked(-152.0, 112.5, Djdn.UPPER_Y)
+		student.place(-164.0, Djdn.CENTRE_Z)
+		_snap_follow()
+		_update_cutaways(0.0, true)
 		# The hallway: walkable behind the piers, its stairs, piers, bust and map solid.
 		checks.hallway_walkable = not World.blocked(-30.0, -2.0) and is_equal_approx(World.floor_height(-30.0, -2.0), 0.03)
 		checks.hallway_props_block = World.blocked(-60.0, -2.4) and World.blocked(-24.0, -0.2) \
@@ -2441,7 +2813,7 @@ func _verify_and_capture() -> void:
 			_travel_to(i)
 			var spot: Vector2 = place[1]
 			travelled = travelled and Vector2(student.position.x, student.position.z).distance_to(spot) < 0.01 \
-				and is_equal_approx(target_width, place[2])
+				and is_equal_approx(target_width, place[2]) and (place.size() < 4 or absf(student.level() - place[3]) < 0.02)
 		checks.fast_travel = travelled
 		student.position = saved
 		_snap_follow()

@@ -76,6 +76,9 @@ const PALM_POTS: Array[Vector2] = [Vector2(-114.5, 87.6), Vector2(-113.65, 87.6)
 const BRICK_WEST := -166.0
 const BRICK_SOUTH := 74.5
 const BRICK_BACK := 88.2
+## The gap in the apron's west hedge (z) where the zebra crosses the Main Building's drive to the
+## flag circle (areas/djdn.gd).
+const HEDGE_GAP := Vector2(85.8, 88.2)
 const FOUNTAIN := Vector2(-165.6, 64.6)
 const APRON := 11.5
 const WALKS_END := -157.5
@@ -422,13 +425,13 @@ func _cafe_juan() -> void:
 	for at in PALM_POTS:
 		_cylinder(0.24, 0.18, 0.42, Vector3(at.x, FLOOR_Y + 0.21, at.y), pot, 10)
 
-## The courtyard gate: an opening through to the Main Building's courtyard (its daylight
-## behind), the iron gate folded back against both jambs, the sign over it.
+## The courtyard gate: an opening through to the Main Building's passage and courtyard
+## (Djdn.GATE_PASSAGE), the iron gate folded back against both jambs, the sign over it.
 func _courtyard_gate() -> void:
 	var x := (COURTYARD.x + COURTYARD.y) / 2.0
 	var width := COURTYARD.y - COURTYARD.x
-	w.box(Vector3(width, 2.75, 0.05), Vector3(x, 1.375, BACK - 0.03), w.glow(Color("dfe6d4"), 0.55, 0.15))
-	w.box(Vector3(width, 0.12, BACK - WALL), Vector3(x, FLOOR_Y + 0.06, (WALL + BACK) / 2.0), w.material("concrete", Color("c9c3b6")))
+	# (open through to the Main Building's passage and its courtyard: no daylight card)
+	w.box(Vector3(width, 0.02, BACK - WALL), Vector3(x, FLOOR_Y + 0.005, (WALL + BACK) / 2.0), w.material("concrete", Color("c9c3b6")))
 	var iron: Material = w.material("plain", Color("26282a"))
 	for side in [-1.0, 1.0]:
 		w.box(Vector3(0.16, 2.75, BACK - WALL + 0.08), Vector3(x + side * (width / 2.0 - 0.08), 1.375, (WALL + BACK) / 2.0), w.material("stucco", Color("e6d29d")))
@@ -562,7 +565,7 @@ func _brick() -> void:
 		if at.x > BRICK_WEST and at.x < WALKS_END and at.y > BRICK_SOUTH:
 			w.box(Vector3(TAU * APRON / 64.0 + 0.04, 0.17, 0.24), Vector3(at.x, -0.1, at.y), kerb, -a - PI / 2.0)
 	var hedge_base: Material = w.material("dirt", Color("8a7458"))
-	w.box(Vector3(0.7, 0.3, BRICK_BACK - BRICK_SOUTH), Vector3(BRICK_WEST - 0.35, -0.05, (BRICK_BACK + BRICK_SOUTH) / 2.0), hedge_base)
+	w.box(Vector3(0.7, 0.3, HEDGE_GAP.x - BRICK_SOUTH), Vector3(BRICK_WEST - 0.35, -0.05, (HEDGE_GAP.x + BRICK_SOUTH) / 2.0), hedge_base)
 	w.box(Vector3(WEST - BRICK_WEST + 0.7, 0.3, 0.7), Vector3((WEST + BRICK_WEST) / 2.0 - 0.35, -0.05, BRICK_BACK + 0.35), hedge_base)
 	var granite: Material = w.material("stucco", Color("e7dccb"))
 	for dx in [-0.6, 0.6]:
@@ -589,7 +592,7 @@ func _planting() -> void:
 	for at in PALM_POTS:
 		_lady_palm(Vector3(at.x, FLOOR_Y + 0.42, at.y), 2650 + roundi(at.x))
 	var z := BRICK_SOUTH + 0.6
-	while z < BRICK_BACK:
+	while z < HEDGE_GAP.x - 0.3:
 		w._shrub(Vector3(BRICK_WEST - 0.35, 0.05, z), 0.9, 2700 + k, w.HEDGE_COLORS)
 		z += 0.85
 		k += 1
