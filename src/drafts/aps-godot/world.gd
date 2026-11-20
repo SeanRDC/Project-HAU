@@ -114,7 +114,7 @@ const SacredHeart := preload("res://areas/sh.gd")
 const TILE_METRES := {"stucco": 4.0, "stone": 1.1, "road": 5.0, "tile": 3.2,
 	"brick": 2.0, "wood": 1.5, "metal": 2.0, "grass": 3.0, "dirt": 2.5, "pavers": 2.4,
 	"concrete": 4.0, "slate": 2.4, "solar": 1.0, "ribbed": 1.6, "floor": 2.4, "ledge": 1.2, "stripes": 6.0,
-	"octagon": 1.2, "slab": 2.4, "circles": 1.8, "lawn": 4.0, "diamond": 2.4, "herringbone": 1.6}
+	"octagon": 1.2, "octagon_grey": 1.2, "slab": 2.4, "circles": 1.8, "lawn": 4.0, "diamond": 2.4, "herringbone": 1.6}
 ## Wall kinds that weather: drawn a second time with shaders/weathering.gdshader, a
 ## grime band at their foot and faint paint patches over them.
 const WEATHERED := ["stucco", "concrete", "brick", "stone", "ledge"]
@@ -124,7 +124,7 @@ const PALETTE := {"stucco": "d7d6cb", "stone": "b6a385", "road": "899093", "tile
 	"brick": "a7957b", "wood": "8b6b4e", "glass": "455965", "metal": "8c9b9e", "grass": "7c8a5f",
 	"dirt": "9a8566", "pavers": "a69b8d", "floor": "d9bfa9", "ledge": "8a7d6a",
 	"concrete": "a3a49c", "slate": "605e5c", "solar": "26364f", "ribbed": "a9aeae", "stripes": "e9e1cc",
-	"octagon": "9f5a45", "slab": "ddd2bf", "circles": "a4523b", "lawn": "6f8a4b",
+	"octagon": "9f5a45", "octagon_grey": "5d5b57", "slab": "ddd2bf", "circles": "a4523b", "lawn": "6f8a4b",
 	"diamond": "ebe3d3", "herringbone": "5f5c55"}
 
 var root: Node3D
@@ -688,10 +688,13 @@ func _texture(kind: String) -> Texture2D:
 			for line in range(0, 128, 16):
 				_rect(image, line, 0, 1, 128, Color("7a7064"))
 				_rect(image, 0, line, 128, 1, Color("7a7064"))
-		"octagon":
+		"octagon", "octagon_grey":
 			# The boulevard's open walks: red octagon pavers, 30 cm across, with small dark
-			# squares where four meet, worn tones and moss in the joints.
+			# squares where four meet, worn tones and moss in the joints. The Epiphany's road has
+			# the same pavers in dark grey (octagon_grey).
 			var reds: Array[Color] = [Color("a85a43"), Color("b26a4f"), Color("98503d"), Color("b9785d"), Color("8f4b3a"), Color("a4644f")]
+			if kind == "octagon_grey":
+				reds = [Color("5f5d59"), Color("67645f"), Color("57554f"), Color("6d6a64"), Color("524f4a"), Color("615e58")]
 			var tones := {}
 			for y in 128:
 				for x in 128:
@@ -702,7 +705,7 @@ func _texture(kind: String) -> Texture2D:
 						tones[cell] = reds[random.randi_range(0, reds.size() - 1)]
 					var tone: Color
 					if u + v >= 22.5:
-						tone = Color("6e4135") # the small square between four octagons
+						tone = Color("6e4135") if kind == "octagon" else Color("3d3b38") # the small square between four octagons
 					elif u + v > 20.5 or maxf(u, v) > 14.5:
 						tone = Color("6f6a4c") if random.randf() < 0.3 else Color("4f4136") # joint, mossy here and there
 					else:

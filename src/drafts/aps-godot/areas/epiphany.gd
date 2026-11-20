@@ -68,6 +68,20 @@ const RISERS := 4
 ## The seal in the road (its middle) and radius.
 const SEAL := Vector2(-251.5, AXIS)
 const SEAL_R := 2.25
+## The angels: four a side along the lawns (x), PEDESTAL_OUT from the axis, each facing the road,
+## and what each holds (north row west to east, then the south row). The plaques could not be read
+## in the photos, so they are not named; the attributes are the archangels' usual ones.
+const ANGELS_X: Array[float] = [-254.5, -244.0, -233.5, -223.0]
+const PEDESTAL_OUT := 7.35
+const PEDESTAL_TOP := 1.95
+const HOLDS := ["child", "sword", "lily", "staff", "flame", "prayer", "crown", "roses"]
+## The stone benches on the lawns along the walks (x), BENCH_OUT from the axis; the lamps behind.
+const BENCHES_X: Array[float] = [-258.4, -249.25, -238.75, -228.25, -218.4]
+const BENCH_OUT := 6.35
+const LAMPS_X: Array[float] = [-249.25, -238.75, -228.25]
+const LAMP_OUT := 8.45
+## The yellow and black post on the north walk by the gate.
+const POST := Vector2(-259.6, AXIS - 4.95)
 
 const BUILT_NAME := "Epiphany"
 
@@ -118,6 +132,8 @@ static func walkable(x: float, z: float) -> bool:
 static func blocked(x: float, z: float) -> bool:
 	if not walkable(x, z):
 		return false
+	if Vector2(x, z).distance_to(POST) < 0.3:
+		return true
 	return false
 
 static func floor_height(x: float, z: float) -> float:
@@ -158,6 +174,17 @@ func build(world_builder: RefCounted) -> void:
 	_curb_walks()
 	_lawns()
 	w._flush()
+	for i in 8:
+		var north := i < 4
+		var x: float = ANGELS_X[i % 4]
+		var z: float = AXIS + (-PEDESTAL_OUT if north else PEDESTAL_OUT)
+		_pedestal(Vector2(x, z), north)
+		_angel(Vector3(x, LAWN_Y + PEDESTAL_TOP, z), 0.0 if north else PI, HOLDS[i], 7300 + i)
+	_benches()
+	_lamps()
+	_urns()
+	_post()
+	w._flush()
 	w.root = saved
 
 ## An axis-aligned box from x0..x1, y0..y1, z0..z1.
@@ -185,8 +212,8 @@ func _ground() -> void:
 ## The road: dark octagon pavers on a bed, from the gate to the road by Rotonda 2, the band each
 ## side darker; and the road by Rotonda 2, plain concrete with its joints, out to the fence.
 func _road() -> void:
-	var pavers: Material = w.material("octagon", Color("55534f"))
-	var band: Material = w.material("octagon", Color("45433f"))
+	var pavers: Material = w.material("octagon_grey")
+	var band: Material = w.material("octagon_grey", Color("c8c8c8"))
 	_block(WEST, EAST, ROAD_Y - 0.3, ROAD_Y, AXIS - PAVERS_HALF, AXIS + PAVERS_HALF, pavers)
 	for side in [-1.0, 1.0]:
 		var z0: float = AXIS + side * PAVERS_HALF
@@ -318,3 +345,189 @@ func _lawns() -> void:
 		_block(WEST, CURB_EAST - 1.6, LAWN_Y - 0.1, LAWN_Y + 0.12, outer - side * 0.1 - 0.06, outer - side * 0.1 + 0.06, kerb)
 		# The east end: the kerb turns in to the walk's end.
 		_block(CURB_EAST - 1.66, CURB_EAST - 1.54, LAWN_Y - 0.1, LAWN_Y + 0.12, minf(inner, outer), maxf(inner, outer), kerb)
+
+# --- The angels -------------------------------------------------------------------------------
+
+## A pedestal of pale stone (from 153055 and the gate's photos): a plinth, a die with a dark bronze
+## plaque on the face to the road and smaller ones on its sides, a moulded cap.
+func _pedestal(at: Vector2, north: bool) -> void:
+	var stone: Material = w.material("concrete", Color("e4ded2"))
+	var trim: Material = w.material("concrete", Color("ece7dc"))
+	var plaque: Material = w.material("plain", Color("33302c"))
+	var y := LAWN_Y
+	_block(at.x - 0.85, at.x + 0.85, y, y + 0.3, at.y - 0.85, at.y + 0.85, stone)
+	_block(at.x - 0.75, at.x + 0.75, y + 0.3, y + 0.42, at.y - 0.75, at.y + 0.75, trim)
+	_block(at.x - 0.62, at.x + 0.62, y + 0.42, y + 1.62, at.y - 0.62, at.y + 0.62, stone)
+	_block(at.x - 0.74, at.x + 0.74, y + 1.62, y + 1.76, at.y - 0.74, at.y + 0.74, trim)
+	_block(at.x - 0.8, at.x + 0.8, y + 1.76, y + PEDESTAL_TOP, at.y - 0.8, at.y + 0.8, stone)
+	var face: float = at.y + (0.63 if north else -0.63)
+	_block(at.x - 0.36, at.x + 0.36, y + 0.68, y + 1.38, face - 0.015, face + 0.015, plaque)
+	for side in [-1.0, 1.0]:
+		_block(at.x + side * 0.63 - 0.015, at.x + side * 0.63 + 0.015, y + 0.75, y + 1.3, at.y - 0.28, at.y + 0.28, plaque)
+
+## A stone angel standing on a cloud of rock, its robe falling in folds, its wings raised behind,
+## facing `turn` (0: south, towards the road from the north row), holding what `holds` names.
+func _angel(foot: Vector3, turn: float, holds: String, seed_value: int) -> void:
+	var stone: Material = w.material("plain", Color("e6e2da"))
+	var shade: Material = w.material("plain", Color("d2cdc3"))
+	var basis := Basis(Vector3.UP, turn)
+	# (right, up, forward) in the statue's frame to the world; forward faces the road.
+	var at := func(r: float, u: float, f: float) -> Vector3: return foot + basis * Vector3(-r, u, f)
+	var part := func(size: Vector3, r: float, u: float, f: float, made: Material, tilt := 0.0, twist := 0.0) -> void:
+		w.box(size, at.call(r, u, f), made, turn + twist, tilt)
+	_cylinder(0.46, 0.22, at.call(0.0, 0.11, 0.0), shade, 10, 0.4)
+	# The robe: a long skirt, wider at the hem, and its folds; a knee forward, a bare foot.
+	_cylinder(0.36, 1.12, at.call(0.0, 0.22 + 0.56, 0.0), stone, 12, 0.21)
+	for k in 5:
+		var a := -0.9 + k * 0.45
+		part.call(Vector3(0.05, 1.0, 0.05), sin(a) * 0.26, 0.74, cos(a) * 0.26, shade, -0.12, a)
+	part.call(Vector3(0.2, 0.42, 0.18), 0.1, 0.62, 0.24, stone, -0.25)
+	part.call(Vector3(0.12, 0.06, 0.2), 0.12, 0.25, 0.33, stone)
+	# The body: chest, the sash across it, shoulders, neck and head with its curls.
+	part.call(Vector3(0.44, 0.5, 0.27), 0.0, 1.55, 0.0, stone)
+	part.call(Vector3(0.5, 0.09, 0.29), 0.0, 1.6, 0.0, shade, 0.0, 0.5)
+	part.call(Vector3(0.6, 0.14, 0.28), 0.0, 1.78, -0.01, stone)
+	_cylinder(0.06, 0.12, at.call(0.0, 1.9, 0.0), stone, 8)
+	var head := SphereMesh.new()
+	head.radius = 0.125
+	head.height = 0.27
+	w._mesh(head, at.call(0.0, 2.05, 0.02), stone)
+	var hair := SphereMesh.new()
+	hair.radius = 0.14
+	hair.height = 0.24
+	w._mesh(hair, at.call(0.0, 2.1, -0.035), shade)
+	# The wings: from the shoulder blades, each a fan of long feathers raised and spread outward,
+	# swept back a little; a plate of coverts over their roots. Seen from the front they rise either
+	# side of the head, their scalloped tips over it.
+	var feather := func(size: Vector3, r: float, u: float, f: float, roll: float, sweep: float, made: Material) -> void:
+		var turned := basis * Basis(Vector3.UP, sweep) * Basis(Vector3.BACK, roll) * Basis(Vector3.RIGHT, -0.12)
+		var mesh := BoxMesh.new()
+		mesh.size = size
+		var instance := MeshInstance3D.new()
+		instance.mesh = mesh
+		instance.material_override = made
+		instance.transform = Transform3D(turned, at.call(r, u, f) + turned * Vector3(0, size.y / 2.0, 0))
+		w.root.add_child(instance)
+	for side in [-1.0, 1.0]:
+		for k in 6:
+			var roll: float = side * (0.03 + k * 0.075)
+			var length := 1.5 - k * 0.12
+			feather.call(Vector3(0.15, length, 0.045), side * (0.15 + k * 0.03), 1.6 - k * 0.04, -0.2 - k * 0.03, roll, side * 0.75, stone if k % 2 == 0 else shade)
+		feather.call(Vector3(0.36, 0.7, 0.06), side * 0.19, 1.5, -0.16, side * 0.18, side * 0.75, shade)
+	# The arms and what they hold.
+	match holds:
+		"sword":
+			part.call(Vector3(0.11, 0.42, 0.11), -0.33, 1.95, 0.05, stone)
+			part.call(Vector3(0.1, 0.32, 0.1), -0.35, 2.3, 0.08, stone)
+			w.rod(at.call(-0.36, 2.42, 0.1), at.call(-0.4, 3.3, 0.14), 0.035, Color("e2ddd3"))
+			part.call(Vector3(0.3, 0.05, 0.06), -0.36, 2.48, 0.1, shade)
+			part.call(Vector3(0.11, 0.4, 0.11), 0.32, 1.5, 0.1, stone, -0.4)
+			var shield := _cylinder(0.3, 0.06, at.call(0.36, 1.35, 0.28), shade, 14)
+			shield.rotation = Vector3(PI / 2.0, turn, 0)
+		"lily":
+			part.call(Vector3(0.11, 0.4, 0.11), -0.3, 1.5, 0.14, stone, -0.6)
+			w.rod(at.call(-0.32, 1.4, 0.32), at.call(-0.34, 2.45, 0.36), 0.025, Color("e2ddd3"))
+			for k in 3:
+				var bloom := SphereMesh.new()
+				bloom.radius = 0.07
+				bloom.height = 0.12
+				w._mesh(bloom, at.call(-0.34 + (k - 1) * 0.06, 2.4 - k * 0.12, 0.38), stone)
+			part.call(Vector3(0.11, 0.42, 0.11), 0.3, 1.55, 0.02, stone, 0.3)
+		"staff":
+			part.call(Vector3(0.11, 0.42, 0.11), -0.32, 1.55, 0.12, stone, -0.4)
+			w.rod(at.call(-0.4, 0.25, 0.3), at.call(-0.4, 2.55, 0.3), 0.03, Color("d8d2c6"))
+			part.call(Vector3(0.11, 0.4, 0.11), 0.32, 1.5, 0.12, stone, -0.5)
+			part.call(Vector3(0.08, 0.06, 0.32), 0.36, 1.32, 0.36, shade) # the fish
+		"flame":
+			part.call(Vector3(0.11, 0.45, 0.11), -0.32, 1.95, 0.12, stone, -0.3)
+			var flame := SphereMesh.new()
+			flame.radius = 0.1
+			flame.height = 0.32
+			w._mesh(flame, at.call(-0.34, 2.35, 0.25), stone)
+			part.call(Vector3(0.11, 0.4, 0.11), 0.3, 1.5, 0.12, stone, -0.5)
+			part.call(Vector3(0.26, 0.05, 0.2), 0.32, 1.34, 0.32, shade) # the book
+		"prayer":
+			for side in [-1.0, 1.0]:
+				part.call(Vector3(0.11, 0.42, 0.11), side * 0.24, 1.58, 0.13, stone, -0.9, -side * 0.4)
+			part.call(Vector3(0.1, 0.22, 0.08), 0.0, 1.72, 0.3, stone)
+		"crown":
+			for side in [-1.0, 1.0]:
+				part.call(Vector3(0.11, 0.45, 0.11), side * 0.3, 1.98, 0.1, stone, -0.25, side * 0.2)
+			_cylinder(0.14, 0.12, at.call(0.0, 2.38, 0.2), shade, 10, 0.16)
+		"roses":
+			for side in [-1.0, 1.0]:
+				part.call(Vector3(0.11, 0.4, 0.11), side * 0.26, 1.5, 0.14, stone, -0.9, -side * 0.3)
+			for k in 5:
+				var rose := SphereMesh.new()
+				rose.radius = 0.06
+				rose.height = 0.1
+				w._mesh(rose, at.call((k - 2) * 0.07, 1.4 + (k % 2) * 0.05, 0.3), shade)
+		_: # the guardian angel: one hand raised, the other on the shoulder of a child beside it
+			part.call(Vector3(0.11, 0.42, 0.11), -0.33, 1.95, 0.08, stone, -0.2)
+			part.call(Vector3(0.11, 0.42, 0.11), 0.34, 1.5, 0.15, stone, -0.6, 0.3)
+			_cylinder(0.17, 0.7, at.call(0.5, 0.22 + 0.35, 0.3), stone, 10, 0.12)
+			part.call(Vector3(0.24, 0.26, 0.16), 0.5, 1.05, 0.3, stone)
+			var child := SphereMesh.new()
+			child.radius = 0.09
+			child.height = 0.2
+			w._mesh(child, at.call(0.5, 1.28, 0.31), stone)
+
+## Stone benches with scroll legs on the lawns, facing the road.
+func _benches() -> void:
+	var stone: Material = w.material("concrete", Color("cfcac0"))
+	var shade: Material = w.material("concrete", Color("bdb7ab"))
+	for side in [-1.0, 1.0]:
+		for x in BENCHES_X:
+			var z: float = AXIS + side * BENCH_OUT
+			_block(x - 0.95, x + 0.95, LAWN_Y + 0.4, LAWN_Y + 0.5, z - 0.24, z + 0.24, stone)
+			for end in [-0.65, 0.65]:
+				_block(x + end - 0.13, x + end + 0.13, LAWN_Y, LAWN_Y + 0.4, z - 0.2, z + 0.2, shade)
+				_cylinder(0.11, 0.3, Vector3(x + end, LAWN_Y + 0.28, z), shade, 8).rotation = Vector3(PI / 2.0, 0, 0)
+
+## Crook lamps on the lawns behind the benches: a dark bronze post on a fluted foot, a crook at the
+## top and the lantern hung from it, lit at night.
+func _lamps() -> void:
+	var bronze := Color("3d342b")
+	for side in [-1.0, 1.0]:
+		for x in LAMPS_X:
+			var foot := Vector3(x, LAWN_Y, AXIS + side * LAMP_OUT)
+			_cylinder(0.16, 0.6, foot + Vector3(0, 0.3, 0), w.material("plain", bronze), 10, 0.1)
+			var top := foot + Vector3(0, 3.7, 0)
+			w.rod(foot + Vector3(0, 0.6, 0), top, 0.055, bronze)
+			var out := Vector3(0, 0, -side)
+			var bend := top + out * 0.25 + Vector3(0, 0.3, 0)
+			var tip := top + out * 0.6 + Vector3(0, 0.2, 0)
+			w.rod(top, bend, 0.04, bronze)
+			w.rod(bend, tip, 0.035, bronze)
+			var head := tip + Vector3(0, -0.3, 0)
+			w.rod(tip, head + Vector3(0, 0.13, 0), 0.015, bronze)
+			_cylinder(0.12, 0.26, head, w.glow(Color("fff0d2"), 0.08, 3.0), 6, 0.09)
+			_cylinder(0.16, 0.06, head + Vector3(0, 0.15, 0), w.material("plain", bronze), 6, 0.04)
+			var light := SpotLight3D.new()
+			light.light_color = Color("ffd194")
+			light.light_energy = 3.0
+			light.spot_range = 8.0
+			light.spot_angle = 65.0
+			light.spot_attenuation = 0.8
+			light.rotation = Vector3(-PI / 2.0, 0, 0)
+			w._lamp(light, head + Vector3(0, -0.2, 0))
+
+## Stone urns with spiky yellow-green plants at the walks' east ends (153055, 153057).
+func _urns() -> void:
+	var stone: Material = w.material("concrete", Color("d9d4c9"))
+	var leaves: Array[Color] = [Color("4f6a2a"), Color("6f8a3a"), Color("8a9a3a"), Color("b7b84a"), Color("d6cf6a")]
+	for side in [-1.0, 1.0]:
+		var at := Vector3(CURB_EAST - 0.9, LAWN_Y, AXIS + side * (CURB_OUT + 0.55))
+		_block(at.x - 0.28, at.x + 0.28, at.y, at.y + 0.2, at.z - 0.28, at.z + 0.28, stone)
+		_cylinder(0.1, 0.35, at + Vector3(0, 0.37, 0), stone, 10, 0.12)
+		_cylinder(0.18, 0.4, at + Vector3(0, 0.74, 0), stone, 12, 0.32)
+		_cylinder(0.34, 0.06, at + Vector3(0, 0.96, 0), stone, 12)
+		w._shrub(at + Vector3(0, 0.92, 0), 0.75, 7400 + int(side), leaves)
+
+## The yellow and black striped post on the north walk by the gate.
+func _post() -> void:
+	var at := Vector3(POST.x, CURB_Y, POST.y)
+	_block(at.x - 0.2, at.x + 0.2, at.y, at.y + 0.08, at.z - 0.2, at.z + 0.2, w.material("plain", Color("e3b733")))
+	for k in 7:
+		_block(at.x - 0.06, at.x + 0.06, at.y + 0.08 + k * 0.2, at.y + 0.28 + k * 0.2, at.z - 0.06, at.z + 0.06,
+			w.material("plain", Color("e8b923") if k % 2 == 0 else Color("1e1f20")))
