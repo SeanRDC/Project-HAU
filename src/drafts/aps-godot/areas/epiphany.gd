@@ -84,6 +84,18 @@ const LAMP_OUT := 8.45
 const POST := Vector2(-259.6, AXIS - 4.95)
 
 const BUILT_NAME := "Epiphany"
+const GATE_NAME := "StoRosarioGate"
+
+## The Sto. Rosario Gate ("epiphany end going to gate"): the main piers either side of the road
+## and the second piers past the pedestrian gates (z from the axis), the fence along the street
+## from the north covered walk's end to the corner on Holy Angel Avenue and its piers' spacing,
+## the flags beside the gate (z from the axis), the dark LED board on the south lawn.
+const MAIN_PIER := 3.95
+const SIDE_PIER := 6.15
+const STREET_NORTH := 62.5
+const FENCE_STEP := 3.0
+const FLAGS: Array[float] = [-9.2, -12.2, 9.2, 12.2]
+const BOARD := Vector2(-258.2, 96.9)
 
 # --- Where the student walks ------------------------------------------------------------------
 
@@ -184,6 +196,15 @@ func build(world_builder: RefCounted) -> void:
 	_lamps()
 	_urns()
 	_post()
+	w._flush()
+	var gate := Node3D.new()
+	gate.name = GATE_NAME
+	grounds.add_child(gate)
+	w.root = gate
+	_sto_rosario()
+	_street_fence()
+	_flags()
+	_board()
 	w._flush()
 	w.root = saved
 
@@ -531,3 +552,139 @@ func _post() -> void:
 	for k in 7:
 		_block(at.x - 0.06, at.x + 0.06, at.y + 0.08 + k * 0.2, at.y + 0.28 + k * 0.2, at.z - 0.06, at.z + 0.06,
 			w.material("plain", Color("e8b923") if k % 2 == 0 else Color("1e1f20")))
+
+# --- The Sto. Rosario Gate --------------------------------------------------------------------
+
+## A gate pier of pale stone: a plinth, the shaft with a carved cartouche on its faces to the road
+## and to the street, a moulded capital and cap; `lamps` puts the cluster of lanterns on top.
+func _pier(at: Vector2, half: float, height: float, carved: bool, lamps: int) -> void:
+	var stone: Material = w.material("concrete", Color("ddd7c9"))
+	var trim: Material = w.material("concrete", Color("e7e2d6"))
+	var relief: Material = w.material("plain", Color("cfc8b8"))
+	_block(at.x - half - 0.08, at.x + half + 0.08, ROAD_Y - 0.1, CURB_Y + 0.3, at.y - half - 0.08, at.y + half + 0.08, trim)
+	_block(at.x - half, at.x + half, CURB_Y + 0.3, height - 0.35, at.y - half, at.y + half, stone)
+	_block(at.x - half - 0.07, at.x + half + 0.07, height - 0.35, height - 0.2, at.y - half - 0.07, at.y + half + 0.07, trim)
+	_block(at.x - half - 0.12, at.x + half + 0.12, height - 0.2, height, at.y - half - 0.12, at.y + half + 0.12, stone)
+	if carved:
+		# The cartouche: an oval frame with a shell over it, scrolls either side, a drop under it.
+		for face in [-1.0, 1.0]:
+			var fx: float = at.x + face * (half + 0.02)
+			var mid := (CURB_Y + height) / 2.0 + 0.2
+			_block(fx - 0.03, fx + 0.03, mid - 0.75, mid + 0.75, at.y - half * 0.55, at.y + half * 0.55, relief)
+			_block(fx - 0.05, fx + 0.05, mid - 0.55, mid + 0.55, at.y - half * 0.35, at.y + half * 0.35, trim)
+			_block(fx - 0.05, fx + 0.05, mid + 0.8, mid + 1.05, at.y - half * 0.45, at.y + half * 0.45, relief)
+			for side in [-1.0, 1.0]:
+				_block(fx - 0.04, fx + 0.04, mid - 0.3, mid + 0.5, at.y + side * half * 0.7 - 0.07, at.y + side * half * 0.7 + 0.07, relief)
+			_block(fx - 0.04, fx + 0.04, mid - 1.25, mid - 0.8, at.y - 0.08, at.y + 0.08, relief)
+	if lamps > 0:
+		_lantern_cluster(Vector3(at.x, height, at.y), lamps)
+
+## Black lanterns on a post over a pier: one on top, the rest on arms round it.
+func _lantern_cluster(top: Vector3, count: int) -> void:
+	var iron := Color("1f2022")
+	w.rod(top, top + Vector3(0, 1.0, 0), 0.05, iron)
+	var heads: Array[Vector3] = [top + Vector3(0, 1.2, 0)]
+	for i in count - 1:
+		var a := TAU * i / float(count - 1) + PI / 4.0
+		var out := Vector3(cos(a), 0, sin(a)) * 0.38
+		w.rod(top + Vector3(0, 0.55, 0), top + Vector3(0, 0.7, 0) + out, 0.025, iron)
+		heads.append(top + Vector3(0, 0.88, 0) + out)
+	for head in heads:
+		_cylinder(0.07, 0.08, head - Vector3(0, 0.14, 0), w.material("plain", iron), 8)
+		_cylinder(0.1, 0.22, head, w.glow(Color("fff0d2"), 0.06, 3.0), 8, 0.12)
+		_cylinder(0.15, 0.1, head + Vector3(0, 0.16, 0), w.material("plain", iron), 8, 0.02)
+	_omni(top + Vector3(0, 0.9, 0), 4.0, 10.0)
+
+func _omni(at: Vector3, energy: float, reach: float) -> void:
+	var light := OmniLight3D.new()
+	light.light_color = Color("ffd194")
+	light.light_energy = energy
+	light.omni_range = reach
+	light.omni_attenuation = 1.4
+	w._lamp(light, at)
+
+## Iron bars across the street line (x WEST) from z0 to z1 standing on y0: rails, bars with spear
+## tips and a band of rings under the top, `top` high.
+func _iron(z0: float, z1: float, y0: float, top: float, step := 0.13) -> void:
+	var iron := Color("1f2022")
+	var x := WEST + 0.12
+	var bars := maxi(2, roundi((z1 - z0) / step))
+	for k in bars + 1:
+		var z := lerpf(z0, z1, float(k) / bars)
+		w.rod(Vector3(x, y0, z), Vector3(x, top, z), 0.012, iron)
+		w.box(Vector3(0.03, 0.09, 0.05), Vector3(x, top + 0.03, z), w.material("plain", iron))
+	for y in [y0 + 0.15, y0 + 0.9, top - 0.35, top - 0.05]:
+		w.rod(Vector3(x, y, z0), Vector3(x, y, z1), 0.02, iron)
+	var z := z0 + 0.15
+	while z < z1 - 0.1:
+		var ring := TorusMesh.new()
+		ring.inner_radius = 0.07
+		ring.outer_radius = 0.09
+		ring.rings = 8
+		ring.ring_segments = 6
+		var made: MeshInstance3D = w._mesh(ring, Vector3(x, top - 0.6, z), w.material("plain", iron))
+		made.rotation = Vector3(0, 0, PI / 2.0)
+		z += 0.26
+
+## The gate: the two tall carved piers with their lantern clusters either side of the road, the
+## iron double gate between them (closed; its top swoops up to the middle), the pedestrian gates
+## over the curb walks to the second piers, which carry single lanterns.
+func _sto_rosario() -> void:
+	for side in [-1.0, 1.0]:
+		_pier(Vector2(WEST, AXIS + side * MAIN_PIER), 0.55, 4.5, true, 4)
+		_pier(Vector2(WEST, AXIS + side * SIDE_PIER), 0.32, 3.0, false, 1)
+		var a: float = AXIS + side * (MAIN_PIER + 0.55)
+		var b: float = AXIS + side * (SIDE_PIER - 0.32)
+		_iron(minf(a, b), maxf(a, b), CURB_Y, 2.5, 0.12)
+	var z0 := AXIS - MAIN_PIER + 0.55
+	var z1 := AXIS + MAIN_PIER - 0.55
+	_iron(z0, z1, ROAD_Y + 0.05, 3.1, 0.12)
+	# The swoop over both leaves, highest in the middle, its bars run up to it; the meeting post.
+	var iron := Color("1f2022")
+	var previous := Vector3(WEST + 0.12, 3.1, z0)
+	for k in range(1, 25):
+		var t := k / 24.0
+		var z := lerpf(z0, z1, t)
+		var lift := sin(t * PI)
+		var next := Vector3(WEST + 0.12, 3.1 + 0.75 * lift * lift, z)
+		w.rod(previous, next, 0.03, iron)
+		w.rod(Vector3(WEST + 0.12, 3.05, z), next, 0.012, iron)
+		previous = next
+	w.rod(Vector3(WEST + 0.12, ROAD_Y, AXIS), Vector3(WEST + 0.12, 3.9, AXIS), 0.04, iron)
+
+## The fence along the street (x WEST) from the north covered walk's end to the corner on Holy
+## Angel Avenue: a low cream wall, cream piers every three metres, iron bars with rings between,
+## broken by the gate.
+func _street_fence() -> void:
+	var runs := [Vector2(STREET_NORTH, AXIS - SIDE_PIER - 0.32), Vector2(AXIS + SIDE_PIER + 0.32, FENCE_Z)]
+	for run in runs:
+		var count := maxi(1, roundi((run.y - run.x) / FENCE_STEP))
+		for k in count:
+			var z0: float = lerpf(run.x, run.y, float(k) / count)
+			var z1: float = lerpf(run.x, run.y, float(k + 1) / count)
+			_block(WEST - 0.05, WEST + 0.3, ROAD_Y - 0.1, 0.55, z0, z1, w.material("stucco", Color("ece0bf")))
+			_block(WEST - 0.08, WEST + 0.33, 0.55, 0.62, z0, z1, w.material("plain", Color("f1e9d2")))
+			_iron(z0 + 0.25, z1 - 0.25, 0.62, 2.35, 0.16)
+			if k > 0:
+				_pier(Vector2(WEST + 0.12, z0), 0.26, 2.75, false, 0)
+		_pier(Vector2(WEST + 0.12, run.x if run.x < AXIS else run.y), 0.3, 2.9, false, 0)
+
+## The yellow and white flags on poles at the fence either side of the gate.
+func _flags() -> void:
+	for out in FLAGS:
+		var foot := Vector3(WEST + 0.5, LAWN_Y, AXIS + out)
+		w.rod(foot, foot + Vector3(0, 4.6, 0), 0.03, Color("d8d8d2"))
+		w.rod(foot + Vector3(0, 4.3, 0), foot + Vector3(0.75, 4.3, 0), 0.015, Color("d8d8d2"))
+		w.box(Vector3(0.36, 1.05, 0.02), foot + Vector3(0.2, 3.77, 0), w.material("plain", Color("efc93c")))
+		w.box(Vector3(0.36, 1.05, 0.02), foot + Vector3(0.56, 3.77, 0), w.material("plain", Color("f4f2ea")))
+
+## The dark LED board on its steel frame on the south lawn by the gate, facing in.
+func _board() -> void:
+	var steel := Color("2b2d30")
+	var at := BOARD
+	for dz in [-1.1, 1.1]:
+		w.rod(Vector3(at.x, LAWN_Y, at.y + dz), Vector3(at.x, 5.2, at.y + dz), 0.09, steel)
+	_block(at.x - 0.25, at.x + 0.05, 2.3, 5.4, at.y - 1.6, at.y + 1.6, w.material("plain", Color("1a1b1d")))
+	_block(at.x + 0.05, at.x + 0.08, 2.4, 5.3, at.y - 1.5, at.y + 1.5, w.material("plain", Color("121314")))
+	for y in [2.6, 3.5, 4.4, 5.1]:
+		w.rod(Vector3(at.x - 0.3, y, at.y - 1.55), Vector3(at.x - 0.3, y, at.y + 1.55), 0.03, steel)
