@@ -1,5 +1,15 @@
 # Project Context
 
+**The Main Building and the side gate, 2026-11-20.** In Godot: `areas/djdn.gd` (the
+front, drive, empty parking and garden; inside the lobby, the courtyard with its stage,
+theatre front, masts and glass roof, the galleries on both storeys, three stairs and the
+mezzanine) and `areas/side_gate.gd` (the flag circle, the walk, the gatehouse, colonnade,
+pavilions, fence and car gate; nothing past the fence). **No cars anywhere there** (Sean).
+Inside, the camera faces east in a cutaway; solid rooms the near plane slices show a dark
+**section fill** (`w.sectioned()`); whatever stands in front is a fade group. On the flag
+circle and the walk the camera looks at the gate square to the fence. The Student Center's
+courtyard gate now leads into the courtyard. See `sessions/2026-11-20-main-building-and-side-gate.md`.
+
 **The story, revised again, 2026-11-14.** `opening/STORY.md` opens with "The story as
 revised on 2026-11-14 (read this first)"; the text under it is still the 2026-10-27
 version, to be rewritten once the team agrees. Ysha dies at Consuelo, Macabebe in a
@@ -215,7 +225,7 @@ is the team's HAU Boulevard as it is. See `sessions/2026-10-17-weathering.md`.
 
 **The Student Center, 2026-10-19.** `areas/student_center.gd` builds it on its plot
 from `assets/images/buildings/student center/`: the open arcade between the boulevard's
-south covered walkway and the Main Building (still a plot), with the planter of lady
+south covered walkway and the Main Building (built 2026-11-20, see the top), with the planter of lady
 palms and its rail (open, with the boulevard's south planter, at the three western
 crossings), cream posts, a tiled ceiling with fans, the terracotta `circles` floor,
 Cafe Juan's windows and doorway (facade only), the courtyard gate, offices, study
