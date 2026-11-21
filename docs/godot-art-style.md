@@ -46,6 +46,7 @@ Files:
 | `areas/student_center.gd` | The Student Center: the open arcade between the boulevard's south covered walkway and the Main Building, its planter and rail (open at the crossings), posts, roof (a fade group), Cafe Juan's front, the courtyard gate, the offices, the tables, the ATM end, the brick apron past its west end and the lawn at its east end; its camera weights (`view_for`, `covered_for`) |
 | `areas/djdn.gd` | The Main Building (DJDN), from `assets/MAIN BUILDINGS DJDN/`: the symmetric front with the portico, the drive, the empty parking, the garden; inside the lobby, the courtyard (stage, theatre front, masts, glass roof), the galleries on both storeys, the three stairs and the mezzanine; its storeys (`floors`, `floor_at`), its views (`front_for`, `inside_for`, `width_cap`, `focus_lift`) and its fade groups |
 | `areas/side_gate.gd` | The side gate's grounds: the flag circle (mound, star, pedestal and flag, chained posts, royal palms, three flights), the walk square to the fence with its diamond tiles, benches, bollards and low fences, the lawns and the empty parking beside it; the fence's frame (`fence_local`, `fence_world`) and the gate view (`view_for`, `GATE_TURNS`) |
+| `areas/epiphany.gd` | The Epiphany of Angels, from `assets/epiphany of angels/` and the gate's photos, square to the grid (axis z 86, `AXIS`): the road of grey octagon pavers (`octagon_grey`) from the Sto. Rosario fence (x -261, `WEST`) to the road by Rotonda 2 (x -213.5, `EAST`), white diamonds along its bands, the seal near the gate; raised curb walks of pale slabs with ochre panels; the lawns with eight stone angels on their pedestals (four a side, each holding an archangel's usual attribute; the plaques were unreadable), stone benches, crook lamps, urns; the Sto. Rosario Gate (carved piers with lantern clusters, the swooping iron double gate closed, pedestrian gates, the street fence, papal flags, the dark LED board); north the garden and the covered walk with its terracotta pavilion; south the shade trees, the fallen trunk, the Memorare stone, the path and the Main Gate covered walk along the avenue fence (its roof a fade group), the black swing gate, the Guardian Angel car gate, the hatched crossing and four yellow-nosed steps up to the side gate colonnade's west pavilion. Its camera: facing north with everything nearer than `cut_z` cut away (`view_for`), turning west to the gate near the street end (`west_for`). No cars |
 | `areas/pgn.gd` | The Peter G. Nepomuceno Building (world coordinates, the plot squared to x): an L, the long block's face on the boulevard at z 49.2 and the wing beside APS on the west road. A dark grey ground floor (`4e555b`, 4.2 m) set back 1 m under the first band; nine 3.3 m floors, each a white band (`f4f5f1`, 1.1 m tall, standing out 1.1 m, rounded at the outside corners) over a row of blue windows (`3c63b4`) in white frames, grey ribbed louvres angled at the bands' edge; a white louvred stair screen, the name in gold, an orange strip over the covered walkway; the roof box with its vents. At the west end a blue glass stair tower (`2648d8`) and a dark louvred corner with the name in steel, beside the paver lane (`MiddleRoad.PGN_LANE`) with potted trees up to the courtyard. In the lane the camera looks north (`lane_for`); the boulevard's south view cuts at `MIDDLE_CUT_Z` 50.4, in front of PGN's bands |
 | `areas/formation.gd` | The Sister Josefina G. Nepomuceno Formation Center (world coordinates, front at x 25 facing the east road), set back inside its plot and joined at the back to the chapel's east wall (`CHAPEL_EDGE`): the north wing 2.3 m clear of the lawn-side sidewalk round the bend (`SIDEWALK_FAR`, from the kerb to 13.5 across), the drop-off between the steps and the road. Cream stucco (`f1e8cb`) with white bands (`f7f1dc`); a 4.4 m ground floor whose open colonnade (raised 0.45 m, three steps) has white grilles over dark doors and the name in grey steel letters on the sign band; two 3.5 m floors of windows between slim fins; a white fabric barrel-vault canopy on steel arches over the roof terrace; the 16.2 m stair tower with two green-glass strips behind white louvres; the curved wings (half discs: north r 6.2 full height, south r 7.5 a storey lower). A concrete way in at the north end, grey stamped pavers on the apron and the way out round the island (its two-trunked tree, lime hedges, grey bollard lamps), the gabled green kiosks (`World._kiosk`). Facing it (`view_for`, turn 3 like MGN) the camera cuts away everything east of `CUT_X` 44.8 |
 | `areas/aero.gd` | Aero Hall (the plan's annex; only its front part is built, the strips behind the gym are bare): one storey of navy ribbed walls (`2d3548`) on a white base under dark grey ribbed gable roofs with black fascias; the taller front block's gable faces the gym's GYM doorway. The concrete beside it starts at x 38.8 (SJH's east face, with room for SJH's 2 m shift east). Facing the gym from out here the camera cuts away everything west of `CUT_X` 38.6, past the road's end only (`cut_for`) |
@@ -619,6 +620,18 @@ black-and-white manga memory of the campus, page by page, in Tagalog. The look:
 
 ---
 
+## Statues from Blender (trial)
+
+The boulevard's angel fountain group is a model built in Blender (`tools/blender/angel_fountain.py`
+writes `models/angel_fountain.glb` and `assets/drafts/3d/angel_fountain.blend`), not boxes:
+metaballs (one family per figure, threshold 0.12, so a part shows at about three quarters of
+its radius; the script grows the written sizes by `GROW`), mesh wing blades with metaball
+feathers, a little cloud-noise roughness, decimated to about 56,000 triangles. `middle_road.gd`
+loads it, turns it a quarter to face east and gives every mesh the stucco sandstone material,
+so it lights and weathers like the rest. It is a trial for that one statue; if it holds up the
+Epiphany's angels and the other statues can follow the same way. Run Godot's import
+(`--headless --import`) after changing a model.
+
 ## Cutscene characters (3D)
 
 The characters that matter in cutscenes (Lance first; Pat and Ysha next) are low-poly 3D
@@ -1106,6 +1119,19 @@ Build an interior the same way:
   the inner row of pillars, the slatted ceiling as the band's top.
   The boulevard's view keeps the circle's north apron, and the drive stays the
   front's; the chapel, MGN and the front views yield to it.
+- **The Epiphany of Angels** (`Epiphany.view_for`, eased as `epiphany`): the camera faces
+  north as on the APS front, with the north row of angels and the covered walk behind the
+  student, and everything nearer than `Epiphany.cut_z` is cut away through the ground line:
+  just past the south curb walk (`ROAD_CUT`) on the road, just inside the fence
+  (`FENCE_CUT`) on the path, the Main Gate covered walk and the crossing, just ahead of the
+  student on the north path and under the north covered walk. The cuts are fixed lines,
+  not a line a few metres in front of the student, so the south trees are never sliced
+  into floating crowns while walking the road. Near the street end (`west_for`, x under
+  -246) it turns a quarter west (`epi_west`, turn -1) to face the Sto. Rosario Gate down
+  the road between the angels, as in the gate's photo. The south covered walk's roof
+  (`EpiphanySouthRoof`) fades while the student is under it or on the path beside it, the
+  north one's (`EpiphanyNorthRoof`) under it. The chapel's and MGN's views, which reach
+  this far west, yield to it.
 - **Lights inside** are plain `OmniLight3D`s in their own group, on at every
   hour but only while the student is in (not in `world.lamps`, which are night
   lamps). Windows inside glow by day through `glow()`.
