@@ -69,3 +69,19 @@ the rest; the work ran on its own (an hourly check-in resumed it after usage lim
 - The road by Rotonda 2 stops at z 74.5, short of SFJ's plot; Rotonda 2's circle stays reserved
   and its big plot label shows from the road.
 - The Blender statue is a trial: Sean to judge it in the game before the other statues follow.
+
+## Later: Rotonda 2 and a finer statue
+
+- Sean: "build the rotonda 2, the fountain there and the ground decoration". From the drone shot
+  ("FOUNTAIN IN FRONT OF SFJ.png"), the pool photo ("SFJ BUILDING AND FOUNTAIN.jpg") and 153048:
+  `areas/rotonda.gd` on the plan's plot, built now (`rotonda2` in BUILT; the `plots_moved` check
+  expects it built). The flag circle got its fourth flight, west down to the drive (the "right"
+  stair of the old entryway scene). Check `rotonda_built`, `rotonda_view`; fast travel
+  "Rotonda 2 fountain".
+- Sean asked whether the Blender statue could be more detailed: a second pass on
+  `angel_fountain.py` (finer metaball resolution, carved faces, locks of hair, feathers as
+  overlapping scales, robe grooves and girdle, fingers, collars, the girl's fringe and puffed
+  sleeves, the boy's parting and belt, the book's leaves, ledges on the rock; about 116,000
+  triangles). Metaballs only go so far: faces and hands are still soft. Sculpting by hand in
+  Blender, or a photogrammetry scan of the real statue, would be the next step up.
+- Not checked: the star's exact proportions and the rings' radius are read off one drone frame.

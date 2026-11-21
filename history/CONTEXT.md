@@ -1,5 +1,7 @@
 # Project Context
 
+**Rotonda 2, 2026-11-21.** `areas/rotonda.gd`: the fountain plaza by SFJ on its plot (the drive's star and rings, the lawn round the pool, the stone bowl and ten jets, bollards and lamps), joined to the Epiphany's road and down the flag circle's new west flight. The Blender angel fountain got a finer carving pass (faces, hair, scaled feathers, folds). See `sessions/2026-11-21-epiphany-of-angels.md`.
+
 **The Epiphany of Angels and the angel fountain from Blender, 2026-11-21.** In Godot:
 `areas/epiphany.gd`, the road in from the Sto. Rosario Gate between eight stone angels on their
 pedestals, the seal, the curb walks, benches and crook lamps; the gate (carved piers with lantern
