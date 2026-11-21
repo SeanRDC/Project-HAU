@@ -362,8 +362,9 @@ func _road() -> void:
 		_block(EAST, NS_EAST, ROAD_Y, ROAD_Y + 0.004, z - 0.02, z + 0.02, joint)
 		z += 3.0
 	_block((EAST + NS_EAST) / 2.0 - 0.02, (EAST + NS_EAST) / 2.0 + 0.02, ROAD_Y, ROAD_Y + 0.004, NS_NORTH, FENCE_Z - 0.6, joint)
-	# The east kerb, against Rotonda 2's plot.
-	_block(NS_EAST, NS_EAST + 0.2, ROAD_Y - 0.2, 0.0, NS_NORTH, 98.6, w.material("concrete", Color("c3beb3")))
+	# The east kerb, open where Rotonda 2's apron joins the road.
+	_block(NS_EAST, NS_EAST + 0.2, ROAD_Y - 0.2, 0.0, NS_NORTH, 76.0, w.material("concrete", Color("c3beb3")))
+	_block(NS_EAST, NS_EAST + 0.2, ROAD_Y - 0.2, 0.0, 92.6, 98.6, w.material("concrete", Color("c3beb3")))
 
 ## The white diamonds along both bands every three metres, and the row of white and dark
 ## diamonds across the road's east end.

@@ -24,6 +24,7 @@ const StudentCenter := preload("res://areas/student_center.gd")
 const Djdn := preload("res://areas/djdn.gd")
 const SideGate := preload("res://areas/side_gate.gd")
 const Epiphany := preload("res://areas/epiphany.gd")
+const Rotonda := preload("res://areas/rotonda.gd")
 const Pgn := preload("res://areas/pgn.gd")
 const Formation := preload("res://areas/formation.gd")
 const Aero := preload("res://areas/aero.gd")
@@ -207,6 +208,8 @@ var colonnade := 0.0
 ## how far the Epiphany's north view cuts away what stands nearer than Epiphany.cut_z.
 var epi_west := 0.0
 var epiphany := 0.0
+## 0..1: how far Rotonda 2's north view cuts away what stands nearer than Rotonda.cut_z.
+var rotonda := 0.0
 ## The widest the Main Building's cutaway frames here (Djdn.width_cap), eased.
 var djdn_cap := 18.0
 ## The controls keep the boulevard side they started on while a direction is held, so
@@ -540,7 +543,7 @@ static func perch_for(x: float, z: float, level: float) -> float:
 static func chapel_for(x: float, z: float) -> float:
 	return smoothstep(24.0, 32.0, z) * (1.0 - smoothstep(-24.0, -18.0, x)) * (1.0 - Sjh.view_for(x, z)) * (1.0 - Mgn.reach(x, z)) \
 		* (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Pgn.lane_for(x, z)) * (1.0 - Pgn.east_for(x, z)) * (1.0 - Sjh.rear_for(x, z)) \
-		* (1.0 - Djdn.view_for(x, z)) * (1.0 - SideGate.view_for(x, z)) * (1.0 - Epiphany.view_for(x, z))
+		* (1.0 - Djdn.view_for(x, z)) * (1.0 - SideGate.view_for(x, z)) * (1.0 - Epiphany.view_for(x, z)) * (1.0 - Rotonda.view_for(x, z))
 
 ## Facing the Main Building's front from its drive (east), or east inside it: what the
 ## boulevard's and the side gate's views leave.
@@ -554,7 +557,7 @@ static func gate_for(x: float, z: float) -> float:
 
 ## The MGN view (facing west from the west road) yields to the middle road's.
 static func mgn_for(x: float, z: float) -> float:
-	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z)) * (1.0 - Djdn.view_for(x, z)) * (1.0 - SideGate.view_for(x, z)) 		* (1.0 - Epiphany.view_for(x, z))
+	return Mgn.view_for(x, z) * (1.0 - MiddleRoad.view_for(x, z)) * (1.0 - Sjh.rear_for(x, z)) * (1.0 - Djdn.view_for(x, z)) * (1.0 - SideGate.view_for(x, z)) 		* (1.0 - Epiphany.view_for(x, z)) * (1.0 - Rotonda.view_for(x, z))
 
 func _snap_follow() -> void:
 	follow = Vector2(student.position.x - 0.15, student.position.z)
@@ -588,6 +591,7 @@ func _snap_follow() -> void:
 	colonnade = SideGate.colonnade_for(student.position.x, student.position.z)
 	epi_west = Epiphany.west_for(student.position.x, student.position.z)
 	epiphany = Epiphany.view_for(student.position.x, student.position.z)
+	rotonda = Rotonda.view_for(student.position.x, student.position.z) * (1.0 - SideGate.view_for(student.position.x, student.position.z))
 
 ## The camera's turn about the vertical: 0 looks north at APS, -90° east at the
 ## canteen or the chapel (their views never overlap: one is east of x 12, one west of -18),
@@ -653,6 +657,7 @@ func _update_camera(delta: float) -> void:
 	gate_view = lerpf(gate_view, gate_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	epi_west = lerpf(epi_west, Epiphany.west_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
 	epiphany = lerpf(epiphany, Epiphany.view_for(student.position.x, student.position.z), 1.0 - exp(-delta * 3.0))
+	rotonda = lerpf(rotonda, Rotonda.view_for(student.position.x, student.position.z) * (1.0 - SideGate.view_for(student.position.x, student.position.z)), 1.0 - exp(-delta * 3.0))
 	var lane_now := BesideAps.lane_for(student.position.x, student.position.z)
 	var east_now := lane_now * BesideAps.lane_east_for(student.position.x, student.position.z)
 	lane_east = lerpf(lane_east, east_now, 1.0 - exp(-delta * 3.0))
@@ -907,6 +912,12 @@ func _update_camera(delta: float) -> void:
 		var line_z := Epiphany.cut_z(follow.x, follow.y)
 		var south_edge := (Vector3(focus.x, 0.0, line_z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, south_edge * smoothstep(0.0, 1.0, epi_cut))
+	# On Rotonda 2's drive, facing north at the fountain and SFJ, it stands over the side gate's
+	# lawns and colonnade: everything past the drive's rim is cut away the same way.
+	var rot_cut := rotonda * facing_north
+	if rot_cut > 0.0:
+		var rim_edge := (Vector3(focus.x, 0.0, Rotonda.cut_z(follow.x, follow.y)) - camera.position).dot(forward)
+		camera.near = maxf(camera.near, rim_edge * smoothstep(0.0, 1.0, rot_cut))
 	if middle > 0.0:
 		var north_edge := (Vector3(focus.x, focus.y, MIDDLE_CUT_Z) - camera.position).dot(forward)
 		camera.near = maxf(camera.near, north_edge * smoothstep(0.0, 1.0, middle))
@@ -1228,6 +1239,7 @@ static func travel_places() -> Array:
 		["Main Gate covered walk", Vector2(-236.0, 101.8), 24.0],
 		["Epiphany north walk", Vector2(-236.0, 68.75), 24.0],
 		["Guardian Angel gate", Vector2(-210.2, 99.0), 26.0],
+		["Rotonda 2 fountain", Rotonda.CENTER + Vector2(0.0, 6.0), 30.0],
 	]
 
 ## Jumps the student to a fast-travel place, with every camera zone, the gym's
@@ -2357,10 +2369,11 @@ func _verify_and_capture() -> void:
 		checks.student_center_west_end = middle > 0.95 and chapel < 0.05 and arcade < 0.05
 		# The Main Building and the side gate's plots: built, and the flag circle, the walk, the
 		# gate and Rotonda 2 moved 5.4 m west of the layout picture (the photos' spacing from the
-		# portico); Rotonda 2 stays a reserved plot.
+		# portico); Rotonda 2 is built on its plot (areas/rotonda.gd, 2026-11-21).
 		checks.plots_moved = CampusPlan.PLOTS["djdn"]["built"] and CampusPlan.PLOTS["flagCircle"]["built"] \
 			and CampusPlan.PLOTS["gateWalk"]["built"] and CampusPlan.PLOTS["sideGate1"]["built"] \
-			and absf(_centre(CampusPlan.PLOTS["flagCircle"]["outline"]).x + 178.5) < 0.6 and not CampusPlan.PLOTS["rotonda2"]["built"]
+			and absf(_centre(CampusPlan.PLOTS["flagCircle"]["outline"]).x + 178.5) < 0.6 and CampusPlan.PLOTS["rotonda2"]["built"] \
+			and _centre(CampusPlan.PLOTS["rotonda2"]["outline"]).distance_to(Rotonda.CENTER) < 0.6
 		# The Main Building stands, and its front is symmetric about the portico: every window,
 		# column and door has its mirror across the middle (the drone shot), 18 windows a floor.
 		checks.djdn_built = scene.find_child(Djdn.BUILT_NAME, true, false) != null and World.blocked(-150.0, 95.0)
@@ -2611,6 +2624,23 @@ func _verify_and_capture() -> void:
 		_walk_until(Vector2(0, -1), func() -> bool: return student.position.z < 69.0)
 		checks.epiphany_north_walk = student.position.z < 69.1 and Epiphany.in_north_walk(student.position.x, student.position.z) \
 			and absf(student.level() - Epiphany.COVER_Y) < 0.02
+		# Rotonda 2: the drive walkable, the fountain solid; down the flag circle's west flight onto it,
+		# and across from the road by the Epiphany; facing north there, the side gate's lawns cut away.
+		var rot_ok := scene.find_child(Rotonda.BUILT_NAME, true, false) != null 			and not World.blocked(Rotonda.CENTER.x, Rotonda.CENTER.y - 6.0) and is_equal_approx(World.floor_height(Rotonda.CENTER.x, Rotonda.CENTER.y - 6.0), Rotonda.DRIVE_Y) 			and World.blocked(Rotonda.CENTER.x, Rotonda.CENTER.y) and World.blocked(Rotonda.CENTER.x + 2.0, Rotonda.CENTER.y)
+		student.place(-183.0, SideGate.CIRCLE.y)
+		_walk_until(Vector2(-1, 0), func() -> bool: return student.position.x < -190.0)
+		rot_ok = rot_ok and student.position.x < -189.9 and absf(student.level() - Rotonda.DRIVE_Y) < 0.02
+		student.place(-210.0, Epiphany.AXIS)
+		_walk_until(Vector2(1, 0), func() -> bool: return student.position.x > -203.0)
+		rot_ok = rot_ok and student.position.x > -203.1 and Rotonda.walkable(student.position.x, student.position.z)
+		checks.rotonda_built = rot_ok
+		student.place(Rotonda.CENTER.x, Rotonda.CENTER.y + 6.5)
+		_set_zoom(30.0, true)
+		_snap_follow()
+		for i in 60:
+			_update_camera(1.0 / 30.0)
+		forward = -camera.global_basis.z
+		checks.rotonda_view = Vector3(forward.x, 0.0, forward.z).normalized().dot(Vector3(0, 0, -1)) > 0.95 			and (Vector3(Rotonda.CENTER.x, 2.0, Rotonda.CUT_Z + 3.0) - camera.position).dot(forward) < camera.near 			and _all_visible([Rotonda.CENTER.x], [0.5], [Rotonda.CENTER.y]) 			and _all_visible([student.position.x], [student.level() + 0.2, student.level() + 1.8], [student.position.z])
 		# Upstairs: up the lobby's stair to the mezzanine, round its arms to the front corridor, along
 		# it and the north upper gallery; up each courtyard stair onto its gallery; and under the
 		# upper gallery the student is still seen (its floor fades).

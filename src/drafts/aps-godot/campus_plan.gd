@@ -91,7 +91,7 @@ const PLOTS := {
 	"gateWalk": {"name": "Side Gate Walkway", "short": "Side Gate Walk", "no": 0, "kind": "walk", "built": true,
 		"label": Vector2(-179.4, 101),
 		"outline": [Vector2(-182.1, 93.6), Vector2(-174.1, 93.3), Vector2(-170.4, 110.8), Vector2(-191.9, 101.6)]},
-	"rotonda2": {"name": "Rotonda 2 (the fountain plaza by SFJ)", "short": "Rotonda 2", "no": 0, "kind": "ground", "built": false,
+	"rotonda2": {"name": "Rotonda 2 (the fountain plaza by SFJ)", "short": "Rotonda 2", "no": 0, "kind": "ground", "built": true,
 		"label": Vector2(-196.6, 84.3),
 		"outline": [Vector2(-186.9, 83.9), Vector2(-187.2, 86.9), Vector2(-188.5, 89.7), Vector2(-190.6, 91.9), Vector2(-193.2, 93.4), Vector2(-196.2, 94), Vector2(-199.2, 93.6), Vector2(-202, 92.4), Vector2(-204.2, 90.3), Vector2(-205.7, 87.6), Vector2(-206.3, 84.7), Vector2(-206, 81.6), Vector2(-204.7, 78.9), Vector2(-202.6, 76.6), Vector2(-200, 75.2), Vector2(-197, 74.6), Vector2(-194, 74.9), Vector2(-191.2, 76.2), Vector2(-189, 78.3), Vector2(-187.5, 80.9)]},
 	"flagCircle": {"name": "Flag Circle", "short": "Flag Circle", "no": 0, "kind": "ground", "built": true,
