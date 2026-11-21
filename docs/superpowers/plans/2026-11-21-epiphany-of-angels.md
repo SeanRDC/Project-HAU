@@ -42,7 +42,7 @@ short road that joins it to the side gate); Rotonda 2, SFJ and St. Martha stay r
 - [x] 6. The north covered walk and pavilion, the garden.
 - [x] 7. Trees, fallen trunk, Memorare stone, birdbath, box, signs, planting.
 - [x] 8. Camera (north view with the south cut, west gate view, covered walks), fade groups, fast travel, checks.
-- [ ] 9. Captures reviewed, `docs/godot-art-style.md`, README, session file, `history/CONTEXT.md`; all checks, `npm run check`, `npm run build`.
+- [x] 9. Captures reviewed, `docs/godot-art-style.md`, README, session file, `history/CONTEXT.md`; all checks, `npm run check`, `npm run build`.
 
 ## Added by Sean later the same day
 
@@ -53,6 +53,6 @@ primitive statue group in the game with it, as a trial for that one statue (the 
 follow if it looks right). The plinth, rams' heads, basin and jets stay as they are. When every
 request is done (and only then): shut the PC down.
 
-- [ ] 10. `tools/blender/angel_fountain.py` (metaballs, sandstone): the angel, wings, girl, boy, book, rock mound; `models/angel_fountain.glb`; previews checked.
-- [ ] 11. Load it in `_fountain()` in place of the primitive group; captures; checks pass.
+- [x] 10. `tools/blender/angel_fountain.py` (metaballs, sandstone): the angel, wings, girl, boy, book, rock mound; `models/angel_fountain.glb`; previews checked.
+- [x] 11. Load it in `_fountain()` in place of the primitive group; captures; checks pass.
 - [ ] 12. When ALL is done and committed: shut the PC down (`shutdown /s /t 60`).
