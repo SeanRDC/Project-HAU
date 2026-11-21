@@ -626,7 +626,7 @@ The boulevard's angel fountain group is a model built in Blender (`tools/blender
 writes `models/angel_fountain.glb` and `assets/drafts/3d/angel_fountain.blend`), not boxes:
 metaballs (one family per figure, threshold 0.12, so a part shows at about three quarters of
 its radius; the script grows the written sizes by `GROW`), mesh wing blades with metaball
-feathers, a little cloud-noise roughness, decimated to about 56,000 triangles. `middle_road.gd`
+feathers, a little cloud-noise roughness, decimated to about 116,000 triangles (faces, locks of hair, feathers as overlapping scales, robe grooves, fingers, collars and seams from negative and small metaballs). `middle_road.gd`
 loads it, turns it a quarter to face east and gives every mesh the stucco sandstone material,
 so it lights and weathers like the rest. It is a trial for that one statue; if it holds up the
 Epiphany's angels and the other statues can follow the same way. Run Godot's import

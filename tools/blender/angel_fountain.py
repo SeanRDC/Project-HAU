@@ -27,7 +27,7 @@ PREVIEW = os.path.abspath(ARGS[ARGS.index("--preview") + 1]) if "--preview" in A
 
 # Blender: z up, the group faces -y (in the game it is turned to face east down the boulevard).
 # z 0 is the top of the rock the figures stand on. Metres.
-RESOLUTION = 0.018
+RESOLUTION = 0.012
 SANDSTONE = (0.86, 0.60, 0.44, 1.0)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -164,12 +164,19 @@ for s, name in ((-1, "WingR"), (1, "WingL")):
     # The feathers over its face, metaballs swelling softly out of it: coverts in scallops near the
     # top, long flight feathers lower down, and the outer edge's tips.
     W = family(name)
-    for row, (v0, length) in enumerate([(2.3, 0.14), (2.12, 0.18), (1.9, 0.26), (1.6, 0.38), (1.2, 0.5), (0.72, 0.5)]):
-        u = 0.05 + (row % 2) * 0.03
-        while u < 0.44:
-            if inside(u, v0, WING) and inside(u, v0 - length, WING):
-                capsule(W, wing_point(s, u, v0, -0.035), wing_point(s, u + 0.01, v0 - length, -0.04), 0.024)
-            u += 0.055
+    # Feathers as overlapping scales: rows from the top down, each feather a flattened ellipsoid
+    # in the wing's plane, wider than the spacing so their rounded tips make the scalloped edges.
+    rows = [(2.42, 0.1), (2.32, 0.12), (2.2, 0.15), (2.06, 0.18), (1.9, 0.22), (1.7, 0.28), (1.46, 0.34), (1.18, 0.4),
+            (0.86, 0.42), (0.55, 0.38), (0.3, 0.25)]
+    turn = Quaternion((0, 0, 1), s * 0.42)
+    for row, (v0, length) in enumerate(rows):
+        u = 0.04 + (row % 2) * 0.024
+        width = 0.034 if row < 5 else 0.04
+        while u < 0.45:
+            mid_v = v0 - length / 2
+            if inside(u, v0, WING) and inside(u, v0 - length * 0.9, WING):
+                ellipsoid(W, wing_point(s, u, mid_v, -0.034), length / 2, (width / (length / 2), 0.016 / (length / 2), 1.0), turn)
+            u += 0.048
     for i in range(4, 12):
         (u1, v1), (u2, v2) = WING[i], WING[i + 1]
         for t in (0.25, 0.75):
@@ -210,6 +217,74 @@ for co, r in [((BX, BY + 0.02, 1.19), 0.085), ((BX - 0.06, BY + 0.03, 1.15), 0.0
 limb(B, [(BX - 0.11, BY, 0.96), (BX - 0.14, BY - 0.1, 0.8), (BX - 0.16, BY - 0.18, 0.72)], [0.045, 0.04, 0.036])
 limb(B, [(BX + 0.11, BY, 0.96), (BX + 0.15, BY - 0.1, 0.8), (BX + 0.07, BY - 0.2, 0.72)], [0.045, 0.04, 0.036])
 
+# --- The finer carving -------------------------------------------------------------------------------
+# Negative metaballs cut into their figure (eye sockets, the mouth, grooves between the robe's folds);
+# small positive ones raise the brows, noses, locks of hair, fingers, collars and seams.
+
+
+def cut(e):
+    e.use_negative = True
+    return e
+
+
+# The angel's face (its front at about y 0): brows, sockets, the nose, the mouth, the chin.
+for s in (-1, 1):
+    cut(ball(A, (s * 0.042, -0.006, 1.972), 0.014))
+ball(A, (0, -0.004, 1.94), 0.016)
+ball(A, (0, 0.006, 1.865), 0.024)
+# Locks falling either side of her face to the shoulders.
+for s in (-1, 1):
+    limb(A, [(s * 0.13, 0.1, 2.0), (s * 0.15, 0.1, 1.9), (s * 0.14, 0.11, 1.8), (s * 0.16, 0.12, 1.72)], [0.026, 0.028, 0.026, 0.022])
+# Her hair in wavy locks from the crown to the shoulders, round the sides and the back.
+for s in (-1, 1):
+    for k in range(5):
+        spread = 0.08 + k * 0.016
+        back = 0.1 + k * 0.035
+        limb(A, [(s * spread, back, 2.06), (s * (spread + 0.035), back + 0.02, 1.96), (s * (spread + 0.01), back + 0.035, 1.86),
+                 (s * (spread + 0.04), back + 0.05, 1.76), (s * (spread + 0.02), back + 0.06, 1.68)], [0.03, 0.03, 0.028, 0.026, 0.022])
+# The robe: grooves between its folds down the front and sides, a girdle at the waist, the neckline.
+for x in (-0.24, -0.15, -0.05, 0.05, 0.15, 0.24):
+    cut(capsule(A, (x, AY - 0.22 + abs(x) * 0.5, 0.08), (x * 0.7, AY - 0.17 + abs(x) * 0.4, 1.0), 0.02))
+for k in range(14):
+    a = math.tau * k / 14
+    ball(A, (math.cos(a) * 0.17, AY + math.sin(a) * 0.11, 1.26), 0.026)
+for s in (-1, 1):
+    cut(capsule(A, (s * 0.07, AY - 0.13, 1.68), (0, AY - 0.15, 1.6), 0.014))
+# The wide sleeves hanging from her forearms, and her fingers over the children's shoulders.
+for s, to in ((-1, (-0.22, -0.2, 0.96)), (1, (0.22, -0.2, 1.03))):
+    ellipsoid(A, (s * 0.3, AY - 0.1, 1.2), 0.08, (0.8, 1.0, 1.7))
+    hand = Vector((to[0] + s * 0.01, to[1] + 0.03, to[2] + 0.04))
+    for f in range(4):
+        x = hand.x + (f - 1.5) * 0.022
+        capsule(A, (x, hand.y - 0.02, hand.z + 0.01), (x, hand.y - 0.07, hand.z - 0.04), 0.011)
+
+# The girl's face (its front at about y -0.31), her fringe, puffed sleeves, collar and the folds at
+# her skirt's hem.
+for s in (-1, 1):
+    cut(ball(G, (GX + s * 0.034, -0.306, 1.055), 0.012))
+ball(G, (GX, -0.308, 1.035), 0.011)
+cut(capsule(G, (GX - 0.015, -0.302, 1.006), (GX + 0.015, -0.302, 1.006), 0.004))
+capsule(G, (GX - 0.07, -0.285, 1.1), (GX + 0.07, -0.285, 1.1), 0.024)
+for s in (-1, 1):
+    ball(G, (GX + s * 0.11, GY, 0.87), 0.045)
+capsule(G, (GX - 0.06, GY - 0.075, 0.93), (GX + 0.06, GY - 0.075, 0.93), 0.014)
+for k in range(14):
+    a = math.tau * k / 14
+    capsule(G, (GX + math.cos(a) * 0.19, GY + math.sin(a) * 0.14, 0.38), (GX + math.cos(a) * 0.14, GY + math.sin(a) * 0.1, 0.56), 0.012)
+
+# The boy's face (its front at about y -0.34), the parting in his hair, his collar, short sleeves,
+# belt and the creases down his trousers.
+for s in (-1, 1):
+    cut(ball(B, (BX + s * 0.037, -0.336, 1.135), 0.012))
+ball(B, (BX, -0.338, 1.11), 0.012)
+cut(capsule(B, (BX - 0.017, -0.332, 1.08), (BX + 0.017, -0.332, 1.08), 0.004))
+cut(capsule(B, (BX - 0.03, BY - 0.04, 1.25), (BX - 0.03, BY + 0.08, 1.24), 0.01))
+for s in (-1, 1):
+    ellipsoid(B, (BX + s * 0.05, BY - 0.1, 1.0), 0.03, (1.2, 0.6, 0.8))
+    ball(B, (BX + s * 0.12, BY, 0.93), 0.05)
+    capsule(B, (BX + s * 0.055, BY - 0.07, 0.08), (BX + s * 0.055, BY - 0.07, 0.56), 0.012)
+capsule(B, (BX - 0.13, BY - 0.02, 0.68), (BX + 0.13, BY - 0.02, 0.68), 0.024)
+
 # --- The rock they stand on ------------------------------------------------------------------------
 R = family("Rock")
 GROW = 1.0
@@ -219,6 +294,14 @@ for i in range(46):
     x, y = math.cos(a) * d * 0.62, math.sin(a) * d * 0.5 + 0.02
     z = -0.08 - d * 0.16 + random.uniform(-0.04, 0.04)
     ball(R, (x, y, z), random.uniform(0.16, 0.26))
+# Ledges standing out of it, and cracks cut into it.
+for i in range(10):
+    a = random.uniform(0, math.tau)
+    ellipsoid(R, (math.cos(a) * 0.62, math.sin(a) * 0.5, random.uniform(-0.3, -0.12)), random.uniform(0.12, 0.18),
+              (1.4, 0.9, 0.5), Quaternion((0, 0, 1), a))
+for i in range(8):
+    a = random.uniform(0, math.tau)
+    cut(capsule(R, (math.cos(a) * 0.62, math.sin(a) * 0.5, -0.1), (math.cos(a) * 0.74, math.sin(a) * 0.61, -0.3), 0.02))
 
 # --- To meshes -------------------------------------------------------------------------------------
 bpy.context.view_layer.update()
@@ -247,7 +330,13 @@ page = bpy.context.active_object
 page.scale = (0.2, 0.15, 0.012)
 page.location = (0.14, -0.39, 0.735)
 page.rotation_euler = (0.25, -0.12, 0)
-meshes += [book, page]
+# The leaves between the covers, a little lighter than the covers' edge.
+bpy.ops.mesh.primitive_cube_add(size=1)
+leaves = bpy.context.active_object
+leaves.scale = (0.37, 0.27, 0.03)
+leaves.location = (0.045, -0.39, 0.752)
+leaves.rotation_euler = (0.25, 0, 0)
+meshes += [book, page, leaves]
 
 stone = bpy.data.materials.new("sandstone")
 stone.diffuse_color = SANDSTONE
@@ -270,7 +359,7 @@ for o in meshes:
         disp.texture = tex
         disp.strength = 0.008
         dec = o.modifiers.new("Budget", "DECIMATE")
-        dec.ratio = 0.35 if o.name.startswith(("Wing", "Rock")) else 0.5
+        dec.ratio = 0.3 if o.name.startswith(("Wing", "Rock")) else 0.45
         bpy.ops.object.modifier_apply(modifier="Grain")
         bpy.ops.object.modifier_apply(modifier="Budget")
     for poly in o.data.polygons:
