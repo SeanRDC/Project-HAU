@@ -65,6 +65,11 @@ const CROSSINGS: Array[Vector2] = [Vector2(-69.0, -66.0), Vector2(-107.5, -104.5
 const FOUNTAIN := Vector2(-165.6, 64.6)
 const APRON := 11.5
 const BASIN := 2.9
+## The fountain's statue group, a model from Blender (tools/blender/angel_fountain.py): its file, the
+## node's name, and how far its feet stand over the plinth's top (its rock sinks into the plinth).
+const STATUE_MODEL := "res://models/angel_fountain.glb"
+const STATUE_NAME := "AngelFountainStatue"
+const STATUE_LIFT := 0.3
 ## The covered walkways: two rows of pillars 3.0 m apart (front at the road side), a bay
 ## of 3.2 m, the roof's extent, the floor's height and the beams' underside (the
 ## cutaway's ceiling).
@@ -803,49 +808,23 @@ func _fountain() -> void:
 		var c := plinth + Vector3(corner.x * 0.72, 0.95, corner.y * 0.72)
 		_sphere(0.17, c, ram, 0.9)
 		_sphere(0.09, c + Vector3(corner.x * 0.14, -0.08, corner.y * 0.14), ram)
-	# The sandstone group on the plinth (the base is at y `group`).
+	# The sandstone group on the plinth: modelled in Blender (tools/blender/angel_fountain.py,
+	# models/angel_fountain.glb) from the close-ups, the guardian angel with her wings raised and
+	# her hands on the shoulders of a girl and a boy holding an open book, on their rock. The model
+	# faces +z; turned a quarter it faces east, down the boulevard. It takes the sandstone's stucco
+	# material, so it weathers and lights like the rest.
 	var sand: Material = w.material("stucco", Color("e0a77c"))
-	var shade: Material = w.material("stucco", Color("c78d64"))
-	var group := plinth + Vector3(0, 1.52, 0)
-	w.box(Vector3(1.3, 0.18, 1.1), group + Vector3(0, 0.09, 0), shade)
-	# The angel, a little behind (west of) the children.
-	var angel := group + Vector3(-0.28, 0.18, 0)
-	_cylinder(0.24, 0.36, 1.5, angel + Vector3(0, 0.75, 0), sand, 10)
-	_cylinder(0.2, 0.24, 0.45, angel + Vector3(0, 1.7, 0), sand, 10)
-	_sphere(0.15, angel + Vector3(0.02, 2.08, 0), sand)
-	_sphere(0.16, angel + Vector3(-0.02, 2.12, 0), shade, 0.8)
-	for side in [-1.0, 1.0]:
-		# Arms reaching down round the children's shoulders.
-		w.rod(angel + Vector3(0.05, 1.85, side * 0.22), angel + Vector3(0.38, 1.35, side * 0.3), 0.07, Color("d9a077"))
-		# The wing: a fan of long feathers from behind the shoulder, rising past the head and
-		# sweeping down behind, with a layer of short coverts over their roots. It is spread
-		# out and swept back (60°), so from the side views it shows a wing's outline.
-		var sweep := 1.05
-		var turn := atan2(-sin(sweep), side * cos(sweep))
-		var shoulder := angel + Vector3(-0.14, 1.78, side * 0.16)
-		var fan := [[92.0, 1.25], [78.0, 1.5], [64.0, 1.6], [50.0, 1.5], [36.0, 1.35], [22.0, 1.15], [8.0, 0.95]]
-		for k in fan.size():
-			var rise: float = deg_to_rad(fan[k][0])
-			var length: float = fan[k][1]
-			var along := Vector3(-sin(sweep), 0, side * cos(sweep)) * cos(rise) + Vector3.UP * sin(rise)
-			w.box(Vector3(0.06, length, 0.2), shoulder + along * length / 2.0, sand if k % 2 == 0 else shade, turn, PI / 2.0 - rise)
-			w.box(Vector3(0.07, length * 0.55, 0.22), shoulder + along * length * 0.28 + Vector3(0.02, 0, 0), shade, turn, PI / 2.0 - rise)
-	# The girl (north, a dress) and the boy (south, with the book), in front of the angel.
-	for child in [[1.0, Color("e6ae84")], [-1.0, Color("dda177")]]:
-		var s: float = child[0]
-		var made: Material = w.material("stucco", child[1])
-		var foot := group + Vector3(0.22, 0.18, s * 0.27)
-		if s > 0.0:
-			_cylinder(0.12, 0.26, 0.75, foot + Vector3(0, 0.375, 0), made, 10)
-		else:
-			for leg in [-0.07, 0.07]:
-				_cylinder(0.065, 0.07, 0.5, foot + Vector3(0, 0.25, leg), made, 6)
-			_cylinder(0.14, 0.15, 0.3, foot + Vector3(0, 0.62, 0), made, 8)
-		_cylinder(0.12, 0.15, 0.35, foot + Vector3(0, 0.92, 0), made, 8)
-		_sphere(0.11, foot + Vector3(0.01, 1.2, 0), made)
-		_sphere(0.115, foot + Vector3(-0.02, 1.23, 0), shade, 0.8)
-		if s < 0.0:
-			w.box(Vector3(0.12, 0.2, 0.3), foot + Vector3(0.16, 0.85, 0), shade, 0.0, 0.3)
+	var statue: Node3D = (load(STATUE_MODEL) as PackedScene).instantiate()
+	statue.name = STATUE_NAME
+	statue.position = plinth + Vector3(0, 1.52 + STATUE_LIFT, 0)
+	statue.rotation.y = PI / 2.0
+	w.root.add_child(statue)
+	var parts: Array[Node] = [statue]
+	while not parts.is_empty():
+		var part: Node = parts.pop_back()
+		if part is MeshInstance3D:
+			(part as MeshInstance3D).material_override = sand
+		parts.append_array(part.get_children())
 
 # --- Planting -----------------------------------------------------------------------------
 
