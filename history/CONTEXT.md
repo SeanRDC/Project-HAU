@@ -1,5 +1,19 @@
 # Project Context
 
+**Rotonda 2, 2026-11-21.** `areas/rotonda.gd`: the fountain plaza by SFJ on its plot (the drive's star and rings, the lawn round the pool, the stone bowl and ten jets, bollards and lamps), joined to the Epiphany's road and down the flag circle's new west flight. The Blender angel fountain got a finer carving pass (faces, hair, scaled feathers, folds). See `sessions/2026-11-21-epiphany-of-angels.md`.
+
+**The Epiphany of Angels and the angel fountain from Blender, 2026-11-21.** In Godot:
+`areas/epiphany.gd`, the road in from the Sto. Rosario Gate between eight stone angels on their
+pedestals, the seal, the curb walks, benches and crook lamps; the gate (carved piers with lantern
+clusters, the iron double gate closed) and the street fence; the north covered walk with its
+terracotta pavilion; the Main Gate covered walk along the avenue fence, the black swing gate, the
+Guardian Angel car gate (closed), the hatched crossing and the steps down from the side gate's
+colonnade. **No cars**; Rotonda 2, SFJ and St. Martha stay reserved (Sean). The camera faces north
+with the near side cut away and turns west to face the gate near the street end. The angel
+fountain's statue on the boulevard is now a Blender model (`tools/blender/angel_fountain.py`,
+`models/angel_fountain.glb`), a trial for that one statue before the others. See
+`sessions/2026-11-21-epiphany-of-angels.md`.
+
 **The Main Building and the side gate, 2026-11-20.** In Godot: `areas/djdn.gd` (the
 front, drive, empty parking and garden; inside the lobby, the courtyard with its stage,
 theatre front, masts and glass roof, the galleries on both storeys, three stairs and the
