@@ -37,3 +37,6 @@ assets/drafts/characters/mascot/pxl/out/
 # The Main Building walk photos at full size (4 MB each) stay local; 1600 px copies are
 # committed in "assets/MAIN BUILDINGS DJDN/2026-10-19 walk/"
 assets/MAIN BUILDINGS DJDN/20261019_*.jpg
+# The Epiphany of Angels photos at full size stay local; 1600 px copies are committed in
+# "assets/epiphany of angels/2026-10-19 walk/"
+assets/epiphany of angels/20261019_*.jpg
