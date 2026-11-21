@@ -61,8 +61,9 @@ const POSTS_R := 3.15
 const STAR := Vector2(3.45, 5.2)
 const FLIGHT_DEPTH := 1.0
 ## The flights: [angle from the middle (atan2(z, x)), the floor at their foot, half width, risers]:
-## east to the zebra on the drive, south-west onto the walk, north to the boulevard's walk.
-const FLIGHTS: Array = [[0.0, DRIVE_Y, 1.2, 4], [2.01624, WALK_Y, PAVING, 3], [-PI / 2.0, WALK_Y, 1.2, 3]]
+## east to the zebra on the drive, south-west onto the walk, north to the boulevard's walk, west
+## down to Rotonda 2's drive (the "right" stair to the SFJ fountain).
+const FLIGHTS: Array = [[0.0, DRIVE_Y, 1.2, 4], [2.01624, WALK_Y, PAVING, 3], [-PI / 2.0, WALK_Y, 1.2, 3], [PI, DRIVE_Y, 1.2, 4]]
 ## The north flight's apron across to the boulevard's south walk (MiddleRoad.WALK_S.y 79.1).
 const NORTH_APRON := Rect2(CIRCLE.x - 1.2, 78.9, 2.4, 1.8)
 ## The swan-neck lamps on the plaza (angle) and along the walk (lx, lz).
