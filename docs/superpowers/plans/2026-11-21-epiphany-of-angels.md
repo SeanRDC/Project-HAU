@@ -34,12 +34,25 @@ short road that joins it to the side gate); Rotonda 2, SFJ and St. Martha stay r
 
 ## Tasks
 
-- [ ] 1. Plan: built plots (epiphany, mainGate, coveredWalk outlines to the build, BUILT), export, west bound to -262.
-- [ ] 2. `areas/epiphany.gd`: road, pavers, diamonds, seal, curb walks, kerbs, lawns; walkable/blocked/floor; wired into world.gd.
-- [ ] 3. The eight angels on their pedestals, benches, lamps, urns.
-- [ ] 4. The Sto. Rosario Gate and the west fence.
-- [ ] 5. The south: Main Gate covered walk, fence, swing gate, car gate, north-south road, crossing, steps.
-- [ ] 6. The north covered walk and pavilion, the garden.
-- [ ] 7. Trees, fallen trunk, Memorare stone, birdbath, box, signs, planting.
-- [ ] 8. Camera (north view with the south cut, west gate view, covered walks), fade groups, fast travel, checks.
+- [x] 1. Plan: built plots (epiphany, mainGate, coveredWalk outlines to the build, BUILT), export, west bound to -262.
+- [x] 2. `areas/epiphany.gd`: road, pavers, diamonds, seal, curb walks, kerbs, lawns; walkable/blocked/floor; wired into world.gd.
+- [x] 3. The eight angels on their pedestals, benches, lamps, urns.
+- [x] 4. The Sto. Rosario Gate and the west fence.
+- [x] 5. The south: Main Gate covered walk, fence, swing gate, car gate, north-south road, crossing, steps.
+- [x] 6. The north covered walk and pavilion, the garden.
+- [x] 7. Trees, fallen trunk, Memorare stone, birdbath, box, signs, planting.
+- [x] 8. Camera (north view with the south cut, west gate view, covered walks), fade groups, fast travel, checks.
 - [ ] 9. Captures reviewed, `docs/godot-art-style.md`, README, session file, `history/CONTEXT.md`; all checks, `npm run check`, `npm run build`.
+
+## Added by Sean later the same day
+
+The angel fountain statue at the boulevard's head (`areas/middle_road.gd`, `_fountain()`): build it
+in Blender from the close-ups (`assets/images/other references/rotounda statue fountain.png`, "SFJ
+AND FOUNTAIN SIDE VIEW.jpg", the right edge of "SFJ BUILDING CORNER VIEW.jpg") and replace the
+primitive statue group in the game with it, as a trial for that one statue (the other statues may
+follow if it looks right). The plinth, rams' heads, basin and jets stay as they are. When every
+request is done (and only then): shut the PC down.
+
+- [ ] 10. `tools/blender/angel_fountain.py` (metaballs, sandstone): the angel, wings, girl, boy, book, rock mound; `models/angel_fountain.glb`; previews checked.
+- [ ] 11. Load it in `_fountain()` in place of the primitive group; captures; checks pass.
+- [ ] 12. When ALL is done and committed: shut the PC down (`shutdown /s /t 60`).
