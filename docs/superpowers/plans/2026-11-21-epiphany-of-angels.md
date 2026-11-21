@@ -55,4 +55,4 @@ request is done (and only then): shut the PC down.
 
 - [x] 10. `tools/blender/angel_fountain.py` (metaballs, sandstone): the angel, wings, girl, boy, book, rock mound; `models/angel_fountain.glb`; previews checked.
 - [x] 11. Load it in `_fountain()` in place of the primitive group; captures; checks pass.
-- [ ] 12. When ALL is done and committed: shut the PC down (`shutdown /s /t 60`).
+- [x] 12. When ALL is done and committed: shut the PC down (`shutdown /s /t 60`).
