@@ -70,7 +70,8 @@ const NORTH_GARDEN := 71.6
 const NORTH_WALK := Vector2(66.5, 71.0)
 const NORTH_WEST := -259.0
 const PAVILION := Rect2(-219.2, 65.8, 4.6, 5.9)
-const NORTH_PATH := Rect2(-216.6, 71.0, 2.0, 9.6)
+const NORTH_PATH := Rect2(-217.3, 71.0, 1.8, 9.6)
+const NORTH_PATH_Y := 0.15
 ## The north covered walk's ceiling and bays, the pavilion's ceiling, the roofs' fade group.
 const NORTH_CEILING := COVER_Y + 2.7
 const NORTH_BAY := 3.4
@@ -215,7 +216,55 @@ static func floor_height(x: float, z: float) -> float:
 		return CURB_Y
 	if on_path(x, z):
 		return PATH_Y
+	if on_north_path(x, z) and not in_north_walk(x, z):
+		return NORTH_PATH_Y
 	return COVER_Y
+
+# --- The camera ---------------------------------------------------------------------------------
+#
+# Along the Epiphany the camera faces north, as on the APS front: the north row of angels, the
+# garden and the covered walk stand behind the student. Everything nearer the camera than a line
+# across the ground (cut_z) is cut away, so the south row, the trees and the fence never stand in
+# front of the student: just past the south curb walk while the student is on the road, at the
+# fence while they are on the path, the covered walk or the crossing, just ahead of them while they
+# are on the north path or under the north covered walk. Near the street end it turns west to face
+# the Sto. Rosario Gate down the road between the angels (west_for), as in the gate's photos.
+
+## The cut lines (z): past the south curb walk, just inside the fence, past the north garden's edge.
+const ROAD_CUT := AXIS + CURB_OUT + 0.25
+const FENCE_CUT := FENCE_Z - 0.7
+const NORTH_CUT := NORTH_GARDEN + 0.9
+## Facing the gate: from GATE_VIEW.x west of it all the way, easing in from GATE_VIEW.y.
+const GATE_VIEW := Vector2(-250.0, -246.0)
+
+## 0..1: how far the Epiphany's north view and its cut apply (its grounds, the road by Rotonda 2,
+## the crossing; easing out over the steps up to the side gate's colonnade).
+static func view_for(x: float, z: float) -> float:
+	var inside := (1.0 - smoothstep(NS_EAST + 0.2, NS_EAST + 1.4, x)) * smoothstep(WEST - 1.0, WEST, x) \
+		* smoothstep(NORTH_WALK.x - 2.0, NORTH_WALK.x - 1.0, z) * (1.0 - smoothstep(FENCE_Z, FENCE_Z + 1.0, z))
+	return maxf(inside, 1.0 if on_steps(x, z) and steps_local(x, z).x < STEPS_LX.y + 0.4 else 0.0)
+
+## 0..1: how far the camera turns to face the Sto. Rosario Gate (on the road and the curb walks
+## near the street end).
+static func west_for(x: float, z: float) -> float:
+	return (1.0 - smoothstep(GATE_VIEW.x, GATE_VIEW.y, x)) * (1.0 - smoothstep(CURB_OUT - 0.2, CURB_OUT + 0.6, absf(z - AXIS))) \
+		* smoothstep(WEST - 1.0, WEST, x)
+
+## The line across the ground (z) nearer than which everything is cut away, facing north.
+static func cut_z(x: float, z: float) -> float:
+	var road := ROAD_CUT
+	if x <= EAST - 0.2 and z < AXIS - CURB_OUT + 0.5:
+		# The north path and the covered walk: just ahead of the student, never short of the garden.
+		road = lerpf(maxf(NORTH_CUT, z + 0.6), ROAD_CUT, smoothstep(AXIS - CURB_OUT - 0.5, AXIS - CURB_OUT + 0.5, z))
+	var south := smoothstep(ROAD_CUT - 0.3, ROAD_CUT + 0.7, z)
+	return maxf(lerpf(road, FENCE_CUT, south), z + 0.45)
+
+## Whether a roof's fade group hides: the south covered walk's while the student is under it or on
+## the path beside it, the north's while under it.
+static func roof_hidden(group: String, x: float, z: float) -> bool:
+	if group == SOUTH_ROOF:
+		return in_south_walk(x, z) or on_path(x, z) or (x > EAST and x < EAST + 1.2 and z > SOUTH_WALK.x and z < FENCE_Z)
+	return in_north_walk(x, z)
 
 # --- Building ---------------------------------------------------------------------------------
 
@@ -603,7 +652,7 @@ func _urns() -> void:
 	var stone: Material = w.material("concrete", Color("d9d4c9"))
 	var leaves: Array[Color] = [Color("4f6a2a"), Color("6f8a3a"), Color("8a9a3a"), Color("b7b84a"), Color("d6cf6a")]
 	for side in [-1.0, 1.0]:
-		var at := Vector3(CURB_EAST - 0.9, LAWN_Y, AXIS + side * (CURB_OUT + 0.55))
+		var at := Vector3(CURB_EAST - 0.6, LAWN_Y, AXIS + side * (CURB_OUT + 0.55))
 		_block(at.x - 0.28, at.x + 0.28, at.y, at.y + 0.2, at.z - 0.28, at.z + 0.28, stone)
 		_cylinder(0.1, 0.35, at + Vector3(0, 0.37, 0), stone, 10, 0.12)
 		_cylinder(0.18, 0.4, at + Vector3(0, 0.74, 0), stone, 12, 0.32)
@@ -1044,7 +1093,7 @@ func _north_walk() -> void:
 	w._flush()
 	w.root = saved
 	# The path across the lawn from the curb walk's east end to the pavilion.
-	_block(NORTH_PATH.position.x, NORTH_PATH.end.x, ROAD_Y - 0.2, COVER_Y, NORTH_PATH.position.y, NORTH_PATH.end.y, w.material("concrete", Color("b9b5ac")))
+	_block(NORTH_PATH.position.x, NORTH_PATH.end.x, ROAD_Y - 0.2, NORTH_PATH_Y, NORTH_PATH.end.y - 9.6 + 0.7, NORTH_PATH.end.y, w.material("concrete", Color("b9b5ac")))
 
 ## The north row's pillars (x), every NORTH_BAY from the pavilion westward.
 static func _north_pillars() -> Array[float]:
@@ -1068,14 +1117,15 @@ func _north_garden() -> void:
 	random.seed = 7710
 	var x := NORTH_WEST + 0.8
 	while x < PAVILION.position.x - 1.0:
-		if absf(x - (NORTH_PATH.position.x + 1.0)) > 1.6:
+		if absf(x - NORTH_PATH.get_center().x) > 1.8:
 			var z := random.randf_range(NORTH_GARDEN + 0.9, AXIS - LAWN_OUT - 1.0)
 			w._shrub(Vector3(x, LAWN_Y, z), random.randf_range(1.0, 1.5), 7711 + int(x * 10.0), dark)
 		x += random.randf_range(1.1, 1.8)
 	# The low shrubs in a line along the walk's edge.
 	x = NORTH_WEST + 0.5
 	while x < PAVILION.position.x - 0.8:
-		w._shrub(Vector3(x, LAWN_Y, NORTH_GARDEN + 0.45), 0.6, 7800 + int(x * 10.0))
+		if absf(x - NORTH_PATH.get_center().x) > 1.4:
+			w._shrub(Vector3(x, LAWN_Y, NORTH_GARDEN + 0.45), 0.6, 7800 + int(x * 10.0))
 		x += 0.9
 
 # --- Trees and the things on the lawns ---------------------------------------------------------
