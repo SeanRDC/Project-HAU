@@ -1509,7 +1509,7 @@ func _fly(delta: float) -> void:
 	student.face(camera)
 	_update_cutaways(delta)
 	npcs.update(delta)
-	critters.update(delta, true, false, false, false)
+	critters.update(delta, true, false, true, false) # as if talking: no cat comes to a student left waiting
 	atmosphere.focus = Vector3(ahead.x, 0.0, ahead.z)
 	atmosphere.view_width = 60.0
 	atmosphere.update(delta)
@@ -2881,6 +2881,71 @@ func _verify_and_capture() -> void:
 		var at_home: bool = nonox.name == "Nonox" and Sjh.in_walkway(start_at.x, start_at.y) and size > 0.65 and size < 0.7
 		checks.nonox_home = at_home and stayed_in and faced.size() == 2 and faced.values().all(func(v: bool) -> bool: return v) \
 			and nonox.walked > 4.0
+		# Nonox's trips: every leg is clear both ways; on each he walks out, stays a while and
+		# comes home (the way home with the student far off, out of view: he never waits).
+		var legs_clear := true
+		for trip: Array in critters._nonox_routes():
+			var from: Vector2 = nonox.home
+			for p: Vector2 in trip:
+				if not (Critters._leg_clear(from, p) and Critters._leg_clear(p, from)):
+					legs_clear = false
+					print("nonox: leg blocked ", Sjh.local(from.x, from.y), " -> ", Sjh.local(p.x, p.y))
+				from = p
+		var trips := 0
+		student.position = Vector3(far.x, 0.0, far.y)
+		for t in critters._nonox_routes().size():
+			critters._start_roam(nonox, t)
+			for i in 30 * 90:
+				critters._update_nonox(nonox, 1.0 / 30.0, far, side)
+				if nonox.state != "walk_route":
+					break
+			var reached: bool = nonox.away and nonox.at.distance_to(nonox.spot) < 0.1
+			nonox.stay = 99.0
+			for i in 30 * 30:
+				critters._update_nonox(nonox, 1.0 / 30.0, far, side)
+				reached = reached and nonox.at.distance_to(nonox.spot) < Critters.NONOX.away_reach + 0.1
+			nonox.stay = 0.0
+			nonox.timer = 99.0
+			var unseen := not critters._awake((nonox.node as Node3D).position, far)
+			for i in 30 * 90:
+				critters.update(1.0 / 30.0, true, false, false, false)
+				if not nonox.away and nonox.state == "idle":
+					break
+			if reached and unseen and not nonox.away and nonox.at.distance_to(nonox.home) < 0.1:
+				trips += 1
+			else:
+				print("nonox: trip %d reached %s unseen %s at %s" % [t, reached, unseen, Sjh.local(nonox.at.x, nonox.at.y)])
+		checks.nonox_roams = legs_clear and trips == critters._nonox_routes().size()
+		# He comes to a student nearby, stops ~1 m off, faces them and says Meow!; not while
+		# they talk; he leaves after 8 s ignored, and gives up if they walk off.
+		var by_nonox: Vector2 = Sjh.world(-11.0, -2.6)
+		critters._rest(nonox)
+		critters._quiet = true
+		nonox.approach_t = 0.0
+		for i in 60:
+			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
+		var waited: bool = nonox.state == "idle"
+		critters._quiet = false
+		for i in 30 * 8:
+			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
+			if nonox.state == "greet":
+				break
+		var greeted_me: bool = nonox.state == "greet" and absf(nonox.at.distance_to(by_nonox) - 1.0) < 0.3 \
+			and nonox.sprite.texture == nonox.sheets.front[0] and critters._bubble_label.text == "Meow!"
+		for i in 30 * 10:
+			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
+		var lost_interest: bool = nonox.state not in ["greet", "sulk"]
+		critters._rest(nonox)
+		nonox.approach_t = 0.0
+		var set_off_from: Vector2 = nonox.at
+		critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
+		var set_off: bool = nonox.state == "approach"
+		for i in 10:
+			critters._update_nonox(nonox, 1.0 / 30.0, Sjh.world(-11.0, 8.0), side)
+		checks.nonox_greets = waited and greeted_me and lost_interest and set_off and nonox.state == "idle" \
+			and nonox.at.distance_to(set_off_from) < 0.1
+		if not checks.nonox_greets:
+			print("nonox: waited %s greeted %s lost interest %s set off %s state %s" % [waited, greeted_me, lost_interest, set_off, nonox.state])
 		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0
