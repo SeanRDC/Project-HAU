@@ -353,8 +353,9 @@ func pet() -> bool:
 ## canteen's herringbone patio, between the umbrella tables and the kerb, loafing or sitting
 ## and now and then wandering a few metres about it; no other cat lives near. Every so often
 ## he walks up to the student, says mao and waits to be petted; ignored, he gives them the
-## stink-eye or just goes. Pet him (E) and he purrs, or now and then bleps; then he loafs a
-## while beside the student. Times are seconds, distances metres; ranges are random within.
+## stink-eye or just goes. Pet him (E) and he mews or trills twice, purring (now and then with
+## a blep); then he loafs a while beside the student, still purring. His mao and prr are
+## kitten sounds of their own (audio.gd's mew and trill), longer for each o or r. Times are seconds, distances metres; ranges are random within.
 const NONOX := {
 	"name": "Nonox",
 	"home": Vector2(27.0, 14.5), # world: on the canteen patio, west of the umbrella table at (29.8, 15.8)
@@ -371,12 +372,12 @@ const NONOX := {
 	"greet_time": 8.0,
 	"sulk_chance": 0.3,
 	"sulk_time": 1.5,
-	"petted_time": 2.0,
-	"pet_cooldown": 3.0, # E again within this does nothing
-	"linger": Vector2(3.0, 5.0), # loafing beside the student after a pet
+	"petted_time": 4.0, # two lines, a purr with each
+	"pet_cooldown": 4.0, # E again within this (the whole pet) does nothing
+	"linger": Vector2(5.0, 8.0), # loafing beside the student after a pet, still purring
 	"blep_chance": 0.05,
 	"meows": ["maoo", "mao", "maoooo"],
-	"lines": ["maoo", "mao", "maoooo", "Prrr...", "Mrrp!"], # petted
+	"lines": ["mao", "maoo", "maooo", "prr", "prrrr"], # petted
 }
 
 static func _leg_clear(a: Vector2, b: Vector2) -> bool:
@@ -455,8 +456,8 @@ func _approach(cat: Dictionary, at: Vector2) -> bool:
 	cat.state = "approach"
 	return true
 
-## A pet: he stops where he is, faces the student and purrs (or bleps, with a "..."). On his
-## way back to where he was, he carries on after; else he rests.
+## A pet: he stops where he is, faces the student, mews or trills and purrs (now and then
+## blepping). On his way back to where he was, he carries on after; else he rests.
 func _pet_nonox(cat: Dictionary, blep: bool) -> void:
 	var right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
 	_face(cat, Vector2(student.position.x, student.position.z), right)
@@ -466,14 +467,21 @@ func _pet_nonox(cat: Dictionary, blep: bool) -> void:
 	cat.state = "petted"
 	cat.timer = NONOX.petted_time
 	pets += 1
-	if blep:
-		_show(cat.sprite, cat.sheets.blep, 0)
-		_say(cat, "...")
+	_show(cat.sprite, cat.sheets.blep if blep else cat.sheets.petted, 0)
+	_nonox_says(cat, NONOX.lines)
+
+## A line said, with its sound: a mew for each mao, a trill for each prr; purring when petted.
+func _nonox_says(cat: Dictionary, lines: Array) -> void:
+	var line: String = lines[_rng.randi_range(0, lines.size() - 1)]
+	_say(cat, line)
+	if sound == null:
+		return
+	if line.begins_with("m"):
+		sound.mew(line.count("o"))
 	else:
-		_show(cat.sprite, cat.sheets.petted, 0)
-		_say(cat, NONOX.lines[_rng.randi_range(0, NONOX.lines.size() - 1)])
-		if sound != null:
-			sound.purr()
+		sound.trill(line.count("r"))
+	if cat.state == "petted":
+		sound.purr()
 
 func _face(cat: Dictionary, at: Vector2, right: Vector2) -> void:
 	var side: float = (at - cat.at).dot(right)
@@ -517,9 +525,7 @@ func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -
 					cat.timer = NONOX.greet_time
 					_face(cat, at, right)
 					_show(cat.sprite, cat.sheets.front, 0)
-					if sound != null:
-						sound.meow()
-					_say(cat, NONOX.meows[_rng.randi_range(0, NONOX.meows.size() - 1)])
+					_nonox_says(cat, NONOX.meows)
 				else:
 					_walk_back(cat)
 		"greet":
@@ -540,9 +546,14 @@ func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -
 		"petted":
 			_face(cat, at, right)
 			_show(cat.sprite, cat.sheets.blep if cat.blep else cat.sheets.petted, 0)
+			var half: float = NONOX.petted_time * 0.5
+			if cat.timer <= half and cat.timer + delta > half:
+				_nonox_says(cat, NONOX.lines) # the second line, halfway through
 			if cat.timer <= 0.0:
 				cat.state = "linger"
 				cat.timer = _roll(NONOX.linger)
+				if sound != null:
+					sound.purr()
 		"linger":
 			_show(cat.sprite, cat.sheets.loaf, 0)
 			if cat.timer > 0.0:

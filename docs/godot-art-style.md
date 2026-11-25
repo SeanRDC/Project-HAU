@@ -794,10 +794,11 @@ the world's sprites:
   wanders 1.5-5 m from home on the patio's brick every 6-12 s; every 45-90 s he walks to a
   student within 12 m to stop 1 m off, faces them and says mao (maoo, mao or maoooo), and after
   8 s ignored leaves (30% with the stink-eye for 1.5 s); a student who walks off before he gets
-  there puts him off for another 45-90 s. He walks at 1.44 m/s (0.6 of the student), 0.18 m a
-  frame, and keeps his facing when walking mostly into the screen. Petted: 2 s, a line (maoo,
-  mao, maoooo, Prrr..., Mrrp!) or 5% the blep with "...", then 3-5 s loafing; E again within
-  3 s does nothing. Flocks
+  there puts him off for another 45-90 s. His mao is a kitten's `mew` and his prr a rolled
+  `trill` (`audio.gd`), each longer for every o or r. He walks at 1.44 m/s (0.6 of the student), 0.18 m a
+  frame, and keeps his facing when walking mostly into the screen. Petted: 4 s (5% with the blep
+  face), a line (mao, maoo, maooo, prr, prrrr) with its sound and a purr, another 2 s in, then
+  5-8 s loafing with a last purr; E again within the 4 s does nothing. Flocks
   (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop (its own frames, with a 0.06 m arc) and peck on open ground from 6:00 to 18:00 when
   it is not raining, and the whole flock flutters up and away when the student comes
   within 2.4 m (4.5 m running): up, across the screen away from the student and towards the
@@ -808,7 +809,7 @@ the world's sprites:
   view straight along the screen, 2.5-7 m in front of the student (towards the camera, so
   never through the building the view looks at) and 3-8 m up, 6-9 m/s, bobbing, from off
   the screen to off the screen, their shadows on the ground (`flyers`).
-  Sounds (`audio.gd`): `meow`, `purr`, `flutter`.
+  Sounds (`audio.gd`): `meow`, `purr`, `flutter`; Nonox's `mew` and `trill`.
 - **Talks are scripts** in `npcs.gd` `CAST`: lines, and questions with two or three
   replies the student picks (W/S or arrows and E, 1-3, or the mouse) on a dark card at
   the bottom of the screen, the picked one in maroon. A reply can be remembered, and

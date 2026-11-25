@@ -2919,27 +2919,30 @@ func _verify_and_capture() -> void:
 			and nonox.at.distance_to(set_off_from) < 0.1
 		if not checks.nonox_greets:
 			print("nonox: waited %s greeted %s lost interest %s set off %s state %s" % [waited, greeted_me, lost_interest, set_off, nonox.state])
-		# E pets him: the petted pose and a line (or now and then the blep and "..."); E again
-		# within 3 s does nothing more; then he loafs a while and goes about his day.
+		# E pets him: the petted pose (or now and then the blep), a mao or prr and another
+		# halfway; E again within the pet does nothing more; then he loafs a while and goes
+		# about his day.
 		var by_him: Vector2 = nonox.at + Vector2(0.8, 0.0)
 		student.position = Vector3(by_him.x, World.floor_height(by_him.x, by_him.y), by_him.y)
 		var pets_before: int = critters.pets
 		var first_pet: bool = critters.cat_in_reach().get("nonox", false) and critters.pet() and nonox.state == "petted" \
 			and nonox.sprite.texture in [nonox.sheets.petted[0], nonox.sheets.blep[0]] \
-			and critters._bubble_label.text in Critters.NONOX.lines + ["..."]
+			and critters._bubble_label.text in Critters.NONOX.lines
 		var petted_for: float = nonox.timer
 		var spam_ignored: bool = critters.pet() and critters.pets == pets_before + 1 and nonox.timer == petted_for
 		var lingered := false
-		for i in 30 * 4:
+		critters._bubble_label.text = ""
+		for i in 30 * 6:
 			critters._update_nonox(nonox, 1.0 / 30.0, by_him, side)
 			lingered = lingered or (nonox.state == "linger" and nonox.sprite.texture == nonox.sheets.loaf[0])
+		var twice: bool = critters._bubble_label.text in Critters.NONOX.lines # the second line, halfway
 		critters._pet_nonox(nonox, true)
-		var blepped: bool = nonox.sprite.texture == nonox.sheets.blep[0] and critters._bubble_label.text == "..."
-		for i in 30 * 8:
+		var blepped: bool = nonox.sprite.texture == nonox.sheets.blep[0] and critters._bubble_label.text in Critters.NONOX.lines
+		for i in 30 * 14: # the pet (4 s) and the loaf after (5-8 s)
 			critters._update_nonox(nonox, 1.0 / 30.0, by_him, side)
-		checks.nonox_petted = first_pet and spam_ignored and lingered and blepped and nonox.state not in ["petted", "linger"]
+		checks.nonox_petted = first_pet and spam_ignored and twice and lingered and blepped and nonox.state not in ["petted", "linger"]
 		if not checks.nonox_petted:
-			print("nonox: petted %s spam ignored %s lingered %s blepped %s state %s" % [first_pet, spam_ignored, lingered, blepped, nonox.state])
+			print("nonox: petted %s spam ignored %s twice %s lingered %s blepped %s state %s" % [first_pet, spam_ignored, twice, lingered, blepped, nonox.state])
 		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0
