@@ -1199,7 +1199,7 @@ static func travel_places() -> Array:
 		["APS hallway", Vector2(-6.0, -2.0), 22.0],
 		["Corner garden", Vector2(-52.0, 10.0), 30.0],
 		["Canteen patio", CANTEEN_SPOT, 28.0],
-		["Nonox, canteen patio", Critters.NONOX.home + Vector2(0.5, -2.0), 22.0],
+		["Nonox, canteen patio", Critters.NONOX.home + Vector2(0.0, -1.5), 22.0],
 		["Canteen hall", World.canteen_world(51.0, 0.0), 22.0],
 		["Lane beside APS", Vector2(45.5, 10.0), 26.0],
 		["Pergola beside APS", Vector2(43.6, 31.0), 24.0],
@@ -2890,7 +2890,7 @@ func _verify_and_capture() -> void:
 			print("nonox: at home %s alone %s stayed in %s faced %s walked %.1f" % [at_home, alone, stayed_in, faced, nonox.walked])
 		# He comes to a student nearby, stops ~1 m off, faces them and says mao; not while
 		# they talk; he leaves after 8 s ignored, and gives up if they walk off.
-		var by_nonox: Vector2 = nonox.home + Vector2(0.5, -3.5)
+		var by_nonox: Vector2 = nonox.home + Vector2(1.2, 2.8)
 		nonox.at = nonox.home
 		critters._rest(nonox)
 		critters._quiet = true

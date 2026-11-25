@@ -358,7 +358,7 @@ func pet() -> bool:
 ## kitten sounds of their own (audio.gd's mew and trill), longer for each o or r. Times are seconds, distances metres; ranges are random within.
 const NONOX := {
 	"name": "Nonox",
-	"home": Vector2(27.0, 14.5), # world: on the canteen patio, west of the umbrella table at (29.8, 15.8)
+	"home": Vector2(27.3, 21.6), # world: on the canteen patio's south end, by the umbrella table at (29.8, 21.0)
 	"scale": 0.88, # of DENSITY: he sits 21 px against Mingming's 31 at hers, ~0.68 of her height
 	"speed": 1.44, # 0.6 of the student's walk
 	"stride": 0.18, # metres a walk frame: 8 frames a second at his speed
