@@ -784,7 +784,21 @@ the world's sprites:
   5 m of home, curl up asleep breathing (more at noon, at night and in the rain) and wake with
   a stretch before strolling off, walk over to a
   student standing still within 4.5 m, gallop off from a running one (a 0.2 m stride per frame), and lean into a pet, eyes closed
-  (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). Flocks
+  (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). **Nonox** (2026-11-25), a blue-grey Persian
+  kitten from a real cat, is the one cat drawn outside pxl: the handoff's 26 px sheet
+  (`assets/drafts/characters/critters/nonox/`, split by its `split.mjs` into `nonox_walk` 6 x
+  26x25 and one 26x25 frame each of front, loaf, sit, petted and blep, the empty row under the
+  feet dropped). **He is drawn at 0.88 of the density** (`NONOX.scale`), the one exception to
+  it, so he stands ~0.68 of Mingming's height (the team's choice). He lives on SJH's walkway
+  (`NONOX.home`, SJH's frame), loafs (70%) or sits, wanders 4-6 m along it every 6-12 s, and
+  goes on a trip (35% every 90-180 s while resting at home: down the lobby steps, along the brown
+  sidewalk either way, or through the west passage to the yard; `_nonox_routes()`, straight legs
+  each checked clear) for 20-40 s; every 45-90 s he walks to a student within 12 m to stop 1 m
+  off, faces them and says Meow!, and after 8 s ignored leaves (30% with the stink-eye for
+  1.5 s). He walks at 1.44 m/s (0.6 of the student), 0.18 m a frame, and keeps his facing when
+  walking mostly into the screen. Petted: 2 s, a purr line (Meow!, Prrr..., Mrrp!) or 5% the
+  blep with "...", then 3-5 s loafing; E again within 3 s does nothing. He never waits off
+  screen. Flocks
   (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop (its own frames, with a 0.06 m arc) and peck on open ground from 6:00 to 18:00 when
   it is not raining, and the whole flock flutters up and away when the student comes
   within 2.4 m (4.5 m running): up, across the screen away from the student and towards the

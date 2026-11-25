@@ -1215,6 +1215,7 @@ static func travel_places() -> Array:
 		["St. Joseph Hall", SJH_SPOT, 64.0],
 		["SJH walkway", Sjh.world(25.0, -1.8), 22.0],
 		["SJH lobby", Sjh.world(0.0, -1.5), 22.0],
+		["Nonox, SJH walkway", Sjh.world(-15.0, -2.0), 22.0],
 		["SJH west entrance", Sjh.world(48.6, -0.8), 22.0],
 		["SJH back lane", Sjh.world(0.0, Sjh.BACK - 7.0), 40.0],
 		["Mary statue", Vector2(-48.5, 113.6), 26.0],
