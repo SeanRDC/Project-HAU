@@ -95,6 +95,9 @@ func _ready() -> void:
 		queue.append(_thunder.bind(i))
 		queue.append(_flutter.bind(i))
 	queue.append(_purr)
+	for n in range(1, 5):
+		queue.append(_mew.bind(n))
+		queue.append(_trill.bind(n))
 	queue.append(_select)
 	queue.append(func() -> void: _start_rain.call_deferred(_wav(_seamless(_rain(), RATE, 0.11 * MASTER), true)))
 	_task = WorkerThreadPool.add_task(func() -> void:
@@ -195,6 +198,45 @@ func _meow(variant: int) -> AudioStreamWAV:
 			phase += freq / RATE
 			var tone := sin(TAU * phase) * 0.6 + sin(TAU * phase * 2.0) * 0.3 + sin(TAU * phase * 3.0) * 0.12
 			buffer[k] = tone * sin(PI * t) * 0.05 * MASTER
+		return buffer)
+
+## A kitten's mew, Nonox's "mao": higher, thinner and shorter than a grown cat's meow, a
+## quick rise then a falling "ao", drawn out a little more for each o (1-4).
+func mew(o: int) -> void:
+	_play(_mew(clampi(o, 1, 4)), _effects)
+
+func _mew(o: int) -> AudioStreamWAV:
+	return _cached("mew:%d" % o, func() -> PackedFloat32Array:
+		var count := int(RATE * (0.16 + 0.09 * o))
+		var top := 1180.0 - 40.0 * o
+		var buffer := PackedFloat32Array()
+		buffer.resize(count)
+		var phase := 0.0
+		for k in count:
+			var t := float(k) / count
+			var freq := top * (0.72 + 0.28 * sin(PI * minf(t * 2.4, 1.0))) * (1.0 - 0.3 * t)
+			phase += freq / RATE
+			var tone := sin(TAU * phase) * 0.65 + sin(TAU * phase * 2.0) * 0.25 + sin(TAU * phase * 3.0) * 0.08
+			buffer[k] = tone * minf(t * 12.0, 1.0) * pow(1.0 - t, 0.6) * 0.05 * MASTER
+		return buffer)
+
+## A kitten's trill, Nonox's "prr": a soft rolled chirp that lifts at the end, longer for
+## each r (1-4).
+func trill(r: int) -> void:
+	_play(_trill(clampi(r, 1, 4)), _effects)
+
+func _trill(r: int) -> AudioStreamWAV:
+	return _cached("trill:%d" % r, func() -> PackedFloat32Array:
+		var count := int(RATE * (0.12 + 0.07 * r))
+		var buffer := PackedFloat32Array()
+		buffer.resize(count)
+		var phase := 0.0
+		for k in count:
+			var t := float(k) / count
+			phase += lerpf(520.0, 760.0, t * t) / RATE
+			var roll := 0.35 + 0.65 * (0.5 + 0.5 * sin(TAU * 32.0 * float(k) / RATE)) # the rolled r
+			var tone := sin(TAU * phase) * 0.7 + sin(TAU * phase * 2.0) * 0.25
+			buffer[k] = tone * roll * sin(PI * t) * 0.045 * MASTER
 		return buffer)
 
 ## A cat purring while petted: a low rough rumble pulsing about 25 times a second.
