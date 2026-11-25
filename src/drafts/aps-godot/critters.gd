@@ -490,7 +490,7 @@ func _walk_back(cat: Dictionary) -> void:
 
 ## Off to the student, if he can get to a metre from them in a line; else he tries again soon.
 func _approach(cat: Dictionary, at: Vector2) -> bool:
-	var stop: Vector2 = at + (cat.at - at).limit_length(1.0).normalized() * NONOX.approach_stop
+	var stop: Vector2 = at + (cat.at - at).normalized() * NONOX.approach_stop
 	if (cat.at as Vector2).distance_to(at) <= NONOX.approach_stop:
 		stop = cat.at
 	if not _leg_clear(cat.at, stop):
