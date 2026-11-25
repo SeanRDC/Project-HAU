@@ -776,7 +776,7 @@ the world's sprites:
   46x30; maya ground 2 (standing, pecking) and hop 3 (crouch, tucked, landing), 24x24, fly 4 x
   24x28), at the characters' density, side-on facing right and
   flipped, lit and shadowed like the cast. Twelve cats: five at their own spots (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
-  Kiko tuxedo by the canteen, Tisay grey tabby on the chapel plaza, Itim black at SJH,
+  Kiko tuxedo past the canteen's tip, Tisay grey tabby on the chapel plaza, Itim black at SJH,
   Puti white at the Student Center) and seven more (`MORE_CATS`, the coats in turn) scattered over
   the open ground (`_open_ground`: a 4 m grid, walkable, at ground level, off the roads; 22 m
   apart): sit, every 2.5-6 s flicking the tail or blinking (35% each), grooming or yawning
@@ -789,16 +789,15 @@ the world's sprites:
   (`assets/drafts/characters/critters/nonox/`, split by its `split.mjs` into `nonox_walk` 6 x
   26x25 and one 26x25 frame each of front, loaf, sit, petted and blep, the empty row under the
   feet dropped). **He is drawn at 0.88 of the density** (`NONOX.scale`), the one exception to
-  it, so he stands ~0.68 of Mingming's height (the team's choice). He lives on SJH's walkway
-  (`NONOX.home`, SJH's frame), loafs (70%) or sits, wanders 4-6 m along it every 6-12 s, and
-  goes on a trip (35% every 90-180 s while resting at home: down the lobby steps, along the brown
-  sidewalk either way, or through the west passage to the yard; `_nonox_routes()`, straight legs
-  each checked clear) for 20-40 s; every 45-90 s he walks to a student within 12 m to stop 1 m
-  off, faces them and says Meow!, and after 8 s ignored leaves (30% with the stink-eye for
-  1.5 s). He walks at 1.44 m/s (0.6 of the student), 0.18 m a frame, and keeps his facing when
-  walking mostly into the screen. Petted: 2 s, a purr line (Meow!, Prrr..., Mrrp!) or 5% the
-  blep with "...", then 3-5 s loafing; E again within 3 s does nothing. He never waits off
-  screen. Flocks
+  it, so he stands ~0.68 of Mingming's height (the team's choice). He lives on the APS canteen's patio
+  (`NONOX.home`, world), and no other cat's home is within 22 m of it; he loafs (70%) or sits,
+  wanders 1.5-5 m from home on the patio's brick every 6-12 s; every 45-90 s he walks to a
+  student within 12 m to stop 1 m off, faces them and says mao (maoo, mao or maoooo), and after
+  8 s ignored leaves (30% with the stink-eye for 1.5 s); a student who walks off before he gets
+  there puts him off for another 45-90 s. He walks at 1.44 m/s (0.6 of the student), 0.18 m a
+  frame, and keeps his facing when walking mostly into the screen. Petted: 2 s, a line (maoo,
+  mao, maoooo, Prrr..., Mrrp!) or 5% the blep with "...", then 3-5 s loafing; E again within
+  3 s does nothing. Flocks
   (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop (its own frames, with a 0.06 m arc) and peck on open ground from 6:00 to 18:00 when
   it is not raining, and the whole flock flutters up and away when the student comes
   within 2.4 m (4.5 m running): up, across the screen away from the student and towards the

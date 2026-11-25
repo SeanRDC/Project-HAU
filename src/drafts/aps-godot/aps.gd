@@ -1199,6 +1199,7 @@ static func travel_places() -> Array:
 		["APS hallway", Vector2(-6.0, -2.0), 22.0],
 		["Corner garden", Vector2(-52.0, 10.0), 30.0],
 		["Canteen patio", CANTEEN_SPOT, 28.0],
+		["Nonox, canteen patio", Critters.NONOX.home + Vector2(0.5, -2.0), 22.0],
 		["Canteen hall", World.canteen_world(51.0, 0.0), 22.0],
 		["Lane beside APS", Vector2(45.5, 10.0), 26.0],
 		["Pergola beside APS", Vector2(43.6, 31.0), 24.0],
@@ -1215,7 +1216,6 @@ static func travel_places() -> Array:
 		["St. Joseph Hall", SJH_SPOT, 64.0],
 		["SJH walkway", Sjh.world(25.0, -1.8), 22.0],
 		["SJH lobby", Sjh.world(0.0, -1.5), 22.0],
-		["Nonox, SJH walkway", Sjh.world(-15.0, -2.0), 22.0],
 		["SJH west entrance", Sjh.world(48.6, -0.8), 22.0],
 		["SJH back lane", Sjh.world(0.0, Sjh.BACK - 7.0), 40.0],
 		["Mary statue", Vector2(-48.5, 113.6), 26.0],
@@ -2862,15 +2862,14 @@ func _verify_and_capture() -> void:
 		var over: Node3D = critters.flyers[-1].birds[0].node
 		var flying_over: bool = over != null and over.position.y > World.floor_height(over.position.x, over.position.z) + 2.0 			and (over.position - student.position).dot(camera.global_transform.basis.z) > 1.0
 		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and landed and petted and cat_animates 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
-		# Nonox: at home on SJH's walkway, ~0.68 of Mingming's height, wandering it without
-		# leaving it and facing the way he walks.
+		# Nonox: at home on the canteen patio, no other cat living near, ~0.68 of Mingming's
+		# height, wandering it without leaving it and facing the way he walks.
 		var nonox: Dictionary = critters._nonox()
 		var far := Vector2(0.0, 0.0)
 		# from a known start: the frames before the checks leave him anywhere
 		critters._rng.seed = 2511
 		nonox.at = nonox.home
 		critters._rest(nonox)
-		nonox.roam_t = 999.0
 		nonox.approach_t = 999.0
 		var start_at: Vector2 = nonox.at
 		var stayed_in := true
@@ -2878,52 +2877,21 @@ func _verify_and_capture() -> void:
 		for i in 30 * 60:
 			var walked: float = nonox.walked
 			critters._update_nonox(nonox, 1.0 / 30.0, far, side)
-			stayed_in = stayed_in and Sjh.in_walkway(nonox.at.x, nonox.at.y)
+			stayed_in = stayed_in and Critters._on_patio(nonox.at)
 			if nonox.walked > walked:
 				faced[nonox.facing] = nonox.sprite.texture == nonox.sheets.walk[0]
 		var mingming: Dictionary = critters.cats[0]
 		var size: float = (24.0 * nonox.sprite.pixel_size) / (31.0 * mingming.sprite.pixel_size)
-		var at_home: bool = nonox.name == "Nonox" and Sjh.in_walkway(start_at.x, start_at.y) and size > 0.65 and size < 0.7
+		var alone: bool = critters.cats.all(func(c: Dictionary) -> bool: return c.has("nonox") or (c.home as Vector2).distance_to(nonox.home) > 15.0)
+		var at_home: bool = nonox.name == "Nonox" and not World.blocked(start_at.x, start_at.y) and alone and size > 0.65 and size < 0.7
 		checks.nonox_home = at_home and stayed_in and faced.size() == 2 and faced.values().all(func(v: bool) -> bool: return v) \
 			and nonox.walked > 4.0
-		# Nonox's trips: every leg is clear both ways; on each he walks out, stays a while and
-		# comes home (the way home with the student far off, out of view: he never waits).
-		var legs_clear := true
-		for trip: Array in critters._nonox_routes():
-			var from: Vector2 = nonox.home
-			for p: Vector2 in trip:
-				if not (Critters._leg_clear(from, p) and Critters._leg_clear(p, from)):
-					legs_clear = false
-					print("nonox: leg blocked ", Sjh.local(from.x, from.y), " -> ", Sjh.local(p.x, p.y))
-				from = p
-		var trips := 0
-		student.position = Vector3(far.x, 0.0, far.y)
-		for t in critters._nonox_routes().size():
-			critters._start_roam(nonox, t)
-			for i in 30 * 90:
-				critters._update_nonox(nonox, 1.0 / 30.0, far, side)
-				if nonox.state != "walk_route":
-					break
-			var reached: bool = nonox.away and nonox.at.distance_to(nonox.spot) < 0.1
-			nonox.stay = 99.0
-			for i in 30 * 30:
-				critters._update_nonox(nonox, 1.0 / 30.0, far, side)
-				reached = reached and nonox.at.distance_to(nonox.spot) < Critters.NONOX.away_reach + 0.1
-			nonox.stay = 0.0
-			nonox.timer = 99.0
-			var unseen := not critters._awake((nonox.node as Node3D).position, far)
-			for i in 30 * 90:
-				critters.update(1.0 / 30.0, true, false, false, false)
-				if not nonox.away and nonox.state == "idle":
-					break
-			if reached and unseen and not nonox.away and nonox.at.distance_to(nonox.home) < 0.1:
-				trips += 1
-			else:
-				print("nonox: trip %d reached %s unseen %s at %s" % [t, reached, unseen, Sjh.local(nonox.at.x, nonox.at.y)])
-		checks.nonox_roams = legs_clear and trips == critters._nonox_routes().size()
-		# He comes to a student nearby, stops ~1 m off, faces them and says Meow!; not while
+		if not checks.nonox_home:
+			print("nonox: at home %s alone %s stayed in %s faced %s walked %.1f" % [at_home, alone, stayed_in, faced, nonox.walked])
+		# He comes to a student nearby, stops ~1 m off, faces them and says mao; not while
 		# they talk; he leaves after 8 s ignored, and gives up if they walk off.
-		var by_nonox: Vector2 = Sjh.world(-11.0, -2.6)
+		var by_nonox: Vector2 = nonox.home + Vector2(0.5, -3.5)
+		nonox.at = nonox.home
 		critters._rest(nonox)
 		critters._quiet = true
 		nonox.approach_t = 0.0
@@ -2936,7 +2904,7 @@ func _verify_and_capture() -> void:
 			if nonox.state == "greet":
 				break
 		var greeted_me: bool = nonox.state == "greet" and absf(nonox.at.distance_to(by_nonox) - 1.0) < 0.3 \
-			and nonox.sprite.texture == nonox.sheets.front[0] and critters._bubble_label.text == "Meow!"
+			and nonox.sprite.texture == nonox.sheets.front[0] and critters._bubble_label.text in Critters.NONOX.meows
 		for i in 30 * 10:
 			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
 		var lost_interest: bool = nonox.state not in ["greet", "sulk"]
@@ -2946,19 +2914,19 @@ func _verify_and_capture() -> void:
 		critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
 		var set_off: bool = nonox.state == "approach"
 		for i in 10:
-			critters._update_nonox(nonox, 1.0 / 30.0, Sjh.world(-11.0, 8.0), side)
+			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox + Vector2(0.0, -6.0), side)
 		checks.nonox_greets = waited and greeted_me and lost_interest and set_off and nonox.state == "idle" \
 			and nonox.at.distance_to(set_off_from) < 0.1
 		if not checks.nonox_greets:
 			print("nonox: waited %s greeted %s lost interest %s set off %s state %s" % [waited, greeted_me, lost_interest, set_off, nonox.state])
 		# E pets him: the petted pose and a line (or now and then the blep and "..."); E again
 		# within 3 s does nothing more; then he loafs a while and goes about his day.
-		var by_him: Vector2 = nonox.at + (Sjh.world(1.0, 0.0) - Sjh.world(0.0, 0.0)) * 0.8
+		var by_him: Vector2 = nonox.at + Vector2(0.8, 0.0)
 		student.position = Vector3(by_him.x, World.floor_height(by_him.x, by_him.y), by_him.y)
 		var pets_before: int = critters.pets
 		var first_pet: bool = critters.cat_in_reach().get("nonox", false) and critters.pet() and nonox.state == "petted" \
 			and nonox.sprite.texture in [nonox.sheets.petted[0], nonox.sheets.blep[0]] \
-			and critters._bubble_label.text in ["Meow!", "Prrr...", "Mrrp!", "..."]
+			and critters._bubble_label.text in Critters.NONOX.lines + ["..."]
 		var petted_for: float = nonox.timer
 		var spam_ignored: bool = critters.pet() and critters.pets == pets_before + 1 and nonox.timer == petted_for
 		var lingered := false

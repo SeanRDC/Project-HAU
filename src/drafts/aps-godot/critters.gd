@@ -9,7 +9,7 @@ extends Node3D
 ## yawning), stroll, and curl up asleep, breathing (more at noon, at night and in the rain),
 ## and wake with a stretch. Stand still near one and it may come over; press E beside it to
 ## pet it (eyes closed, it leans into the hand and purrs). Run at one and it gallops off.
-## Nonox, a blue-grey Persian kitten, lives on St. Joseph Hall's walkway (see "Nonox" below).
+## Nonox, a blue-grey Persian kitten, lives on the APS canteen's patio (see "Nonox" below).
 ## Birds: flocks of maya (tree sparrows) hopping and pecking on the open ground by day.
 ## Come close, or run, and the whole flock flutters up and away; it lands again a while
 ## later. More flocks are scattered over the open ground, and small groups fly over the
@@ -19,7 +19,6 @@ const World := preload("res://world.gd")
 const Npc := preload("res://npc.gd")
 const Npcs := preload("res://npcs.gd")
 const Opening := preload("res://opening.gd")
-const Sjh := preload("res://areas/sjh.gd")
 
 ## Metres per sprite pixel: the characters' (85 px for 1.83 m).
 const DENSITY := 1.83 / 85.0
@@ -32,7 +31,7 @@ const SCARE_RUNNING := 4.5
 ## name, home (world x, z), coat
 const CATS := [
 	{"name": "Mingming", "home": Vector2(-6.0, 6.2), "coat": "orange"},
-	{"name": "Kiko", "home": Vector2(33.0, 13.0), "coat": "tuxedo"},
+	{"name": "Kiko", "home": Vector2(46.6, 40.0), "coat": "tuxedo"}, # past the canteen's tip: the patio is Nonox's,
 	{"name": "Tisay", "home": Vector2(-31.0, 57.0), "coat": "grey"},
 	{"name": "Itim", "home": Vector2(-24.0, 118.5), "coat": "black"},
 	{"name": "Puti", "home": Vector2(-118.0, 83.0), "coat": "white"},
@@ -94,6 +93,7 @@ func _ready() -> void:
 	var taken: Array[Vector2] = []
 	for data in CATS:
 		taken.append(data.home)
+	taken.append(NONOX.home)
 	var coats := ["orange", "tuxedo", "grey", "black", "white"]
 	for i in MORE_CATS.size():
 		var spot := _pick(open, taken, CAT_SPACING)
@@ -254,7 +254,7 @@ func _update_cat(cat: Dictionary, delta: float, at: Vector2, still: bool, runnin
 				cat.timer = _rng.randf_range(4.0, 8.0)
 				if near < 1.2 and sound != null:
 					sound.meow()
-					_say(cat, "Meow!")
+					_say(cat, NONOX.meows[_rng.randi_range(0, NONOX.meows.size() - 1)])
 			else:
 				_walk(cat, delta, 0.9, right)
 		"walk", "dash":
@@ -349,26 +349,21 @@ func pet() -> bool:
 # --- Nonox ------------------------------------------------------------------------
 
 ## Nonox, a 6-month-old blue-grey Persian kitten from a real cat (the handoff, with its sheet,
-## mockups and spec, is in assets/drafts/characters/critters/nonox/). He lives on St. Joseph
-## Hall's raised walkway, loafing or sitting and now and then wandering along it. Now and then
-## he goes out on a trip (down the lobby steps, along the brown sidewalk either way, or through
-## the west passage to the yard), stays a while and comes home. Every so often he walks up to
-## the student, says Meow! and waits to be petted; ignored, he gives them the stink-eye or
-## just goes. Pet him (E) and he purrs, or now and then bleps; then he loafs a while beside
-## the student. Times are seconds, distances metres; ranges are random within.
+## mockups and spec, is in assets/drafts/characters/critters/nonox/). He lives on the APS
+## canteen's herringbone patio, between the umbrella tables and the kerb, loafing or sitting
+## and now and then wandering a few metres about it; no other cat lives near. Every so often
+## he walks up to the student, says mao and waits to be petted; ignored, he gives them the
+## stink-eye or just goes. Pet him (E) and he purrs, or now and then bleps; then he loafs a
+## while beside the student. Times are seconds, distances metres; ranges are random within.
 const NONOX := {
 	"name": "Nonox",
-	"home": Vector2(-17.0, -2.6), # in SJH's frame (Sjh.world): on the walkway east of the lobby
+	"home": Vector2(27.0, 14.5), # world: on the canteen patio, west of the umbrella table at (29.8, 15.8)
 	"scale": 0.88, # of DENSITY: he sits 21 px against Mingming's 31 at hers, ~0.68 of her height
 	"speed": 1.44, # 0.6 of the student's walk
 	"stride": 0.18, # metres a walk frame: 8 frames a second at his speed
 	"sit_chance": 0.3, # resting, he sits up; else he loafs
 	"wander_every": Vector2(6.0, 12.0),
-	"wander_reach": Vector2(4.0, 6.0),
-	"roam_every": Vector2(90.0, 180.0), # at home and resting, he may go on a trip
-	"roam_chance": 0.35,
-	"roam_stay": Vector2(20.0, 40.0),
-	"away_reach": 3.0, # out on a trip, he wanders this far from where he stopped
+	"wander_reach": Vector2(1.5, 5.0), # from home, on the patio's brick
 	"approach_every": Vector2(45.0, 90.0),
 	"approach_range": 12.0,
 	"approach_stop": 1.0,
@@ -380,27 +375,9 @@ const NONOX := {
 	"pet_cooldown": 3.0, # E again within this does nothing
 	"linger": Vector2(3.0, 5.0), # loafing beside the student after a pet
 	"blep_chance": 0.05,
-	"lines": ["Meow!", "Prrr...", "Mrrp!"],
+	"meows": ["maoo", "mao", "maoooo"],
+	"lines": ["maoo", "mao", "maoooo", "Prrr...", "Mrrp!"], # petted
 }
-
-## His trips, in world points: straight legs from home (each checked clear in --test); he
-## stays a while at the last.
-static var _routes: Array = []
-static func _nonox_routes() -> Array:
-	if _routes.is_empty():
-		var lobby := [Vector2(0.0, -2.6), Vector2(0.0, 0.6), Vector2(0.0, 3.3), Vector2(0.0, 6.0)]
-		# up the lobby's steps past its handrails, then the brown sidewalk winding along the front
-		var east := [Vector2(-7.3, -2.6), Vector2(-7.3, 0.5), Vector2(-7.3, 3.3)]
-		var west := [Vector2(7.3, -2.6), Vector2(7.3, 0.5), Vector2(7.3, 3.3)]
-		for u in range(10, 30, 2):
-			east.append(Vector2(-u, Sjh._walk_middle(-u)))
-			west.append(Vector2(u, Sjh._walk_middle(u)))
-		# through the west passage and down its steps to the yard
-		var yard := [Vector2(36.0, -2.6), Vector2(40.0, -0.85), Vector2(45.0, -0.85), Vector2(46.2, -0.85), Vector2(47.4, -0.85),
-			Vector2(48.6, -0.85), Vector2(50.0, -0.85)]
-		for trip in [lobby, east, west, yard]:
-			_routes.append(trip.map(func(p: Vector2) -> Vector2: return Sjh.world(p.x, p.y)))
-	return _routes
 
 static func _leg_clear(a: Vector2, b: Vector2) -> bool:
 	return _clear_spot(a, b).distance_to(b) < 0.06
@@ -425,12 +402,11 @@ func _add_nonox() -> void:
 	body.name = "Cat_Nonox"
 	body.add_child(sprite)
 	add_child(body)
-	var home := Sjh.world(NONOX.home.x, NONOX.home.y)
+	var home: Vector2 = NONOX.home
 	cats.append({"name": NONOX.name, "nonox": true, "node": body, "sprite": sprite, "sheets": sheets, "home": home,
 		"at": home, "base": home, "state": "idle", "pose": "loaf", "timer": _roll(NONOX.wander_every), "target": home,
-		"facing": 1.0, "phase": 0.0, "walked": 0.0, "stride": NONOX.stride, "away": false, "trip": 0, "spot": home,
-		"stay": 0.0, "route": [], "left_from": Vector2.INF, "met_at": home, "roam_t": _roll(NONOX.roam_every),
-		"approach_t": _roll(NONOX.approach_every), "pet_cd": 0.0, "blep": false})
+		"facing": 1.0, "phase": 0.0, "walked": 0.0, "stride": NONOX.stride, "route": [], "left_from": Vector2.INF,
+		"met_at": home, "approach_t": _roll(NONOX.approach_every), "pet_cd": 0.0, "blep": false})
 	_place(body, home, 0.0)
 
 func _nonox() -> Dictionary:
@@ -442,42 +418,19 @@ func _rest(cat: Dictionary) -> void:
 	cat.pose = "sit" if _rng.randf() < NONOX.sit_chance else "loaf"
 	cat.timer = _roll(NONOX.wander_every)
 
-## At home somewhere along the walkway a few metres either way; out on a trip somewhere near
-## where he stopped. As far as he can get in a line, and in a line back to home (or that spot)
-## so a trip can always start (or end) from there.
+## Somewhere on the patio a few metres from home, as far as he can get in a line, and in a
+## line back home; the brick only (not down the kerb, nor up into the canteen).
 func _wander_to(cat: Dictionary) -> Vector2:
-	var back: Vector2 = cat.spot if cat.away else cat.home
-	var wish: Vector2
-	if cat.away:
-		wish = back + Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(1.0, NONOX.away_reach)
-	else:
-		var a := Sjh.local(cat.at.x, cat.at.y)
-		var b := Sjh.local(back.x, back.y)
-		wish = Sjh.world(lerpf(a.x, b.x, 0.5) + _roll(NONOX.wander_reach) * (1.0 if _rng.randf() < 0.5 else -1.0),
-			_rng.randf_range(-3.0, -0.4))
-	var spot := _clear_spot(cat.at, wish)
-	if not _leg_clear(spot, back) or (not cat.away and not Sjh.in_walkway(spot.x, spot.y)):
+	var home: Vector2 = cat.home
+	var spot := _clear_spot(cat.at, home + Vector2.from_angle(_rng.randf() * TAU) * _roll(NONOX.wander_reach))
+	if not _on_patio(spot) or not _leg_clear(spot, home):
 		return cat.at
 	return spot
 
-func _start_roam(cat: Dictionary, trip: int) -> void:
-	var route: Array = _nonox_routes()[trip]
-	cat.trip = trip
-	cat.route = [cat.home] + route
-	cat.spot = route[-1]
-	cat.base = cat.spot
-	cat.away = true
-	cat.stay = _roll(NONOX.roam_stay)
-	cat.state = "walk_route"
-
-## Back to where he stopped, then the trip's way home in reverse.
-func _go_home(cat: Dictionary) -> void:
-	var back: Array = _nonox_routes()[cat.trip].slice(0, -1)
-	back.reverse()
-	cat.route = [cat.spot] + back + [cat.home]
-	cat.base = cat.home
-	cat.away = false
-	cat.state = "walk_route"
+static func _on_patio(at: Vector2) -> bool:
+	var home: Vector2 = NONOX.home
+	return at.distance_to(home) <= NONOX.wander_reach.y + 0.1 \
+		and absf(World.floor_height(at.x, at.y) - World.floor_height(home.x, home.y)) < 0.05
 
 ## Back along the line he came by to wherever he left from to see the student.
 func _walk_back(cat: Dictionary) -> void:
@@ -502,8 +455,8 @@ func _approach(cat: Dictionary, at: Vector2) -> bool:
 	cat.state = "approach"
 	return true
 
-## A pet: he stops where he is, faces the student and purrs (or bleps, with a "..."). Out on a
-## trip or on his way back to where he was, he carries on after; else he rests.
+## A pet: he stops where he is, faces the student and purrs (or bleps, with a "..."). On his
+## way back to where he was, he carries on after; else he rests.
 func _pet_nonox(cat: Dictionary, blep: bool) -> void:
 	var right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
 	_face(cat, Vector2(student.position.x, student.position.z), right)
@@ -532,23 +485,12 @@ func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -
 	cat.timer -= delta
 	cat.approach_t -= delta
 	cat.pet_cd -= delta
-	if cat.state in ["idle", "wander"]:
-		if cat.away:
-			cat.stay -= delta
-		elif cat.state == "idle":
-			cat.roam_t -= delta
 	match cat.state:
 		"idle":
 			_show(cat.sprite, cat.sheets[cat.pose], 0)
 			if cat.approach_t <= 0.0 and not _quiet and (cat.at as Vector2).distance_to(at) < NONOX.approach_range \
 					and _approach(cat, at):
 				pass
-			elif cat.away and cat.stay <= 0.0:
-				_go_home(cat)
-			elif not cat.away and cat.roam_t <= 0.0:
-				cat.roam_t = _roll(NONOX.roam_every)
-				if _rng.randf() < NONOX.roam_chance:
-					_start_roam(cat, _rng.randi_range(0, _nonox_routes().size() - 1))
 			elif cat.timer <= 0.0:
 				cat.state = "wander"
 				cat.target = _wander_to(cat)
@@ -561,12 +503,13 @@ func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -
 				return
 			cat.target = cat.route[0]
 			if _walk(cat, delta, NONOX.speed, right):
-				# shortcut: legs are checked clear in --test, so a stuck leg is a bug; he hops to its end
-				# rather than standing stuck for good
+				# shortcut: the way back is the line he came by, so a stuck leg is a bug; he hops to its
+				# end rather than standing stuck for good
 				cat.at = cat.route.pop_front()
 				_place(cat.node, cat.at, 0.0)
 		"approach":
 			if at.distance_to(cat.met_at) > NONOX.approach_give_up:
+				cat.approach_t = _roll(NONOX.approach_every) # not straight after them again
 				_walk_back(cat)
 			elif _walk(cat, delta, NONOX.speed, right):
 				if (cat.at as Vector2).distance_to(cat.target) < 0.1:
@@ -576,7 +519,7 @@ func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -
 					_show(cat.sprite, cat.sheets.front, 0)
 					if sound != null:
 						sound.meow()
-					_say(cat, "Meow!")
+					_say(cat, NONOX.meows[_rng.randi_range(0, NONOX.meows.size() - 1)])
 				else:
 					_walk_back(cat)
 		"greet":
@@ -831,10 +774,10 @@ func update(delta: float, still: bool, running: bool, talking: bool, npc_near: b
 	# their walks and hops query the world's collision many times a frame, for ~120 animals.
 	_quiet = talking
 	for cat in cats:
-		if cat.has("nonox"):
-			_update_nonox(cat, delta, at, right) # he never waits: he may be on his way home
-		elif not _awake((cat.node as Node3D).position, at):
+		if not _awake((cat.node as Node3D).position, at):
 			continue
+		elif cat.has("nonox"):
+			_update_nonox(cat, delta, at, right)
 		else:
 			_update_cat(cat, delta, at, still, running, right)
 		cat.sprite.flip_h = cat.facing < 0.0
