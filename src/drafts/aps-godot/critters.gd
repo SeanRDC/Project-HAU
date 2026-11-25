@@ -334,6 +334,10 @@ func pet() -> bool:
 	var cat := cat_in_reach()
 	if cat.is_empty():
 		return false
+	if cat.has("nonox"):
+		if cat.pet_cd <= 0.0:
+			_pet_nonox(cat, _rng.randf() < NONOX.blep_chance)
+		return true
 	cat.state = "petted"
 	cat.timer = 2.2
 	pets += 1
@@ -350,7 +354,8 @@ func pet() -> bool:
 ## he goes out on a trip (down the lobby steps, along the brown sidewalk either way, or through
 ## the west passage to the yard), stays a while and comes home. Every so often he walks up to
 ## the student, says Meow! and waits to be petted; ignored, he gives them the stink-eye or
-## just goes. Times are seconds, distances metres; ranges are random within.
+## just goes. Pet him (E) and he purrs, or now and then bleps; then he loafs a while beside
+## the student. Times are seconds, distances metres; ranges are random within.
 const NONOX := {
 	"name": "Nonox",
 	"home": Vector2(-17.0, -2.6), # in SJH's frame (Sjh.world): on the walkway east of the lobby
@@ -371,6 +376,11 @@ const NONOX := {
 	"greet_time": 8.0,
 	"sulk_chance": 0.3,
 	"sulk_time": 1.5,
+	"petted_time": 2.0,
+	"pet_cooldown": 3.0, # E again within this does nothing
+	"linger": Vector2(3.0, 5.0), # loafing beside the student after a pet
+	"blep_chance": 0.05,
+	"lines": ["Meow!", "Prrr...", "Mrrp!"],
 }
 
 ## His trips, in world points: straight legs from home (each checked clear in --test); he
@@ -420,7 +430,7 @@ func _add_nonox() -> void:
 		"at": home, "base": home, "state": "idle", "pose": "loaf", "timer": _roll(NONOX.wander_every), "target": home,
 		"facing": 1.0, "phase": 0.0, "walked": 0.0, "stride": NONOX.stride, "away": false, "trip": 0, "spot": home,
 		"stay": 0.0, "route": [], "left_from": Vector2.INF, "met_at": home, "roam_t": _roll(NONOX.roam_every),
-		"approach_t": _roll(NONOX.approach_every)})
+		"approach_t": _roll(NONOX.approach_every), "pet_cd": 0.0, "blep": false})
 	_place(body, home, 0.0)
 
 func _nonox() -> Dictionary:
@@ -492,6 +502,26 @@ func _approach(cat: Dictionary, at: Vector2) -> bool:
 	cat.state = "approach"
 	return true
 
+## A pet: he stops where he is, faces the student and purrs (or bleps, with a "..."). Out on a
+## trip or on his way back to where he was, he carries on after; else he rests.
+func _pet_nonox(cat: Dictionary, blep: bool) -> void:
+	var right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
+	_face(cat, Vector2(student.position.x, student.position.z), right)
+	cat.pet_cd = NONOX.pet_cooldown
+	cat.approach_t = _roll(NONOX.approach_every)
+	cat.blep = blep
+	cat.state = "petted"
+	cat.timer = NONOX.petted_time
+	pets += 1
+	if blep:
+		_show(cat.sprite, cat.sheets.blep, 0)
+		_say(cat, "...")
+	else:
+		_show(cat.sprite, cat.sheets.petted, 0)
+		_say(cat, NONOX.lines[_rng.randi_range(0, NONOX.lines.size() - 1)])
+		if sound != null:
+			sound.purr()
+
 func _face(cat: Dictionary, at: Vector2, right: Vector2) -> void:
 	var side: float = (at - cat.at).dot(right)
 	if absf(side) > 0.05:
@@ -501,6 +531,7 @@ func _face(cat: Dictionary, at: Vector2, right: Vector2) -> void:
 func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -> void:
 	cat.timer -= delta
 	cat.approach_t -= delta
+	cat.pet_cd -= delta
 	if cat.state in ["idle", "wander"]:
 		if cat.away:
 			cat.stay -= delta
@@ -562,6 +593,20 @@ func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -
 			_face(cat, at, right)
 			_show(cat.sprite, cat.sheets.blep, 0)
 			if cat.timer <= 0.0:
+				_walk_back(cat)
+		"petted":
+			_face(cat, at, right)
+			_show(cat.sprite, cat.sheets.blep if cat.blep else cat.sheets.petted, 0)
+			if cat.timer <= 0.0:
+				cat.state = "linger"
+				cat.timer = _roll(NONOX.linger)
+		"linger":
+			_show(cat.sprite, cat.sheets.loaf, 0)
+			if cat.timer > 0.0:
+				pass
+			elif not cat.route.is_empty():
+				cat.state = "walk_route"
+			else:
 				_walk_back(cat)
 
 # --- Birds ------------------------------------------------------------------------
