@@ -1,5 +1,7 @@
 # Project Context
 
+**Nonox, 2026-11-25.** A blue-grey Persian kitten from a real cat, the one cat not made in pxl (the handoff's sheet, `assets/drafts/characters/critters/nonox/`), in `critters.gd`: he lives on SJH's raised walkway, loafs or sits and wanders along it, goes on trips (down the lobby steps, along the brown sidewalk, to the west yard) and comes home, walks up to the student to say Meow!, and purrs (or bleps) when petted (E, 3 s cooldown). ~0.68 of Mingming's height (drawn at 0.88 of the density, the team's choice), 1.44 m/s. He never waits off-screen. F1 "Nonox, SJH walkway"; checks `nonox_*`. See `sessions/2026-11-25-nonox.md`.
+
 **Rotonda 2, 2026-11-21.** `areas/rotonda.gd`: the fountain plaza by SFJ on its plot (the drive's star and rings, the lawn round the pool, the stone bowl and ten jets, bollards and lamps), joined to the Epiphany's road and down the flag circle's new west flight. The Blender angel fountain got a finer carving pass (faces, hair, scaled feathers, folds). See `sessions/2026-11-21-epiphany-of-angels.md`.
 
 **The Epiphany of Angels and the angel fountain from Blender, 2026-11-21.** In Godot:
