@@ -2861,6 +2861,26 @@ func _verify_and_capture() -> void:
 		var over: Node3D = critters.flyers[-1].birds[0].node
 		var flying_over: bool = over != null and over.position.y > World.floor_height(over.position.x, over.position.z) + 2.0 			and (over.position - student.position).dot(camera.global_transform.basis.z) > 1.0
 		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and landed and petted and cat_animates 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
+		# Nonox: at home on SJH's walkway, ~0.68 of Mingming's height, wandering it without
+		# leaving it and facing the way he walks.
+		var nonox: Dictionary = critters._nonox()
+		var far := Vector2(0.0, 0.0)
+		nonox.roam_t = 999.0
+		nonox.approach_t = 999.0
+		var start_at: Vector2 = nonox.at
+		var stayed_in := true
+		var faced := {}
+		for i in 30 * 60:
+			var walked: float = nonox.walked
+			critters._update_nonox(nonox, 1.0 / 30.0, far, side)
+			stayed_in = stayed_in and Sjh.in_walkway(nonox.at.x, nonox.at.y)
+			if nonox.walked > walked:
+				faced[nonox.facing] = nonox.sprite.texture == nonox.sheets.walk[0]
+		var mingming: Dictionary = critters.cats[0]
+		var size: float = (24.0 * nonox.sprite.pixel_size) / (31.0 * mingming.sprite.pixel_size)
+		var at_home: bool = nonox.name == "Nonox" and Sjh.in_walkway(start_at.x, start_at.y) and size > 0.65 and size < 0.7
+		checks.nonox_home = at_home and stayed_in and faced.size() == 2 and faced.values().all(func(v: bool) -> bool: return v) \
+			and nonox.walked > 4.0
 		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0

@@ -9,6 +9,7 @@ extends Node3D
 ## yawning), stroll, and curl up asleep, breathing (more at noon, at night and in the rain),
 ## and wake with a stretch. Stand still near one and it may come over; press E beside it to
 ## pet it (eyes closed, it leans into the hand and purrs). Run at one and it gallops off.
+## Nonox, a blue-grey Persian kitten, lives on St. Joseph Hall's walkway (see "Nonox" below).
 ## Birds: flocks of maya (tree sparrows) hopping and pecking on the open ground by day.
 ## Come close, or run, and the whole flock flutters up and away; it lands again a while
 ## later. More flocks are scattered over the open ground, and small groups fly over the
@@ -18,6 +19,7 @@ const World := preload("res://world.gd")
 const Npc := preload("res://npc.gd")
 const Npcs := preload("res://npcs.gd")
 const Opening := preload("res://opening.gd")
+const Sjh := preload("res://areas/sjh.gd")
 
 ## Metres per sprite pixel: the characters' (85 px for 1.83 m).
 const DENSITY := 1.83 / 85.0
@@ -104,6 +106,8 @@ func _ready() -> void:
 		var spot := _pick(open, taken, FLOCK_SPACING)
 		if spot != Vector2.INF:
 			_add_flock(spot, _rng.randi_range(3, 6))
+	# last, so the scattered cats and flocks keep their spots
+	_add_nonox()
 
 ## Open ground on a 4 m grid over the campus: walkable, at ground level, off the roads.
 static func _open_ground() -> Array[Vector2]:
@@ -177,7 +181,7 @@ static func _show(sprite: Sprite3D, sheet: Array, frame: int) -> void:
 		sprite.texture = sheet[0]
 		sprite.hframes = sheet[1]
 	sprite.frame = posmod(frame, sheet[1])
-	sprite.position.y = sprite.texture.get_height() * DENSITY * 0.5
+	sprite.position.y = sprite.texture.get_height() * sprite.pixel_size * 0.5
 
 # --- Cats -------------------------------------------------------------------------
 
@@ -291,13 +295,14 @@ func _walk(cat: Dictionary, delta: float, speed: float, right: Vector2) -> bool:
 		return true
 	cat.at = next
 	cat.walked += step.length()
-	if absf(step.dot(right)) > 0.0001:
+	# Nonox keeps his facing when he walks mostly into or out of the screen
+	if absf(step.dot(right)) > (0.3 * step.length() if cat.has("nonox") else 0.0001):
 		cat.facing = signf(step.dot(right))
 	# dashing off it gallops, a longer stride per frame
 	if cat.state == "dash":
 		_show(cat.sprite, cat.sheets.gallop, int(cat.walked / 0.2))
 	else:
-		_show(cat.sprite, cat.sheets.walk, int(cat.walked / 0.09))
+		_show(cat.sprite, cat.sheets.walk, int(cat.walked / cat.get("stride", 0.09)))
 	_place(cat.node, cat.at, 0.0)
 	return false
 
@@ -336,6 +341,80 @@ func pet() -> bool:
 		sound.purr()
 	_say(cat, "Prrr...")
 	return true
+
+# --- Nonox ------------------------------------------------------------------------
+
+## Nonox, a 6-month-old blue-grey Persian kitten from a real cat (the handoff, with its sheet,
+## mockups and spec, is in assets/drafts/characters/critters/nonox/). He lives on St. Joseph
+## Hall's raised walkway, loafing or sitting and now and then wandering along it. Times are
+## seconds, distances metres; ranges are random within.
+const NONOX := {
+	"name": "Nonox",
+	"home": Vector2(-17.0, -2.6), # in SJH's frame (Sjh.world): on the walkway east of the lobby
+	"scale": 0.88, # of DENSITY: he sits 21 px against Mingming's 31 at hers, ~0.68 of her height
+	"speed": 1.44, # 0.6 of the student's walk
+	"stride": 0.18, # metres a walk frame: 8 frames a second at his speed
+	"sit_chance": 0.3, # resting, he sits up; else he loafs
+	"wander_every": Vector2(6.0, 12.0),
+	"wander_reach": Vector2(4.0, 6.0),
+}
+
+var _quiet := false
+
+static func _nonox_sheets() -> Dictionary:
+	var sheets := {}
+	for pose in ["walk", "front", "loaf", "sit", "petted", "blep"]:
+		sheets[pose] = _load("nonox_" + pose, 6 if pose == "walk" else 1)
+	return sheets
+
+func _roll(range: Vector2) -> float:
+	return _rng.randf_range(range.x, range.y)
+
+func _add_nonox() -> void:
+	var sheets := _nonox_sheets()
+	var sprite := _sprite(sheets.loaf[0], 1)
+	sprite.pixel_size = DENSITY * NONOX.scale
+	sprite.name = "Cat_Nonox"
+	var body := Node3D.new()
+	body.name = "Cat_Nonox"
+	body.add_child(sprite)
+	add_child(body)
+	var home := Sjh.world(NONOX.home.x, NONOX.home.y)
+	cats.append({"name": NONOX.name, "nonox": true, "node": body, "sprite": sprite, "sheets": sheets, "home": home,
+		"at": home, "base": home, "state": "idle", "pose": "loaf", "timer": _roll(NONOX.wander_every), "target": home,
+		"facing": 1.0, "phase": 0.0, "walked": 0.0, "stride": NONOX.stride, "roam_t": 0.0, "approach_t": 0.0})
+	_place(body, home, 0.0)
+
+func _nonox() -> Dictionary:
+	return cats[-1]
+
+## Resting: he loafs, or now and then sits up, until he wanders again.
+func _rest(cat: Dictionary) -> void:
+	cat.state = "idle"
+	cat.pose = "sit" if _rng.randf() < NONOX.sit_chance else "loaf"
+	cat.timer = _roll(NONOX.wander_every)
+
+## Somewhere along the walkway a few metres either way, as far as he can get in a line.
+func _wander_to(cat: Dictionary) -> Vector2:
+	var b := Sjh.local(cat.base.x, cat.base.y)
+	var a := Sjh.local(cat.at.x, cat.at.y)
+	var wish := Sjh.world(b.x + _roll(NONOX.wander_reach) * (1.0 if _rng.randf() < 0.5 else -1.0) + (a.x - b.x) * 0.5,
+		_rng.randf_range(-3.0, -0.4))
+	var spot := _clear_spot(cat.at, wish)
+	return spot if Sjh.in_walkway(spot.x, spot.y) else cat.at
+
+## A frame of Nonox; `at` is the student's ground position.
+func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -> void:
+	cat.timer -= delta
+	match cat.state:
+		"idle":
+			_show(cat.sprite, cat.sheets[cat.pose], 0)
+			if cat.timer <= 0.0:
+				cat.state = "wander"
+				cat.target = _wander_to(cat)
+		"wander":
+			if _walk(cat, delta, NONOX.speed, right) or cat.timer < -12.0:
+				_rest(cat)
 
 # --- Birds ------------------------------------------------------------------------
 
@@ -557,10 +636,14 @@ func update(delta: float, still: bool, running: bool, talking: bool, npc_near: b
 	var at := Vector2(student.position.x, student.position.z)
 	# Off the screen and away from the student, cats and feeding flocks wait where they are:
 	# their walks and hops query the world's collision many times a frame, for ~120 animals.
+	_quiet = talking
 	for cat in cats:
-		if not _awake((cat.node as Node3D).position, at):
+		if cat.has("nonox"):
+			_update_nonox(cat, delta, at, right) # he never waits: he may be on his way home
+		elif not _awake((cat.node as Node3D).position, at):
 			continue
-		_update_cat(cat, delta, at, still, running, right)
+		else:
+			_update_cat(cat, delta, at, still, running, right)
 		cat.sprite.flip_h = cat.facing < 0.0
 		cat.sprite.rotation.y = atan2(-forward.x, -forward.z)
 	for flock in flocks:
