@@ -1,5 +1,5 @@
-// Nonox's sheet (the handoff's 6 x 2 grid of 26 px cells, nonox_spritesheet.json) into the
-// game's one-row-per-pose sheets, like the other cats': nonox_walk (six frames) and one frame
+// Nonox's sheet (the handoff's 7 x 2 grid of 32 px cells, nonox_spritesheet.json) into the
+// game's one-row-per-pose sheets, like the other cats': nonox_walk (four frames) and one frame
 // each for front, loaf, sit, petted and blep. Every cell has an empty row under the feet;
 // it is dropped so the feet stand on the bottom row.
 // usage: node assets/drafts/characters/critters/nonox/split.mjs
@@ -14,8 +14,8 @@ const im = readPng(here + sheet.image);
 const cell = sheet.cell_px, h = cell - 1;
 
 const POSES = {
-  walk: ['walk_1', 'walk_2', 'walk_3', 'walk_4', 'walk_5', 'walk_6'],
-  front: ['front'], loaf: ['loaf'], sit: ['curious_sit'], petted: ['petted_happy'], blep: ['stink_eye_blep'],
+  walk: ['walk_1', 'walk_2', 'walk_3', 'walk_4'],
+  front: ['front'], loaf: ['loaf'], sit: ['curious_sit'], petted: ['petted'], blep: ['stink_eye_blep'],
 };
 
 for (const [pose, frames] of Object.entries(POSES)) {

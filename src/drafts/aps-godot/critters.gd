@@ -359,7 +359,7 @@ func pet() -> bool:
 const NONOX := {
 	"name": "Nonox",
 	"home": Vector2(27.3, 21.6), # world: on the canteen patio's south end, by the umbrella table at (29.8, 21.0)
-	"scale": 0.88, # of DENSITY: he sits 21 px against Mingming's 31 at hers, ~0.68 of her height
+	"scale": 0.92, # of DENSITY: he sits 21 px against Mingming's 31 at hers, ~0.68 of her height
 	"speed": 1.44, # 0.6 of the student's walk
 	"stride": 0.18, # metres a walk frame: 8 frames a second at his speed
 	"sit_chance": 0.3, # resting, he sits up; else he loafs
@@ -388,7 +388,7 @@ var _quiet := false
 static func _nonox_sheets() -> Dictionary:
 	var sheets := {}
 	for pose in ["walk", "front", "loaf", "sit", "petted", "blep"]:
-		sheets[pose] = _load("nonox_" + pose, 6 if pose == "walk" else 1)
+		sheets[pose] = _load("nonox_" + pose, 4 if pose == "walk" else 1)
 	return sheets
 
 func _roll(range: Vector2) -> float:

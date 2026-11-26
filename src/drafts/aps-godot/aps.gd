@@ -2881,7 +2881,7 @@ func _verify_and_capture() -> void:
 			if nonox.walked > walked:
 				faced[nonox.facing] = nonox.sprite.texture == nonox.sheets.walk[0]
 		var mingming: Dictionary = critters.cats[0]
-		var size: float = (24.0 * nonox.sprite.pixel_size) / (31.0 * mingming.sprite.pixel_size)
+		var size: float = (23.0 * nonox.sprite.pixel_size) / (31.0 * mingming.sprite.pixel_size)
 		var alone: bool = critters.cats.all(func(c: Dictionary) -> bool: return c.has("nonox") or (c.home as Vector2).distance_to(nonox.home) > 15.0)
 		var at_home: bool = nonox.name == "Nonox" and not World.blocked(start_at.x, start_at.y) and alone and size > 0.65 and size < 0.7
 		checks.nonox_home = at_home and stayed_in and faced.size() == 2 and faced.values().all(func(v: bool) -> bool: return v) \
