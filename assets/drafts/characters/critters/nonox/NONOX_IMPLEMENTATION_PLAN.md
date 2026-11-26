@@ -8,7 +8,7 @@ This folder is meant to be dropped into the repo and handed to Claude Code.
 nonox_handoff/
 ├── NONOX_IMPLEMENTATION_PLAN.md      ← this file
 ├── assets/
-│   ├── nonox_spritesheet.png         ← 156×52, 6×2 grid of 26px cells, transparent
+│   ├── nonox_spritesheet.png         ← 224×64, 7×2 grid of 32px cells, transparent
 │   └── nonox_spritesheet.json        ← frame rects + animation definitions
 └── reference/
     ├── nonox_poses_labeled.png       ← every pose, labelled, 12× zoom
@@ -30,33 +30,35 @@ nonox_handoff/
 
 ## 1. Sprite sheet
 
-**File:** `assets/nonox_spritesheet.png`. 6 columns × 2 rows, each cell **26×26 px**.
+**File:** `assets/nonox_spritesheet.png`. **224×64**, 7 columns × 2 rows of **32×32 px** cells. The art keeps the fluffy, detailed look of the approved design, adjusted to fit HAU: snapped to a clean pixel grid, Nonox's light-grey fur on a 6-tone, near-neutral ramp (very slightly cool shadows), a selective outline (lighter on the lit upper-left edges, darker in shadow, like the game's cats), a 1px catchlight in each copper eye, and stray single pixels cleaned up.
 
-| Row | Col 0 | Col 1 | Col 2 | Col 3 | Col 4 | Col 5 |
-|---|---|---|---|---|---|---|
-| 0 | `front` | `loaf` | `curious_sit` | `petted_happy` | `stink_eye_blep` | (empty) |
-| 1 | `walk_1` | `walk_2` | `walk_3` | `walk_4` | `walk_5` | `walk_6` |
+| Row | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|---|
+| 0 | `front` | `three_quarter` | `side` | `back` | `loaf` | `sleep` | `curious_sit` |
+| 1 | `petted` | `stink_eye_blep` | `walk_1` | `walk_2` | `walk_3` | `walk_4` | (empty) |
 
-**Import settings (must match Mingming's):**
+**Import settings (must match Mingming):**
 - Filter: **nearest / point**, no mipmaps, no compression.
-- Pivot: **bottom-center**. His feet sit on the bottom pixel row of every cell.
-- Scale: **the same pixels-per-unit as Mingming**, so one Nonox pixel is the same on-screen size as one Mingming pixel (about 5.5 screen px at 1600×900).
-- Intended size: about **2.5/3 of Mingming's height**, since he's a kitten. Check against `reference/mockup_bench_with_mingming.png`.
-- He should receive the same scene lighting, shadows, and sorting as Mingming and the other NPC sprites.
+- Pivot: **bottom-center**. His feet rest on y = 30 in every cell; the 4 walk frames share one anchor, so he doesn't jitter.
+- Scale: **same pixels-per-unit as Mingming** (about 5.5 screen px per art px at 1600×900). Check against `reference/mockup_bench_with_mingming.png`.
+- Same scene lighting, shadows and sorting as Mingming.
 
-**Animations** (also listed in the JSON):
+**Animations** (also in the JSON):
 
 | Animation | Frames | Notes |
 |---|---|---|
-| `walk_right` | `walk_1` to `walk_6` | 8 fps, loop. The frames are aligned on his eye, so he won't jitter. |
-| `walk_left` | same frames | Flip horizontally. No extra art. |
-| `idle_loaf` | `loaf` | Default resting pose |
-| `idle_sit` | `curious_sit` | Occasional idle variation |
-| `face_player` | `front` | When he arrives next to the player |
-| `petted` | `petted_happy` | While being petted |
-| `stink_eye` | `stink_eye_blep` | Grumpy reaction or rare blep easter egg |
+| `idle` | `front` | Default when stopped near the player |
+| `idle_side` | `side` | Default when stopped mid-wander |
+| `curious` | `curious_sit` | Idle variation |
+| `loaf` | `loaf` | Resting pose |
+| `turn` | `three_quarter` | Brief in-between when turning to face the player |
+| `walk_right` / `walk_left` | `walk_1`–`walk_4` | 8 fps loop; flip for left |
+| `walk_away` | `back` | Moving away from the camera; bob 1px |
+| `petted` | `petted` | Hold 2 s |
+| `stink_eye` | `stink_eye_blep` | Hold 1.5 s |
+| `sleep` | `sleep` | Slow 1.00→1.03 Y-scale for breathing |
 
-> There's no sleep pose in this sheet. If you want one later, add it as `row 0, col 5` and update the JSON.
+Where section 2 says `idle_loaf`, `idle_sit` or `face_player`, use `loaf`, `curious` and `idle`.
 
 ---
 
@@ -186,4 +188,4 @@ Use a small state machine. The timings below are defaults; put them in a config 
 | Which building is his home? | Ask the developer; until then, use the building closest to the player's spawn. |
 | Can he follow the player after 10 pets? | Off by default (`enableFollowReward: false`). |
 | Does he save his position and pet count between sessions? | No; he respawns at home. |
-| Sleep pose? | Not in this sheet; it can be added later as row 0, col 5. |
+| Sleep? | Included (`sleep`). Suggest napping in his home building after 2 min without player contact. |
