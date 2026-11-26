@@ -785,10 +785,11 @@ the world's sprites:
   a stretch before strolling off, walk over to a
   student standing still within 4.5 m, gallop off from a running one (a 0.2 m stride per frame), and lean into a pet, eyes closed
   (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). **Nonox** (2026-11-25), a blue-grey Persian
-  kitten from a real cat, is the one cat drawn outside pxl: the handoff's 26 px sheet
-  (`assets/drafts/characters/critters/nonox/`, split by its `split.mjs` into `nonox_walk` 6 x
-  26x25 and one 26x25 frame each of front, loaf, sit, petted and blep, the empty row under the
-  feet dropped). **He is drawn at 0.88 of the density** (`NONOX.scale`), the one exception to
+  kitten from a real cat, is the one cat drawn outside pxl: the handoff's 32 px sheet
+  (`assets/drafts/characters/critters/nonox/`, split by its `split.mjs` into `nonox_walk` 4 x
+  32x31 and one 32x31 frame each of front, loaf, sit, petted and blep, the empty row under the
+  feet dropped; its side, back, three-quarter and sleep poses are not used yet). **He is drawn
+  at 0.92 of the density** (`NONOX.scale`), the one exception to
   it, so he stands ~0.68 of Mingming's height (the team's choice). He lives on the APS canteen's patio
   (`NONOX.home`, world), and no other cat's home is within 22 m of it; he loafs (70%) or sits,
   wanders 1.5-5 m from home on the patio's brick every 6-12 s; every 45-90 s he walks to a
