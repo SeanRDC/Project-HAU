@@ -1199,6 +1199,7 @@ static func travel_places() -> Array:
 		["APS hallway", Vector2(-6.0, -2.0), 22.0],
 		["Corner garden", Vector2(-52.0, 10.0), 30.0],
 		["Canteen patio", CANTEEN_SPOT, 28.0],
+		["Nonox, canteen patio", Critters.NONOX.home + Vector2(0.0, -1.5), 22.0],
 		["Canteen hall", World.canteen_world(51.0, 0.0), 22.0],
 		["Lane beside APS", Vector2(45.5, 10.0), 26.0],
 		["Pergola beside APS", Vector2(43.6, 31.0), 24.0],
@@ -1509,7 +1510,7 @@ func _fly(delta: float) -> void:
 	student.face(camera)
 	_update_cutaways(delta)
 	npcs.update(delta)
-	critters.update(delta, true, false, false, false)
+	critters.update(delta, true, false, true, false) # as if talking: no cat comes to a student left waiting
 	atmosphere.focus = Vector3(ahead.x, 0.0, ahead.z)
 	atmosphere.view_width = 60.0
 	atmosphere.update(delta)
@@ -2861,6 +2862,87 @@ func _verify_and_capture() -> void:
 		var over: Node3D = critters.flyers[-1].birds[0].node
 		var flying_over: bool = over != null and over.position.y > World.floor_height(over.position.x, over.position.z) + 2.0 			and (over.position - student.position).dot(camera.global_transform.basis.z) > 1.0
 		checks.cats_and_birds = critters.cats.size() >= 10 and critters.flocks.size() >= 16 and flying_over and took_off and flew_away and landed and petted and cat_animates 			and critters.cats.all(func(c: Dictionary) -> bool: return not World.blocked((c.at as Vector2).x, (c.at as Vector2).y))
+		# Nonox: at home on the canteen patio, no other cat living near, ~0.68 of Mingming's
+		# height, wandering it without leaving it and facing the way he walks.
+		var nonox: Dictionary = critters._nonox()
+		var far := Vector2(0.0, 0.0)
+		# from a known start: the frames before the checks leave him anywhere
+		critters._rng.seed = 2511
+		nonox.at = nonox.home
+		critters._rest(nonox)
+		nonox.approach_t = 999.0
+		var start_at: Vector2 = nonox.at
+		var stayed_in := true
+		var faced := {}
+		for i in 30 * 60:
+			var walked: float = nonox.walked
+			critters._update_nonox(nonox, 1.0 / 30.0, far, side)
+			stayed_in = stayed_in and Critters._on_patio(nonox.at)
+			if nonox.walked > walked:
+				faced[nonox.facing] = nonox.sprite.texture == nonox.sheets.walk[0]
+		var mingming: Dictionary = critters.cats[0]
+		var size: float = (23.0 * nonox.sprite.pixel_size) / (31.0 * mingming.sprite.pixel_size)
+		var alone: bool = critters.cats.all(func(c: Dictionary) -> bool: return c.has("nonox") or (c.home as Vector2).distance_to(nonox.home) > 15.0)
+		var at_home: bool = nonox.name == "Nonox" and not World.blocked(start_at.x, start_at.y) and alone and size > 0.65 and size < 0.7
+		checks.nonox_home = at_home and stayed_in and faced.size() == 2 and faced.values().all(func(v: bool) -> bool: return v) \
+			and nonox.walked > 4.0
+		if not checks.nonox_home:
+			print("nonox: at home %s alone %s stayed in %s faced %s walked %.1f" % [at_home, alone, stayed_in, faced, nonox.walked])
+		# He comes to a student nearby, stops ~1 m off, faces them and says mao; not while
+		# they talk; he leaves after 8 s ignored, and gives up if they walk off.
+		var by_nonox: Vector2 = nonox.home + Vector2(1.2, 2.8)
+		nonox.at = nonox.home
+		critters._rest(nonox)
+		critters._quiet = true
+		nonox.approach_t = 0.0
+		for i in 60:
+			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
+		var waited: bool = nonox.state == "idle"
+		critters._quiet = false
+		for i in 30 * 8:
+			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
+			if nonox.state == "greet":
+				break
+		var greeted_me: bool = nonox.state == "greet" and absf(nonox.at.distance_to(by_nonox) - 1.0) < 0.3 \
+			and nonox.sprite.texture == nonox.sheets.front[0] and critters._bubble_label.text in Critters.NONOX.meows
+		for i in 30 * 10:
+			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
+		var lost_interest: bool = nonox.state not in ["greet", "sulk"]
+		critters._rest(nonox)
+		nonox.approach_t = 0.0
+		var set_off_from: Vector2 = nonox.at
+		critters._update_nonox(nonox, 1.0 / 30.0, by_nonox, side)
+		var set_off: bool = nonox.state == "approach"
+		for i in 10:
+			critters._update_nonox(nonox, 1.0 / 30.0, by_nonox + Vector2(0.0, -6.0), side)
+		checks.nonox_greets = waited and greeted_me and lost_interest and set_off and nonox.state == "idle" \
+			and nonox.at.distance_to(set_off_from) < 0.1
+		if not checks.nonox_greets:
+			print("nonox: waited %s greeted %s lost interest %s set off %s state %s" % [waited, greeted_me, lost_interest, set_off, nonox.state])
+		# E pets him: the petted pose (or now and then the blep), a mao or prr and another
+		# halfway; E again within the pet does nothing more; then he loafs a while and goes
+		# about his day.
+		var by_him: Vector2 = nonox.at + Vector2(0.8, 0.0)
+		student.position = Vector3(by_him.x, World.floor_height(by_him.x, by_him.y), by_him.y)
+		var pets_before: int = critters.pets
+		var first_pet: bool = critters.cat_in_reach().get("nonox", false) and critters.pet() and nonox.state == "petted" \
+			and nonox.sprite.texture in [nonox.sheets.petted[0], nonox.sheets.blep[0]] \
+			and critters._bubble_label.text in Critters.NONOX.lines
+		var petted_for: float = nonox.timer
+		var spam_ignored: bool = critters.pet() and critters.pets == pets_before + 1 and nonox.timer == petted_for
+		var lingered := false
+		critters._bubble_label.text = ""
+		for i in 30 * 6:
+			critters._update_nonox(nonox, 1.0 / 30.0, by_him, side)
+			lingered = lingered or (nonox.state == "linger" and nonox.sprite.texture == nonox.sheets.loaf[0])
+		var twice: bool = critters._bubble_label.text in Critters.NONOX.lines # the second line, halfway
+		critters._pet_nonox(nonox, true)
+		var blepped: bool = nonox.sprite.texture == nonox.sheets.blep[0] and critters._bubble_label.text in Critters.NONOX.lines
+		for i in 30 * 14: # the pet (4 s) and the loaf after (5-8 s)
+			critters._update_nonox(nonox, 1.0 / 30.0, by_him, side)
+		checks.nonox_petted = first_pet and spam_ignored and twice and lingered and blepped and nonox.state not in ["petted", "linger"]
+		if not checks.nonox_petted:
+			print("nonox: petted %s spam ignored %s twice %s lingered %s blepped %s state %s" % [first_pet, spam_ignored, twice, lingered, blepped, nonox.state])
 		checks.npc_looks_and_says_hello = looks_right and ben.sprite.flip_h and not ben.noticed and greeted 			and not npcs.hello_for(bea).is_empty()
 		# in the rain, umbrellas open outside, and not under the canteen roof
 		npcs.rain = 1.0

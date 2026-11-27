@@ -1,0 +1,171 @@
+{
+ "image": "nonox_spritesheet.png",
+ "cell_px": 32,
+ "columns": 7,
+ "rows": 2,
+ "pivot": "bottom-center; feet rest on y=30 of each 32px cell",
+ "filter": "nearest / point, no mipmaps, no compression",
+ "pixel_scale": "match Mingming: 1 art pixel = same on-screen size as Mingming pixels (~5.5 screen px at 1600x900)",
+ "animations": {
+  "idle": {
+   "frames": [
+    "front"
+   ],
+   "loop": true
+  },
+  "idle_side": {
+   "frames": [
+    "side"
+   ],
+   "loop": true
+  },
+  "curious": {
+   "frames": [
+    "curious_sit"
+   ],
+   "loop": true
+  },
+  "loaf": {
+   "frames": [
+    "loaf"
+   ],
+   "loop": true
+  },
+  "petted": {
+   "frames": [
+    "petted"
+   ],
+   "loop": false,
+   "hold_sec": 2
+  },
+  "stink_eye": {
+   "frames": [
+    "stink_eye_blep"
+   ],
+   "loop": false,
+   "hold_sec": 1.5
+  },
+  "walk_right": {
+   "frames": [
+    "walk_1",
+    "walk_2",
+    "walk_3",
+    "walk_4"
+   ],
+   "fps": 8,
+   "loop": true
+  },
+  "walk_left": {
+   "frames": [
+    "walk_1",
+    "walk_2",
+    "walk_3",
+    "walk_4"
+   ],
+   "fps": 8,
+   "loop": true,
+   "flip_h": true
+  },
+  "walk_away": {
+   "frames": [
+    "back"
+   ],
+   "loop": true,
+   "note": "single frame; bob 1px while moving away from camera"
+  },
+  "turn": {
+   "frames": [
+    "three_quarter"
+   ],
+   "loop": false,
+   "note": "in-between when turning toward the player"
+  },
+  "sleep": {
+   "frames": [
+    "sleep"
+   ],
+   "loop": true,
+   "note": "scale Y 1.00->1.03 slowly for breathing"
+  }
+ },
+ "frames": {
+  "front": {
+   "x": 0,
+   "y": 0,
+   "w": 32,
+   "h": 32
+  },
+  "three_quarter": {
+   "x": 32,
+   "y": 0,
+   "w": 32,
+   "h": 32
+  },
+  "side": {
+   "x": 64,
+   "y": 0,
+   "w": 32,
+   "h": 32
+  },
+  "back": {
+   "x": 96,
+   "y": 0,
+   "w": 32,
+   "h": 32
+  },
+  "loaf": {
+   "x": 128,
+   "y": 0,
+   "w": 32,
+   "h": 32
+  },
+  "sleep": {
+   "x": 160,
+   "y": 0,
+   "w": 32,
+   "h": 32
+  },
+  "curious_sit": {
+   "x": 192,
+   "y": 0,
+   "w": 32,
+   "h": 32
+  },
+  "petted": {
+   "x": 0,
+   "y": 32,
+   "w": 32,
+   "h": 32
+  },
+  "stink_eye_blep": {
+   "x": 32,
+   "y": 32,
+   "w": 32,
+   "h": 32
+  },
+  "walk_1": {
+   "x": 64,
+   "y": 32,
+   "w": 32,
+   "h": 32
+  },
+  "walk_2": {
+   "x": 96,
+   "y": 32,
+   "w": 32,
+   "h": 32
+  },
+  "walk_3": {
+   "x": 128,
+   "y": 32,
+   "w": 32,
+   "h": 32
+  },
+  "walk_4": {
+   "x": 160,
+   "y": 32,
+   "w": 32,
+   "h": 32
+  }
+ }
+}

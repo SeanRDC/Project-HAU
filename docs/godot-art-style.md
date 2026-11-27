@@ -776,7 +776,7 @@ the world's sprites:
   46x30; maya ground 2 (standing, pecking) and hop 3 (crouch, tucked, landing), 24x24, fly 4 x
   24x28), at the characters' density, side-on facing right and
   flipped, lit and shadowed like the cast. Twelve cats: five at their own spots (`CATS`, coats in `COATS`: Mingming orange tabby at APS,
-  Kiko tuxedo by the canteen, Tisay grey tabby on the chapel plaza, Itim black at SJH,
+  Kiko tuxedo past the canteen's tip, Tisay grey tabby on the chapel plaza, Itim black at SJH,
   Puti white at the Student Center) and seven more (`MORE_CATS`, the coats in turn) scattered over
   the open ground (`_open_ground`: a 4 m grid, walkable, at ground level, off the roads; 22 m
   apart): sit, every 2.5-6 s flicking the tail or blinking (35% each), grooming or yawning
@@ -784,7 +784,22 @@ the world's sprites:
   5 m of home, curl up asleep breathing (more at noon, at night and in the rain) and wake with
   a stretch before strolling off, walk over to a
   student standing still within 4.5 m, gallop off from a running one (a 0.2 m stride per frame), and lean into a pet, eyes closed
-  (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). Flocks
+  (E within 1.3 m, "Hawakan si ..." when no one is there to talk to; a purr). **Nonox** (2026-11-25), a blue-grey Persian
+  kitten from a real cat, is the one cat drawn outside pxl: the handoff's 32 px sheet
+  (`assets/drafts/characters/critters/nonox/`, split by its `split.mjs` into `nonox_walk` 4 x
+  32x31 and one 32x31 frame each of front, loaf, sit, petted and blep, the empty row under the
+  feet dropped; its side, back, three-quarter and sleep poses are not used yet). **He is drawn
+  at 0.92 of the density** (`NONOX.scale`), the one exception to
+  it, so he stands ~0.68 of Mingming's height (the team's choice). He lives on the APS canteen's patio
+  (`NONOX.home`, world), and no other cat's home is within 22 m of it; he loafs (70%) or sits,
+  wanders 1.5-5 m from home on the patio's brick every 6-12 s; every 45-90 s he walks to a
+  student within 12 m to stop 1 m off, faces them and says mao (maoo, mao or maoooo), and after
+  8 s ignored leaves (30% with the stink-eye for 1.5 s); a student who walks off before he gets
+  there puts him off for another 45-90 s. His mao is a kitten's `mew` and his prr a rolled
+  `trill` (`audio.gd`), each longer for every o or r. He walks at 1.44 m/s (0.6 of the student), 0.18 m a
+  frame, and keeps his facing when walking mostly into the screen. Petted: 4 s (5% with the blep
+  face), a line (mao, maoo, maooo, prr, prrrr) with its sound and a purr, another 2 s in, then
+  5-8 s loafing with a last purr; E again within the 4 s does nothing. Flocks
   (`FLOCKS`: eight spots, 5-8 birds; `MORE_FLOCKS` 14 more of 3-6 scattered the same way, 14 m apart) hop (its own frames, with a 0.06 m arc) and peck on open ground from 6:00 to 18:00 when
   it is not raining, and the whole flock flutters up and away when the student comes
   within 2.4 m (4.5 m running): up, across the screen away from the student and towards the
@@ -795,7 +810,7 @@ the world's sprites:
   view straight along the screen, 2.5-7 m in front of the student (towards the camera, so
   never through the building the view looks at) and 3-8 m up, 6-9 m/s, bobbing, from off
   the screen to off the screen, their shadows on the ground (`flyers`).
-  Sounds (`audio.gd`): `meow`, `purr`, `flutter`.
+  Sounds (`audio.gd`): `meow`, `purr`, `flutter`; Nonox's `mew` and `trill`.
 - **Talks are scripts** in `npcs.gd` `CAST`: lines, and questions with two or three
   replies the student picks (W/S or arrows and E, 1-3, or the mouse) on a dark card at
   the bottom of the screen, the picked one in maroon. A reply can be remembered, and

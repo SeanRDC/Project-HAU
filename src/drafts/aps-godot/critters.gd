@@ -9,6 +9,7 @@ extends Node3D
 ## yawning), stroll, and curl up asleep, breathing (more at noon, at night and in the rain),
 ## and wake with a stretch. Stand still near one and it may come over; press E beside it to
 ## pet it (eyes closed, it leans into the hand and purrs). Run at one and it gallops off.
+## Nonox, a blue-grey Persian kitten, lives on the APS canteen's patio (see "Nonox" below).
 ## Birds: flocks of maya (tree sparrows) hopping and pecking on the open ground by day.
 ## Come close, or run, and the whole flock flutters up and away; it lands again a while
 ## later. More flocks are scattered over the open ground, and small groups fly over the
@@ -30,7 +31,7 @@ const SCARE_RUNNING := 4.5
 ## name, home (world x, z), coat
 const CATS := [
 	{"name": "Mingming", "home": Vector2(-6.0, 6.2), "coat": "orange"},
-	{"name": "Kiko", "home": Vector2(33.0, 13.0), "coat": "tuxedo"},
+	{"name": "Kiko", "home": Vector2(46.6, 40.0), "coat": "tuxedo"}, # past the canteen's tip: the patio is Nonox's,
 	{"name": "Tisay", "home": Vector2(-31.0, 57.0), "coat": "grey"},
 	{"name": "Itim", "home": Vector2(-24.0, 118.5), "coat": "black"},
 	{"name": "Puti", "home": Vector2(-118.0, 83.0), "coat": "white"},
@@ -92,6 +93,7 @@ func _ready() -> void:
 	var taken: Array[Vector2] = []
 	for data in CATS:
 		taken.append(data.home)
+	taken.append(NONOX.home)
 	var coats := ["orange", "tuxedo", "grey", "black", "white"]
 	for i in MORE_CATS.size():
 		var spot := _pick(open, taken, CAT_SPACING)
@@ -104,6 +106,8 @@ func _ready() -> void:
 		var spot := _pick(open, taken, FLOCK_SPACING)
 		if spot != Vector2.INF:
 			_add_flock(spot, _rng.randi_range(3, 6))
+	# last, so the scattered cats and flocks keep their spots
+	_add_nonox()
 
 ## Open ground on a 4 m grid over the campus: walkable, at ground level, off the roads.
 static func _open_ground() -> Array[Vector2]:
@@ -177,7 +181,7 @@ static func _show(sprite: Sprite3D, sheet: Array, frame: int) -> void:
 		sprite.texture = sheet[0]
 		sprite.hframes = sheet[1]
 	sprite.frame = posmod(frame, sheet[1])
-	sprite.position.y = sprite.texture.get_height() * DENSITY * 0.5
+	sprite.position.y = sprite.texture.get_height() * sprite.pixel_size * 0.5
 
 # --- Cats -------------------------------------------------------------------------
 
@@ -250,7 +254,7 @@ func _update_cat(cat: Dictionary, delta: float, at: Vector2, still: bool, runnin
 				cat.timer = _rng.randf_range(4.0, 8.0)
 				if near < 1.2 and sound != null:
 					sound.meow()
-					_say(cat, "Meow!")
+					_say(cat, NONOX.meows[_rng.randi_range(0, NONOX.meows.size() - 1)])
 			else:
 				_walk(cat, delta, 0.9, right)
 		"walk", "dash":
@@ -291,13 +295,14 @@ func _walk(cat: Dictionary, delta: float, speed: float, right: Vector2) -> bool:
 		return true
 	cat.at = next
 	cat.walked += step.length()
-	if absf(step.dot(right)) > 0.0001:
+	# Nonox keeps his facing when he walks mostly into or out of the screen
+	if absf(step.dot(right)) > (0.3 * step.length() if cat.has("nonox") else 0.0001):
 		cat.facing = signf(step.dot(right))
 	# dashing off it gallops, a longer stride per frame
 	if cat.state == "dash":
 		_show(cat.sprite, cat.sheets.gallop, int(cat.walked / 0.2))
 	else:
-		_show(cat.sprite, cat.sheets.walk, int(cat.walked / 0.09))
+		_show(cat.sprite, cat.sheets.walk, int(cat.walked / cat.get("stride", 0.09)))
 	_place(cat.node, cat.at, 0.0)
 	return false
 
@@ -329,6 +334,10 @@ func pet() -> bool:
 	var cat := cat_in_reach()
 	if cat.is_empty():
 		return false
+	if cat.has("nonox"):
+		if cat.pet_cd <= 0.0:
+			_pet_nonox(cat, _rng.randf() < NONOX.blep_chance)
+		return true
 	cat.state = "petted"
 	cat.timer = 2.2
 	pets += 1
@@ -336,6 +345,225 @@ func pet() -> bool:
 		sound.purr()
 	_say(cat, "Prrr...")
 	return true
+
+# --- Nonox ------------------------------------------------------------------------
+
+## Nonox, a 6-month-old blue-grey Persian kitten from a real cat (the handoff, with its sheet,
+## mockups and spec, is in assets/drafts/characters/critters/nonox/). He lives on the APS
+## canteen's herringbone patio, between the umbrella tables and the kerb, loafing or sitting
+## and now and then wandering a few metres about it; no other cat lives near. Every so often
+## he walks up to the student, says mao and waits to be petted; ignored, he gives them the
+## stink-eye or just goes. Pet him (E) and he mews or trills twice, purring (now and then with
+## a blep); then he loafs a while beside the student, still purring. His mao and prr are
+## kitten sounds of their own (audio.gd's mew and trill), longer for each o or r. Times are seconds, distances metres; ranges are random within.
+const NONOX := {
+	"name": "Nonox",
+	"home": Vector2(27.3, 21.6), # world: on the canteen patio's south end, by the umbrella table at (29.8, 21.0)
+	"shade": 0.78, # multiplies his sheet: the handoff's grey read too light on the brick
+	"scale": 0.92, # of DENSITY: he sits 21 px against Mingming's 31 at hers, ~0.68 of her height
+	"speed": 1.44, # 0.6 of the student's walk
+	"stride": 0.18, # metres a walk frame: 8 frames a second at his speed
+	"sit_chance": 0.3, # resting, he sits up; else he loafs
+	"wander_every": Vector2(6.0, 12.0),
+	"wander_reach": Vector2(1.5, 5.0), # from home, on the patio's brick
+	"approach_every": Vector2(45.0, 90.0),
+	"approach_range": 12.0,
+	"approach_stop": 1.0,
+	"approach_give_up": 3.0, # the student has walked this far from where he set off for them
+	"greet_time": 8.0,
+	"sulk_chance": 0.3,
+	"sulk_time": 1.5,
+	"petted_time": 4.0, # two lines, a purr with each
+	"pet_cooldown": 4.0, # E again within this (the whole pet) does nothing
+	"linger": Vector2(5.0, 8.0), # loafing beside the student after a pet, still purring
+	"blep_chance": 0.05,
+	"meows": ["maoo", "mao", "maoooo"],
+	"lines": ["mao", "maoo", "maooo", "prr", "prrrr"], # petted
+}
+
+static func _leg_clear(a: Vector2, b: Vector2) -> bool:
+	return _clear_spot(a, b).distance_to(b) < 0.06
+
+var _quiet := false
+
+static func _nonox_sheets() -> Dictionary:
+	var sheets := {}
+	for pose in ["walk", "front", "loaf", "sit", "petted", "blep"]:
+		sheets[pose] = _load("nonox_" + pose, 4 if pose == "walk" else 1)
+	return sheets
+
+func _roll(range: Vector2) -> float:
+	return _rng.randf_range(range.x, range.y)
+
+func _add_nonox() -> void:
+	var sheets := _nonox_sheets()
+	var sprite := _sprite(sheets.loaf[0], 1)
+	sprite.pixel_size = DENSITY * NONOX.scale
+	sprite.modulate = Color(NONOX.shade, NONOX.shade, NONOX.shade)
+	sprite.name = "Cat_Nonox"
+	var body := Node3D.new()
+	body.name = "Cat_Nonox"
+	body.add_child(sprite)
+	add_child(body)
+	var home: Vector2 = NONOX.home
+	cats.append({"name": NONOX.name, "nonox": true, "node": body, "sprite": sprite, "sheets": sheets, "home": home,
+		"at": home, "base": home, "state": "idle", "pose": "loaf", "timer": _roll(NONOX.wander_every), "target": home,
+		"facing": 1.0, "phase": 0.0, "walked": 0.0, "stride": NONOX.stride, "route": [], "left_from": Vector2.INF,
+		"met_at": home, "approach_t": _roll(NONOX.approach_every), "pet_cd": 0.0, "blep": false})
+	_place(body, home, 0.0)
+
+func _nonox() -> Dictionary:
+	return cats[-1]
+
+## Resting: he loafs, or now and then sits up, until he wanders again.
+func _rest(cat: Dictionary) -> void:
+	cat.state = "idle"
+	cat.pose = "sit" if _rng.randf() < NONOX.sit_chance else "loaf"
+	cat.timer = _roll(NONOX.wander_every)
+
+## Somewhere on the patio a few metres from home, as far as he can get in a line, and in a
+## line back home; the brick only (not down the kerb, nor up into the canteen).
+func _wander_to(cat: Dictionary) -> Vector2:
+	var home: Vector2 = cat.home
+	var spot := _clear_spot(cat.at, home + Vector2.from_angle(_rng.randf() * TAU) * _roll(NONOX.wander_reach))
+	if not _on_patio(spot) or not _leg_clear(spot, home):
+		return cat.at
+	return spot
+
+static func _on_patio(at: Vector2) -> bool:
+	var home: Vector2 = NONOX.home
+	return at.distance_to(home) <= NONOX.wander_reach.y + 0.1 \
+		and absf(World.floor_height(at.x, at.y) - World.floor_height(home.x, home.y)) < 0.05
+
+## Back along the line he came by to wherever he left from to see the student.
+func _walk_back(cat: Dictionary) -> void:
+	if cat.left_from == Vector2.INF:
+		_rest(cat)
+		return
+	cat.route = [cat.left_from]
+	cat.left_from = Vector2.INF
+	cat.state = "walk_route"
+
+## Off to the student, if he can get to a metre from them in a line; else he tries again soon.
+func _approach(cat: Dictionary, at: Vector2) -> bool:
+	var stop: Vector2 = at + (cat.at - at).normalized() * NONOX.approach_stop
+	if (cat.at as Vector2).distance_to(at) <= NONOX.approach_stop:
+		stop = cat.at
+	if not _leg_clear(cat.at, stop):
+		cat.approach_t = 2.0
+		return false
+	cat.left_from = cat.at
+	cat.met_at = at
+	cat.target = stop
+	cat.state = "approach"
+	return true
+
+## A pet: he stops where he is, faces the student, mews or trills and purrs (now and then
+## blepping). On his way back to where he was, he carries on after; else he rests.
+func _pet_nonox(cat: Dictionary, blep: bool) -> void:
+	var right := Vector2(camera.global_transform.basis.x.x, camera.global_transform.basis.x.z).normalized()
+	_face(cat, Vector2(student.position.x, student.position.z), right)
+	cat.pet_cd = NONOX.pet_cooldown
+	cat.approach_t = _roll(NONOX.approach_every)
+	cat.blep = blep
+	cat.state = "petted"
+	cat.timer = NONOX.petted_time
+	pets += 1
+	_show(cat.sprite, cat.sheets.blep if blep else cat.sheets.petted, 0)
+	_nonox_says(cat, NONOX.lines)
+
+## A line said, with its sound: a mew for each mao, a trill for each prr; purring when petted.
+func _nonox_says(cat: Dictionary, lines: Array) -> void:
+	var line: String = lines[_rng.randi_range(0, lines.size() - 1)]
+	_say(cat, line)
+	if sound == null:
+		return
+	if line.begins_with("m"):
+		sound.mew(line.count("o"))
+	else:
+		sound.trill(line.count("r"))
+	if cat.state == "petted":
+		sound.purr()
+
+func _face(cat: Dictionary, at: Vector2, right: Vector2) -> void:
+	var side: float = (at - cat.at).dot(right)
+	if absf(side) > 0.05:
+		cat.facing = signf(side)
+
+## A frame of Nonox; `at` is the student's ground position.
+func _update_nonox(cat: Dictionary, delta: float, at: Vector2, right: Vector2) -> void:
+	cat.timer -= delta
+	cat.approach_t -= delta
+	cat.pet_cd -= delta
+	match cat.state:
+		"idle":
+			_show(cat.sprite, cat.sheets[cat.pose], 0)
+			if cat.approach_t <= 0.0 and not _quiet and (cat.at as Vector2).distance_to(at) < NONOX.approach_range \
+					and _approach(cat, at):
+				pass
+			elif cat.timer <= 0.0:
+				cat.state = "wander"
+				cat.target = _wander_to(cat)
+		"wander":
+			if _walk(cat, delta, NONOX.speed, right) or cat.timer < -12.0:
+				_rest(cat)
+		"walk_route":
+			if cat.route.is_empty():
+				_rest(cat)
+				return
+			cat.target = cat.route[0]
+			if _walk(cat, delta, NONOX.speed, right):
+				# shortcut: the way back is the line he came by, so a stuck leg is a bug; he hops to its
+				# end rather than standing stuck for good
+				cat.at = cat.route.pop_front()
+				_place(cat.node, cat.at, 0.0)
+		"approach":
+			if at.distance_to(cat.met_at) > NONOX.approach_give_up:
+				cat.approach_t = _roll(NONOX.approach_every) # not straight after them again
+				_walk_back(cat)
+			elif _walk(cat, delta, NONOX.speed, right):
+				if (cat.at as Vector2).distance_to(cat.target) < 0.1:
+					cat.state = "greet"
+					cat.timer = NONOX.greet_time
+					_face(cat, at, right)
+					_show(cat.sprite, cat.sheets.front, 0)
+					_nonox_says(cat, NONOX.meows)
+				else:
+					_walk_back(cat)
+		"greet":
+			_face(cat, at, right)
+			_show(cat.sprite, cat.sheets.front, 0)
+			if cat.timer <= 0.0:
+				cat.approach_t = _roll(NONOX.approach_every)
+				if _rng.randf() < NONOX.sulk_chance:
+					cat.state = "sulk" # the stink-eye
+					cat.timer = NONOX.sulk_time
+				else:
+					_walk_back(cat)
+		"sulk":
+			_face(cat, at, right)
+			_show(cat.sprite, cat.sheets.blep, 0)
+			if cat.timer <= 0.0:
+				_walk_back(cat)
+		"petted":
+			_face(cat, at, right)
+			_show(cat.sprite, cat.sheets.blep if cat.blep else cat.sheets.petted, 0)
+			var half: float = NONOX.petted_time * 0.5
+			if cat.timer <= half and cat.timer + delta > half:
+				_nonox_says(cat, NONOX.lines) # the second line, halfway through
+			if cat.timer <= 0.0:
+				cat.state = "linger"
+				cat.timer = _roll(NONOX.linger)
+				if sound != null:
+					sound.purr()
+		"linger":
+			_show(cat.sprite, cat.sheets.loaf, 0)
+			if cat.timer > 0.0:
+				pass
+			elif not cat.route.is_empty():
+				cat.state = "walk_route"
+			else:
+				_walk_back(cat)
 
 # --- Birds ------------------------------------------------------------------------
 
@@ -557,10 +785,14 @@ func update(delta: float, still: bool, running: bool, talking: bool, npc_near: b
 	var at := Vector2(student.position.x, student.position.z)
 	# Off the screen and away from the student, cats and feeding flocks wait where they are:
 	# their walks and hops query the world's collision many times a frame, for ~120 animals.
+	_quiet = talking
 	for cat in cats:
 		if not _awake((cat.node as Node3D).position, at):
 			continue
-		_update_cat(cat, delta, at, still, running, right)
+		elif cat.has("nonox"):
+			_update_nonox(cat, delta, at, right)
+		else:
+			_update_cat(cat, delta, at, still, running, right)
 		cat.sprite.flip_h = cat.facing < 0.0
 		cat.sprite.rotation.y = atan2(-forward.x, -forward.z)
 	for flock in flocks:
