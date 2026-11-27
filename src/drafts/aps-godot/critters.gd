@@ -359,6 +359,7 @@ func pet() -> bool:
 const NONOX := {
 	"name": "Nonox",
 	"home": Vector2(27.3, 21.6), # world: on the canteen patio's south end, by the umbrella table at (29.8, 21.0)
+	"shade": 0.85, # multiplies his sheet: the handoff's grey read too light on the brick
 	"scale": 0.92, # of DENSITY: he sits 21 px against Mingming's 31 at hers, ~0.68 of her height
 	"speed": 1.44, # 0.6 of the student's walk
 	"stride": 0.18, # metres a walk frame: 8 frames a second at his speed
@@ -398,6 +399,7 @@ func _add_nonox() -> void:
 	var sheets := _nonox_sheets()
 	var sprite := _sprite(sheets.loaf[0], 1)
 	sprite.pixel_size = DENSITY * NONOX.scale
+	sprite.modulate = Color(NONOX.shade, NONOX.shade, NONOX.shade)
 	sprite.name = "Cat_Nonox"
 	var body := Node3D.new()
 	body.name = "Cat_Nonox"
